@@ -2,9 +2,9 @@ import React from 'react'
 import Image from 'next/image'
 import heroImage from '@/public/images/logo1.png'
 
-type Props = {}
 
-export default function FooterSection({}: Props) {
+
+export default function FooterSection() {
   return (
     <footer className="bg-card">
       <div className="max-w-7xl mx-auto px-6 py-12">

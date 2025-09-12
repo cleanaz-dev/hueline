@@ -5,9 +5,8 @@ import Image from 'next/image'
 import MascotImage from '@/public/images/mascot.png'
 import Link from 'next/link'
 
-type Props = {}
 
-export default function CTASection({}: Props) {
+export default function CTASection() {
   return (
     <section className="py-12 px-4">
       <div className="max-w-4xl mx-auto text-center flex items-center flex-col space-y-8">

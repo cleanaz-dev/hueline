@@ -5,7 +5,6 @@ import EasilyIntegrateImage from "@/public/images/easily-intergrate.png";
 import TwentyFourSevenImage from "@/public/images/24-7.png"
 import OwnItImage from "@/public/images/own-it.png"
 
-type Props = {};
 
 interface Feature {
  id: number;
@@ -45,7 +44,7 @@ const features: Feature[] = [
  },
 ];
 
-export default function WYGSection({}: Props) {
+export default function WYGSection() {
  return (
    <section id="wyg" className=" px-4">
      <div className="max-w-2xl lg:max-w-4xl mx-auto">

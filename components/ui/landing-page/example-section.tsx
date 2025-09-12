@@ -8,7 +8,7 @@ import ConsultantAgentImage from '@/public/images/consultant-agent.png'
 import ColorMatchingAgentImage from '@/public/images/color-matching-agent.png'
 import BookingAgentImage from '@/public/images/booking-agent.png'
 
-type Props = {}
+
 
 interface Example {
 id: number;
@@ -46,7 +46,7 @@ const examples: Example[] = [
 }
 ]
 
-export default function ExamplesSection({}: Props) {
+export default function ExamplesSection() {
 return (
   <section id="examples" className="px-4">
    <div className="max-w-xl md:max-w-4xl mx-auto">
