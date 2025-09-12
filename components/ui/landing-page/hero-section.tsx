@@ -1,9 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import ThemeChanger from "@/hooks/use-theme-changer";
-import { Play, Phone, Zap, Menu, Star, Palette, Home } from "lucide-react";
+import { Play, Phone, Star } from "lucide-react";
 import Image from "next/image";
-import heroImage from "@/public/images/logo1.png";
 import videoThumbnail from "@/public/images/hero1.png";
 import Link from "next/link";
 
@@ -38,7 +36,7 @@ export function HeroSection() {
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 max-w-6xl md:max-w-4xl mx-auto min-h-0">
         <div className="flex-shrink-0">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-shadow-sm/50 text-shadow-primary text-balance mb-3 md:mb-6">
-            Give Every Customer a Paint Expert - Even When You're Busy
+            Give Every Customer a Paint Expert - Even When You&apos;re Busy
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-4 md:mb-8 text-muted-foreground">

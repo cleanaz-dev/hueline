@@ -1,7 +1,7 @@
 "use client"
 import React from 'react'
 import Image, { StaticImageData }from 'next/image'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import AudioPlayer from './audio-player'
 import ConsultantAgentImage from '@/public/images/consultant-agent.png'
