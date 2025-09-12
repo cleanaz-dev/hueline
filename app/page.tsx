@@ -5,7 +5,6 @@ import { HeroSection } from "@/components/ui/landing-page/hero-section";
 import NavSection from "@/components/ui/landing-page/nav-section";
 import SolutionSection from "@/components/ui/landing-page/solutions-section";
 import WYGSection from "@/components/ui/landing-page/wyg-section";
-import Image from "next/image";
 
 export default function Home() {
   return (

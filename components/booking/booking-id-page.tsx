@@ -85,7 +85,7 @@ export default function BookingPage({ booking }: Props) {
             </div>
             <div className="bg-primary/5 rounded-xl p-6 border border-primary/10">
               <p className="text-lg italic leading-relaxed">
-                "{booking.prompt}"
+               {`"${booking.prompt}"`}
               </p>
             </div>
           </div>
