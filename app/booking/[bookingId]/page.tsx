@@ -3,9 +3,9 @@ import { getBooking } from "@/lib/redis"
 import BookingPage from '@/components/booking/booking-id-page'
 
 type Props = {
-  params: {
+  params: Promise<{
     bookingId: string
-  }
+  }>
 }
 
 export default async function page({ params }: Props) {
