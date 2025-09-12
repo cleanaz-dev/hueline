@@ -1,3 +1,4 @@
+"use client"
 import React from "react";
 import Image from "next/image";
 import Logo from "@/public/images/logo1.png";
@@ -12,6 +13,8 @@ import {
   Eye,
 } from "lucide-react";
 import ThemeChanger from "@/hooks/use-theme-changer";
+import Link from "next/link";
+import { Button } from "../ui/button";
 
 type Booking = {
   name: string;
@@ -226,10 +229,14 @@ export default function BookingPage({ booking }: Props) {
               alt="hueline-mascot"
               className="object-contain size-32 mx-auto mb-6"
             />
-            <button className="group inline-flex items-center justify-center bg-primary hover:bg-secondary/90 text-primary-foreground font-medium py-3 px-6 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md">
+            <Button
+            size="lg"
+            className="group inline-flex items-center justify-center bg-primary hover:bg-secondary/90 text-primary-foreground font-medium py-3 px-6 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md" asChild>
+            <Link href="/booking">
               Schedule Consultation
               <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </button>
+              </Link>
+            </Button>
           </div>
         </section>
       </main>

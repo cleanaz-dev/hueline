@@ -5,30 +5,40 @@ import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function ThemeChanger() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
 
-  // Avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleThemeToggle = () => {
     setIsRotating(true);
-    setTheme(theme === "light" ? "dark" : "light");
-    
-    // Reset rotation after animation completes
+    // Use resolved theme (accounting for system preference)
+    const currentTheme = theme === "system" ? systemTheme : theme;
+    setTheme(currentTheme === "light" ? "dark" : "light");
     setTimeout(() => setIsRotating(false), 300);
   };
 
+  // Return a placeholder during SSR to prevent layout shift
   if (!mounted) {
     return (
-      <Button variant="outline" size="icon" className="w-10 h-10 rounded-full">
-        <Sun className="h-5 w-5" />
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="w-10 h-10 rounded-full"
+          aria-label="Toggle theme"
+        >
+          <div className="h-5 w-5"></div>
+        </Button>
+      </div>
     );
   }
+
+  // Get the actual theme to display (accounting for system preference)
+  const displayTheme = theme === "system" ? systemTheme : theme;
 
   return (
     <div className="flex items-center gap-2">
@@ -41,14 +51,12 @@ export default function ThemeChanger() {
         onClick={handleThemeToggle}
         aria-label="Toggle theme"
       >
-        {/* Sun icon for light theme */}
         <Sun className={`h-5 w-5 absolute transition-all duration-300 ${
-          theme === "light" ? "scale-100 opacity-100" : "scale-0 opacity-0"
+          displayTheme === "light" ? "scale-100 opacity-100" : "scale-0 opacity-0"
         }`} />
         
-        {/* Moon icon for dark theme */}
         <Moon className={`h-5 w-5 absolute transition-all duration-300 ${
-          theme === "dark" ? "scale-100 opacity-100" : "scale-0 opacity-0"
+          displayTheme === "dark" ? "scale-100 opacity-100" : "scale-0 opacity-0"
         }`} />
       </Button>
     </div>
