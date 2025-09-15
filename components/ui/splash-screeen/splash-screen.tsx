@@ -49,6 +49,7 @@ export default function SplashScreen({ onVideoEnd }: SplashScreenProps) {
         autoPlay
         muted
         playsInline
+        preload='auto'
         onEnded={handleVideoEnd}
         onError={handleVideoError}
       >
