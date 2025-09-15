@@ -4,7 +4,10 @@ declare global {
   var redisClient: ReturnType<typeof createClient> | undefined
 }
 
-
+function logWithTime(message: string) {
+  const timestamp = new Date().toLocaleTimeString();
+  console.log(`[${timestamp}] ${message}`);
+}
 function connectOnceToRedis() {
   if (!globalThis.redisClient) {
     globalThis.redisClient = createClient({
@@ -39,7 +42,7 @@ export async function pushImageUrl(phoneNumber: string, url: string, expirationS
   const list = JSON.parse(await client.get(key) || "[]") as string[];
   list.push(url);
   await client.setEx(key, expirationSeconds, JSON.stringify(list));
-  console.log(`✅ Pushed 1 image for ${phoneNumber}`);
+  logWithTime(`✅ Pushed 1 image for ${phoneNumber}`);
 }
   
 export async function getBooking(phoneNumber: string) {

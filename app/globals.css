@@ -115,9 +115,11 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-overflow-scrolling: touch;
   }
   body {
     @apply bg-background text-foreground;
+    scrollbar-gutter: stable;
   }
 
   .section-header {
@@ -140,4 +142,5 @@
       scroll-padding-top: 80px; /* Desktop nav height */
     }
   }
+  
 }
