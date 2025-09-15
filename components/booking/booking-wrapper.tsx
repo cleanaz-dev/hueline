@@ -25,7 +25,7 @@ export default function BookingWrapper({ booking }: Props) {
 
   // Hide splash after ~2s
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 1250)
+    const timer = setTimeout(() => setShowSplash(false), 1450)
     return () => clearTimeout(timer)
   }, [])
 
