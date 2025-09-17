@@ -11,8 +11,8 @@ export async function POST(req: Request) {
 
     for (let i = 0; i < mediaCount; i++) {
       const mediaUrlEntry = formData.get(`MediaUrl${i}`);
-      if (!mediaUrlEntry || typeof mediaUrlEntry !== 'string') continue;
-      
+      if (!mediaUrlEntry || typeof mediaUrlEntry !== "string") continue;
+
       const secureUrl = await uploadToCloudinary(mediaUrlEntry, `decor/${from}`);
       await pushImageUrl(from, secureUrl);
     }
@@ -20,8 +20,21 @@ export async function POST(req: Request) {
     console.error("SMS webhook error:", e);
   }
 
-  return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`, {
-    status: 200,
-    headers: { "Content-Type": "application/xml" },
-  });
+  return new NextResponse(
+    `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`,
+    {
+      status: 200,
+      headers: { "Content-Type": "application/xml" },
+    }
+  );
+}
+
+export async function GET() {
+  try {
+    console.log("Hello!");
+    return NextResponse.json({ message: "Hello!" }, { status: 200 });
+  } catch (error: any) {
+    console.error(error);
+    return NextResponse.json({ message: error.message }, { status: 500 });
+  }
 }
