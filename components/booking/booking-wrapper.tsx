@@ -6,14 +6,19 @@ import BookingPage from '@/components/booking/booking-id-page'
 import SplashScreen from '../ui/splash-screeen/splash-screen'
 
 // Booking type definition
+type PaintColor = {
+  name: string;
+  hex: string;
+};
+
 type Booking = {
-  name: string
-  prompt: string
-  original_images: string[]
-  mockup_urls: string[]
-  paint_colors: string[]
-  summary: string
-}
+  name: string;
+  prompt: string;
+  original_images: string[];
+  mockup_urls: string[];
+  paint_colors: PaintColor[]; // Array of paint color objects
+  summary: string;
+};
 
 type Props = {
   booking: Booking
