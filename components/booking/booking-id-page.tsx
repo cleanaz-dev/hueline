@@ -77,7 +77,7 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
                 Painting Report Not Available
               </h1>
               <p className="text-lg text-muted-foreground max-w-lg mx-auto">
-                The design report you're looking for may have expired or is no longer available in our cache.
+                The design report you&apos;re looking for may have expired or is no longer available in our cache.
               </p>
             </div>
 
