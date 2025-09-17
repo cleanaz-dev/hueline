@@ -33,8 +33,8 @@ export async function GET() {
   try {
     console.log("Hello!");
     return NextResponse.json({ message: "Hello!" }, { status: 200 });
-  } catch (error: any) {
-    console.error(error);
-    return NextResponse.json({ message: error.message }, { status: 500 });
+  } catch (error) {
+    console.error("Error fetching booking:", error)
+    return NextResponse.json({ message: "Interal Server Error"}, { status: 500 });
   }
 }
