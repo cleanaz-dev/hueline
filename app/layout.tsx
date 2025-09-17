@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist_Mono, Roboto } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
-import LogoImage from "@/public/images/logo1.png"
+import LogoImage from "@/public/images/logo1.png";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -11,19 +12,21 @@ const geistMono = Geist_Mono({
 const roboto = Roboto({
   variable: "--font-roboto",
   subsets: ["latin"],
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
-})
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+});
 
 export const metadata: Metadata = {
   title: "Hueline - Voice AI Agent Assistant for Painters",
-  description: "AI-powered voice assistant that helps painters with photo analysis, visual mockups, and smart estimates during customer calls.",
+  description:
+    "AI-powered voice assistant that helps painters with photo analysis, visual mockups, and smart estimates during customer calls.",
   icons: {
     icon: LogoImage.src,
     apple: LogoImage.src,
   },
   openGraph: {
     title: "Hueline - Voice AI Agent Assistant for Painters",
-    description: "AI-powered voice assistant that helps painters with photo analysis, visual mockups, and smart estimates during customer calls.",
+    description:
+      "AI-powered voice assistant that helps painters with photo analysis, visual mockups, and smart estimates during customer calls.",
     images: [LogoImage.src],
   },
 };
@@ -35,10 +38,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${roboto.className} ${geistMono.variable} antialiased`}
-      >
-        <ThemeProvider> {children} </ThemeProvider>
+      <body className={`${roboto.className} ${geistMono.variable} antialiased`}>
+        <ThemeProvider>
+          {" "}
+          {children}
+          <SpeedInsights />
+        </ThemeProvider>
       </body>
     </html>
   );
