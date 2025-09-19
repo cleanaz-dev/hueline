@@ -77,7 +77,8 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
                 Painting Report Not Available
               </h1>
               <p className="text-lg text-muted-foreground max-w-lg mx-auto">
-                The design report you&apos;re looking for may have expired or is no longer available in our cache.
+                The design report you&apos;re looking for may have expired or is
+                no longer available in our cache.
               </p>
             </div>
 
@@ -94,7 +95,7 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
                   Try Again
                 </Button>
               )}
-              
+
               <Button
                 size="lg"
                 className="group inline-flex items-center justify-center bg-primary hover:bg-secondary/90 text-primary-foreground font-medium py-3 px-6 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
@@ -119,8 +120,8 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
             {/* Help Text */}
             <div className="bg-background/60 rounded-xl p-6 max-w-md mx-auto border border-primary/10">
               <p className="text-sm text-muted-foreground">
-                Design reports are temporarily stored and may expire after a period of time. 
-                Please create a new consultation to generate a fresh report.
+                Design reports are temporarily stored and may expire after a
+                period of time.
               </p>
             </div>
           </div>
@@ -157,10 +158,11 @@ export default function BookingPage({ booking, onRefresh }: Props) {
   }
 
   // Validate required data
-  const hasValidData = booking.name && 
-                      booking.prompt && 
-                      booking.original_images?.length > 0 && 
-                      booking.mockup_urls?.length > 0;
+  const hasValidData =
+    booking.name &&
+    booking.prompt &&
+    booking.original_images?.length > 0 &&
+    booking.mockup_urls?.length > 0;
 
   if (!hasValidData) {
     return <EmptyState onRefresh={onRefresh} />;
@@ -207,7 +209,9 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                   <AvatarFallback>AN</AvatarFallback>
                 </Avatar>
                 <div className="text-left">
-                  <p className="text-base md:text-sm font-medium">By: Annalia</p>
+                  <p className="text-base md:text-sm font-medium">
+                    By: Annalia
+                  </p>
                   <p className="text-base md:text-sm text-muted-foreground">
                     HueLine Senior Design Consultant
                   </p>
@@ -266,10 +270,13 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         height={400}
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                        <span className="text-background text-sm font-medium">
-                          Image {index + 1}
-                        </span>
+                      <div className="absolute top-4 left-0">
+                        <div className="bg-primary/10 text-primary-foreground px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
+                          <span className="flex items-center gap-2 font-light">
+                            
+                            Image {index + 1}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -297,10 +304,12 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         height={400}
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                        <span className="text-background text-sm font-medium">
-                          Design {index + 1}
-                        </span>
+                      <div className="absolute top-4 left-0">
+                        <div className="bg-primary/10 text-primary-foreground px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
+                          <span className="flex items-center gap-2 font-light">
+                            Design {index + 1}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -317,7 +326,9 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
                     <Sparkles className="h-5 w-5 text-primary" />
                   </div>
-                  <h2 className="ml-3 text-2xl font-semibold">Design Analysis</h2>
+                  <h2 className="ml-3 text-2xl font-semibold">
+                    Design Analysis
+                  </h2>
                 </div>
                 <div className="prose prose-lg max-w-none">
                   <p>{booking.summary}</p>
@@ -350,7 +361,9 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-medium text-sm">{color.name}</p>
-                            <p className="text-xs text-muted-foreground font-mono">{color.hex}</p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {color.hex}
+                            </p>
                           </div>
                           <PaintBucket className="h-4 w-4 text-muted-foreground" />
                         </div>

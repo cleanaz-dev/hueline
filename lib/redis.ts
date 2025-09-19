@@ -36,7 +36,7 @@ const keys = {
   booking: (phoneNumber: string) => `booking:${phoneNumber}`
 }
 
-export async function pushImageUrl(phoneNumber: string, url: string, expirationSeconds = 300) {
+export async function pushImageUrl(phoneNumber: string, url: string, expirationSeconds = 3600) {
   const client = await getRedisClient();
   const key = keys.sentImages(phoneNumber);
   const list = JSON.parse(await client.get(key) || "[]") as string[];
