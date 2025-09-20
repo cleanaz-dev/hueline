@@ -1,9 +1,10 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Logo from "@/public/images/logo1.png";
 import MascotImage from "@/public/images/mascot.png";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import GenerateDialog from "./generate-dialog";
 import {
   Palette,
   Lightbulb,
@@ -13,6 +14,8 @@ import {
   Eye,
   AlertCircle,
   RefreshCw,
+  Zap,
+  Clock,
 } from "lucide-react";
 import ThemeChanger from "@/hooks/use-theme-changer";
 import Link from "next/link";
@@ -31,6 +34,10 @@ type Booking = {
   mockup_urls: string[];
   paint_colors: PaintColor[];
   summary: string;
+  call_duration?: string;
+  alternate_colors?: PaintColor[];
+  alt_mockup_url?: string;
+  phone?: string;
 };
 
 type Props = {
@@ -38,12 +45,27 @@ type Props = {
   onRefresh?: () => void;
 };
 
+const formatCallDuration = (duration: string) => {
+  if (!duration) return '';
+  
+  // Parse "1:59" format
+  const [minutes, seconds] = duration.split(':').map(Number);
+  
+  if (minutes === 0) {
+    return `${seconds} seconds`;
+  } else if (seconds === 0) {
+    return `${minutes}m`;
+  } else {
+    return `${minutes}m ${seconds}s`;
+  }
+};
+
+
 // Empty State Component
 function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <ScrollArea className="h-screen">
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
-        {/* Header with Logo */}
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -64,14 +86,12 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
 
         <main className="max-w-4xl mx-auto px-6 py-16">
           <div className="text-center space-y-8">
-            {/* Empty State Icon */}
             <div className="flex justify-center">
               <div className="flex items-center justify-center h-24 w-24 rounded-full bg-primary/10 border-2 border-primary/20">
                 <AlertCircle className="h-12 w-12 text-primary/60" />
               </div>
             </div>
 
-            {/* Empty State Content */}
             <div className="space-y-4">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">
                 Painting Report Not Available
@@ -82,7 +102,6 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
               </p>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               {onRefresh && (
                 <Button
@@ -108,7 +127,6 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
               </Button>
             </div>
 
-            {/* Mascot Image */}
             <div className="pt-8">
               <Image
                 src={MascotImage}
@@ -117,7 +135,6 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
               />
             </div>
 
-            {/* Help Text */}
             <div className="bg-background/60 rounded-xl p-6 max-w-md mx-auto border border-primary/10">
               <p className="text-sm text-muted-foreground">
                 Design reports are temporarily stored and may expire after a
@@ -127,7 +144,6 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
           </div>
         </main>
 
-        {/* Footer */}
         <footer className="border-t border-primary/10 bg-background mt-12">
           <div className="max-w-6xl mx-auto px-6 py-8 text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">
@@ -152,12 +168,13 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
 }
 
 export default function BookingPage({ booking, onRefresh }: Props) {
-  // Show empty state if no booking data
+  const [selectedColor, setSelectedColor] = useState<PaintColor | null>(null);
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+
   if (!booking) {
     return <EmptyState onRefresh={onRefresh} />;
   }
 
-  // Validate required data
   const hasValidData =
     booking.name &&
     booking.prompt &&
@@ -168,11 +185,15 @@ export default function BookingPage({ booking, onRefresh }: Props) {
     return <EmptyState onRefresh={onRefresh} />;
   }
 
+  const handleGenerateAlternate = () => {
+    if (!selectedColor) return;
+    setShowGenerateDialog(true);
+  };
+
   return (
     <ScrollArea className="h-screen">
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
-        {/* Header with Logo */}
-        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm ">
+        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Image
@@ -191,7 +212,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
         </header>
 
         <main className="max-w-6xl mx-auto px-2 md:px-12 space-y-12 py-8">
-          {/* Hero Section */}
+          {/* Hero Section with Call Duration */}
           <section className="text-center space-y-6">
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl font-bold">
@@ -200,9 +221,17 @@ export default function BookingPage({ booking, onRefresh }: Props) {
               <p className="text-xl text-muted-foreground">
                 Prepared for {booking.name}
               </p>
+              {booking.call_duration && (
+                <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">
+                    Call completed in {formatCallDuration(booking.call_duration)}
+                  </span>
+                </div>
+              )}
             </div>
 
-            <div className="inline- items-center justify-center gap-3 bg-muted/50 p-4 rounded-xl max-w-md mx-auto">
+            <div className="inline-flex items-center justify-center gap-3 bg-muted/80 p-4 rounded-xl max-w-md mx-auto">
               <div className="flex items-center gap-3">
                 <Avatar className="size-10">
                   <AvatarImage src="/images/agent-avatar.png" />
@@ -227,7 +256,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
                   <Lightbulb className="h-5 w-5 text-primary" />
                 </div>
-                <h2 className="ml-3 text-2xl font-semibold ">Project Vision</h2>
+                <h2 className="ml-3 text-2xl font-semibold">Project Vision</h2>
               </div>
               <div className="bg-primary/5 rounded-xl p-6 border border-primary/10">
                 <p className="text-lg italic leading-relaxed">
@@ -271,10 +300,9 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
                       <div className="absolute top-4 left-0">
-                        <div className="bg-primary/10 text-primary-foreground px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
-                          <span className="flex items-center gap-2 font-light">
-                            
-                            Image {index + 1}
+                        <div className="text-primary-foreground px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
+                          <span className="flex items-center gap-2">
+                            Original {index + 1}
                           </span>
                         </div>
                       </div>
@@ -305,48 +333,48 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
                       <div className="absolute top-4 left-0">
-                        <div className="bg-primary/10 text-primary-foreground px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
-                          <span className="flex items-center gap-2 font-light">
+                        <div className="text-primary-foreground px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
+                          <span className="flex items-center gap-2">
                             Design {index + 1}
                           </span>
                         </div>
                       </div>
                     </div>
                   ))}
+
+                  {/* Show alternate mockup if it exists */}
+                  {booking.alt_mockup_url && (
+                    <div className="relative overflow-hidden rounded-xl shadow-sm border border-primary/10">
+                      <Image
+                        src={booking.alt_mockup_url}
+                        alt="Alternative design"
+                        width={600}
+                        height={400}
+                        className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
+                      />
+                      <div className="absolute top-4 left-0">
+                        <div className="bg-gradient-to-r from-primary/50 to-primary/25 text-secondary-foreground px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
+                          <span className="flex items-center gap-2">
+                        
+                            New Design
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Design Summary */}
-          {booking.summary && (
-            <section>
-              <div className="bg-background rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
-                <div className="flex items-center mb-6">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <h2 className="ml-3 text-2xl font-semibold">
-                    Design Analysis
-                  </h2>
-                </div>
-                <div className="prose prose-lg max-w-none">
-                  <p>{booking.summary}</p>
-                </div>
-              </div>
-            </section>
-          )}
-
           {/* Paint Color Palette */}
           {booking.paint_colors && booking.paint_colors.length > 0 && (
-            <section className="bg-primary/5 rounded-2xl py-8 px-4 md:px-8 md:py-10">
+            <section className="bg-background rounded-2xl py-8 px-4 md:px-8 md:py-10">
               <div className="flex items-center mb-8">
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
                   <Palette className="h-5 w-5 text-primary" />
                 </div>
-                <h2 className="ml-3 text-2xl font-semibold">
-                  Recommended Paint Colors
-                </h2>
+                <h2 className="ml-3 text-2xl font-semibold">Paint Colors</h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -375,9 +403,143 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             </section>
           )}
 
+          {/* Hue Engine Section */}
+          {booking.alternate_colors && booking.alternate_colors.length > 0 && (
+            <section className="bg-primary/5 rounded-2xl py-8 px-6 md:px-8 md:py-10">
+              <div className="flex items-center mb-8">
+                <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
+                  <Zap className="h-5 w-5 text-primary" />
+                </div>
+                <h2 className="ml-3 text-2xl font-semibold">Hue Engine</h2>
+                <div className="ml-auto">
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
+                    AI POWERED
+                  </span>
+                </div>
+              </div>
+
+              {booking.alt_mockup_url ? (
+                /* Disabled state when alternate image exists */
+                <div className="text-center space-y-4 opacity-60">
+                  <p className="text-muted-foreground">
+                    Alternative design has been generated! The Hue Engine is now complete.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pointer-events-none">
+                    {booking.alternate_colors.map((color, index) => (
+                      <div
+                        key={index}
+                        className="relative overflow-hidden rounded-xl border-2 border-muted"
+                      >
+                        <div
+                          className="w-full h-24"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <div className="p-3 bg-background">
+                          <div className="text-center">
+                            <p className="font-medium text-sm text-muted-foreground">{color.name}</p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {color.hex}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-center">
+                    <Button disabled size="lg" className="opacity-50">
+                      <Zap className="h-4 w-4 mr-2" />
+                      Already Generated
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                /* Active state when no alternate image */
+                <>
+                  <p className="text-muted-foreground mb-6">
+                    Explore alternative color options for your space. Select a color
+                    below and generate a new mockup instantly.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    {booking.alternate_colors.map((color, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedColor(color)}
+                        className={`group cursor-pointer relative overflow-hidden rounded-xl border-2 transition-all duration-300 ${
+                          selectedColor?.hex === color.hex
+                            ? "border-primary shadow-lg scale-105"
+                            : "border-primary/20 hover:border-primary/40"
+                        }`}
+                      >
+                        <div
+                          className="w-full h-24 transition-all duration-300"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <div className="p-3 bg-background">
+                          <div className="text-center">
+                            <p className="font-medium text-sm">{color.name}</p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {color.hex}
+                            </p>
+                          </div>
+                        </div>
+                        {selectedColor?.hex === color.hex && (
+                          <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
+                            <Zap className="h-3 w-3" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleGenerateAlternate}
+                      disabled={!selectedColor}
+                      size="lg"
+                      className="group inline-flex items-center gap-3 px-8"
+                    >
+                      <Zap className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                      Generate Mockup
+                    </Button>
+                  </div>
+                </>
+              )}
+            </section>
+          )}
+
+
+          {/* Generate Dialog */}
+          <GenerateDialog
+            isOpen={showGenerateDialog}
+            onClose={() => setShowGenerateDialog(false)}
+            selectedColor={selectedColor}
+            phoneNumber={booking.phone || ""}
+            originalImages={booking.original_images}
+          />
+
+          {/* Design Summary */}
+          {booking.summary && (
+            <section>
+              <div className="bg-background rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
+                <div className="flex items-center mb-6">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <h2 className="ml-3 text-2xl font-semibold">
+                    Design Analysis
+                  </h2>
+                </div>
+                <div className="prose prose-lg max-w-none">
+                  <p>{booking.summary}</p>
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Call to Action */}
           <section>
-            <div className="bg-background rounded-2xl shadow-sm border border-primary/10  py-8 px-4 text-center">
+            <div className="bg-background rounded-2xl shadow-sm border border-primary/10 py-8 px-4 text-center">
               <h2 className="text-2xl font-bold mb-4 text-balance">
                 Ready to Transform Your Space?
               </h2>
@@ -396,7 +558,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 asChild
               >
                 <Link href="/booking">
-                  Schedule Consultation
+                  Get This AI Voice Agent for Your Business
                   <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
@@ -404,7 +566,6 @@ export default function BookingPage({ booking, onRefresh }: Props) {
           </section>
         </main>
 
-        {/* Footer */}
         <footer className="border-t border-primary/10 bg-background mt-12">
           <div className="max-w-6xl mx-auto px-6 py-8 text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">

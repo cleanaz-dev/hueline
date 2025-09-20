@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@cloudinary/url-gen": "^1.22.0",
+    "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@radix-ui/react-slot": "^1.2.3",
     "@vercel/speed-insights": "^1.2.0",
@@ -30,6 +32,7 @@
     "react-calendly": "^4.4.0",
     "react-dom": "19.1.0",
     "redis": "^5.8.2",
+    "replicate": "^1.2.0",
     "sonner": "^2.0.7",
     "styled-components": "^6.1.19",
     "tailwind-merge": "^3.3.1"

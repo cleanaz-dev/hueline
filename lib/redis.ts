@@ -56,3 +56,26 @@ export async function getBooking(phoneNumber: string) {
   
   return JSON.parse(data);
 }
+
+export async function updateBookingWithAltMockup(phoneNumber: string, altMockupUrl: string, expirationSeconds = 3600) {
+  const client = await getRedisClient();
+  const key = keys.booking(phoneNumber);
+  
+  // Get existing booking data
+  const existingData = await client.get(key);
+  
+  if (!existingData) {
+    logWithTime(`❌ No existing booking found for ${phoneNumber}`);
+    return null;
+  }
+  
+  // Parse and update with alternate mockup
+  const bookingData = JSON.parse(existingData);
+  bookingData.alt_mockup_url = altMockupUrl;
+  
+  // Save back to Redis
+  await client.setEx(key, expirationSeconds, JSON.stringify(bookingData));
+  logWithTime(`✅ Updated booking with alt mockup for ${phoneNumber}`);
+  
+  return bookingData;
+}
