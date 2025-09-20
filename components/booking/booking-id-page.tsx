@@ -46,11 +46,11 @@ type Props = {
 };
 
 const formatCallDuration = (duration: string) => {
-  if (!duration) return '';
-  
+  if (!duration) return "";
+
   // Parse "1:59" format
-  const [minutes, seconds] = duration.split(':').map(Number);
-  
+  const [minutes, seconds] = duration.split(":").map(Number);
+
   if (minutes === 0) {
     return `${seconds} seconds`;
   } else if (seconds === 0) {
@@ -59,7 +59,6 @@ const formatCallDuration = (duration: string) => {
     return `${minutes}m ${seconds}s`;
   }
 };
-
 
 // Empty State Component
 function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
@@ -225,33 +224,32 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
                   <Clock className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">
-                    Call completed in {formatCallDuration(booking.call_duration)}
+                    Call completed in{" "}
+                    {formatCallDuration(booking.call_duration)}
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="inline-flex items-center justify-center gap-3 bg-muted/80 p-4 rounded-xl max-w-md mx-auto">
-              <div className="flex items-center gap-3">
-                <Avatar className="size-10">
-                  <AvatarImage src="/images/agent-avatar.png" />
-                  <AvatarFallback>AN</AvatarFallback>
-                </Avatar>
-                <div className="text-left">
-                  <p className="text-base md:text-sm font-medium">
-                    By: Annalia
-                  </p>
-                  <p className="text-base md:text-sm text-muted-foreground">
-                    HueLine Senior Design Consultant
-                  </p>
-                </div>
+            <div className="inline-flex items-center justify-center gap-4 bg-card px-4 py-2.5 rounded-xl max-w-md mx-auto border border-primary/10 shadow-sm">
+              <Avatar className="size-12 ring-2 ring-primary/20">
+                <AvatarImage src="/images/agent-avatar.png" />
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                  AN
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-left leading-tight">
+                <p className="text-sm font-semibold">By: Annalia</p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  HueLine Professional Services
+                </p>
               </div>
             </div>
           </section>
 
           {/* Project Vision */}
           <section>
-            <div className="bg-background rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
+            <div className="bg-card rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
               <div className="flex items-center mb-6">
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
                   <Lightbulb className="h-5 w-5 text-primary" />
@@ -267,7 +265,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
           </section>
 
           {/* Before & After Images */}
-          <section className="bg-primary/5 rounded-2xl py-8 px-4 md:px-8 md:py-10">
+          <section className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl shadow-lg border border-primary/20  py-8 px-4 md:px-8 md:py-10">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">
                 Transformation Gallery
@@ -300,7 +298,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
                       <div className="absolute top-4 left-0">
-                        <div className="text-primary-foreground px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
+                        <div className="text-white px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
                           <span className="flex items-center gap-2">
                             Original {index + 1}
                           </span>
@@ -333,7 +331,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
                       <div className="absolute top-4 left-0">
-                        <div className="text-primary-foreground px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
+                        <div className="text-white px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
                           <span className="flex items-center gap-2">
                             Design {index + 1}
                           </span>
@@ -353,10 +351,9 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
                       <div className="absolute top-4 left-0">
-                        <div className="bg-gradient-to-r from-primary/50 to-primary/25 text-secondary-foreground px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
+                        <div className="bg-gradient-to-r from-red-500/50 via-yellow-300/50 to-indigo-500/50 text-white px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
                           <span className="flex items-center gap-2">
-                        
-                            New Design
+                            Hue Engine
                           </span>
                         </div>
                       </div>
@@ -367,9 +364,9 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             </div>
           </section>
 
-          {/* Paint Color Palette */}
+          {/* Combined Paint Colors & Hue Engine Section */}
           {booking.paint_colors && booking.paint_colors.length > 0 && (
-            <section className="bg-background rounded-2xl py-8 px-4 md:px-8 md:py-10">
+            <section className="bg-card rounded-2xl py-8 px-6 md:px-8 md:py-10">
               <div className="flex items-center mb-8">
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
                   <Palette className="h-5 w-5 text-primary" />
@@ -377,137 +374,146 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 <h2 className="ml-3 text-2xl font-semibold">Paint Colors</h2>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {booking.paint_colors.map((color, index) => (
-                  <div key={index} className="group">
-                    <div className="relative overflow-hidden rounded-xl border border-primary/10">
-                      <div
-                        className="w-full h-32 transition-all duration-300"
-                        style={{ backgroundColor: color.hex }}
-                      />
-                      <div className="p-4 bg-background">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-sm">{color.name}</p>
-                            <p className="text-xs text-muted-foreground font-mono">
-                              {color.hex}
-                            </p>
+              {/* Main Paint Colors */}
+              <div className="mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {booking.paint_colors.map((color, index) => (
+                    <div key={index} className="group">
+                      <div className="relative overflow-hidden rounded-xl border border-primary/10 shadow-sm hover:shadow-md transition-shadow">
+                        <div
+                          className="w-full h-32 transition-all duration-300"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <div className="p-4 bg-background">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm">
+                                {color.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground font-mono">
+                                {color.hex}
+                              </p>
+                            </div>
+                            <PaintBucket className="h-4 w-4 text-muted-foreground" />
                           </div>
-                          <PaintBucket className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Hue Engine Section */}
-          {booking.alternate_colors && booking.alternate_colors.length > 0 && (
-            <section className="bg-primary/5 rounded-2xl py-8 px-6 md:px-8 md:py-10">
-              <div className="flex items-center mb-8">
-                <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
-                  <Zap className="h-5 w-5 text-primary" />
-                </div>
-                <h2 className="ml-3 text-2xl font-semibold">Hue Engine</h2>
-                <div className="ml-auto">
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
-                    AI POWERED
-                  </span>
+                  ))}
                 </div>
               </div>
 
-              {booking.alt_mockup_url ? (
-                /* Disabled state when alternate image exists */
-                <div className="text-center space-y-4 opacity-60">
-                  <p className="text-muted-foreground">
-                    Alternative design has been generated! The Hue Engine is now complete.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pointer-events-none">
-                    {booking.alternate_colors.map((color, index) => (
-                      <div
-                        key={index}
-                        className="relative overflow-hidden rounded-xl border-2 border-muted"
-                      >
-                        <div
-                          className="w-full h-24"
-                          style={{ backgroundColor: color.hex }}
-                        />
-                        <div className="p-3 bg-background">
-                          <div className="text-center">
-                            <p className="font-medium text-sm text-muted-foreground">{color.name}</p>
-                            <p className="text-xs text-muted-foreground font-mono">
-                              {color.hex}
-                            </p>
-                          </div>
+              {/* Hue Engine Section */}
+              {booking.alternate_colors &&
+                booking.alternate_colors.length > 0 && (
+                  <div className="border-t border-primary/10 pt-8">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-medium flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-primary" />
+                        HUE ENGINE
+                      </h3>
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium uppercase">
+                        More Paint Choices
+                      </span>
+                    </div>
+
+                    {booking.alt_mockup_url ? (
+                      /* Disabled state when alternate image exists */
+                      <div className="text-center space-y-4 opacity-60">
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Alternative design has been generated! The Hue Engine
+                          is now complete.
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pointer-events-none">
+                          {booking.alternate_colors.map((color, index) => (
+                            <div
+                              key={index}
+                              className="relative overflow-hidden rounded-lg border-2 border-muted"
+                            >
+                              <div
+                                className="w-full h-16"
+                                style={{ backgroundColor: color.hex }}
+                              />
+                              <div className="p-2 bg-background">
+                                <div className="text-center">
+                                  <p className="font-medium text-xs text-muted-foreground truncate">
+                                    {color.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground font-mono">
+                                    {color.hex}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex justify-center pt-2">
+                          <Button disabled size="sm" className="opacity-50">
+                            <Zap className="h-3 w-3 mr-2" />
+                            Already Generated
+                          </Button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-center">
-                    <Button disabled size="lg" className="opacity-50">
-                      <Zap className="h-4 w-4 mr-2" />
-                      Already Generated
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                /* Active state when no alternate image */
-                <>
-                  <p className="text-muted-foreground mb-6">
-                    Explore alternative color options for your space. Select a color
-                    below and generate a new mockup instantly.
-                  </p>
+                    ) : (
+                      /* Active state when no alternate image */
+                      <>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Explore alternative color options for your space.
+                          Select a color below and generate a new mockup
+                          instantly.
+                        </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    {booking.alternate_colors.map((color, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedColor(color)}
-                        className={`group cursor-pointer relative overflow-hidden rounded-xl border-2 transition-all duration-300 ${
-                          selectedColor?.hex === color.hex
-                            ? "border-primary shadow-lg scale-105"
-                            : "border-primary/20 hover:border-primary/40"
-                        }`}
-                      >
-                        <div
-                          className="w-full h-24 transition-all duration-300"
-                          style={{ backgroundColor: color.hex }}
-                        />
-                        <div className="p-3 bg-background">
-                          <div className="text-center">
-                            <p className="font-medium text-sm">{color.name}</p>
-                            <p className="text-xs text-muted-foreground font-mono">
-                              {color.hex}
-                            </p>
-                          </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                          {booking.alternate_colors.map((color, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setSelectedColor(color)}
+                              className={`group cursor-pointer relative overflow-hidden rounded-lg border-2 transition-all duration-300 ${
+                                selectedColor?.hex === color.hex
+                                  ? "border-primary shadow-md scale-105"
+                                  : "border-primary/20 hover:border-primary/40"
+                              }`}
+                            >
+                              <div
+                                className="w-full h-16 transition-all duration-300"
+                                style={{ backgroundColor: color.hex }}
+                              />
+                              <div className="p-2 bg-background">
+                                <div className="text-center">
+                                  <p className="font-medium text-xs truncate">
+                                    {color.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground font-mono">
+                                    {color.hex}
+                                  </p>
+                                </div>
+                              </div>
+                              {selectedColor?.hex === color.hex && (
+                                <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-1">
+                                  <Zap className="h-2 w-2" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
                         </div>
-                        {selectedColor?.hex === color.hex && (
-                          <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
-                            <Zap className="h-3 w-3" />
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
 
-                  <div className="flex justify-center">
-                    <Button
-                      onClick={handleGenerateAlternate}
-                      disabled={!selectedColor}
-                      size="lg"
-                      className="group inline-flex items-center gap-3 px-8"
-                    >
-                      <Zap className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                      Generate Mockup
-                    </Button>
+                        <div className="flex justify-center">
+                          <Button
+                            onClick={handleGenerateAlternate}
+                            disabled={!selectedColor}
+                            size="sm"
+                            className="group inline-flex items-center gap-2 px-6"
+                          >
+                            <Zap className="h-3 w-3 group-hover:scale-110 transition-transform" />
+                            Generate Mockup
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
-                </>
-              )}
+                )}
             </section>
           )}
-
 
           {/* Generate Dialog */}
           <GenerateDialog
@@ -521,7 +527,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
           {/* Design Summary */}
           {booking.summary && (
             <section>
-              <div className="bg-background rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
+              <div className="bg-card rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
                 <div className="flex items-center mb-6">
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
                     <Sparkles className="h-5 w-5 text-primary" />
@@ -537,31 +543,72 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             </section>
           )}
 
-          {/* Call to Action */}
+          {/* Call to Action for Painters */}
           <section>
-            <div className="bg-background rounded-2xl shadow-sm border border-primary/10 py-8 px-4 text-center">
-              <h2 className="text-2xl font-bold mb-4 text-balance">
-                Ready to Transform Your Space?
-              </h2>
-              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                Schedule a consultation with our design experts to bring your
-                vision to life
-              </p>
-              <Image
-                src={MascotImage}
-                alt="hueline-mascot"
-                className="object-contain size-32 mx-auto mb-6"
-              />
-              <Button
-                size="lg"
-                className="group inline-flex items-center justify-center bg-primary hover:bg-secondary/90 text-primary-foreground font-medium py-3 px-6 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
-                asChild
-              >
-                <Link href="/booking">
-                  Get This AI Voice Agent for Your Business
-                  <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
+            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl shadow-lg border border-primary/20 py-10 px-6 text-center">
+              <div className="max-w-2xl mx-auto">
+                <h2 className="text-3xl font-bold mb-4 text-balance">
+                  Want This AI Agent for Your Painting Business?
+                </h2>
+                <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+                  Generate instant design mockups, paint color recommendations,
+                  and professional reports that close more jobs. Let AI handle
+                  consultations while you focus on painting.
+                </p>
+
+                <div className="grid md:grid-cols-3 gap-4 mb-8 text-sm">
+                  <div className="bg-background/60 rounded-lg p-4 border border-primary/10">
+                    <div className="flex items-center justify-center mb-2">
+                      <PaintBucket className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="font-medium">AI Design Mockups</p>
+                    <p className="text-muted-foreground text-xs">
+                      Show clients exactly how their space will look
+                    </p>
+                  </div>
+                  <div className="bg-background/60 rounded-lg p-4 border border-primary/10">
+                    <div className="flex items-center justify-center mb-2">
+                      <Palette className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="font-medium">Smart Color Matching</p>
+                    <p className="text-muted-foreground text-xs">
+                      Perfect paint colors for every project
+                    </p>
+                  </div>
+                  <div className="bg-background/60 rounded-lg p-4 border border-primary/10">
+                    <div className="flex items-center justify-center mb-2">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="font-medium">24/7 Lead Capture</p>
+                    <p className="text-muted-foreground text-xs">
+                      Never miss a potential customer again
+                    </p>
+                  </div>
+                </div>
+
+                <Image
+                  src={MascotImage}
+                  alt="hueline-mascot"
+                  className="object-contain size-24 mx-auto mb-6 opacity-90"
+                />
+
+                <div className="space-y-4">
+                  <Button
+                    size="lg"
+                    className="group inline-flex items-center justify-center bg-primary text-white font-bold py-4 px-8 rounded-xl transition-all duration-500 shadow-lg hover:shadow-xl text-lg hover:bg-accent"
+                    asChild
+                  >
+                    <Link href="/booking">
+                      Get HueLine AI for Your Business
+                      <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  </Button>
+
+                  <p className="text-sm text-muted-foreground">
+                    🚀 Limited time: Early adopter pricing available
+                  </p>
+                </div>
+              </div>
             </div>
           </section>
         </main>
