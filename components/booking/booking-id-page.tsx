@@ -1,10 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Logo from "@/public/images/logo1.png";
 import MascotImage from "@/public/images/mascot.png";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import GenerateDialog from "./generate-dialog";
 import {
   Palette,
   Lightbulb,
@@ -15,7 +14,6 @@ import {
   AlertCircle,
   RefreshCw,
   Zap,
-  Clock,
 } from "lucide-react";
 import ThemeChanger from "@/hooks/use-theme-changer";
 import Link from "next/link";
@@ -65,6 +63,7 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <ScrollArea className="h-screen">
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
+        {/* Header with Logo */}
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -85,12 +84,14 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
 
         <main className="max-w-4xl mx-auto px-6 py-16">
           <div className="text-center space-y-8">
+            {/* Empty State Icon */}
             <div className="flex justify-center">
               <div className="flex items-center justify-center h-24 w-24 rounded-full bg-primary/10 border-2 border-primary/20">
                 <AlertCircle className="h-12 w-12 text-primary/60" />
               </div>
             </div>
 
+            {/* Empty State Content */}
             <div className="space-y-4">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">
                 Painting Report Not Available
@@ -101,6 +102,7 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
               </p>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               {onRefresh && (
                 <Button
@@ -126,6 +128,7 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
               </Button>
             </div>
 
+            {/* Mascot Image */}
             <div className="pt-8">
               <Image
                 src={MascotImage}
@@ -134,15 +137,18 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
               />
             </div>
 
+            {/* Help Text */}
             <div className="bg-background/60 rounded-xl p-6 max-w-md mx-auto border border-primary/10">
               <p className="text-sm text-muted-foreground">
                 Design reports are temporarily stored and may expire after a
-                period of time.
+                period of time. Please create a new consultation to generate a
+                fresh report.
               </p>
             </div>
           </div>
         </main>
 
+        {/* Footer */}
         <footer className="border-t border-primary/10 bg-background mt-12">
           <div className="max-w-6xl mx-auto px-6 py-8 text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">
@@ -169,11 +175,12 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
 export default function BookingPage({ booking, onRefresh }: Props) {
   const [selectedColor, setSelectedColor] = useState<PaintColor | null>(null);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
-
+  // Show empty state if no booking data
   if (!booking) {
     return <EmptyState onRefresh={onRefresh} />;
   }
 
+  // Validate required data
   const hasValidData =
     booking.name &&
     booking.prompt &&
@@ -192,7 +199,8 @@ export default function BookingPage({ booking, onRefresh }: Props) {
   return (
     <ScrollArea className="h-screen">
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
-        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
+        {/* Header with Logo */}
+        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm ">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Image
@@ -211,7 +219,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
         </header>
 
         <main className="max-w-6xl mx-auto px-2 md:px-12 space-y-12 py-8">
-          {/* Hero Section with Call Duration */}
+          {/* Hero Section */}
           <section className="text-center space-y-6">
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl font-bold">
@@ -220,41 +228,34 @@ export default function BookingPage({ booking, onRefresh }: Props) {
               <p className="text-xl text-muted-foreground">
                 Prepared for {booking.name}
               </p>
-              {booking.call_duration && (
-                <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">
-                    Call completed in{" "}
-                    {formatCallDuration(booking.call_duration)}
-                  </span>
-                </div>
-              )}
             </div>
 
-            <div className="inline-flex items-center justify-center gap-4 bg-card px-4 py-2.5 rounded-xl max-w-md mx-auto border border-primary/10 shadow-sm">
-              <Avatar className="size-12 ring-2 ring-primary/20">
-                <AvatarImage src="/images/agent-avatar.png" />
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                  AN
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-left leading-tight">
-                <p className="text-sm font-semibold">By: Annalia</p>
-                <p className="text-sm text-muted-foreground font-medium">
-                  HueLine Professional Services
-                </p>
+            <div className="inline- items-center justify-center gap-3 bg-muted/50 p-4 rounded-xl max-w-md mx-auto">
+              <div className="flex items-center gap-3">
+                <Avatar className="size-10">
+                  <AvatarImage src="/images/agent-avatar.png" />
+                  <AvatarFallback>AN</AvatarFallback>
+                </Avatar>
+                <div className="text-left">
+                  <p className="text-base md:text-sm font-medium">
+                    By: Annalia
+                  </p>
+                  <p className="text-base md:text-sm text-muted-foreground">
+                    HueLine Senior Design Consultant
+                  </p>
+                </div>
               </div>
             </div>
           </section>
 
           {/* Project Vision */}
           <section>
-            <div className="bg-card rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
+            <div className="bg-background rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
               <div className="flex items-center mb-6">
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
                   <Lightbulb className="h-5 w-5 text-primary" />
                 </div>
-                <h2 className="ml-3 text-2xl font-semibold">Project Vision</h2>
+                <h2 className="ml-3 text-2xl font-semibold ">Project Vision</h2>
               </div>
               <div className="bg-primary/5 rounded-xl p-6 border border-primary/10">
                 <p className="text-lg italic leading-relaxed">
@@ -265,7 +266,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
           </section>
 
           {/* Before & After Images */}
-          <section className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl shadow-lg border border-primary/20  py-8 px-4 md:px-8 md:py-10">
+          <section className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl py-8 px-4 md:px-8 md:py-10">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">
                 Transformation Gallery
@@ -288,7 +289,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                   {booking.original_images.map((image, index) => (
                     <div
                       key={index}
-                      className="relative overflow-hidden rounded-xl shadow-sm border border-primary/10"
+                      className="relative overflow-hidden rounded-xl  border-8  border-primary/50"
                     >
                       <Image
                         src={image}
@@ -321,7 +322,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                   {booking.mockup_urls.map((image, index) => (
                     <div
                       key={index}
-                      className="relative overflow-hidden rounded-xl shadow-sm border border-primary/10"
+                      className="relative overflow-hidden rounded-xl  border-8  border-primary/50"
                     >
                       <Image
                         src={image}
@@ -340,9 +341,8 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                     </div>
                   ))}
 
-                  {/* Show alternate mockup if it exists */}
                   {booking.alt_mockup_url && (
-                    <div className="relative overflow-hidden rounded-xl shadow-sm border border-primary/10">
+                    <div className="relative overflow-hidden rounded-xl  border-8  border-primary/50">
                       <Image
                         src={booking.alt_mockup_url}
                         alt="Alternative design"
@@ -363,6 +363,25 @@ export default function BookingPage({ booking, onRefresh }: Props) {
               </div>
             </div>
           </section>
+
+          {/* Design Summary */}
+          {booking.summary && (
+            <section>
+              <div className="bg-background rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
+                <div className="flex items-center mb-6">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <h2 className="ml-3 text-2xl font-semibold">
+                    Design Analysis
+                  </h2>
+                </div>
+                <div className="prose prose-lg max-w-none">
+                  <p>{booking.summary}</p>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Combined Paint Colors & Hue Engine Section */}
           {booking.paint_colors && booking.paint_colors.length > 0 && (
@@ -515,104 +534,73 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             </section>
           )}
 
-          {/* Generate Dialog */}
-          <GenerateDialog
-            isOpen={showGenerateDialog}
-            onClose={() => setShowGenerateDialog(false)}
-            selectedColor={selectedColor}
-            phoneNumber={booking.phone || ""}
-            originalImages={booking.original_images}
-          />
-
-          {/* Design Summary */}
-          {booking.summary && (
-            <section>
-              <div className="bg-card rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
-                <div className="flex items-center mb-6">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <h2 className="ml-3 text-2xl font-semibold">
-                    Design Analysis
-                  </h2>
-                </div>
-                <div className="prose prose-lg max-w-none">
-                  <p>{booking.summary}</p>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Call to Action for Painters */}
+          {/* Call to Action */}
           <section>
-            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl shadow-lg border border-primary/20 py-10 px-6 text-center">
-              <div className="max-w-2xl mx-auto">
-                <h2 className="text-3xl font-bold mb-4 text-balance">
-                  Want This AI Agent for Your Painting Business?
-                </h2>
-                <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                  Generate instant design mockups, paint color recommendations,
-                  and professional reports that close more jobs. Let AI handle
-                  consultations while you focus on painting.
-                </p>
+            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl shadow-sm border border-primary/10  py-8 px-4 text-center">
+              <h2 className="text-2xl font-bold mb-4 text-balance">
+                Want This AI Agent for Your Painting Business?
+              </h2>
+              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                Generate instant design mockups, paint color recommendations,
+                and professional reports that close more jobs. Let AI handle
+                consultations while you focus on painting.
+              </p>
 
-                <div className="grid md:grid-cols-3 gap-4 mb-8 text-sm">
-                  <div className="bg-background/60 rounded-lg p-4 border border-primary/10">
-                    <div className="flex items-center justify-center mb-2">
-                      <PaintBucket className="h-5 w-5 text-primary" />
-                    </div>
-                    <p className="font-medium">AI Design Mockups</p>
-                    <p className="text-muted-foreground text-xs">
-                      Show clients exactly how their space will look
-                    </p>
+              <div className="grid md:grid-cols-3 gap-4 mb-8 text-sm">
+                <div className="bg-background/60 rounded-lg p-4 border border-primary/10">
+                  <div className="flex items-center justify-center mb-2">
+                    <PaintBucket className="h-5 w-5 text-primary" />
                   </div>
-                  <div className="bg-background/60 rounded-lg p-4 border border-primary/10">
-                    <div className="flex items-center justify-center mb-2">
-                      <Palette className="h-5 w-5 text-primary" />
-                    </div>
-                    <p className="font-medium">Smart Color Matching</p>
-                    <p className="text-muted-foreground text-xs">
-                      Perfect paint colors for every project
-                    </p>
-                  </div>
-                  <div className="bg-background/60 rounded-lg p-4 border border-primary/10">
-                    <div className="flex items-center justify-center mb-2">
-                      <Sparkles className="h-5 w-5 text-primary" />
-                    </div>
-                    <p className="font-medium">24/7 Lead Capture</p>
-                    <p className="text-muted-foreground text-xs">
-                      Never miss a potential customer again
-                    </p>
-                  </div>
-                </div>
-
-                <Image
-                  src={MascotImage}
-                  alt="hueline-mascot"
-                  className="object-contain size-24 mx-auto mb-6 opacity-90"
-                />
-
-                <div className="space-y-4">
-                  <Button
-                    size="lg"
-                    className="group inline-flex items-center justify-center bg-primary text-white font-bold py-4 px-8 rounded-xl transition-all duration-500 shadow-lg hover:shadow-xl text-lg hover:bg-accent"
-                    asChild
-                  >
-                    <Link href="/booking">
-                      Get HueLine AI for Your Business
-                      <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </Button>
-
-                  <p className="text-sm text-muted-foreground">
-                    🚀 Limited time: Early adopter pricing available
+                  <p className="font-medium">AI Design Mockups</p>
+                  <p className="text-muted-foreground text-xs">
+                    Show clients exactly how their space will look
                   </p>
                 </div>
+                <div className="bg-background/60 rounded-lg p-4 border border-primary/10">
+                  <div className="flex items-center justify-center mb-2">
+                    <Palette className="h-5 w-5 text-primary" />
+                  </div>
+                  <p className="font-medium">Smart Color Matching</p>
+                  <p className="text-muted-foreground text-xs">
+                    Perfect paint colors for every project
+                  </p>
+                </div>
+                <div className="bg-background/60 rounded-lg p-4 border border-primary/10">
+                  <div className="flex items-center justify-center mb-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <p className="font-medium">24/7 Lead Capture</p>
+                  <p className="text-muted-foreground text-xs">
+                    Never miss a potential customer again
+                  </p>
+                </div>
+              </div>
+              <Image
+                src={MascotImage}
+                alt="hueline-mascot"
+                className="object-contain size-32 mx-auto mb-6"
+              />
+              <div className="space-y-4">
+                <Button
+                  size="lg"
+                  className="group inline-flex items-center justify-center bg-primary text-white font-bold py-4 px-8 rounded-xl transition-all duration-500 shadow-lg hover:shadow-xl text-lg hover:bg-accent"
+                  asChild
+                >
+                  <Link href="/booking">
+                    Get HueLine AI for Your Business
+                    <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+
+                <p className="text-sm text-muted-foreground">
+                  🚀 Limited time: Early adopter pricing available
+                </p>
               </div>
             </div>
           </section>
         </main>
 
+        {/* Footer */}
         <footer className="border-t border-primary/10 bg-background mt-12">
           <div className="max-w-6xl mx-auto px-6 py-8 text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">
