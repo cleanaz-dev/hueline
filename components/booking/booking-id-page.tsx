@@ -14,11 +14,15 @@ import {
   AlertCircle,
   RefreshCw,
   Zap,
+  Sofa,
 } from "lucide-react";
 import ThemeChanger from "@/hooks/use-theme-changer";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
+import GenerateDialog from "./generate-dialog";
+import { Label } from "../ui/label";
+import { Switch } from "../ui/switch";
 
 type PaintColor = {
   name: string;
@@ -175,6 +179,7 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
 export default function BookingPage({ booking, onRefresh }: Props) {
   const [selectedColor, setSelectedColor] = useState<PaintColor | null>(null);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+  const [removeFurniture, setRemoveFurniture] = useState<boolean>(false);
   // Show empty state if no booking data
   if (!booking) {
     return <EmptyState onRefresh={onRefresh} />;
@@ -197,7 +202,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
   };
 
   return (
-    <ScrollArea className="h-screen">
+    <ScrollArea>
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
         {/* Header with Logo */}
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm ">
@@ -289,7 +294,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                   {booking.original_images.map((image, index) => (
                     <div
                       key={index}
-                      className="relative overflow-hidden rounded-xl  border-8  border-primary/50"
+                      className="relative overflow-hidden rounded-xl shadow-sm border border-primary/10"
                     >
                       <Image
                         src={image}
@@ -298,8 +303,8 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         height={400}
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
-                      <div className="absolute top-4 left-0">
-                        <div className="text-white px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
+                     <div className="absolute top-4 left-0">
+                        <div className="text-white px-4 py-2 rounded-r-lg shadow-lg bg-card/10 font-semibold text-sm uppercase tracking-wide">
                           <span className="flex items-center gap-2">
                             Original {index + 1}
                           </span>
@@ -322,7 +327,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                   {booking.mockup_urls.map((image, index) => (
                     <div
                       key={index}
-                      className="relative overflow-hidden rounded-xl  border-8  border-primary/50"
+                      className="relative overflow-hidden rounded-xl shadow-sm border border-primary/10"
                     >
                       <Image
                         src={image}
@@ -331,8 +336,8 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         height={400}
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
-                      <div className="absolute top-4 left-0">
-                        <div className="text-white px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
+                     <div className="absolute top-4 left-0">
+                        <div className="text-white px-4 py-2 rounded-r-lg bg-card/10 shadow-lg font-semibold text-sm uppercase tracking-wide">
                           <span className="flex items-center gap-2">
                             Design {index + 1}
                           </span>
@@ -342,7 +347,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                   ))}
 
                   {booking.alt_mockup_url && (
-                    <div className="relative overflow-hidden rounded-xl  border-8  border-primary/50">
+                    <div className="relative overflow-hidden rounded-xl shadow-sm border border-primary/10">
                       <Image
                         src={booking.alt_mockup_url}
                         alt="Alternative design"
@@ -482,7 +487,24 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                           instantly.
                         </p>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                        {/* Remove Furniture Toggle */}
+                        <div className="flex md:max-w-sm items-center justify-center gap-3 mb-6 p-4 bg-background/60 rounded-lg border border-primary/50">
+                          <Sofa className="h-4 w-4 text-primary" />
+                          <Label
+                            htmlFor="remove-furniture"
+                            className="text-sm font-medium"
+                          >
+                            Remove furniture from mockup
+                          </Label>
+                          <Switch
+                            id="remove-furniture"
+                            checked={removeFurniture}
+                            onCheckedChange={setRemoveFurniture}
+                            className="mt-0.5"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-32 mb-6">
                           {booking.alternate_colors.map((color, index) => (
                             <button
                               key={index}
@@ -520,7 +542,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                           <Button
                             onClick={handleGenerateAlternate}
                             disabled={!selectedColor}
-                            size="sm"
+                            size="lg"
                             className="group inline-flex items-center gap-2 px-6"
                           >
                             <Zap className="h-3 w-3 group-hover:scale-110 transition-transform" />
@@ -533,6 +555,15 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 )}
             </section>
           )}
+
+          <GenerateDialog
+            isOpen={showGenerateDialog}
+            onClose={() => setShowGenerateDialog(false)}
+            selectedColor={selectedColor}
+            phoneNumber={booking.phone || ""}
+            originalImages={booking.original_images}
+            removeFurniture={removeFurniture}
+          />
 
           {/* Call to Action */}
           <section>
@@ -579,23 +610,21 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 src={MascotImage}
                 alt="hueline-mascot"
                 className="object-contain size-32 mx-auto mb-6"
+                priority
               />
-              <div className="space-y-4">
-                <Button
-                  size="lg"
-                  className="group inline-flex items-center justify-center bg-primary text-white font-bold py-4 px-8 rounded-xl transition-all duration-500 shadow-lg hover:shadow-xl text-lg hover:bg-accent"
-                  asChild
-                >
-                  <Link href="/booking">
-                    Get HueLine AI for Your Business
-                    <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </Button>
-
-                <p className="text-sm text-muted-foreground">
-                  🚀 Limited time: Early adopter pricing available
-                </p>
-              </div>
+              <Button
+                size="lg"
+                className="group inline-flex items-center justify-center bg-primary hover:bg-secondary/90 text-primary-foreground font-medium py-3 px-6 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
+                asChild
+              >
+                <Link href="/booking">
+                  Get HueLine AI for Your Business
+                  <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+              <p className="text-sm text-muted-foreground mt-4">
+                🚀 Limited time: Early adopter pricing available
+              </p>
             </div>
           </section>
         </main>

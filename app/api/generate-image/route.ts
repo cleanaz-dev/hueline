@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     // Need to await the JSON parsing
     const data = await req.json();
 
-    const { phoneNumber, prompt, imageUrl } = data;
+    const { phoneNumber, prompt, imageUrl, removeFurniture = false } = data;
     console.log("Data:", data);
     // return NextResponse.json({ message: "Data Received " }, { status: 200 });
     // Validate required fields
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const imageArray = Array.isArray(imageUrl) ? imageUrl : [imageUrl];
 
     // Generate the mockup and wait for result
-    const altMockupUrl = await generateAltMockup(prompt, imageArray);
+    const altMockupUrl = await generateAltMockup(prompt, imageArray, removeFurniture);
 
     // Update the booking data with the new alternate mockup
     const updatedBooking = await updateBookingWithAltMockup(

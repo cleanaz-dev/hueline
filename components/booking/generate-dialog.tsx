@@ -22,6 +22,7 @@ type Props = {
   selectedColor: PaintColor | null;
   phoneNumber: string;
   originalImages: string[];
+  removeFurniture: boolean;
 };
 
 export default function GenerateDialog({
@@ -30,6 +31,7 @@ export default function GenerateDialog({
   selectedColor,
   phoneNumber,
   originalImages,
+  removeFurniture
 }: Props) {
   const [stage, setStage] = useState<"generating" | "complete">("generating");
   const [progress, setProgress] = useState(0);
@@ -58,6 +60,7 @@ export default function GenerateDialog({
             phoneNumber,
             prompt: `Change paint color to: ${selectedColor.name}`,
             imageUrl: originalImages,
+            removeFurniture
           }),
         });
 

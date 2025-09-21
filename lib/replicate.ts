@@ -1,34 +1,48 @@
 //  lib/replicate.ts
-import Replicate, { type Prediction } from "replicate"
-import { uploadToCloudinary } from "./cloudinary"
+import Replicate, { type Prediction } from "replicate";
+import { uploadToCloudinary } from "./cloudinary";
 
 const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN
-})
+  auth: process.env.REPLICATE_API_TOKEN,
+});
 
-const model = "google/nano-banana"
+const model = "google/nano-banana";
 
-export async function generateAltMockup(prompt: string, image_input: string[], output_format: string = "jpg") {
+export async function generateAltMockup(
+  prompt: string,
+  image_input: string[],
+  removeFurniture: boolean = false,
+  output_format: string = "jpg"
+) {
+
+  let newPrompt
+  if (removeFurniture) {
+    // add remove furniture to prompt
+    newPrompt = `Paint color change prompt: ${prompt} and remove all funiture in image`
+  } else {
+    // just color change prompt
+    newPrompt = `Paint color change prompt: ${prompt}`
+  }
+
   try {
     const input = {
-      prompt: `Paint color change prompt: ${prompt}`,
+      prompt: newPrompt,
       image_input: image_input,
-      output_format: output_format
-    }
-    
-    const output = await replicate.run(model, { input })
-    
-    const firstOutput = Array.isArray(output) ? output[0] : output
-    
+      output_format: output_format,
+    };
+
+    const output = await replicate.run(model, { input });
+
+    const firstOutput = Array.isArray(output) ? output[0] : output;
+
     // Get the URL string from the FileOutput object
-    const imageUrl = firstOutput.url().href
-    
+    const imageUrl = firstOutput.url().href;
+
     // Upload to Cloudinary and return the secure URL
-    const secureUrl = await uploadToCloudinary(imageUrl, 'hueline')
-    return secureUrl
-    
+    const secureUrl = await uploadToCloudinary(imageUrl, "hueline");
+    return secureUrl;
   } catch (error) {
-    console.error('Error generating mockup:', error)
-    throw error
+    console.error("Error generating mockup:", error);
+    throw error;
   }
 }
