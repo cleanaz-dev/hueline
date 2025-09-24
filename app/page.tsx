@@ -13,7 +13,7 @@ export default function Home() {
         <NavSection />
       </div>
       <div className="space-y-12 md:space-y-16">
-         <HeroSection />
+        <HeroSection />
         <SolutionSection />
         <ExamplesSection />
         <WYGSection />

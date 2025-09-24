@@ -14,14 +14,14 @@ export async function generateAltMockup(
   removeFurniture: boolean = false,
   output_format: string = "jpg"
 ) {
-
+console.log("🎨 Prompt:", prompt)
   let newPrompt
   if (removeFurniture) {
     // add remove furniture to prompt
-    newPrompt = `Paint color change prompt: ${prompt} and remove all funiture in image`
+    newPrompt = `${prompt} and remove all funiture in image`
   } else {
     // just color change prompt
-    newPrompt = `Paint color change prompt: ${prompt}`
+    newPrompt = `${prompt}`
   }
 
   try {

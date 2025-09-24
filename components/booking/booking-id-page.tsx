@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Zap,
   Sofa,
+  Clock,
 } from "lucide-react";
 import ThemeChanger from "@/hooks/use-theme-changer";
 import Link from "next/link";
@@ -23,6 +24,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import GenerateDialog from "./generate-dialog";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
+import QuoteCard from "./quote-card";
 
 type PaintColor = {
   name: string;
@@ -45,21 +47,6 @@ type Booking = {
 type Props = {
   booking?: Booking | null;
   onRefresh?: () => void;
-};
-
-const formatCallDuration = (duration: string) => {
-  if (!duration) return "";
-
-  // Parse "1:59" format
-  const [minutes, seconds] = duration.split(":").map(Number);
-
-  if (minutes === 0) {
-    return `${seconds} seconds`;
-  } else if (seconds === 0) {
-    return `${minutes}m`;
-  } else {
-    return `${minutes}m ${seconds}s`;
-  }
 };
 
 // Empty State Component
@@ -233,6 +220,10 @@ export default function BookingPage({ booking, onRefresh }: Props) {
               <p className="text-xl text-muted-foreground">
                 Prepared for {booking.name}
               </p>
+              <div className="inline-flex justify-center items-center gap-2 px-6 py-3 rounded-2xl bg-primary/15">
+                <Clock />
+                Call Duration: {booking.call_duration}
+              </div>
             </div>
 
             <div className="inline- items-center justify-center gap-3 bg-muted/50 p-4 rounded-xl max-w-md mx-auto">
@@ -303,7 +294,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         height={400}
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
-                     <div className="absolute top-4 left-0">
+                      <div className="absolute top-4 left-0">
                         <div className="text-white px-4 py-2 rounded-r-lg shadow-lg bg-card/10 font-semibold text-sm uppercase tracking-wide">
                           <span className="flex items-center gap-2">
                             Original {index + 1}
@@ -336,7 +327,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         height={400}
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
-                     <div className="absolute top-4 left-0">
+                      <div className="absolute top-4 left-0">
                         <div className="text-white px-4 py-2 rounded-r-lg bg-card/10 shadow-lg font-semibold text-sm uppercase tracking-wide">
                           <span className="flex items-center gap-2">
                             Design {index + 1}
@@ -448,7 +439,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                           Alternative design has been generated! The Hue Engine
                           is now complete.
                         </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pointer-events-none">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pointer-events-none">
                           {booking.alternate_colors.map((color, index) => (
                             <div
                               key={index}
@@ -561,9 +552,11 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             onClose={() => setShowGenerateDialog(false)}
             selectedColor={selectedColor}
             phoneNumber={booking.phone || ""}
-            originalImages={booking.original_images}
+            originalImages={booking.mockup_urls}
             removeFurniture={removeFurniture}
           />
+
+          <QuoteCard />
 
           {/* Call to Action */}
           <section>
@@ -577,13 +570,13 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 consultations while you focus on painting.
               </p>
 
-              <div className="grid md:grid-cols-3 gap-4 mb-8 text-sm">
+              <div className="grid md:grid-cols-3 gap-4 mb-8 md:text-sm">
                 <div className="bg-background/60 rounded-lg p-4 border border-primary/10">
                   <div className="flex items-center justify-center mb-2">
                     <PaintBucket className="h-5 w-5 text-primary" />
                   </div>
                   <p className="font-medium">AI Design Mockups</p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-muted-foreground text-sm md:text-xs">
                     Show clients exactly how their space will look
                   </p>
                 </div>
@@ -592,7 +585,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                     <Palette className="h-5 w-5 text-primary" />
                   </div>
                   <p className="font-medium">Smart Color Matching</p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-muted-foreground text-sm md:text-xs">
                     Perfect paint colors for every project
                   </p>
                 </div>
@@ -601,7 +594,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                     <Sparkles className="h-5 w-5 text-primary" />
                   </div>
                   <p className="font-medium">24/7 Lead Capture</p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-muted-foreground text-sm md:text-xs">
                     Never miss a potential customer again
                   </p>
                 </div>

@@ -40,9 +40,7 @@ export function HeroSection() {
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-4 md:mb-8 text-muted-foreground">
-            Send photos, get instant paint recommendations, visualize changes,
-            and redesign your space - all over the phone with our AI voice
-            agent.
+           While competitors charge $300 per mock-up OR $3k/mo for enterprise software, HueLine gives unlimited paint-grade visuals + 24/7 voice agent for one flat kilobuck.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6 md:mb-8">
