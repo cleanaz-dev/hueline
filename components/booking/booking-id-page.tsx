@@ -49,7 +49,11 @@ type Props = {
   booking?: Booking | null;
   onRefresh?: () => void;
 };
-
+function formatTime(duration?: string): string {
+  if (!duration) return ""; // or "0m 0s" if you want a default
+  const [minutes, seconds] = duration.split(":").map(Number);
+  return `${minutes}m ${seconds}s`;
+}
 // Empty State Component
 function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
   return (
@@ -223,7 +227,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
               </p>
               <div className="inline-flex justify-center items-center gap-2 px-6 py-3 rounded-2xl bg-primary/15">
                 <Clock />
-                Call Duration: {booking.call_duration}
+                Call Duration: {formatTime(booking.call_duration)}
               </div>
             </div>
 
