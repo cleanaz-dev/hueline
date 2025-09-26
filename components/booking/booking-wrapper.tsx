@@ -9,6 +9,7 @@ import SplashScreen from '../ui/splash-screeen/splash-screen'
 type PaintColor = {
   name: string;
   hex: string;
+  ral: string;
 };
 
 type Booking = {

@@ -1,5 +1,5 @@
 //  lib/replicate.ts
-import Replicate, { type Prediction } from "replicate";
+import Replicate from "replicate";
 import { uploadToCloudinary } from "./cloudinary";
 
 const replicate = new Replicate({

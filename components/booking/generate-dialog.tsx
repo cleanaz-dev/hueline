@@ -31,7 +31,7 @@ export default function GenerateDialog({
   selectedColor,
   phoneNumber,
   originalImages,
-  removeFurniture
+  removeFurniture,
 }: Props) {
   const [stage, setStage] = useState<"generating" | "complete">("generating");
   const [progress, setProgress] = useState(0);
@@ -60,7 +60,7 @@ export default function GenerateDialog({
             phoneNumber,
             prompt: `Change paint color to: ${selectedColor.name}`,
             imageUrl: originalImages,
-            removeFurniture
+            removeFurniture,
           }),
         });
 
@@ -90,18 +90,19 @@ export default function GenerateDialog({
     return () => {
       if (progressInterval) clearInterval(progressInterval);
     };
-  }, [isOpen, selectedColor, phoneNumber, originalImages]);
+  }, [
+    isOpen,
+    selectedColor,
+    phoneNumber,
+    originalImages,
+    onClose,
+    removeFurniture,
+  ]);
 
   const handleComplete = () => {
     onClose();
     // Revalidate/refresh the page to show new image
     router.refresh();
-  };
-
-  const handleClose = () => {
-    setStage("generating");
-    setProgress(0);
-    onClose();
   };
 
   if (!selectedColor) return null;
