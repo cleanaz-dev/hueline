@@ -29,6 +29,7 @@ import QuoteCard from "./quote-card";
 type PaintColor = {
   name: string;
   hex: string;
+  ral: string;
 };
 
 type Booking = {
@@ -406,7 +407,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                                 {color.name}
                               </p>
                               <p className="text-xs text-muted-foreground font-mono">
-                                {color.hex}
+                                {color.hex} - {color.ral}
                               </p>
                             </div>
                             <PaintBucket className="h-4 w-4 text-muted-foreground" />
@@ -450,12 +451,12 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                                 style={{ backgroundColor: color.hex }}
                               />
                               <div className="p-2 bg-background">
-                                <div className="text-center">
-                                  <p className="font-medium text-xs text-muted-foreground truncate">
+                                <div className="text-left">
+                                  <p className="font-medium text-xs truncate">
                                     {color.name}
                                   </p>
                                   <p className="text-xs text-muted-foreground font-mono">
-                                    {color.hex}
+                                    {color.hex} - {color.ral}
                                   </p>
                                 </div>
                               </div>

@@ -36,11 +36,11 @@ export function HeroSection() {
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 max-w-6xl md:max-w-4xl mx-auto min-h-0">
         <div className="flex-shrink-0">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-shadow-sm/50 text-shadow-primary text-balance mb-3 md:mb-6">
-            Give Every Customer a Paint Expert - Even When You&apos;re Busy
+            AI answers, paints their room, books the job—while you work.
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-4 md:mb-8 text-muted-foreground">
-           While competitors charge $300 per mock-up OR $3k/mo for enterprise software, HueLine gives unlimited paint-grade visuals + 24/7 voice agent for one flat kilobuck.
+           Stop paying $300 a mock-up. HueLine: unlimited AI visuals + 24/7 phone agent for $799/mo.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6 md:mb-8">

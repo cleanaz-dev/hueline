@@ -128,6 +128,7 @@ export default function GenerateDialog({
                       autoPlay
                       muted
                       loop
+                      playsInline
                       className="w-full h-full object-cover"
                       src="/videos/splash_screen-2.mp4"
                     />
