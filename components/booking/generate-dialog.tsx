@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 type PaintColor = {
   name: string;
   hex: string;
+  ral: string;
 };
 
 type Props = {
@@ -50,7 +51,7 @@ export default function GenerateDialog({
             if (prev >= 90) return prev; // Stop at 90% until API completes
             return prev + Math.random() * 15;
           });
-        }, 200);
+        }, 500);
 
         // Make API call
         const response = await fetch("/api/generate-image", {

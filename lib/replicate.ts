@@ -18,7 +18,7 @@ console.log("🎨 Prompt:", prompt)
   let newPrompt
   if (removeFurniture) {
     // add remove furniture to prompt
-    newPrompt = `${prompt} and remove all funiture in image`
+    newPrompt = `${prompt} and MUST remove all funiture OR Obstructions in image`
   } else {
     // just color change prompt
     newPrompt = `${prompt}`
