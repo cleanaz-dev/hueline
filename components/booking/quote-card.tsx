@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Timer } from "lucide-react";
+import { Timer, PaintBucket, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-const CouponCard = () => {
-  const [timeLeft, setTimeLeft] = useState(3542); // 59 minutes in seconds
+type PaintColor = {
+  name: string;
+  hex: string;
+  ral: string;
+};
+
+type BookingProps = {
+  name?: string;
+  paintColors?: PaintColor[];
+};
+
+const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
+  const [timeLeft, setTimeLeft] = useState(3542);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -21,56 +32,147 @@ const CouponCard = () => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto border-2 border-dashed border-orange-400/70 bg-gradient-to-br from-orange-50 to-amber-50">
-      <CardContent className="p-6 text-center">
-        {/* Coupon Header */}
-        <div className="mb-4">
-
-          <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 py-1 rounded-full mb-2">
-            <Timer className="h-4 w-4" />
-            <span className="font-bold">LIMITED TIME</span>
+    <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+      {/* Coupon Card */}
+      <Card className="border-2 border-dashed border-orange-400/70 bg-gradient-to-br from-orange-50 to-amber-50">
+        <CardContent className="p-6 text-center">
+          <div className="mb-4">
+            <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 py-1 rounded-full mb-2">
+              <Timer className="h-4 w-4" />
+              <span className="font-bold">LIMITED TIME</span>
+            </div>
+            <h2 className="text-2xl font-bold text-orange-700">15% OFF</h2>
+            <p className="text-orange-600 tracking-wider">BOOK NOW</p>
+            <div className="text-xs text-orange-500 mt-2 p-2 rounded-2xl  text-balance  bg-amber-500/15">
+              <p>
+                This is what YOUR customers will see—drives instant bookings.
+              </p>
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-orange-700">15% OFF</h2>
-          <p className="text-orange-600">Your Next Service</p>
-          <div className="text-xs text-orange-500 mt-2 p-2 rounded-2xl bg-background/10 text-balance">
-    <p>This is what YOUR customers will see—drives instant bookings.</p>
-  </div>
-        </div>
 
-        {/* Countdown Timer */}
-        <div className="bg-white border-2 border-orange-300 rounded-lg p-3 mb-4">
-          <div className="text-sm text-gray-600 mb-1">Offer expires in</div>
-          <div className="text-3xl font-mono font-bold text-orange-600">
-            {formatTime(timeLeft)}
+          <div className="bg-white border-2 border-orange-300 rounded-lg p-3 mb-4">
+            <div className="text-sm text-gray-600 mb-1">Offer expires in</div>
+            <div className="text-3xl font-mono font-bold text-orange-600">
+              {formatTime(timeLeft)}
+            </div>
           </div>
-        </div>
 
-        {/* Coupon Code */}
-        <div className="bg-white border-2 border-green-500 rounded-lg p-3 mb-4">
-          <div className="text-sm text-gray-600 mb-1">Use coupon code</div>
-          <div className="text-2xl font-mono font-bold text-green-600 tracking-widest">
-            SAVE15NOW
+          <div className="bg-white border-2 border-green-500 rounded-lg p-3 mb-4">
+            <div className="text-sm text-gray-600 mb-1">Use coupon code</div>
+            <div className="text-2xl font-mono font-bold text-green-600 tracking-widest">
+              SAVE15NOW
+            </div>
           </div>
-        </div>
 
-        {/* Book Button */}
-        <Button 
-        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-lg shadow-lg"
-        size="lg"
-        asChild
-        >
-          <Link href="/booking">
-          Book Now & Save
-          </Link>
-        </Button>
+          <Button
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-lg shadow-lg"
+            size="lg"
+            asChild
+          >
+            <Link href="/booking">Book Now & Save</Link>
+          </Button>
 
-        {/* Fine Print */}
-        <p className="text-xs text-gray-500 mt-3">
-          *Valid for first-time customers. Cannot be combined with other offers.
-        </p>
-      </CardContent>
-    </Card>
+          <p className="text-xs text-gray-500 mt-3">
+            *Valid for first-time customers. Cannot be combined with other
+            offers.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Quote Card */}
+      <Card className="border-2 border-blue-400/70 bg-gradient-to-br from-blue-50 to-indigo-50">
+        <CardContent className="p-6">
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center gap-2 bg-blue-500 text-white px-4 py-1 rounded-full mb-2">
+              <FileText className="h-4 w-4" />
+              <span className="font-bold">PAINTING QUOTE</span>
+            </div>
+            <h2 className="text-xl font-bold text-blue-700">
+              For: {booking?.name || "John Smith"}
+            </h2>
+            <p className="text-sm text-blue-600">Generated by Hue-Line AI</p>
+          </div>
+
+          {/* Paint Colors Section */}
+          <div className="bg-white rounded-lg p-4 mb-4 border border-blue-200">
+            <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <PaintBucket className="h-4 w-4" />
+              Recommended Colors
+            </h3>
+            {booking?.paintColors && booking.paintColors.length > 0 ? (
+              <div className="space-y-2">
+                {booking.paintColors.slice(0, 2).map((color, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <div
+                      className="w-6 h-6 rounded-full border-2 border-gray-300"
+                      style={{ backgroundColor: color.hex }}
+                    />
+                    <div className="text-sm">
+                      <div className="font-medium">{color.name}</div>
+                      <div className="text-gray-500 font-mono">{color.ral}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-500 border-2 border-gray-300" />
+                  <div className="text-sm">
+                    <div className="font-medium">Premium Blue</div>
+                    <div className="text-gray-500 font-mono">RAL 5015</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-gray-100 border-2 border-gray-300" />
+                  <div className="text-sm">
+                    <div className="font-medium">Warm White</div>
+                    <div className="text-gray-500 font-mono">RAL 9010</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quote Details */}
+          <div className="bg-white rounded-lg p-4 mb-4 border border-blue-200">
+            <div className="text-sm space-y-2">
+              <div className="flex justify-between">
+                <span>Room Preparation:</span>
+                <span className="font-semibold">$350</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Premium Paint & Materials:</span>
+                <span className="font-semibold">$425</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Professional Application:</span>
+                <span className="font-semibold">$650</span>
+              </div>
+              <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
+                <span>Total Estimate:</span>
+                <span className="text-blue-700">$1,425</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Company Exclusive Notice */}
+          <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg p-3 text-center border border-purple-200">
+            <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide">
+              Generated Exclusively for Your Company
+            </p>
+            <p className="text-xs text-purple-600 mt-1">
+              AI-powered quotes sent your CRM
+            </p>
+          </div>
+
+          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 mt-4 text-lg cursor-auto">
+            Easily Integrated
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
-export default CouponCard;
+export default CouponQuoteCards;

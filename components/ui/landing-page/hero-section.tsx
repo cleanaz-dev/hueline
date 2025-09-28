@@ -1,15 +1,13 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { Play, Phone, Star } from "lucide-react";
-import Image from "next/image";
+import { Phone, Star } from "lucide-react";
 import videoThumbnail from "@/public/images/hero1.png";
 import Link from "next/link";
 
 export function HeroSection() {
   return (
     <section className="relative h-screen flex flex-col overflow-hidden">
-
-
+      {/* Ratings */}
       <div className="flex text-center justify-center items-center mt-2 md:mt-0 md:gap-6 py-2 md:py-0 relative z-10 flex-shrink-0 space-y-2">
         <div className="flex items-center">
           <div className="flex -space-x-2">
@@ -34,16 +32,18 @@ export function HeroSection() {
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 max-w-6xl md:max-w-4xl mx-auto min-h-0">
+        {/* Hero Main Area Text */}
         <div className="flex-shrink-0">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-shadow-sm/50 text-shadow-primary text-balance mb-3 md:mb-6">
             AI answers, paints their room, books the job—while you work.
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-4 md:mb-8 text-muted-foreground">
-           Stop paying $300 a mock-up. HueLine: unlimited AI visuals + 24/7 phone agent for $799/mo.
+            Stop paying $300 a mock-up. HueLine: unlimited AI visuals + 24/7
+            phone agent for $799/mo.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6 md:mb-8">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button size="lg" className="" asChild>
               <Link href="/booking">
                 <Phone className="mr-2 h-5 w-5" />
@@ -52,29 +52,22 @@ export function HeroSection() {
             </Button>
           </div>
         </div>
+
         {/* Video container with strict 16:9 aspect ratio */}
         <div className="w-full max-w-4xl flex-1 min-h-0 flex items-center justify-center pb-4">
-          <div className="relative bg-primary backdrop-blur-sm rounded-lg  p-2 md:p-4 w-full">
-            {/* 16:9 aspect ratio container */}
-            <div className="relative w-full aspect-video rounded-lg flex items-center justify-center border border-muted overflow-hidden">
-              <Image
-                src={videoThumbnail}
-                alt="HueLine AI voice agent demo for painting contractors"
-                className="rounded-lg object-cover"
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
+          <div className="relative w-full aspect-video rounded-lg flex items-center justify-center overflow-hidden">
+            <video
+              className="w-full h-full rounded-lg object-cover"
+              controls
+              preload="metadata"
+              poster={videoThumbnail.src}
+            >
+              <source
+                src="https://hue-line.s3.us-east-1.amazonaws.com/f-vid-01.mp4"
+                type="video/mp4"
               />
-
-              {/* Play button overlay - optional */}
-              <div className="absolute inset-0 flex items-center justify-center rounded-lg">
-                <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/90 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary transition-colors">
-                  <Play
-                    className="w-8 h-8 md:w-10 md:h-10 text-primary-foreground ml-1"
-                    fill="currentColor"
-                  />
-                </div>
-              </div>
-            </div>
+              Your browser does not support the video tag.
+            </video>
           </div>
         </div>
       </div>

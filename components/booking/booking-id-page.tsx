@@ -561,7 +561,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             removeFurniture={removeFurniture}
           />
 
-          <QuoteCard />
+          <QuoteCard booking={booking}/>
 
           {/* Call to Action */}
           <section>
