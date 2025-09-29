@@ -47,7 +47,7 @@ export function HeroSection() {
             <Button size="lg" className="" asChild>
               <Link href="/booking">
                 <Phone className="mr-2 h-5 w-5" />
-                Book A Call with Paul
+                Book A Call Today!
               </Link>
             </Button>
           </div>
