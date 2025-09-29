@@ -24,7 +24,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import GenerateDialog from "./generate-dialog";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
-import QuoteCard from "./quote-card";
+import CouponQuoteCards from "./quote-card"; 
 
 type PaintColor = {
   name: string;
@@ -199,7 +199,11 @@ export default function BookingPage({ booking, onRefresh }: Props) {
         {/* Header with Logo */}
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm ">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+            <div className="">
+              <Link
+                href="/"
+                className="flex items-center space-x-2"
+              >
               <Image
                 src={Logo}
                 alt="HueLine Logo"
@@ -208,6 +212,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
               <span className="text-xl font-semibold text-primary italic">
                 HueLine
               </span>
+              </Link>
             </div>
             <div className="flex items-center">
               <ThemeChanger />
@@ -561,7 +566,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             removeFurniture={removeFurniture}
           />
 
-          <QuoteCard booking={booking}/>
+          <CouponQuoteCards booking={booking}/>
 
           {/* Call to Action */}
           <section>

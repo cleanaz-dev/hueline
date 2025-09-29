@@ -7,12 +7,12 @@ import Link from "next/link";
 type PaintColor = {
   name: string;
   hex: string;
-  ral: string;
+  ral?: string;
 };
 
 type BookingProps = {
   name?: string;
-  paintColors?: PaintColor[];
+  paint_colors?: PaintColor[];
 };
 
 const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
@@ -43,7 +43,7 @@ const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
             </div>
             <h2 className="text-2xl font-bold text-orange-700">15% OFF</h2>
             <p className="text-orange-600 tracking-wider">BOOK NOW</p>
-            <div className="text-xs text-orange-500 mt-2 p-2 rounded-2xl  text-balance  bg-amber-500/15">
+            <div className="text-xs text-orange-500 mt-2 p-2 rounded-2xl text-balance bg-amber-500/15">
               <p>
                 This is what YOUR customers will see—drives instant bookings.
               </p>
@@ -94,14 +94,14 @@ const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
           </div>
 
           {/* Paint Colors Section */}
-          <div className="bg-white rounded-lg p-4 mb-4 border border-blue-200">
-            <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <div className="bg-card rounded-lg p-4 mb-4 border border-blue-200">
+            <h3 className="font-semibold text-muted-foreground mb-3 flex items-center gap-2">
               <PaintBucket className="h-4 w-4" />
               Recommended Colors
             </h3>
-            {booking?.paintColors && booking.paintColors.length > 0 ? (
+            {booking?.paint_colors && booking.paint_colors.length > 0 ? (
               <div className="space-y-2">
-                {booking.paintColors.slice(0, 2).map((color, index) => (
+                {booking.paint_colors.slice(0, 2).map((color, index) => (
                   <div key={index} className="flex items-center gap-3">
                     <div
                       className="w-6 h-6 rounded-full border-2 border-gray-300"
@@ -109,7 +109,11 @@ const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
                     />
                     <div className="text-sm">
                       <div className="font-medium">{color.name}</div>
-                      <div className="text-gray-500 font-mono">{color.ral}</div>
+                      {color.ral && (
+                        <div className="text-muted-foreground font-mono">
+                          {color.ral}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -135,7 +139,7 @@ const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
           </div>
 
           {/* Quote Details */}
-          <div className="bg-white rounded-lg p-4 mb-4 border border-blue-200">
+          <div className="bg-card rounded-lg p-4 mb-4 border border-blue-200">
             <div className="text-sm space-y-2">
               <div className="flex justify-between">
                 <span>Room Preparation:</span>
