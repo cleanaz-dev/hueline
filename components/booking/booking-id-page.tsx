@@ -43,6 +43,7 @@ type Booking = {
   alternate_colors?: PaintColor[];
   alt_mockup_url?: string;
   phone?: string;
+  dimensions?: string;
 };
 
 type Props = {

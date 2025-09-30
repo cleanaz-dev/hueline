@@ -13,6 +13,7 @@ type PaintColor = {
 type BookingProps = {
   name?: string;
   paint_colors?: PaintColor[];
+  dimensions?: string
 };
 
 const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
@@ -141,6 +142,10 @@ const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
           {/* Quote Details */}
           <div className="bg-card rounded-lg p-4 mb-4 border border-blue-200">
             <div className="text-sm space-y-2">
+               <div className="flex justify-between">
+                <span>Dimensions:</span>
+                <span className="font-semibold">{booking?.dimensions}</span>
+              </div>
               <div className="flex justify-between">
                 <span>Room Preparation:</span>
                 <span className="font-semibold">$350</span>
