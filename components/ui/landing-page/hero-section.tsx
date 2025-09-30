@@ -59,6 +59,7 @@ export function HeroSection() {
             <video
               className="w-full h-full rounded-lg object-cover"
               controls
+              playsInline
               preload="metadata"
               poster={videoThumbnail.src}
             >

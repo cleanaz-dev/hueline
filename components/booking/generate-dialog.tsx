@@ -59,7 +59,7 @@ export default function GenerateDialog({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             phoneNumber,
-            prompt: `Change paint color to: ${selectedColor.name}`,
+            prompt: `Paint the room to: ${selectedColor.hex}`,
             imageUrl: originalImages,
             removeFurniture,
           }),
