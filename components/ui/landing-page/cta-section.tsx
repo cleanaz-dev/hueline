@@ -30,7 +30,7 @@ export default function CTASection() {
         >
           <Link href="/booking">
           <Phone className="mr-2 h-5 w-5" />
-          Book a Call with Paul
+          Book a Call Today!
           </Link>
         </Button>
       </div>
