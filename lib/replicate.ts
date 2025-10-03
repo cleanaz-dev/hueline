@@ -16,13 +16,11 @@ export async function generateAltMockup(
 ) {
 console.log("🎨 Prompt:", prompt)
   let newPrompt
-  if (removeFurniture) {
-    // add remove furniture to prompt
-    newPrompt = `${prompt} and MUST remove all funiture OR Obstructions in image`
-  } else {
-    // just color change prompt
-    newPrompt = `${prompt}`
-  }
+if (removeFurniture) {
+  newPrompt = `${prompt}. Remove ALL furniture, objects, and obstructions from the image. The scene must ONLY show clean, empty surfaces and walls, with no items, no chairs, no tables, no decorations, no clutter.`;
+} else {
+  newPrompt = `${prompt}`;
+}
 
   try {
     const input = {
