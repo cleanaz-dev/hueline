@@ -5,10 +5,13 @@ import { transporter } from '@/lib/mailer';
 import { render } from '@react-email/render';
 import { OnboardingEmail } from '@/lib/config/email-config';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-
 export async function POST(req: Request) {
+  // Initialize Stripe inside the function
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-09-30.clover',
+  });
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+
   const body = await req.text();
   const headersList = await headers();
   const signature = headersList.get('stripe-signature')!;
