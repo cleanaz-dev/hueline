@@ -248,7 +248,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                     By: Annalia
                   </p>
                   <p className="text-base md:text-sm text-muted-foreground">
-                    HueLine Senior Design Consultant
+                    HueLine Design Consultant
                   </p>
                 </div>
               </div>
