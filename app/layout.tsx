@@ -16,7 +16,7 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "Hueline - Voice AI Agent Assistant for Painters",
+  title: "Hue-line | Voice AI Agent Assistant for Painters",
   description:
     "AI-powered voice assistant that helps painters with photo analysis, visual mockups, and smart estimates during customer calls.",
   icons: {
