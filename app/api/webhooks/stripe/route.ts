@@ -17,8 +17,8 @@ export async function POST(req: Request) {
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (err: any) {
-    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+  } catch (err) {
+    return new Response(`Webhook Error: ${err}`, { status: 400 });
   }
 
   if (event.type === 'checkout.session.completed') {

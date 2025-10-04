@@ -49,10 +49,10 @@ export async function POST(req: NextRequest) {
       onboarding: { messageId: onboardingInfo.messageId },
       subscription: { messageId: subscriptionInfo.messageId },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Email error:', error);
     return NextResponse.json(
-      { error: error.message },
+      { error: error },
       { status: 500 }
     );
   }
