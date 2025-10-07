@@ -403,7 +403,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
               {/* Main Paint Colors */}
               <div className="mb-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                  {booking.paint_colors.map((color, index) => (
+                  {booking.paint_colors.slice(0,1).map((color, index) => (
                     <div key={index} className="group">
                       <div className="relative overflow-hidden rounded-xl border border-primary/10 shadow-sm hover:shadow-md transition-shadow">
                         <div

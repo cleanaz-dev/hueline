@@ -1,16 +1,15 @@
-// app/api/webhooks/stripe/route.ts
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
-import { transporter } from '@/lib/mailer';
-import { render } from '@react-email/render';
-import { OnboardingEmail } from '@/lib/config/email-config';
+import { setupFeeHandler } from '@/lib/handlers/setup-fee-handler';
+import { monthlySubscriptionHandler } from '@/lib/handlers/monthly-subscription-handler';
+import { annualSubscriptionHandler } from '@/lib/handlers/annual-subscription-handler';
 
 export async function POST(req: Request) {
   // Initialize Stripe inside the function
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-09-30.clover',
   });
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  const webhookSecret = process.env.STRIPE_TEST_WEBHOOK_SECRET!;
 
   const body = await req.text();
   const headersList = await headers();
@@ -20,32 +19,45 @@ export async function POST(req: Request) {
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (err) {
-    return new Response(`Webhook Error: ${err}`, { status: 400 });
+    console.log('✅ Event received:', event.type, event.id);
+  } catch (err: any) {
+    console.error('❌ Webhook signature verification failed:', err.message);
+    return new Response(
+      JSON.stringify({ error: 'Webhook signature verification failed', details: err.message }),
+      { status: 400 }
+    );
   }
+
+  // Debug log full event payload
+  console.log('📦 Full event payload:', JSON.stringify(event, null, 2));
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
-    
-    const customerEmail = session.customer_details?.email;
-    const customerName = session.customer_details?.name;
-    const company = session.metadata?.company || 'your company';
+    console.log('🎉 Checkout session completed:', session.id);
 
-    if (customerEmail) {
-      const emailHtml = await render(
-        OnboardingEmail({
-          username: customerName || 'there',
-          useremail: customerEmail,
-          company: company,
-        })
-      );
+    // ✅ Identify plan type from metadata
+    const planType = session.metadata?.plan_type || 'unknown';
+    console.log('🧩 Plan Type:', planType);
 
-      await transporter.sendMail({
-        from: '"Hue-Line" <noreply@hue-line.com>',
-        to: customerEmail,
-        subject: 'Welcome to Hue-Line!',
-        html: emailHtml,
-      });
+    try {
+      switch (planType) {
+        case 'setup':
+          await setupFeeHandler(session);
+          break;
+
+        case 'monthly':
+          await monthlySubscriptionHandler(session);
+          break;
+
+        case 'annual':
+          await annualSubscriptionHandler(session);
+          break;
+
+        default:
+          console.warn('⚠️ Unknown plan type, no handler triggered.');
+      }
+    } catch (err: any) {
+      console.error('❌ Error executing handler:', err.message);
     }
   }
 

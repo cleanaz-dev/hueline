@@ -113,4 +113,54 @@ export const styles = {
     borderRadius: "8px",
     marginTop: "12px",
   },
+  perksSection: {
+    paddingTop: "15px",
+    paddingBottom: "15px",
+    marginTop: "20px",
+  },
+  subHeading: {
+    fontSize: "16px",
+    fontWeight: "600",
+    marginBottom: "10px",
+    color: "#111", // dark for readability
+  },
+  perksList: {
+    paddingLeft: "20px",
+    margin: "0",
+    fontSize: "14px",
+    lineHeight: "1.6",
+    color: "#333",
+  },
+  summarySection: {
+    textAlign: "center" as const,
+    padding: "25px 20px",
+    marginTop: "15px",
+    marginBottom: "20px",
+  },
+
+  summaryHeading: {
+    fontSize: "18px",
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: "12px",
+  },
+
+  summaryText: {
+    fontSize: "15px",
+    color: "#444",
+    lineHeight: "1.6",
+    marginBottom: "12px",
+    textAlign: "center" as const,
+  },
+
+intakeList: {
+  listStyleType: "none",
+  paddingLeft: "0",
+  margin: "12px auto 20px",
+  maxWidth: "400px",
+  textAlign: "left" as const,
+  color: "#333",
+  fontSize: "15px",
+  lineHeight: "1.7",
+},
 } as const;
