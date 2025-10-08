@@ -141,7 +141,7 @@ export default function ClientFormPage() {
           <CardHeader>
             <CardTitle className="text-3xl">Client Intake Form</CardTitle>
             <CardDescription>
-              Tell us about your project and we'll get back to you soon.
+              Tell us about your project and we&apos;ll get back to you soon.
             </CardDescription>
           </CardHeader>
 

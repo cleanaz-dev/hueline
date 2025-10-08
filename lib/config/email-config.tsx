@@ -208,7 +208,7 @@ export function ClientIntakeEmail({
   return (
     <Html>
       <Head />
-      <Preview>Thanks for meeting with us, {name}! Here's what's next.</Preview>
+      <Preview>Thanks for meeting with us, {name}! Here&apos;s what&apos;s next.</Preview>
 
       <Body style={styles.body}>
         <Container style={styles.container}>
@@ -222,7 +222,7 @@ export function ClientIntakeEmail({
 
           <Text style={styles.text}>
             It was great connecting with you and learning more about{" "}
-            <strong>{company}</strong>. Here's a quick recap of what we
+            <strong>{company}</strong>. Here&apos;s a quick recap of what we
             discussed and what happens next.
           </Text>
 
@@ -264,7 +264,7 @@ export function ClientIntakeEmail({
             </Heading>
             <Text style={styles.text}>
               To kick things off, complete your one-time setup payment below.
-              Once processed, we'll immediately begin building your custom AI
+              Once processed, we&apos;ll immediately begin building your custom AI
               solution.
             </Text>
             <Link href={setupFeeUrl} style={styles.primaryButton}>
@@ -286,7 +286,7 @@ export function ClientIntakeEmail({
 
           <Text style={styles.footerText}>
             Questions before completing payment? Just hit reply or give me a
-            call—I'm here to help. Looking forward to building something amazing
+            call—I&apos;m here to help. Looking forward to building something amazing
             for {company}!
           </Text>
         </Container>
@@ -308,7 +308,7 @@ export function SubscriptionLink({
           {/* ------ LOGO + COMPANY ------ */}
          <LogoSection />
 
-          <Heading style={styles.heading}>You're almost live! 🚀</Heading>
+          <Heading style={styles.heading}>You&apos;re almost live! 🚀</Heading>
           <Text style={styles.text}>
             Great news — your project for <strong>{company}</strong> is ready to
             go! The final step is to activate your subscription so we can move

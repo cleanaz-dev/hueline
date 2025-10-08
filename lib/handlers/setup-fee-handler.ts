@@ -5,9 +5,6 @@ import { OnboardingEmail } from '@/lib/config/email-config';
 import { MakeHandler } from '@/lib/handlers/make-handler';
 import { getClientByEmail } from '@/lib/query';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
-});
 
 // Optional — helpful to define expected client shape for better safety
 interface ClientRecord {
