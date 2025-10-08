@@ -1,15 +1,15 @@
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import EditClientPage from '@/components/form/edit-client-page';
+import ClientFormPage from '@/components/admin/form/client-form-page';
 
-
-export default async function EditClient() {
+export default async function FormPage() {
   const session = await getServerSession(authOptions);
 
+  // 🔒 Only allow admin email to access
   if (!session || session.user?.email !== process.env.ADMIN_EMAIL) {
     redirect('/login');
   }
 
-  return <EditClientPage />;
+  return <ClientFormPage />;
 }

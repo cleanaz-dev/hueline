@@ -19,6 +19,29 @@ import { styles } from "./email-styles";
 const billingPortalUrl =
   "https://billing.stripe.com/p/login/aFaeVe9790w84JW5Jj1sQ00";
 
+const LOGO_URL =
+  "https://res.cloudinary.com/dmllgn0t7/image/upload/v1759891008/logo-w-brand-min_falylc.png";
+const AVATAR_URL =
+  "https://res.cloudinary.com/dmllgn0t7/image/upload/v1759892366/Generated_Image_October_07_2025_-_10_58PM_oiyrvu.png";
+
+function LogoSection() {
+  return (
+    <Section style={styles.logoSection}>
+      <Row>
+        <Column>
+          <Img
+            src={LOGO_URL}
+            alt="HueLine logo"
+            width="140"
+            height="60"
+            style={styles.logo}
+          />
+        </Column>
+      </Row>
+    </Section>
+  );
+}
+
 interface OnboardingEmailProps {
   username: string;
   useremail: string;
@@ -60,24 +83,7 @@ export function OnboardingEmail({
       <Body style={styles.body}>
         <Container style={styles.container}>
           {/* ------ LOGO + COMPANY ------ */}
-          <Section style={styles.logoSection}>
-            <Row>
-              <Column style={styles.logoColumn}>
-                <Img
-                  src="https://res.cloudinary.com/dmllgn0t7/image/upload/v1759537911/mini-logo_fnouu0.png"
-                  alt="HueLine logo"
-                  width="60"
-                  height="60"
-                  style={styles.logo}
-                />
-              </Column>
-              <Column style={styles.textColumn}>
-                <Heading as="h3" style={styles.company}>
-                  Hue-Line
-                </Heading>
-              </Column>
-            </Row>
-          </Section>
+         <LogoSection />
 
           {/* ------ BODY ------ */}
           <Heading style={styles.heading}>Welcome aboard, {username}!</Heading>
@@ -108,7 +114,7 @@ export function OnboardingEmail({
           {/* ------ ID CARD ------ */}
           <Section style={styles.idCard}>
             <Img
-              src="https://your-cdn.com/your-photo.jpg"
+              src={AVATAR_URL}
               alt="Your Name"
               width={80}
               height={80}
@@ -153,28 +159,11 @@ export function SubscriptionEmail({
       <Body style={styles.body}>
         <Container style={styles.container}>
           {/* ------  LOGO + COMPANY  ------ */}
-          <Section style={styles.logoSection}>
-            <Row>
-              <Column style={styles.logoColumn}>
-                <Img
-                  src="https://res.cloudinary.com/dmllgn0t7/image/upload/v1759537911/mini-logo_fnouu0.png"
-                  alt="Hue-Line logo"
-                  width="70"
-                  height="70"
-                  style={styles.logo}
-                />
-              </Column>
-              <Column style={styles.textColumn}>
-                <Heading as="h3" style={styles.company}>
-                  Hue-Line
-                </Heading>
-              </Column>
-            </Row>
-          </Section>
+         <LogoSection />
 
           {/* ------  BODY CONTENT  ------ */}
           <Heading style={styles.heading}>
-            You’re all set, {username}! 🎉
+            You&apos;re all set, {username}! 🎉
           </Heading>
           <Text style={styles.text}>
             Your <strong>{company}</strong> {plan.toLowerCase()} subscription is
@@ -224,24 +213,7 @@ export function ClientIntakeEmail({
       <Body style={styles.body}>
         <Container style={styles.container}>
           {/* ------ LOGO + COMPANY ------ */}
-          <Section style={styles.logoSection}>
-            <Row>
-              <Column style={styles.logoColumn}>
-                <Img
-                  src="https://res.cloudinary.com/dmllgn0t7/image/upload/v1759537911/mini-logo_fnouu0.png"
-                  alt="Hue-Line logo"
-                  width="60"
-                  height="60"
-                  style={styles.logo}
-                />
-              </Column>
-              <Column style={styles.textColumn}>
-                <Heading as="h3" style={styles.company}>
-                  Hue-Line
-                </Heading>
-              </Column>
-            </Row>
-          </Section>
+         <LogoSection />
 
           {/* ------ BODY ------ */}
           <Heading style={styles.heading}>
@@ -334,24 +306,8 @@ export function SubscriptionLink({
       <Body style={styles.body}>
         <Container style={styles.container}>
           {/* ------ LOGO + COMPANY ------ */}
-          <Section style={styles.logoSection}>
-            <Row>
-              <Column style={styles.logoColumn}>
-                <Img
-                  src="https://res.cloudinary.com/dmllgn0t7/image/upload/v1759537911/mini-logo_fnouu0.png"
-                  alt="Hue-Line logo"
-                  width="60"
-                  height="60"
-                  style={styles.logo}
-                />
-              </Column>
-              <Column style={styles.textColumn}>
-                <Heading as="h3" style={styles.company}>
-                  Hue-Line
-                </Heading>
-              </Column>
-            </Row>
-          </Section>
+         <LogoSection />
+
           <Heading style={styles.heading}>You're almost live! 🚀</Heading>
           <Text style={styles.text}>
             Great news — your project for <strong>{company}</strong> is ready to

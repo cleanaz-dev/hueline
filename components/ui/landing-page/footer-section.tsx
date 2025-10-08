@@ -1,6 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
-import heroImage from '@/public/images/logo1.png'
+import Logo from '@/public/images/mini-logo-min.png'
 
 
 
@@ -13,13 +13,13 @@ export default function FooterSection() {
           {/* Logo and Company */}
           <div className="flex items-center gap-2">
             <Image
-              src={heroImage}
+              src={Logo}
               alt="logo"
-              height={40}
-              width={40}
+              height={50}
+              width={50}
               className="object-contain"
             />
-            <span className="font-bold text-xl italic">HueLine</span>
+            <span className="font-bold text-xl text-primary ">Hue-Line</span>
           </div>
 
           {/* Navigation Links */}

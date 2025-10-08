@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
-import Logo from "@/public/images/logo1.png";
+import Logo from "@/public/images/logo-w-brand-min.png";
 import MascotImage from "@/public/images/mascot.png";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -24,7 +24,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import GenerateDialog from "./generate-dialog";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
-import CouponQuoteCards from "./quote-card"; 
+import CouponQuoteCards from "./quote-card";
 
 type PaintColor = {
   name: string;
@@ -201,18 +201,14 @@ export default function BookingPage({ booking, onRefresh }: Props) {
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm ">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
             <div className="">
-              <Link
-                href="/"
-                className="flex items-center space-x-2"
-              >
-              <Image
-                src={Logo}
-                alt="HueLine Logo"
-                className="object-contain h-10 w-10"
-              />
-              <span className="text-xl font-semibold text-primary italic">
-                HueLine
-              </span>
+              <Link href="/" className="flex items-center space-x-2">
+                <Image
+                  src={Logo}
+                  alt="HueLine Logo"
+                  className="object-contain"
+                  width={130}
+                  height={130}
+                />
               </Link>
             </div>
             <div className="flex items-center">
@@ -343,6 +339,14 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                           <span className="flex items-center gap-2">
                             Design {index + 1}
                           </span>
+                          {/* <span
+                            className="px-2 py-1 rounded"
+                            style={{
+                              backgroundColor: booking.paint_colors[0].hex,
+                            }}
+                          >
+                            {booking.paint_colors[0].name}
+                          </span> */}
                         </div>
                       </div>
                     </div>
@@ -403,7 +407,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
               {/* Main Paint Colors */}
               <div className="mb-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                  {booking.paint_colors.slice(0,1).map((color, index) => (
+                  {booking.paint_colors.slice(0, 1).map((color, index) => (
                     <div key={index} className="group">
                       <div className="relative overflow-hidden rounded-xl border border-primary/10 shadow-sm hover:shadow-md transition-shadow">
                         <div
@@ -567,7 +571,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             removeFurniture={removeFurniture}
           />
 
-          <CouponQuoteCards booking={booking}/>
+          <CouponQuoteCards booking={booking} />
 
           {/* Call to Action */}
           <section>
@@ -640,11 +644,10 @@ export default function BookingPage({ booking, onRefresh }: Props) {
               <Image
                 src={Logo}
                 alt="HueLine Logo"
-                className="object-contain h-8 w-8"
+                className="object-contain"
+                width={130}
+                height={130}
               />
-              <span className="text-lg font-medium italic text-primary">
-                HueLine
-              </span>
             </div>
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} HueLine Interior Design. All rights

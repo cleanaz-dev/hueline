@@ -25,7 +25,7 @@ const features: Feature[] = [
    id: 2,
    title: "Easy Setup",
    description:
-     "Give us your number, we handle the rest. Your AI is answering calls in 24 hours.",
+     "Give us your number, we handle the rest. Your AI is answering calls 24 hours a day.",
    image: EasilyIntegrateImage,
  },
  {

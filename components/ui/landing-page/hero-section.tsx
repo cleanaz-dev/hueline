@@ -1,14 +1,14 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Phone, Star } from "lucide-react";
-import videoThumbnail from "@/public/images/hero1.png";
+import videoThumbnail from "@/public/images/vid-thumbnail-min.png";
 import Link from "next/link";
 
 export function HeroSection() {
   return (
     <section className="relative h-screen flex flex-col overflow-hidden">
       {/* Ratings */}
-      <div className="flex text-center justify-center items-center mt-2 md:mt-0 md:gap-6 py-2 md:py-0 relative z-10 flex-shrink-0 space-y-2">
+      <div className="flex flex-col md:flex-row text-center justify-center items-center mt-2 md:mt-0 md:gap-6 py-2 md:py-0 relative z-10 flex-shrink-0 gap-2">
         <div className="flex items-center">
           <div className="flex -space-x-2">
             <div className="w-6 h-6 md:w-8 md:h-8 bg-primary rounded-full border-2 border-background"></div>
@@ -19,7 +19,7 @@ export function HeroSection() {
             500+ painters & homeowners
           </span>
         </div>
-        <div className="md:flex items-center gap-1 hidden">
+        <div className="flex items-center gap-1">
           <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary text-primary" />
           <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary text-primary" />
           <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary text-primary" />
@@ -39,8 +39,8 @@ export function HeroSection() {
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-4 md:mb-8 text-muted-foreground">
-            Stop paying $300 a mock-up. HueLine: unlimited AI visuals + 24/7
-            phone agent for $799/mo.
+            Stop paying $300 a mock-up. Hue-Line: unlimited AI visuals + 24/7
+            phone agent for <span className="font-bold">$999/mo.</span>
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -64,7 +64,7 @@ export function HeroSection() {
               poster={videoThumbnail.src}
             >
               <source
-                src="https://hue-line.s3.us-east-1.amazonaws.com/f-vid-02-upload.mp4"
+                src="https://hue-line.s3.us-east-1.amazonaws.com/f-vid-audio.mp4"
                 type="video/mp4"
               />
               Your browser does not support the video tag.

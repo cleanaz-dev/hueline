@@ -25,6 +25,8 @@ export async function POST(req: NextRequest) {
       SubscriptionEmail({
         username: 'Test User',
         company: 'Test Company Inc.',
+        plan: "Monthly",
+        useremail: "Test@test.com"
       })
     );
 

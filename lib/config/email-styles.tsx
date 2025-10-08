@@ -18,14 +18,6 @@ export const styles = {
   logoSection: {
     marginBottom: "24px",
   },
-  logoColumn: {
-    width: "70px",
-    verticalAlign: "middle",
-    paddingRight: "12px",
-  },
-  textColumn: {
-    verticalAlign: "middle",
-  },
   logo: {
     borderRadius: "6px",
     display: "block",

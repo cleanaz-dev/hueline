@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import Logo from "@/public/images/logo3-2-min.png";
+import Logo from "@/public/images/logo-w-brand-min.png";
 import Image from "next/image";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ const clientFormSchema = z.object({
 });
 
 type ClientFormData = z.infer<typeof clientFormSchema>;
+
 
 export default function ClientFormPage() {
   const [form, setForm] = useState({
@@ -102,7 +103,7 @@ export default function ClientFormPage() {
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="flex justify-center mb-8">
-          <Image src={Logo} width={125} height={125} priority alt="logo" />
+          <Image src={Logo} width={150} height={150} priority alt="logo" />
         </div>
 
         <Card>

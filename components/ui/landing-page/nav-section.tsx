@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
-import HeroImage from "@/public/images/logo1.png";
+import Logo from "@/public/images/mini-logo-min.png";
 import ThemeChanger from "@/hooks/use-theme-changer";
 import { Button } from "../button";
 import {
@@ -58,14 +58,14 @@ export default function NavSection() {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <Image
-            src={HeroImage}
+            src={Logo}
             alt="logo"
             height={40}
             width={40}
             className="object-contain md:h-[50px] md:w-[50px]"
           />
-          <span className="font-bold text-lg md:text-xl italic text-primary">
-            HueLine
+          <span className="font-bold text-lg md:text-xl text-primary">
+            Hue-Line
           </span>
         </div>
 

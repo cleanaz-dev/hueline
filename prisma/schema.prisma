@@ -15,14 +15,24 @@ datasource db {
 }
 
 model FormData {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  email       String   @unique
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  email       String    @unique
   company     String
   phone       String
   features    String[]
   hours       String
   name        String
-  feePaid     Boolean  @default(false)
-  subscribed  Boolean  @default(false)
-  subLinkSent Boolean  @default(false)
+  feePaid     Boolean   @default(false)
+  subscribed  Boolean   @default(false)
+  subLinkSent Boolean   @default(false)
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
+}
+
+model BookingData {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

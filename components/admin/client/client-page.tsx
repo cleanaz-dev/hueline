@@ -15,7 +15,7 @@ import { Loader2, Search, X } from "lucide-react";
 import Logo from "@/public/images/logo3-2-min.png";
 import Image from "next/image";
 
-export default function EditClientPage() {
+export default function ClientPage() {
   const [email, setEmail] = useState("");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -124,7 +124,7 @@ export default function EditClientPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-4 px-1 md:py-12 md:px-4">
       <div className="max-w-2xl mx-auto">
         <div className="flex justify-center mb-8">
           <Image src={Logo} width={125} height={125} priority alt="logo" />
@@ -132,7 +132,7 @@ export default function EditClientPage() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-3xl">Edit Client</CardTitle>
+            <CardTitle className="text-xl md:text-3xl">Find Client</CardTitle>
             <CardDescription>
               Search for a client by email to edit their information
             </CardDescription>
@@ -194,7 +194,7 @@ export default function EditClientPage() {
                     Subscription Info
                   </h2>
 
-                  <div className="flex flex-col md:flex-row gap-3">
+                  <div className="flex  gap-3">
                     {/* Setup Fee Status */}
                     <Button
                       disabled
