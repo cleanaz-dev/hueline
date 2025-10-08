@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,18 +12,43 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2, Search, X } from "lucide-react";
-import Logo from "@/public/images/logo3-2-min.png";
 import Image from "next/image";
+import Logo from "@/public/images/logo3-2-min.png";
+
+// ------------------------------
+// Types
+// ------------------------------
+
+interface ClientData {
+  id?: string;
+  name: string;
+  email: string;
+  company: string;
+  phone?: string;
+  features: string[];
+  hours?: string;
+  feePaid: boolean;
+  subscribed: boolean;
+  subLinkSent: boolean;
+}
+
+// ------------------------------
+// Component
+// ------------------------------
 
 export default function ClientPage() {
   const [email, setEmail] = useState("");
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<ClientData | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const fetchClient = async () => {
+  // ------------------------------
+  // Handlers
+  // ------------------------------
+
+  const fetchClient = async (): Promise<void> => {
     if (!email) {
       setError("Please enter an email address");
       return;
@@ -34,26 +59,27 @@ export default function ClientPage() {
     setSuccessMessage("");
 
     try {
-      const res = await fetch(`/api/client-form?email=${email}`);
+      const res = await fetch(`/api/client-form?email=${encodeURIComponent(email)}`);
       const json = await res.json();
 
-      if (!res.ok) {
-        throw new Error(json.error || "Client not found");
-      }
+      if (!res.ok) throw new Error(json.error || "Client not found");
 
-      setData(json.data || null);
-      if (!json.data) {
+      const client: ClientData | null = json.data;
+      if (!client) {
         setError("No client found with that email");
+        setData(null);
+      } else {
+        setData(client);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
       setData(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const saveClient = async () => {
+  const saveClient = async (): Promise<void> => {
     if (!data) return;
 
     setSaving(true);
@@ -67,21 +93,22 @@ export default function ClientPage() {
         body: JSON.stringify(data),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to save changes");
-      }
+      if (!res.ok) throw new Error("Failed to save changes");
 
       setSuccessMessage("✅ Changes saved successfully!");
       setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleSendSubscription = async () => {
-    if (!data.email) return setError("Missing client email");
+  const handleSendSubscription = async (): Promise<void> => {
+    if (!data?.email) {
+      setError("Missing client email");
+      return;
+    }
 
     setSaving(true);
     setError("");
@@ -101,27 +128,38 @@ export default function ClientPage() {
       if (!res.ok) throw new Error("Failed to send subscription email");
 
       setSuccessMessage("✅ Subscription link email sent!");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setSaving(false);
     }
   };
 
-  function updateFeature(index: number, value: string) {
+  const updateFeature = (index: number, value: string): void => {
+    if (!data) return;
     const updated = [...data.features];
     updated[index] = value;
     setData({ ...data, features: updated });
-  }
+  };
 
-  function addFeature() {
+  const addFeature = (): void => {
+    if (!data) return;
     setData({ ...data, features: [...data.features, ""] });
-  }
+  };
 
-  function removeFeature(index: number) {
-    const updated = data.features.filter((_: any, i: number) => i !== index);
+  const removeFeature = (index: number): void => {
+    if (!data) return;
+    const updated = data.features.filter((_, i) => i !== index);
     setData({ ...data, features: updated });
-  }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === "Enter") fetchClient();
+  };
+
+  // ------------------------------
+  // Render
+  // ------------------------------
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 px-1 md:py-12 md:px-4">
@@ -146,7 +184,7 @@ export default function ClientPage() {
                   placeholder="client@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && fetchClient()}
+                  onKeyDown={handleKeyDown}
                   disabled={loading}
                 />
               </div>
@@ -189,13 +227,11 @@ export default function ClientPage() {
             <CardContent>
               <div className="p-4 md:p-6 bg-slate-50 rounded-2xl mb-2 md:mb-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
-                  {/* Title */}
                   <h2 className="text-lg md:text-xl font-semibold text-slate-700">
                     Subscription Info
                   </h2>
 
-                  <div className="flex  gap-3">
-                    {/* Setup Fee Status */}
+                  <div className="flex gap-3">
                     <Button
                       disabled
                       className={`px-4 py-2 rounded-lg font-medium ${
@@ -204,12 +240,9 @@ export default function ClientPage() {
                           : "bg-red-100 text-red-800 hover:bg-red-200"
                       }`}
                     >
-                      {data.feePaid
-                        ? "Paid Setup Fee"
-                        : "Setup Fee Not Paid Yet"}
+                      {data.feePaid ? "Paid Setup Fee" : "Setup Fee Not Paid Yet"}
                     </Button>
 
-                    {/* Subscription Status */}
                     <Button
                       onClick={
                         !data.subscribed && !data.subLinkSent
@@ -242,7 +275,6 @@ export default function ClientPage() {
                 }}
                 className="space-y-6"
               >
-                {/* Name */}
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <Input
@@ -254,55 +286,45 @@ export default function ClientPage() {
                   />
                 </div>
 
-                {/* Email */}
                 <div className="space-y-2">
                   <Label htmlFor="edit-email">Email</Label>
                   <Input
                     id="edit-email"
                     type="email"
                     value={data.email}
-                    onChange={(e) =>
-                      setData({ ...data, email: e.target.value })
-                    }
+                    onChange={(e) => setData({ ...data, email: e.target.value })}
                     placeholder="john@company.com"
                     disabled={saving}
                   />
                 </div>
 
-                {/* Company */}
                 <div className="space-y-2">
                   <Label htmlFor="company">Company</Label>
                   <Input
                     id="company"
                     value={data.company}
-                    onChange={(e) =>
-                      setData({ ...data, company: e.target.value })
-                    }
+                    onChange={(e) => setData({ ...data, company: e.target.value })}
                     placeholder="Acme Inc."
                     disabled={saving}
                   />
                 </div>
 
-                {/* Phone */}
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
                     type="tel"
-                    value={data.phone || ""}
-                    onChange={(e) =>
-                      setData({ ...data, phone: e.target.value })
-                    }
+                    value={data.phone ?? ""}
+                    onChange={(e) => setData({ ...data, phone: e.target.value })}
                     placeholder="+1 (555) 123-4567"
                     disabled={saving}
                   />
                 </div>
 
-                {/* Features */}
                 <div className="space-y-2">
                   <Label>Project Features</Label>
                   <div className="space-y-3">
-                    {data.features.map((feature: string, index: number) => (
+                    {data.features.map((feature, index) => (
                       <div key={index} className="flex gap-2">
                         <Input
                           type="text"
@@ -337,27 +359,18 @@ export default function ClientPage() {
                   </Button>
                 </div>
 
-                {/* Preferred Hours */}
                 <div className="space-y-2">
                   <Label htmlFor="hours">Preferred Contact Hours</Label>
                   <Input
                     id="hours"
-                    value={data.hours || ""}
-                    onChange={(e) =>
-                      setData({ ...data, hours: e.target.value })
-                    }
+                    value={data.hours ?? ""}
+                    onChange={(e) => setData({ ...data, hours: e.target.value })}
                     placeholder="e.g., 9am–5pm EST"
                     disabled={saving}
                   />
                 </div>
 
-                {/* Save Button */}
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  className="w-full"
-                  size="lg"
-                >
+                <Button type="submit" disabled={saving} className="w-full" size="lg">
                   {saving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

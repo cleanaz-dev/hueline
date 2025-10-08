@@ -7,7 +7,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-09-30.clover',
 });
 
-export async function annualSubscriptionHandler(session: any) {
+// Define a safe interface for custom fields
+interface CustomField {
+  key: string;
+  text?: { value: string };
+}
+
+export async function annualSubscriptionHandler(session: Stripe.Checkout.Session) {
   const customerEmail = session.customer_details?.email;
   const customerName = session.customer_details?.name;
 
@@ -18,9 +24,10 @@ export async function annualSubscriptionHandler(session: any) {
 
   // Extract company name
   let company = 'your company';
-  const customFields = session.custom_fields;
+  const customFields = session.custom_fields as CustomField[] | null | undefined;
+
   if (Array.isArray(customFields)) {
-    const companyField = customFields.find((f: any) => f.key === 'company');
+    const companyField = customFields.find((f) => f.key === 'company');
     if (companyField?.text?.value) {
       company = companyField.text.value;
     }

@@ -41,7 +41,7 @@ export async function MakeHandler({
     } else {
       console.log(`✅ Sent client ${company} to Make`);
     }
-  } catch (err: any) {
-    console.error('❌ Error sending to Make:', err.message);
+  } catch (err) {
+    console.error('❌ Error sending to Make:', err);
   }
 }

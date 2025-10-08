@@ -1,28 +1,44 @@
 "use client";
+
 import React, { useState } from "react";
-import Logo from "@/public/images/logo-w-brand-min.png";
 import Image from "next/image";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Loader2, X } from "lucide-react";
+import Logo from "@/public/images/logo-w-brand-min.png";
+
+// ------------------------------
+// Validation Schema & Types
+// ------------------------------
 
 const clientFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   company: z.string().min(2, "Company name is required"),
   phone: z.string().optional(),
-  features: z.array(z.string().min(1, "Feature cannot be empty")).min(1, "At least one feature is required"),
+  features: z
+    .array(z.string().min(1, "Feature cannot be empty"))
+    .min(1, "At least one feature is required"),
   hours: z.string().optional(),
 });
 
 type ClientFormData = z.infer<typeof clientFormSchema>;
 
+// ------------------------------
+// Component
+// ------------------------------
 
 export default function ClientFormPage() {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ClientFormData>({
     name: "",
     email: "",
     company: "",
@@ -30,43 +46,51 @@ export default function ClientFormPage() {
     features: [""],
     hours: "",
   });
+
   const [errors, setErrors] = useState<Partial<Record<keyof ClientFormData, string>>>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  function updateFeature(index: number, value: string) {
+  // ------------------------------
+  // Helpers
+  // ------------------------------
+
+  const updateFeature = (index: number, value: string): void => {
     const updated = [...form.features];
     updated[index] = value;
     setForm({ ...form, features: updated });
-  }
+  };
 
-  function addFeature() {
+  const addFeature = (): void => {
     setForm({ ...form, features: [...form.features, ""] });
-  }
+  };
 
-  function removeFeature(index: number) {
+  const removeFeature = (index: number): void => {
     const updated = form.features.filter((_, i) => i !== index);
     setForm({ ...form, features: updated });
-  }
+  };
 
-  async function handleSubmit(e: React.FormEvent) {
+  // ------------------------------
+  // Submit Handler
+  // ------------------------------
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
     setErrors({});
 
-    const filteredFeatures = form.features.filter(f => f.trim() !== "");
-    const formData = { ...form, features: filteredFeatures };
+    const filteredFeatures = form.features.filter((f) => f.trim() !== "");
+    const formData: ClientFormData = { ...form, features: filteredFeatures };
 
     const result = clientFormSchema.safeParse(formData);
 
     if (!result.success) {
-      const fieldErrors: any = {};
-      result.error.issues.forEach((issue) => {
-        if (issue.path[0]) {
-          fieldErrors[issue.path[0] as keyof ClientFormData] = issue.message;
-        }
-      });
+      const fieldErrors: Partial<Record<keyof ClientFormData, string>> = {};
+      for (const issue of result.error.issues) {
+        const key = issue.path[0] as keyof ClientFormData;
+        if (key) fieldErrors[key] = issue.message;
+      }
       setErrors(fieldErrors);
       setLoading(false);
       return;
@@ -78,7 +102,8 @@ export default function ClientFormPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(result.data),
       });
-      const data = await res.json();
+
+      const data: { error?: string } = await res.json();
       if (!res.ok) throw new Error(data.error || "Error saving form");
 
       setMessage("✅ Form saved successfully!");
@@ -90,14 +115,20 @@ export default function ClientFormPage() {
         features: [""],
         hours: "",
       });
-      
+
       setTimeout(() => setMessage(""), 5000);
-    } catch (err: any) {
-      setMessage(`❌ ${err.message}`);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Unexpected error occurred";
+      setMessage(`❌ ${errorMessage}`);
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  // ------------------------------
+  // Render
+  // ------------------------------
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
@@ -116,11 +147,13 @@ export default function ClientFormPage() {
 
           <CardContent>
             {message && (
-              <div className={`p-4 rounded-lg mb-6 ${
-                message.includes("✅") 
-                  ? "bg-green-50 border border-green-200 text-green-700" 
-                  : "bg-red-50 border border-red-200 text-red-700"
-              }`}>
+              <div
+                className={`p-4 rounded-lg mb-6 ${
+                  message.includes("✅")
+                    ? "bg-green-50 border border-green-200 text-green-700"
+                    : "bg-red-50 border border-red-200 text-red-700"
+                }`}
+              >
                 {message}
               </div>
             )}
@@ -190,7 +223,7 @@ export default function ClientFormPage() {
                   id="phone"
                   type="tel"
                   placeholder="+1 (555) 123-4567"
-                  value={form.phone}
+                  value={form.phone ?? ""}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   disabled={loading}
                 />
@@ -247,19 +280,14 @@ export default function ClientFormPage() {
                   id="hours"
                   type="text"
                   placeholder="e.g., 9am–5pm EST"
-                  value={form.hours}
+                  value={form.hours ?? ""}
                   onChange={(e) => setForm({ ...form, hours: e.target.value })}
                   disabled={loading}
                 />
               </div>
 
               {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full"
-                size="lg"
-              >
+              <Button type="submit" disabled={loading} className="w-full" size="lg">
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
