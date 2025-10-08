@@ -650,7 +650,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
               />
             </div>
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} HueLine Interior Design. All rights
+              © {new Date().getFullYear()} Hue-Line Interior Design. All rights
               reserved.
             </p>
           </div>

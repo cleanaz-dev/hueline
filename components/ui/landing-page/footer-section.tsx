@@ -39,7 +39,7 @@ export default function FooterSection() {
 
         {/* Copyright */}
         <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} HueLine. All rights reserved.
+          © {new Date().getFullYear()} Hue-Line. All rights reserved.
         </div>
       </div>
     </footer>
