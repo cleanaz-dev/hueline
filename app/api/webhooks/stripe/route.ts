@@ -1,63 +1,63 @@
-import { headers } from 'next/headers';
-import Stripe from 'stripe';
-import { setupFeeHandler } from '@/lib/handlers/setup-fee-handler';
-import { monthlySubscriptionHandler } from '@/lib/handlers/monthly-subscription-handler';
-import { annualSubscriptionHandler } from '@/lib/handlers/annual-subscription-handler';
+import { headers } from "next/headers";
+import Stripe from "stripe";
+import { setupFeeHandler } from "@/lib/handlers/setup-fee-handler";
+import { monthlySubscriptionHandler } from "@/lib/handlers/monthly-subscription-handler";
+import { annualSubscriptionHandler } from "@/lib/handlers/annual-subscription-handler";
 
 export async function POST(req: Request) {
   // Initialize Stripe inside the function
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-09-30.clover',
+    apiVersion: "2025-09-30.clover",
   });
   const webhookSecret = process.env.STRIPE_TEST_WEBHOOK_SECRET!;
 
   const body = await req.text();
   const headersList = await headers();
-  const signature = headersList.get('stripe-signature')!;
+  const signature = headersList.get("stripe-signature")!;
 
   let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    console.log('✅ Event received:', event.type, event.id);
-  } catch (err: any) {
-    console.error('❌ Webhook signature verification failed:', err.message);
+    console.log("✅ Event received:", event.type, event.id);
+  } catch (err) {
+    console.error("❌ Webhook signature verification failed:", err);
     return new Response(
-      JSON.stringify({ error: 'Webhook signature verification failed', details: err.message }),
+      JSON.stringify({ error: "Webhook signature verification failed", err }),
       { status: 400 }
     );
   }
 
   // Debug log full event payload
-  console.log('📦 Full event payload:', JSON.stringify(event, null, 2));
+  console.log("📦 Full event payload:", JSON.stringify(event, null, 2));
 
-  if (event.type === 'checkout.session.completed') {
+  if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    console.log('🎉 Checkout session completed:', session.id);
+    console.log("🎉 Checkout session completed:", session.id);
 
     // ✅ Identify plan type from metadata
-    const planType = session.metadata?.plan_type || 'unknown';
-    console.log('🧩 Plan Type:', planType);
+    const planType = session.metadata?.plan_type || "unknown";
+    console.log("🧩 Plan Type:", planType);
 
     try {
       switch (planType) {
-        case 'setup':
+        case "setup":
           await setupFeeHandler(session);
           break;
 
-        case 'monthly':
+        case "monthly":
           await monthlySubscriptionHandler(session);
           break;
 
-        case 'annual':
+        case "annual":
           await annualSubscriptionHandler(session);
           break;
 
         default:
-          console.warn('⚠️ Unknown plan type, no handler triggered.');
+          console.warn("⚠️ Unknown plan type, no handler triggered.");
       }
-    } catch (err: any) {
-      console.error('❌ Error executing handler:', err.message);
+    } catch (err) {
+      console.error("❌ Error executing handler:", err);
     }
   }
 

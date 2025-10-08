@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     });
 
     return Response.json({ success: true });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error sending subscription email:", err);
     return Response.json({ error: "Failed to send email" }, { status: 500 });
   }
