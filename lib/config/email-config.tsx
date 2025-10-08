@@ -213,7 +213,7 @@ export function ClientIntakeEmail({
       <Body style={styles.body}>
         <Container style={styles.container}>
           {/* ------ LOGO + COMPANY ------ */}
-         <LogoSection />
+          <LogoSection />
 
           {/* ------ BODY ------ */}
           <Heading style={styles.heading}>
@@ -257,6 +257,18 @@ export function ClientIntakeEmail({
             )}
           </Section>
 
+          {/* ------ CLIENT INFO RECAP ------ */}
+          <Section style={{ marginTop: "24px" }}>
+            <Heading as="h4" style={styles.subHeading}>
+              Your Contact Info
+            </Heading>
+            <Text style={styles.summaryText}>
+              <strong>Email:</strong> {email}
+              <br />
+              <strong>Phone:</strong> {phone || "N/A"}
+            </Text>
+          </Section>
+
           {/* ------ SETUP FEE CTA ------ */}
           <Section style={styles.featureHighlight}>
             <Heading as="h4" style={styles.subHeading}>
@@ -295,6 +307,7 @@ export function ClientIntakeEmail({
   );
 }
 
+
 export function SubscriptionLink({
   name,
   company,
@@ -310,7 +323,7 @@ export function SubscriptionLink({
 
           <Heading style={styles.heading}>You&apos;re almost live! 🚀</Heading>
           <Text style={styles.text}>
-            Great news — your project for <strong>{company}</strong> is ready to
+            Hi {name}! Great news — your project for <strong>{company}</strong> is ready to
             go! The final step is to activate your subscription so we can move
             your Voice AI live.
           </Text>
