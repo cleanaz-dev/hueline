@@ -12,12 +12,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Calendar,
   Loader2,
-  Phone,
   Search,
-  Trash2,
-  User,
   X,
 } from "lucide-react";
 import Image from "next/image";

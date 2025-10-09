@@ -270,7 +270,7 @@ export default function BookingLogin() {
           {/* Help Text */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
-              Can't find your PIN? Check your booking confirmation SMS.
+              Can&apos;t find your PIN? Check your booking confirmation SMS.
             </p>
           </div>
         </div>

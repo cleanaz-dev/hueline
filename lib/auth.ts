@@ -3,11 +3,11 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import type { NextAuthOptions } from "next-auth";
 import { getBooking } from "./redis";
 
-export const authOptions: NextAuthOptions = {
+export const authOptions = {
   providers: [
     // Admin credentials provider
     CredentialsProvider({
-      id: "admin", // ← Unique ID for admin
+      id: "admin",
       name: "Admin Login",
       credentials: {
         email: { label: "Email", type: "email" },
@@ -32,22 +32,24 @@ export const authOptions: NextAuthOptions = {
     }),
     // Booking credentials provider
     CredentialsProvider({
-      id: "booking", // ← Unique ID for booking
+      id: "booking",
       name: "Booking",
       credentials: {
         bookingId: { label: "Booking ID", type: "text" },
         pin: { label: "PIN", type: "password" },
       },
-      async authorize(credentials: any) {
+      async authorize(
+        credentials?: Record<"bookingId" | "pin", string>
+      ): Promise<{ id: string; name: string; email: string } | null> {
         if (!credentials?.bookingId || !credentials?.pin) return null;
 
         const booking = await getBooking(credentials.bookingId);
-        
+
         if (booking && booking.pin === credentials.pin) {
-          return { 
-            id: credentials.bookingId, 
+          return {
+            id: credentials.bookingId,
             name: `Booking ${credentials.bookingId}`,
-            email: `booking-${credentials.bookingId}@example.com` // dummy email
+            email: `booking-${credentials.bookingId}@example.com`,
           };
         }
         return null;
@@ -55,25 +57,28 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }: any) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
-        // Store provider to distinguish between admin and booking sessions
         token.provider = account?.provider;
       }
       return token;
     },
-    async session({ session, token }: any) {
-      session.user.id = token.id;
-      session.provider = token.provider; // "admin" or "booking"
+    async session({ session, token }) {
+      if (token.id) {
+        session.user.id = token.id as string;
+      }
+      if (token.provider) {
+        session.provider = token.provider as string;
+      }
       return session;
     },
   },
   pages: {
-    signIn: "/login", // Default signin page (for admin)
+    signIn: "/login",
   },
   session: {
     strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
-};
+} satisfies NextAuthOptions;
