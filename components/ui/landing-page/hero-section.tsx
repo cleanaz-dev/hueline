@@ -16,7 +16,7 @@ export function HeroSection() {
             <div className="w-6 h-6 md:w-8 md:h-8 bg-accent rounded-full border-2 border-background"></div>
           </div>
           <span className="ml-3 text-xs md:text-sm text-foreground/70">
-            500+ painters & homeowners
+            200+ painters & homeowners
           </span>
         </div>
         <div className="flex items-center gap-1">

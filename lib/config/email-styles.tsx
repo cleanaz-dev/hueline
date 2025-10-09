@@ -114,7 +114,8 @@ export const styles = {
     fontSize: "16px",
     fontWeight: "600",
     marginBottom: "10px",
-    color: "#111", // dark for readability
+    color: "#111",
+    textAlign: "center" as const
   },
   perksList: {
     paddingLeft: "20px",
@@ -126,8 +127,8 @@ export const styles = {
   summarySection: {
     textAlign: "center" as const,
     padding: "25px 20px",
-    marginTop: "15px",
-    marginBottom: "20px",
+    marginTop: "8px",
+    marginBottom: "10px",
   },
 
   summaryHeading: {

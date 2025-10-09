@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Roboto } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
-import LogoImage from "@/public/images/logo1.png";
+import LogoImage from "@/public/images/mini-logo-min.png";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistMono = Geist_Mono({

@@ -25,6 +25,7 @@ import GenerateDialog from "./generate-dialog";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
 import CouponQuoteCards from "./quote-card";
+import { BookingHero } from "./section/booking-hero";
 
 type PaintColor = {
   name: string;
@@ -219,37 +220,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
 
         <main className="max-w-6xl mx-auto px-2 md:px-12 space-y-12 py-8">
           {/* Hero Section */}
-          <section className="text-center space-y-6">
-            <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl font-bold">
-                Painting Report
-              </h1>
-              <p className="text-xl text-muted-foreground">
-                Prepared for {booking.name}
-              </p>
-              <div className="inline-flex justify-center items-center gap-2 px-6 py-3 rounded-2xl bg-primary/15">
-                <Clock />
-                Call Duration: {formatTime(booking.call_duration)}
-              </div>
-            </div>
-
-            <div className="inline- items-center justify-center gap-3 bg-muted/50 p-4 rounded-xl max-w-md mx-auto">
-              <div className="flex items-center gap-3">
-                <Avatar className="size-10">
-                  <AvatarImage src="/images/agent-avatar.png" />
-                  <AvatarFallback>AN</AvatarFallback>
-                </Avatar>
-                <div className="text-left">
-                  <p className="text-base md:text-sm font-medium">
-                    By: Annalia
-                  </p>
-                  <p className="text-base md:text-sm text-muted-foreground">
-                    HueLine Design Consultant
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
+          <BookingHero booking={booking} formatTime={formatTime} />
 
           {/* Project Vision */}
           <section>
@@ -599,7 +570,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                   <div className="flex items-center justify-center mb-2">
                     <Palette className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="font-medium">Smart Color Matching</p>
+                  <p className="font-medium">Smart Color Alternatives</p>
                   <p className="text-muted-foreground text-sm md:text-xs">
                     Perfect paint colors for every project
                   </p>
