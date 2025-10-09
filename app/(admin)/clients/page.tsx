@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import ClientPage from '@/components/admin/client/client-page';
-
+import { getBookingData } from '@/lib/query';
 
 export default async function Clients() {
   const session = await getServerSession(authOptions);
@@ -11,5 +11,7 @@ export default async function Clients() {
     redirect('/login');
   }
 
-  return <ClientPage />;
+  const bookingData = await getBookingData()
+
+  return <ClientPage bookingData={bookingData} />;
 }

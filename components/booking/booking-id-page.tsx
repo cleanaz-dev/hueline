@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Logo from "@/public/images/logo-w-brand-min.png";
 import MascotImage from "@/public/images/mascot.png";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Palette,
   Lightbulb,
@@ -15,7 +14,6 @@ import {
   RefreshCw,
   Zap,
   Sofa,
-  Clock,
 } from "lucide-react";
 import ThemeChanger from "@/hooks/use-theme-changer";
 import Link from "next/link";
@@ -68,11 +66,11 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
               <Image
                 src={Logo}
                 alt="HueLine Logo"
-                className="object-contain h-10 w-10"
+                className="object-contain"
+                width={120}
+                height={120}
               />
-              <span className="text-xl font-semibold text-primary italic">
-                HueLine
-              </span>
+
             </div>
             <div className="flex items-center">
               <ThemeChanger />

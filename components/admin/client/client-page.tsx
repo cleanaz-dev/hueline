@@ -11,9 +11,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Search, X } from "lucide-react";
+import {
+  Calendar,
+  Loader2,
+  Phone,
+  Search,
+  Trash2,
+  User,
+  X,
+} from "lucide-react";
 import Image from "next/image";
 import Logo from "@/public/images/logo3-2-min.png";
+import { BookingTable } from "./booking-table";
 
 // ------------------------------
 // Types
@@ -32,11 +41,21 @@ interface ClientData {
   subLinkSent: boolean;
 }
 
+interface BookingData {
+  id?: string;
+  name: string;
+  phone: string;
+  createdAt?: Date;
+}
+
+interface ClientPageProps {
+  bookingData: BookingData[];
+}
 // ------------------------------
 // Component
 // ------------------------------
 
-export default function ClientPage() {
+export default function ClientPage({ bookingData }: ClientPageProps) {
   const [email, setEmail] = useState("");
   const [data, setData] = useState<ClientData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -59,7 +78,9 @@ export default function ClientPage() {
     setSuccessMessage("");
 
     try {
-      const res = await fetch(`/api/client-form?email=${encodeURIComponent(email)}`);
+      const res = await fetch(
+        `/api/client-form?email=${encodeURIComponent(email)}`
+      );
       const json = await res.json();
 
       if (!res.ok) throw new Error(json.error || "Client not found");
@@ -214,6 +235,8 @@ export default function ClientPage() {
                 {successMessage}
               </div>
             )}
+
+           <BookingTable bookingData={bookingData}/>
           </CardContent>
         </Card>
 
@@ -240,7 +263,9 @@ export default function ClientPage() {
                           : "bg-red-100 text-red-800 hover:bg-red-200"
                       }`}
                     >
-                      {data.feePaid ? "Paid Setup Fee" : "Setup Fee Not Paid Yet"}
+                      {data.feePaid
+                        ? "Paid Setup Fee"
+                        : "Setup Fee Not Paid Yet"}
                     </Button>
 
                     <Button
@@ -292,7 +317,9 @@ export default function ClientPage() {
                     id="edit-email"
                     type="email"
                     value={data.email}
-                    onChange={(e) => setData({ ...data, email: e.target.value })}
+                    onChange={(e) =>
+                      setData({ ...data, email: e.target.value })
+                    }
                     placeholder="john@company.com"
                     disabled={saving}
                   />
@@ -303,7 +330,9 @@ export default function ClientPage() {
                   <Input
                     id="company"
                     value={data.company}
-                    onChange={(e) => setData({ ...data, company: e.target.value })}
+                    onChange={(e) =>
+                      setData({ ...data, company: e.target.value })
+                    }
                     placeholder="Acme Inc."
                     disabled={saving}
                   />
@@ -315,7 +344,9 @@ export default function ClientPage() {
                     id="phone"
                     type="tel"
                     value={data.phone ?? ""}
-                    onChange={(e) => setData({ ...data, phone: e.target.value })}
+                    onChange={(e) =>
+                      setData({ ...data, phone: e.target.value })
+                    }
                     placeholder="+1 (555) 123-4567"
                     disabled={saving}
                   />
@@ -364,13 +395,20 @@ export default function ClientPage() {
                   <Input
                     id="hours"
                     value={data.hours ?? ""}
-                    onChange={(e) => setData({ ...data, hours: e.target.value })}
+                    onChange={(e) =>
+                      setData({ ...data, hours: e.target.value })
+                    }
                     placeholder="e.g., 9am–5pm EST"
                     disabled={saving}
                   />
                 </div>
 
-                <Button type="submit" disabled={saving} className="w-full" size="lg">
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="w-full"
+                  size="lg"
+                >
                   {saving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
