@@ -18,7 +18,7 @@ export default async function page({ params }: Props) {
   const session = await getServerSession(authOptions);
   
   // Simple check - if session exists and user id matches bookingId
-  // @ts-ignore
+ 
   const isAuthorized = session?.user?.id === bookingId;
 
   if (!isAuthorized) {
