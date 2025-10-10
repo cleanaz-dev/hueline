@@ -241,7 +241,7 @@ export default function ClientFormPage() {
                         type="text"
                         value={feature}
                         onChange={(e) => updateFeature(index, e.target.value)}
-                        placeholder="e.g., Voice AI integration, Custom chatbot"
+                        placeholder="e.g., Voice AI integration"
                         disabled={loading}
                         className="flex-1"
                       />
