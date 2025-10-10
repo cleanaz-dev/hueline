@@ -64,7 +64,7 @@ export function HeroSection() {
               poster={videoThumbnail.src}
             >
               <source
-                src="https://hue-line.s3.us-east-1.amazonaws.com/f-vid-audio.mp4"
+                src="https://hue-line.s3.us-east-1.amazonaws.com/f-vid-audio_2.mp4"
                 type="video/mp4"
               />
               Your browser does not support the video tag.
