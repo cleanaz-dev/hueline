@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import LogoImage from "@/public/images/mini-logo-min.png";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next"
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -43,6 +44,7 @@ export default function RootLayout({
           {" "}
           {children}
           <SpeedInsights />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
