@@ -15,18 +15,19 @@ type Props = {
 export default async function page({ params }: Props) {
   const { bookingId } = await params;
   
-  const session = await getServerSession(authOptions);
+  const booking = await getBooking(bookingId);
   
-  // Simple check - if session exists and user id matches bookingId
- 
+  if (!booking) {
+    redirect("/");
+  }
+  
+  const session = await getServerSession(authOptions);
   const isAuthorized = session?.user?.id === bookingId;
 
   if (!isAuthorized) {
     redirect(`/booking/login?bookingId=${bookingId}`);
   }
 
-  const booking = await getBooking(bookingId);
   await saveBookingData(booking);
-
-  return <BookingWrapper booking={booking} />
+  return <BookingWrapper booking={booking} />;
 }

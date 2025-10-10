@@ -20,7 +20,7 @@ export default function BookingLogin() {
 
   const handleChange = (index: number, value: string) => {
     if (!/^\d?$/.test(value)) return;
-    
+
     const newPin = [...pin];
     newPin[index] = value;
     setPin(newPin);
@@ -29,9 +29,9 @@ export default function BookingLogin() {
     if (value && index < 3) {
       inputRefs.current[index + 1]?.focus();
     }
-    
+
     // Auto-submit when all digits are entered
-    if (newPin.every(digit => digit) && index === 3) {
+    if (newPin.every((digit) => digit) && index === 3) {
       handleSubmit(newPin.join(""));
     }
   };
@@ -58,11 +58,11 @@ export default function BookingLogin() {
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text');
-    const numbers = pastedData.replace(/\D/g, '').slice(0, 4);
-    
+    const pastedData = e.clipboardData.getData("text");
+    const numbers = pastedData.replace(/\D/g, "").slice(0, 4);
+
     if (numbers.length === 4) {
-      const newPin = numbers.split('');
+      const newPin = numbers.split("");
       setPin(newPin);
       setError("");
       inputRefs.current[3]?.focus();
@@ -76,9 +76,9 @@ export default function BookingLogin() {
       setError("No booking ID provided");
       return;
     }
-    
+
     const finalPin = enteredPin || pin.join("");
-    
+
     if (finalPin.length !== 4) {
       setError("Please enter a 4-digit PIN");
       return;
@@ -93,49 +93,22 @@ export default function BookingLogin() {
     setError("");
 
     try {
-      console.log("🔐 Verifying PIN for booking:", bookingId);
-
-      // First verify PIN via your existing API
-      const response = await fetch(`/api/booking/${bookingId}/auth`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ pin: finalPin }),
+      const result = await signIn("booking", {
+        bookingId,
+        pin: finalPin,
+        redirect: false,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log("✅ PIN verified, signing in with NextAuth...");
-        
-        // PIN is correct, now sign in with NextAuth using the booking provider
-        const result = await signIn("booking", {
-          bookingId,
-          pin: finalPin,
-          redirect: false,
-        });
-
-        console.log("📋 NextAuth signIn result:", result);
-
-        if (result?.error) {
-          console.error("❌ NextAuth error:", result.error);
-          setError("Authentication failed. Please try again.");
-        } else if (result?.ok) {
-          console.log("✅ Login successful, redirecting...");
-          // Successful login - redirect to booking details page
-          router.push(`/booking/${bookingId}`);
-          router.refresh(); // Refresh to update session state
-        }
-      } else {
-        console.error("❌ PIN verification failed:", data.error);
-        setError(data.error || "Invalid PIN");
+      if (result?.error) {
+        setError("Invalid PIN");
         setPin(["", "", "", ""]);
         inputRefs.current[0]?.focus();
+      } else if (result?.ok) {
+        router.push(`/booking/${bookingId}`);
+        router.refresh();
       }
     } catch (error) {
-      console.error("❌ Network error:", error);
-      setError("Network error. Please check your connection and try again.");
+      setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -153,7 +126,9 @@ export default function BookingLogin() {
         <div className="max-w-md w-full mx-4">
           <div className="bg-white p-8 rounded-lg shadow-md text-center">
             <div className="text-red-500 text-6xl mb-4">❌</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Booking ID Missing</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              Booking ID Missing
+            </h1>
             <p className="text-gray-600 mb-6">
               No booking ID was provided. Please check your link and try again.
             </p>
@@ -176,17 +151,17 @@ export default function BookingLogin() {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="mx-auto h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <svg 
-                className="h-6 w-6 text-blue-600" 
-                fill="none" 
-                viewBox="0 0 24 24" 
+              <svg
+                className="h-6 w-6 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                 />
               </svg>
             </div>
@@ -207,7 +182,9 @@ export default function BookingLogin() {
               {pin.map((digit, index) => (
                 <input
                   key={index}
-                  ref={el => { inputRefs.current[index] = el; }}
+                  ref={(el) => {
+                    inputRefs.current[index] = el;
+                  }}
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
@@ -221,8 +198,12 @@ export default function BookingLogin() {
                     w-14 h-14 text-2xl text-center border-2 rounded-lg
                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                     transition-all duration-200
-                    ${digit ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
-                    ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400'}
+                    ${digit ? "border-blue-500 bg-blue-50" : "border-gray-300"}
+                    ${
+                      isLoading
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:border-gray-400"
+                    }
                     font-semibold
                   `}
                 />
@@ -250,14 +231,29 @@ export default function BookingLogin() {
             </button>
             <button
               onClick={() => handleSubmit()}
-              disabled={isLoading || pin.some(digit => !digit)}
+              disabled={isLoading || pin.some((digit) => !digit)}
               className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 font-semibold"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Verifying...
                 </div>
