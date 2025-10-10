@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export function HeroSection() {
   return (
-    <section className="relative h-screen flex flex-col overflow-hidden">
+    <section className="relative min-h-screen flex flex-col overflow-hidden">
       {/* Ratings */}
       <div className="flex flex-col md:flex-row text-center justify-center items-center mt-2 md:mt-0 md:gap-6 py-2 md:py-0 relative z-10 flex-shrink-0 gap-2">
         <div className="flex items-center">
@@ -19,7 +19,7 @@ export function HeroSection() {
             200+ painters & homeowners
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-1">
           <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary text-primary" />
           <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary text-primary" />
           <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary text-primary" />
