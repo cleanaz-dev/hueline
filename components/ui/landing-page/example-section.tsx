@@ -3,9 +3,9 @@ import React from 'react'
 import Image, { StaticImageData }from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import ConsultantAgentImage from '@/public/images/consultant-agent.png'
-import ColorMatchingAgentImage from '@/public/images/color-matching-agent.png'
-import BookingAgentImage from '@/public/images/booking-agent.png'
+import ConsultantAgentImage from '@/public/images/new-huey-desk-min.png'
+import ColorMatchingAgentImage from '@/public/images/new-huey-show-min.png'
+import BookingAgentImage from '@/public/images/new-huey-book-min.png'
 
 
 

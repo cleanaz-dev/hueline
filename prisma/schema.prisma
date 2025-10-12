@@ -15,24 +15,49 @@ datasource db {
 }
 
 model FormData {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  email       String    @unique
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  email       String         @unique
   company     String
   phone       String
   features    String[]
   hours       String
   name        String
-  feePaid     Boolean   @default(false)
-  subscribed  Boolean   @default(false)
-  subLinkSent Boolean   @default(false)
-  createdAt   DateTime? @default(now())
-  updatedAt   DateTime? @updatedAt
+  feePaid     Boolean        @default(false)
+  subscribed  Boolean        @default(false)
+  subLinkSent Boolean        @default(false)
+  createdAt   DateTime?      @default(now())
+  updatedAt   DateTime?      @updatedAt
+  activities  FormActivity[]
 }
 
 model BookingData {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
   name      String
-  phone     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  phone     String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  status    DemoStatus @default(NO_CONTACT)
+}
+
+enum DemoStatus {
+  NO_CONTACT
+  CONTACT
+  CLOSED
+  LOST
+}
+
+model FormActivity {
+  id        String           @id @default(auto()) @map("_id") @db.ObjectId
+  formId    String           @db.ObjectId
+  form      FormData         @relation(fields: [formId], references: [id], onDelete: Cascade)
+  action    ClientFormStatus // "SUB_LINK_SENT", "SUB_LINK_RESENT", "SUBSCRIBED", "FEE_PAID"
+  details   String?
+  createdAt DateTime         @default(now())
+}
+
+enum ClientFormStatus {
+  SUB_LINK_SENT
+  SUB_LINK_RESENT
+  SUBSCRIBED
+  FEE_PAID
 }

@@ -1,6 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
-import Logo from '@/public/images/mini-logo-min.png'
+import Logo from '@/public/images/logo-2--increased-brightness.png'
 
 
 
@@ -15,11 +15,11 @@ export default function FooterSection() {
             <Image
               src={Logo}
               alt="logo"
-              height={50}
-              width={50}
+              height={100}
+              width={100}
               className="object-contain"
             />
-            <span className="font-bold text-xl text-primary ">Hue-Line</span>
+           
           </div>
 
           {/* Navigation Links */}

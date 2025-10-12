@@ -17,8 +17,9 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import Logo from "@/public/images/logo3-2-min.png";
+import Logo from "@/public/images/logo-w-brand-min.png";
 import { BookingTable } from "./booking-table";
+import { SubscriptionInfo } from "./subscription-info";
 
 // ------------------------------
 // Types
@@ -46,6 +47,7 @@ interface BookingData {
 
 interface ClientPageProps {
   bookingData: BookingData[];
+  
 }
 // ------------------------------
 // Component
@@ -58,6 +60,7 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [showList, setShowList] = useState(false)
 
   // ------------------------------
   // Handlers
@@ -179,7 +182,7 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
   // ------------------------------
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 px-1 md:py-12 md:px-4">
+    <div className="min-h-screen bg-gray-50 py-4 px-1 md:py-8 md:px-4">
       <div className="max-w-2xl mx-auto">
         <div className="flex justify-center mb-8">
           <Image src={Logo} width={125} height={125} priority alt="logo" />
@@ -213,8 +216,8 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
                   </>
                 ) : (
                   <>
-                    <Search className="mr-2 h-4 w-4" />
-                    Search
+                    <Search className="md:mr-2 h-4 w-4" />
+                    <span className="hidden md:flex">Search</span>
                   </>
                 )}
               </Button>
@@ -232,7 +235,7 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
               </div>
             )}
 
-           <BookingTable bookingData={bookingData}/>
+           <BookingTable bookingData={bookingData} showList={showList} setShowList={setShowList}/>
           </CardContent>
         </Card>
 
@@ -244,50 +247,11 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
             </CardHeader>
 
             <CardContent>
-              <div className="p-4 md:p-6 bg-slate-50 rounded-2xl mb-2 md:mb-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
-                  <h2 className="text-lg md:text-xl font-semibold text-slate-700">
-                    Subscription Info
-                  </h2>
-
-                  <div className="flex gap-3">
-                    <Button
-                      disabled
-                      className={`px-4 py-2 rounded-lg font-medium ${
-                        data.feePaid
-                          ? "bg-green-100 text-green-800 hover:bg-green-200"
-                          : "bg-red-100 text-red-800 hover:bg-red-200"
-                      }`}
-                    >
-                      {data.feePaid
-                        ? "Paid Setup Fee"
-                        : "Setup Fee Not Paid Yet"}
-                    </Button>
-
-                    <Button
-                      onClick={
-                        !data.subscribed && !data.subLinkSent
-                          ? handleSendSubscription
-                          : undefined
-                      }
-                      disabled={data.subscribed || data.subLinkSent}
-                      className={`px-4 py-2 rounded-lg font-medium ${
-                        data.subscribed
-                          ? "bg-blue-100 text-blue-800 cursor-not-allowed"
-                          : data.subLinkSent
-                          ? "bg-green-100 text-green-800 cursor-not-allowed"
-                          : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                      }`}
-                    >
-                      {data.subscribed
-                        ? "Subscribed"
-                        : data.subLinkSent
-                        ? "Sub Link Sent"
-                        : "Not Subscribed (Send Link)"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              <SubscriptionInfo 
+                data={data} 
+                saving={saving} 
+                onSendSubscription={handleSendSubscription}
+              />
 
               <form
                 onSubmit={(e) => {

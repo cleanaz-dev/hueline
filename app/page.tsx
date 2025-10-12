@@ -8,7 +8,7 @@ import WYGSection from "@/components/ui/landing-page/wyg-section";
 
 export default function Home() {
   return (
-    <div className="bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
+    <div className="bg-[#FAFAFA]">
       <div className="sticky top-0 z-50">
         <NavSection />
       </div>

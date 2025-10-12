@@ -2,7 +2,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Phone } from 'lucide-react'
 import Image from 'next/image'
-import MascotImage from '@/public/images/mascot.png'
+import MascotImage from '@/public/images/mascot-new.png'
 import Link from 'next/link'
 
 

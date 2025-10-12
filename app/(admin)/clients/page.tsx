@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
-import ClientPage from '@/components/admin/client/client-page';
+import ClientPage from '@/components/admin/clients/client-page';
 import { getBookingData } from '@/lib/query';
 
 export default async function Clients() {

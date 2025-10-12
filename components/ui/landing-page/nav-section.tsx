@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
-import Logo from "@/public/images/mini-logo-min.png";
-import ThemeChanger from "@/hooks/use-theme-changer";
+import Logo from "@/public/images/logo-2--increased-brightness.png";
 import { Button } from "../button";
 import {
   Sheet,
@@ -54,19 +53,19 @@ export default function NavSection() {
 
   return (
     <section className="backdrop-blur-lg">
-      <nav className="relative z-20 flex items-center text-muted-foreground justify-between px-6 py-2 md:py-2 backdrop-blur-sm flex-shrink-0">
+      <nav className="relative z-20 flex items-center text-muted-foreground justify-between px-3 md:px-6 py-2 md:py-2 backdrop-blur-sm flex-shrink-0 bg-white/50">
         {/* Logo */}
         <div className="flex items-center gap-2">
           <Image
             src={Logo}
             alt="logo"
-            height={40}
-            width={40}
-            className="object-contain md:h-[50px] md:w-[50px]"
+            height={100}
+            width={100}
+            className="object-contain  "
           />
-          <span className="font-bold text-lg md:text-xl text-primary">
+          {/* <span className="font-bold text-lg md:text-xl text-primary">
             Hue-Line
-          </span>
+          </span> */}
         </div>
 
         {/* Desktop links */}
@@ -84,7 +83,7 @@ export default function NavSection() {
 
         {/* Desktop CTA */}
         <div className="items-center gap-2 hidden lg:flex">
-          <ThemeChanger />
+          
           <Button size="sm" asChild>
             <Link href="/booking">Book a Call</Link>
           </Button>
@@ -92,7 +91,7 @@ export default function NavSection() {
 
         {/* Mobile */}
         <div className="flex items-center gap-2 lg:hidden">
-          <ThemeChanger />
+        
           <Sheet open={openMenu} onOpenChange={setOpenMenu}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="sm">

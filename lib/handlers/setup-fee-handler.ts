@@ -4,9 +4,9 @@ import { transporter } from '@/lib/mailer';
 import { OnboardingEmail } from '@/lib/config/email-config';
 import { MakeHandler } from '@/lib/handlers/make-handler';
 import { getClientByEmail } from '@/lib/query';
+import { markFeeAsPaid } from '@/lib/handlers/client-status-handler';
 
 
-// Optional — helpful to define expected client shape for better safety
 interface ClientRecord {
   name: string;
   email: string;
@@ -25,7 +25,6 @@ export async function setupFeeHandler(session: Stripe.Checkout.Session): Promise
   }
 
   try {
-    // ✅ Fetch client record from DB
     const client = (await getClientByEmail(customerEmail)) as ClientRecord | null;
 
     if (!client) {
@@ -33,7 +32,9 @@ export async function setupFeeHandler(session: Stripe.Checkout.Session): Promise
       return;
     }
 
-    // ✅ Send onboarding email
+    // ✅ Mark fee as paid and create activity
+    await markFeeAsPaid(customerEmail);
+
     const emailHtml = await render(
       OnboardingEmail({
         username: client.name || 'there',
@@ -51,14 +52,12 @@ export async function setupFeeHandler(session: Stripe.Checkout.Session): Promise
 
     console.log(`📧 Onboarding email sent to ${customerEmail}`);
 
-    // ✅ Compile Voice AI info for Make automation
     const aiInfo = `
 ${(client.features || []).map((f) => `• ${f}`).join('\n')}
 
 Active Hours: ${client.hours || 'N/A'}
     `.trim();
 
-    // ✅ Trigger Make automation
     await MakeHandler({
       company: client.company,
       customerEmail: client.email,
