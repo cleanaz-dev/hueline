@@ -46,7 +46,7 @@ export default function SolutionSection() {
          {solutions.map((solution: Solution) => (
            <Card 
              key={solution.id}
-             className="md:max-w-2xl lg:max-w-none mx-auto w-full overflow-hidden rounded-3xl"
+             className="md:max-w-2xl lg:max-w-none mx-auto w-full overflow-hidden rounded-3xl bg-white"
            >
              <div className="relative w-full h-48">
                <Image
@@ -59,7 +59,7 @@ export default function SolutionSection() {
                />
              </div>
              <CardHeader>
-               <CardTitle className="text-2xl">
+               <CardTitle className="text-2xl text-primary">
                  {solution.title}
                </CardTitle>
              </CardHeader>

@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${roboto.className} ${geistMono.variable} antialiased`}>
-        <ThemeProvider>
+        <ThemeProvider forcedTheme="light">
           {" "}
           {children}
           <SpeedInsights />

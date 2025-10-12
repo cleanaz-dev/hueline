@@ -20,7 +20,7 @@ const billingPortalUrl =
   "https://billing.stripe.com/p/login/aFaeVe9790w84JW5Jj1sQ00";
 
 const LOGO_URL =
-  "https://res.cloudinary.com/dmllgn0t7/image/upload/v1759891008/logo-w-brand-min_falylc.png";
+  "https://res.cloudinary.com/dmllgn0t7/image/upload/v1760295280/logo-2--increased-brightness_wdn9il.png";
 const AVATAR_URL =
   "https://res.cloudinary.com/dmllgn0t7/image/upload/v1759892366/Generated_Image_October_07_2025_-_10_58PM_oiyrvu.png";
 
@@ -32,8 +32,8 @@ function LogoSection() {
           <Img
             src={LOGO_URL}
             alt="HueLine logo"
-            width="140"
-            height="60"
+            width="100"
+            height="30"
             style={styles.logo}
           />
         </Column>
@@ -135,7 +135,7 @@ export function OnboardingEmail({
 
           <Hr style={styles.hr} />
           <Text style={styles.footerText}>
-            Have questions? Just hit reply or use the links above—I&apos;ll get
+            Have questions? Just hit reply or use the links above—we&apos;ll get
             back to you right away.
           </Text>
         </Container>

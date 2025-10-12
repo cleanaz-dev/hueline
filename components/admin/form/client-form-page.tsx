@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2, X } from "lucide-react";
-import Logo from "@/public/images/logo-w-brand-min.png";
+import Logo from "@/public/images/logo-2--increased-brightness.png";
 
 // ------------------------------
 // Validation Schema & Types
@@ -131,7 +131,7 @@ export default function ClientFormPage() {
   // ------------------------------
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="flex justify-center mb-8">
           <Image src={Logo} width={150} height={150} priority alt="logo" />

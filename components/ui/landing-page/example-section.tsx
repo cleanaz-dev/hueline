@@ -56,7 +56,7 @@ return (
 
       <div className="space-y-8 py-8">
         {examples.map((example) => (
-          <Card key={example.id} className="overflow-hidden p-6">
+          <Card key={example.id} className="overflow-hidden p-6 bg-white">
             <div className="flex flex-col md:flex-row gap-6">
               {/* Image - Left on desktop, Top on mobile */}
               <div className="flex justify-center md:justify-start">
@@ -79,7 +79,7 @@ return (
                     {example.badge}
                   </Badge>
                   
-                  <h3 className="text-2xl md:text-3xl font-bold">
+                  <h3 className="text-2xl md:text-3xl font-bold text-primary">
                     {example.title}
                   </h3>
                   

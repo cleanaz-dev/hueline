@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import Logo from "@/public/images/logo-w-brand-min.png";
+import Logo from "@/public/images/logo-2--increased-brightness.png";
 import { BookingTable } from "./booking-table";
 import { SubscriptionInfo } from "./subscription-info";
 
@@ -185,7 +185,7 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
     <div className="min-h-screen bg-gray-50 py-4 px-1 md:py-8 md:px-4">
       <div className="max-w-2xl mx-auto">
         <div className="flex justify-center mb-8">
-          <Image src={Logo} width={125} height={125} priority alt="logo" />
+          <Image src={Logo} width={140} height={140} priority alt="logo" />
         </div>
 
         <Card className="mb-6">

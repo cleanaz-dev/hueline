@@ -56,14 +56,14 @@ export default function WYGSection() {
        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-8">
          {features.map((feature) => (
            <div key={feature.id} className="flex flex-col">
-             <div className="flex flex-col items-center bg-card p-8 rounded-lg border">
+             <div className="flex flex-col items-center bg-white p-8 rounded-lg border">
                <Image
                  src={feature.image}
                  alt={feature.title}
                  className="w-64 h-56 rounded-lg mb-6"
                />
                <div className="text-center">
-                 <h3 className="text-2xl font-bold mb-4 ">
+                 <h3 className="text-2xl font-bold mb-4 text-slate-700 ">
                    {feature.title}
                  </h3>
                  <p className="text-muted-foreground">{feature.description}</p>
