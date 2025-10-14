@@ -1,7 +1,7 @@
 import { transporter } from "@/lib/mailer";
 import { render } from "@react-email/render";
 import { SubscriptionLink } from "@/lib/config/email-config";
-import { sendSubscriptionLink } from "@/lib/handlers/client-status-handler";
+
 
 export async function POST(req: Request) {
   try {
@@ -24,7 +24,6 @@ export async function POST(req: Request) {
       html: emailHtml,
     });
 
-    await sendSubscriptionLink(email);
 
     return Response.json({ success: true });
   } catch (err) {

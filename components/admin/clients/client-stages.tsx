@@ -1,14 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Clock, User, Building, ArrowRight } from "lucide-react";
+import { ChevronDown, User, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { 
-  stageConfig, 
-  activityLabels, 
+import {
+  stageConfig,
+  activityLabels,
   formatActivityDate,
-  type StageConfig 
+  type StageConfig,
 } from "@/lib/config/stage-config";
 
 interface ClientData {
@@ -47,7 +47,8 @@ export function ClientStages({
 }: ClientStagesProps) {
   const [showHistory, setShowHistory] = useState(false);
 
-  const current: StageConfig = stageConfig[stage] || stageConfig.INTAKE_FORM_COMPLETE;
+  const current: StageConfig =
+    stageConfig[stage] || stageConfig.INTAKE_FORM_COMPLETE;
   const next = current.nextStage ? stageConfig[current.nextStage] : null;
 
   const getActivityLabel = (action: string): string => {
@@ -57,7 +58,6 @@ export function ClientStages({
   return (
     <div className="space-y-6">
       {/* Header */}
-     
 
       {/* Client Info */}
       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -65,7 +65,9 @@ export function ClientStages({
           <User className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">{data.name}</p>
+          <p className="text-sm font-medium text-gray-900 truncate">
+            {data.name}
+          </p>
           <div className="flex items-center gap-3 text-xs text-gray-500">
             <span className="truncate">{data.company}</span>
             <span>•</span>
@@ -74,67 +76,77 @@ export function ClientStages({
         </div>
       </div>
       <div className="bg-gray-50 px-2 py-4 md:px-8 md:py-6 rounded-lg space-y-4 mb-4">
-
-      {/* Current Stage */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-medium text-gray-700">Current Stage</h4>
-          <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-            Active
-          </div>
-        </div>
-        
-        <div className={cn("p-4 rounded-lg border border-gray-200 flex items-start gap-3", current.color)}>
-          <div className="p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
-            {current.icon}
-          </div>
-          <div className="flex-1">
-            <h5 className="font-medium text-gray-900 text-sm md:text-base">{current.title}</h5>
-            <p className="text-xs md:text-sm text-gray-600 mt-1">{current.description}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Action Button */}
-      {current.nextStage && (
-        <div className="flex justify-center">
-          <Button
-            onClick={() => onUpdateStage?.(current.nextStage!)}
-            disabled={saving}
-            variant="ghost"
-          >
-            {saving ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-                Updating...
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                {current.actionLabel}
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            )}
-          </Button>
-        </div>
-      )}
-
-      {/* Next Stage */}
-      {next && (
+        {/* Current Stage */}
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-gray-700">Next Stage</h4>
-          <div className="p-4 rounded-lg border border-gray-200 bg-white flex items-start gap-3">
-            <div className="p-2 bg-white rounded-lg border border-gray-200">
-              {next.icon}
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-gray-700">Current Stage</h4>
+            <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+              Active
+            </div>
+          </div>
+
+          <div
+            className={cn(
+              "p-4 rounded-lg border border-gray-200 flex items-start gap-3",
+              current.color
+            )}
+          >
+            <div className="p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+              {current.icon}
             </div>
             <div className="flex-1">
-              <h5 className="font-medium text-gray-700 text-sm md:text-base">{next.title}</h5>
-              <p className="text-xs md:text-sm text-gray-500 mt-1">{next.description}</p>
+              <h5 className="font-medium text-gray-900 text-sm md:text-base">
+                {current.title}
+              </h5>
+              <p className="text-xs md:text-sm text-gray-600 mt-1">
+                {current.description}
+              </p>
             </div>
           </div>
         </div>
-      )}
 
+        {/* Action Button */}
+        {current.nextStage && (
+          <div className="flex justify-center">
+            <Button
+              onClick={() => onUpdateStage?.(current.nextStage!)}
+              disabled={saving}
+              variant="ghost"
+            >
+              {saving ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                  Updating...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {current.actionLabel}
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              )}
+            </Button>
+          </div>
+        )}
 
+        {/* Next Stage */}
+        {next && (
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-gray-700">Next Stage</h4>
+            <div className="p-4 rounded-lg border border-gray-200 bg-white flex items-start gap-3">
+              <div className="p-2 bg-white rounded-lg border border-gray-200">
+                {next.icon}
+              </div>
+              <div className="flex-1">
+                <h5 className="font-medium text-gray-700 text-sm md:text-base">
+                  {next.title}
+                </h5>
+                <p className="text-xs md:text-sm text-gray-500 mt-1">
+                  {next.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Activity History */}
