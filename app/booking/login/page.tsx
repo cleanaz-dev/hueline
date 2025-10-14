@@ -5,6 +5,15 @@ import { useState, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
 
+
+
+// Error handling utility
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  return String(error)
+}
+
+
 export default function BookingLogin() {
   const [pin, setPin] = useState(["", "", "", ""]);
   const [error, setError] = useState("");
@@ -71,49 +80,48 @@ export default function BookingLogin() {
     }
   };
 
-  const handleSubmit = async (enteredPin?: string) => {
-    if (!bookingId) {
-      setError("No booking ID provided");
-      return;
+const handleSubmit = async (enteredPin?: string) => {
+  if (!bookingId) {
+    setError("No booking ID provided");
+    return;
+  }
+
+  const finalPin = enteredPin || pin.join("");
+
+  if (finalPin.length !== 4) {
+    setError("Please enter a 4-digit PIN");
+    return;
+  }
+
+  if (!/^\d{4}$/.test(finalPin)) {
+    setError("PIN must contain only numbers");
+    return;
+  }
+
+  setIsLoading(true);
+  setError("");
+
+  try {
+    const result = await signIn("booking", {
+      bookingId,
+      pin: finalPin,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError("Invalid PIN");
+      setPin(["", "", "", ""]);
+      inputRefs.current[0]?.focus();
+    } else if (result?.ok) {
+      router.push(`/booking/${bookingId}`);
+      router.refresh();
     }
-
-    const finalPin = enteredPin || pin.join("");
-
-    if (finalPin.length !== 4) {
-      setError("Please enter a 4-digit PIN");
-      return;
-    }
-
-    if (!/^\d{4}$/.test(finalPin)) {
-      setError("PIN must contain only numbers");
-      return;
-    }
-
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const result = await signIn("booking", {
-        bookingId,
-        pin: finalPin,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError("Invalid PIN");
-        setPin(["", "", "", ""]);
-        inputRefs.current[0]?.focus();
-      } else if (result?.ok) {
-        router.push(`/booking/${bookingId}`);
-        router.refresh();
-      }
-    } catch (error) {
-      setError("An error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  } catch (error) {
+    setError("An error occurred. Please try again. " + getErrorMessage(error));
+  } finally {
+    setIsLoading(false);
+  }
+};
   const clearPin = () => {
     setPin(["", "", "", ""]);
     setError("");

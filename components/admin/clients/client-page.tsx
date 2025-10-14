@@ -15,7 +15,6 @@ import { Loader2, Search, X } from "lucide-react";
 import Image from "next/image";
 import Logo from "@/public/images/logo-2--increased-brightness.png";
 import { BookingTable } from "./booking-table";
-import { ClientPipeline } from "./client-pipeline";
 import { ClientStages } from "./client-stages"; // Updated import
 
 // ------------------------------
