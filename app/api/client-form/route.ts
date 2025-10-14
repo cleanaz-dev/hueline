@@ -44,6 +44,9 @@ export async function GET(req: Request) {
   try {
     const form = await prisma.formData.findUnique({
       where: { email },
+      include: {
+        activities: true
+      }
     });
 
     if (!form) {

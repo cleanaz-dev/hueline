@@ -15,20 +15,28 @@ datasource db {
 }
 
 model FormData {
-  id          String         @id @default(auto()) @map("_id") @db.ObjectId
-  email       String         @unique
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  email       String    @unique
   company     String
   phone       String
   features    String[]
   hours       String
   name        String
-  feePaid     Boolean        @default(false)
-  subscribed  Boolean        @default(false)
-  subLinkSent Boolean        @default(false)
-  createdAt   DateTime?      @default(now())
-  updatedAt   DateTime?      @updatedAt
+  stage       ClientStage @default(INTAKE_FORM_COMPLETE)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   activities  FormActivity[]
 }
+
+enum ClientStage {
+  INTAKE_FORM_COMPLETE
+  SETUP_LINK_SENT
+  FEE_PAID
+  WORK_COMPLETED
+  DEMO_APPROVED
+  JOB_COMPLETED
+}
+
 
 model BookingData {
   id        String     @id @default(auto()) @map("_id") @db.ObjectId
@@ -47,17 +55,10 @@ enum DemoStatus {
 }
 
 model FormActivity {
-  id        String           @id @default(auto()) @map("_id") @db.ObjectId
-  formId    String           @db.ObjectId
-  form      FormData         @relation(fields: [formId], references: [id], onDelete: Cascade)
-  action    ClientFormStatus // "SUB_LINK_SENT", "SUB_LINK_RESENT", "SUBSCRIBED", "FEE_PAID"
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  formId    String      @db.ObjectId
+  form      FormData    @relation(fields: [formId], references: [id], onDelete: Cascade)
+  action    String      // Simple text: "Sent setup link", "Fee paid", etc.
   details   String?
-  createdAt DateTime         @default(now())
-}
-
-enum ClientFormStatus {
-  SUB_LINK_SENT
-  SUB_LINK_RESENT
-  SUBSCRIBED
-  FEE_PAID
+  createdAt DateTime    @default(now())
 }

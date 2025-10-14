@@ -3,6 +3,7 @@ import { transporter } from "../mailer";
 import { render } from "@react-email/render";
 import { ClientIntakeEmail } from "../config/email-config";
 
+
 interface ClientIntakeData {
   name: string;
   email: string;

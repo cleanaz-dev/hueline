@@ -53,7 +53,7 @@ export default function SplashScreen({ onVideoEnd }: SplashScreenProps) {
         onEnded={handleVideoEnd}
         onError={handleVideoError}
       >
-        <source src="/videos/splash_screen.mp4" type="video/mp4" />
+        <source src="/videos/new-logo-splash-screen_1.mp4" type="video/mp4" />
       </video>
     </div>
   );

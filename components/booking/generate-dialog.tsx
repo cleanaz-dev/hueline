@@ -132,7 +132,7 @@ export default function GenerateDialog({
                       loop
                       playsInline
                       className="w-full h-full object-cover"
-                      src="/videos/splash_screen-2.mp4"
+                      src="/videos/booking-splash.mp4"
                     />
                   </div>
                 </div>

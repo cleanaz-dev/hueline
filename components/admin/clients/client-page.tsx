@@ -11,31 +11,33 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Loader2,
-  Search,
-  X,
-} from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import Image from "next/image";
 import Logo from "@/public/images/logo-2--increased-brightness.png";
 import { BookingTable } from "./booking-table";
-import { SubscriptionInfo } from "./subscription-info";
+import { ClientPipeline } from "./client-pipeline";
+import { ClientStages } from "./client-stages"; // Updated import
 
 // ------------------------------
 // Types
 // ------------------------------
 
 interface ClientData {
-  id?: string;
+  id: string;
   name: string;
   email: string;
   company: string;
   phone?: string;
   features: string[];
   hours?: string;
-  feePaid: boolean;
-  subscribed: boolean;
-  subLinkSent: boolean;
+  stage: string;
+  activities: FormActivity[];
+}
+
+interface FormActivity {
+  action: string;
+  createdAt: string;
+  details?: string;
 }
 
 interface BookingData {
@@ -47,7 +49,6 @@ interface BookingData {
 
 interface ClientPageProps {
   bookingData: BookingData[];
-  
 }
 // ------------------------------
 // Component
@@ -60,7 +61,8 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [showList, setShowList] = useState(false)
+  const [showList, setShowList] = useState(false);
+
 
   // ------------------------------
   // Handlers
@@ -124,37 +126,33 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
     }
   };
 
-  const handleSendSubscription = async (): Promise<void> => {
-    if (!data?.email) {
-      setError("Missing client email");
-      return;
-    }
+const handleUpdateStage = async (newStage: string): Promise<void> => {
+  if (!data?.email) return;
 
-    setSaving(true);
-    setError("");
-    setSuccessMessage("");
+  setSaving(true);
+  setError("");
 
-    try {
-      const res = await fetch("/api/email/send-subscription-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: data.email,
-          name: data.name,
-          company: data.company,
-        }),
-      });
+  try {
+    const res = await fetch(`/api/client/stage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        email: data.email, 
+        stage: newStage 
+      }),
+    });
 
-      if (!res.ok) throw new Error("Failed to send subscription email");
+    if (!res.ok) throw new Error("Failed to update stage");
 
-      setSuccessMessage("✅ Subscription link email sent!");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
+    setData({ ...data, stage: newStage });
+    setSuccessMessage("✅ Stage updated!");
+    setTimeout(() => setSuccessMessage(""), 2000);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Failed to update stage");
+  } finally {
+    setSaving(false);
+  }
+};
   const updateFeature = (index: number, value: string): void => {
     if (!data) return;
     const updated = [...data.features];
@@ -176,6 +174,7 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === "Enter") fetchClient();
   };
+
 
   // ------------------------------
   // Render
@@ -235,7 +234,11 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
               </div>
             )}
 
-           <BookingTable bookingData={bookingData} showList={showList} setShowList={setShowList}/>
+            <BookingTable
+              bookingData={bookingData}
+              showList={showList}
+              setShowList={setShowList}
+            />
           </CardContent>
         </Card>
 
@@ -247,11 +250,14 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
             </CardHeader>
 
             <CardContent>
-              <SubscriptionInfo 
-                data={data} 
-                saving={saving} 
-                onSendSubscription={handleSendSubscription}
+             <ClientStages
+                data={data}
+                stage={data.stage}
+                saving={saving}
+                activities={data.activities || []}
+                onUpdateStage={handleUpdateStage}
               />
+
 
               <form
                 onSubmit={(e) => {
