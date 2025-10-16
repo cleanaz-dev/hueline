@@ -22,6 +22,17 @@ import { ClientInformationSection } from "./client-information-section";
 // Types
 // ------------------------------
 
+interface ClientConfig {
+  twilioNumber?: string;
+  crm?: string;
+  transferNumber?: string;
+  subDomain?: string;
+  voiceGender?: string;
+  voiceName?: string;
+  [key: string]: string | undefined; // Add index signature
+}
+
+
 interface ClientData {
   id: string;
   name: string;
@@ -32,7 +43,7 @@ interface ClientData {
   hours?: string;
   stage: string;
   activities: FormActivity[];
-  config?: Record<string, any>;
+  config?: ClientConfig
 }
 
 interface FormActivity {

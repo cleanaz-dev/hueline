@@ -3,6 +3,18 @@ import { transporter } from "../mailer";
 import { render } from "@react-email/render";
 import { ClientIntakeEmail } from "../config/email-config";
 
+
+interface ClientConfig {
+  twilioNumber?: string;
+  crm?: string;
+  transferNumber?: string;
+  subDomain?: string;
+  voiceGender?: string;
+  voiceName?: string;
+  [key: string]: string | undefined; // Add index signature
+}
+
+
 interface ClientIntakeData {
   name: string;
   email: string;
@@ -10,7 +22,7 @@ interface ClientIntakeData {
   phone?: string;
   features: string[];
   hours?: string;
-  config: Record<string, any>;
+  config: ClientConfig;
 }
 
 export async function clientIntakeHandler(data: ClientIntakeData) {

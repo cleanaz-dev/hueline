@@ -40,6 +40,16 @@ function LogoSection() {
     </Section>
   );
 }
+interface ClientConfig {
+  twilioNumber?: string;
+  crm?: string;
+  transferNumber?: string;
+  subDomain?: string;
+  voiceGender?: string;
+  voiceName?: string;
+  [key: string]: string | undefined; // Add index signature
+}
+
 
 interface OnboardingEmailProps {
   username: string;
@@ -61,7 +71,7 @@ interface ClientIntakeProps {
   phone: string;
   features: string[];
   hours: string;
-  config: Record<string, any>;
+  config: ClientConfig;
 }
 
 interface SubscriptionLinkProps {

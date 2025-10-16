@@ -6,6 +6,17 @@ import { MakeHandler } from '@/lib/handlers/make-handler';
 import { getClientByEmail } from '@/lib/query';
 import { markFeeAsPaid } from '@/lib/handlers/client-status-handler';
 
+interface ClientConfig {
+  twilioNumber?: string;
+  crm?: string;
+  transferNumber?: string;
+  subDomain?: string;
+  voiceGender?: string;
+  voiceName?: string;
+  [key: string]: string | undefined; // Add index signature
+}
+
+
 interface ClientRecord {
   name: string;
   email: string;
@@ -13,7 +24,7 @@ interface ClientRecord {
   phone?: string;
   features?: string[];
   hours?: string;
-  config?: Record<string, any>;
+  config?: ClientConfig;
 }
 
 export async function setupFeeHandler(session: Stripe.Checkout.Session): Promise<void> {
