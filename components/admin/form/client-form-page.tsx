@@ -244,7 +244,7 @@ export default function ClientFormPage() {
                 <CardHeader>
                   <CardTitle className="text-xl text-blue-950">Technical Configuration</CardTitle>
                   <CardDescription>
-                    Setup your AI assistant's technical settings
+                    Setup your AI assistant&apos;s technical settings
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
