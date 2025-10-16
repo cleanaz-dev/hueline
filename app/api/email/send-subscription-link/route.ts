@@ -11,11 +11,9 @@ export async function POST(req: Request) {
       SubscriptionLink({
         name,
         company,
-        subLink:
-          "https://buy.stripe.com/test_3cI9AUgwIfI958EabLgQE01?prefilled_email=" +
-          encodeURIComponent(email),
-      })
-    );
+        email,
+    })
+  )
 
     await transporter.sendMail({
       from: '"Hue-Line" <info@hue-line.com>',

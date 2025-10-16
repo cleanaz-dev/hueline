@@ -16,6 +16,7 @@ import {
 } from "@react-email/components";
 import { styles } from "./email-styles";
 import { StripePaymentLinks } from '@/lib/config/strilpe-config'
+import { StringToBoolean } from "class-variance-authority/types";
 
 
 const LOGO_URL =
@@ -66,6 +67,7 @@ interface ClientIntakeProps {
 interface SubscriptionLinkProps {
   name: string;
   company: string;
+  email: string;
 }
 // After One-Time Setup Fee
 export function OnboardingEmail({
@@ -309,6 +311,7 @@ export function ClientIntakeEmail({
 export function SubscriptionLink({
   name,
   company,
+  email
 }: SubscriptionLinkProps) {
   return (
     <Html>
