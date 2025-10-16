@@ -65,14 +65,14 @@ export function BookingTable({
       {showList && (
         <>
           {/* Desktop Table */}
-          <div className="hidden md:block rounded-lg overflow-hidden border">
+          <div className="hidden md:block overflow-hidden">
             <Table>
-              <TableHeader>
-                <TableRow className="bg-primary/10">
-                  <TableHead>Name</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Created</TableHead>
+              <TableHeader >
+                <TableRow className="bg-primary ">
+                  <TableHead className="text-white">Name</TableHead>
+                  <TableHead className="text-white">Phone</TableHead>
+                  <TableHead className="text-white">Status</TableHead>
+                  <TableHead className="text-right text-white">Created</TableHead>
                 </TableRow>
               </TableHeader>
 

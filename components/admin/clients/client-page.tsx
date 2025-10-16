@@ -11,11 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Search, X } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import Image from "next/image";
 import Logo from "@/public/images/logo-2--increased-brightness.png";
 import { BookingTable } from "./booking-table";
-import { ClientStages } from "./client-stages"; // Updated import
+import { ClientStages } from "./client-stages";
+import { ClientConfigSection } from "./client-config-section";
+import { ClientInformationSection } from "./client-information-section";
 
 // ------------------------------
 // Types
@@ -31,6 +33,7 @@ interface ClientData {
   hours?: string;
   stage: string;
   activities: FormActivity[];
+  config?: Record<string, any>;
 }
 
 interface FormActivity {
@@ -49,6 +52,7 @@ interface BookingData {
 interface ClientPageProps {
   bookingData: BookingData[];
 }
+
 // ------------------------------
 // Component
 // ------------------------------
@@ -61,7 +65,6 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [showList, setShowList] = useState(false);
-
 
   // ------------------------------
   // Handlers
@@ -125,55 +128,42 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
     }
   };
 
-const handleUpdateStage = async (newStage: string): Promise<void> => {
-  if (!data?.email) return;
+  const handleUpdateStage = async (newStage: string): Promise<void> => {
+    if (!data?.email) return;
 
-  setSaving(true);
-  setError("");
+    setSaving(true);
+    setError("");
 
-  try {
-    const res = await fetch(`/api/client/stage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        email: data.email, 
-        stage: newStage 
-      }),
-    });
+    try {
+      const res = await fetch(`/api/client/stage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.email,
+          stage: newStage,
+        }),
+      });
 
-    if (!res.ok) throw new Error("Failed to update stage");
+      if (!res.ok) throw new Error("Failed to update stage");
 
-    setData({ ...data, stage: newStage });
-    setSuccessMessage("✅ Stage updated!");
-    setTimeout(() => setSuccessMessage(""), 2000);
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "Failed to update stage");
-  } finally {
-    setSaving(false);
-  }
-};
-  const updateFeature = (index: number, value: string): void => {
-    if (!data) return;
-    const updated = [...data.features];
-    updated[index] = value;
-    setData({ ...data, features: updated });
+      setData({ ...data, stage: newStage });
+      setSuccessMessage("✅ Stage updated!");
+      setTimeout(() => setSuccessMessage(""), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update stage");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const addFeature = (): void => {
+  const handleDataChange = (updates: Partial<ClientData>) => {
     if (!data) return;
-    setData({ ...data, features: [...data.features, ""] });
-  };
-
-  const removeFeature = (index: number): void => {
-    if (!data) return;
-    const updated = data.features.filter((_, i) => i !== index);
-    setData({ ...data, features: updated });
+    setData({ ...data, ...updates });
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === "Enter") fetchClient();
   };
-
 
   // ------------------------------
   // Render
@@ -244,19 +234,18 @@ const handleUpdateStage = async (newStage: string): Promise<void> => {
         {data && (
           <Card>
             <CardHeader>
-              <CardTitle>Client Information</CardTitle>
+              <CardTitle className="md:text-2xl">Client</CardTitle>
               <CardDescription>Update the client details below</CardDescription>
             </CardHeader>
 
             <CardContent>
-             <ClientStages
+              <ClientStages
                 data={data}
                 stage={data.stage}
                 saving={saving}
                 activities={data.activities || []}
                 onUpdateStage={handleUpdateStage}
               />
-
 
               <form
                 onSubmit={(e) => {
@@ -265,108 +254,17 @@ const handleUpdateStage = async (newStage: string): Promise<void> => {
                 }}
                 className="space-y-6"
               >
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={data.name}
-                    onChange={(e) => setData({ ...data, name: e.target.value })}
-                    placeholder="John Doe"
-                    disabled={saving}
-                  />
-                </div>
+                <ClientInformationSection
+                  data={data}
+                  onDataChange={handleDataChange}
+                  disabled={saving}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="edit-email">Email</Label>
-                  <Input
-                    id="edit-email"
-                    type="email"
-                    value={data.email}
-                    onChange={(e) =>
-                      setData({ ...data, email: e.target.value })
-                    }
-                    placeholder="john@company.com"
-                    disabled={saving}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="company">Company</Label>
-                  <Input
-                    id="company"
-                    value={data.company}
-                    onChange={(e) =>
-                      setData({ ...data, company: e.target.value })
-                    }
-                    placeholder="Acme Inc."
-                    disabled={saving}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={data.phone ?? ""}
-                    onChange={(e) =>
-                      setData({ ...data, phone: e.target.value })
-                    }
-                    placeholder="+1 (555) 123-4567"
-                    disabled={saving}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Project Features</Label>
-                  <div className="space-y-3">
-                    {data.features.map((feature, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          type="text"
-                          value={feature}
-                          onChange={(e) => updateFeature(index, e.target.value)}
-                          placeholder="e.g., Voice AI integration"
-                          disabled={saving}
-                          className="flex-1"
-                        />
-                        {data.features.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => removeFeature(index)}
-                            disabled={saving}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={addFeature}
-                    disabled={saving}
-                    className="px-0"
-                  >
-                    + Add another feature
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="hours">Preferred Contact Hours</Label>
-                  <Input
-                    id="hours"
-                    value={data.hours ?? ""}
-                    onChange={(e) =>
-                      setData({ ...data, hours: e.target.value })
-                    }
-                    placeholder="e.g., 9am–5pm EST"
-                    disabled={saving}
-                  />
-                </div>
+                <ClientConfigSection
+                  config={data.config}
+                  onConfigChange={(newConfig) => handleDataChange({ config: newConfig })}
+                  disabled={saving}
+                />
 
                 <Button
                   type="submit"

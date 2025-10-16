@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ChevronDown, User, ArrowRight } from "lucide-react";
+import { ChevronDown, User, ArrowRight, Building, Mail, Phone } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -59,24 +59,56 @@ export function ClientStages({
     <div className="space-y-6">
       {/* Header */}
 
-      {/* Client Info */}
-      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-        <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
-          <User className="w-4 h-4 text-white" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">
-            {data.name}
-          </p>
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            <span className="truncate">{data.company}</span>
-            <span>•</span>
-            <span>{data.hours || "Standard hours"}</span>
-            <span>•</span>
-            <span>{data.phone}</span>
-          </div>
-        </div>
+{/* Client Info - Alternative Mobile Layout */}
+<div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+  <div className="hidden md:flex w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full items-center justify-center flex-shrink-0 mt-0.5">
+    <User className="w-4 h-4 text-white" />
+  </div>
+  <div className="flex-1 min-w-0">
+    <p className="text-sm font-medium text-gray-900 truncate mb-1">
+      {data.name}
+    </p>
+    
+    {/* Desktop Layout */}
+    <div className="hidden md:flex items-center flex-wrap gap-3 text-xs text-gray-500">
+      <span className="truncate">{data.company}</span>
+      <span>•</span>
+      <span>{data.hours || "Standard hours"}</span>
+      {data.phone && (
+        <>
+          <span>•</span>
+          <span>{data.phone}</span>
+        </>
+      )}
+      <span>•</span>
+      <span className="truncate">{data.email}</span>
+    </div>
+
+    {/* Mobile Layout - Icon based */}
+    <div className="md:hidden flex flex-col gap-1 text-xs text-gray-500">
+      <div className="flex items-center gap-2 truncate">
+        <Building className="w-3 h-3 flex-shrink-0" />
+        <span className="truncate">{data.company}</span>
       </div>
+      <div className="flex items-center gap-2 truncate">
+        <Mail className="w-3 h-3 flex-shrink-0" />
+        <span className="truncate">{data.email}</span>
+      </div>
+      {(data.phone || data.hours) && (
+        <div className="flex items-center gap-2">
+          <Phone className="w-3 h-3 flex-shrink-0" />
+          <span>{data.phone || data.hours}</span>
+          {data.phone && data.hours && (
+            <>
+              <span>•</span>
+              <span>{data.hours}</span>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+</div>
       <div className="bg-gray-50 px-2 py-4 md:px-8 md:py-6 rounded-lg space-y-4 mb-4">
         {/* Current Stage */}
         <div className="space-y-3">

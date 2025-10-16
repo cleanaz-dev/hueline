@@ -5,20 +5,19 @@ import { prisma } from "../prisma";
 interface BookingData {
   name: string;
   phone: string;
-  createdAt?: Date
+  createdAt?: Date;
 }
-
 
 export async function getClientByEmail(email: string) {
   return await prisma.formData.findUniqueOrThrow({
     where: {
-      email: email  // or using ES6 shorthand: { email }
-    }
+      email: email, // or using ES6 shorthand: { email }
+    },
   });
 }
 
 export async function saveBookingData(data: BookingData): Promise<void> {
-  if (!data?.phone) return;               // null-guard only
+  if (!data?.phone) return; // null-guard only
 
   const bookingExist = await prisma.bookingData.findFirst({
     where: { phone: data.phone },
@@ -33,7 +32,17 @@ export async function saveBookingData(data: BookingData): Promise<void> {
 export async function getBookingData(): Promise<BookingData[]> {
   return await prisma.bookingData.findMany({
     orderBy: {
-      createdAt: 'desc'
-    }
-  })
+      createdAt: "desc",
+    },
+  });
+}
+
+export async function updateActivity(email: string, action: string) {
+  if (!action) return;
+  await prisma.formActivity.create({
+    data: {
+      form: { connect: { email } },
+      action: action,
+    },
+  });
 }

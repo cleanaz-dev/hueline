@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clientIntakeHandler } from "@/lib/handlers/client-intake-handler";
+import { updateActivity } from "@/lib/query";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const { email, company, phone, features, hours, name } = body;
+    const { email, company, phone, features, hours, name, ...rest } = body;
 
     console.log("body", body);
-    return NextResponse.json({ message: "Data Recieved" }, { status: 200 });
 
     if (!email || !company || !phone || !name) {
       return NextResponse.json(
@@ -18,13 +18,31 @@ export async function POST(req: Request) {
       );
     }
 
+    // Put all extra fields into config
+    const config = Object.keys(rest).length > 0 ? rest : undefined;
+
     const form = await prisma.formData.upsert({
       where: { email },
-      update: { company, phone, features, hours, name },
-      create: { email, company, phone, features, hours, name },
+      update: { company, phone, features, hours, name, config },
+      create: { email, company, phone, features, hours, name, config },
     });
 
-    await clientIntakeHandler(body);
+    console.log("config:", config);
+
+    // return NextResponse.json({ message: "OK!" }, { status: 200 });
+
+    // Pass the structured data with config to the handler
+    await clientIntakeHandler({
+      email,
+      company,
+      phone,
+      features,
+      hours,
+      name,
+      config,
+    });
+
+    await updateActivity(email, "Completed Intake Form");
 
     return NextResponse.json({ success: true, data: form });
   } catch (err) {

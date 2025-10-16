@@ -20,6 +20,7 @@ model FormData {
   company     String
   phone       String
   features    String[]
+  config      Json?
   hours       String
   name        String
   stage       ClientStage @default(INTAKE_FORM_COMPLETE)

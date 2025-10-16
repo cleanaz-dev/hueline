@@ -3,7 +3,6 @@ import { transporter } from "../mailer";
 import { render } from "@react-email/render";
 import { ClientIntakeEmail } from "../config/email-config";
 
-
 interface ClientIntakeData {
   name: string;
   email: string;
@@ -11,6 +10,7 @@ interface ClientIntakeData {
   phone?: string;
   features: string[];
   hours?: string;
+  config: Record<string, any>;
 }
 
 export async function clientIntakeHandler(data: ClientIntakeData) {
@@ -24,6 +24,7 @@ export async function clientIntakeHandler(data: ClientIntakeData) {
         phone: data.phone || "",
         features: data.features,
         hours: data.hours || "",
+        config: data.config,
       })
     );
 

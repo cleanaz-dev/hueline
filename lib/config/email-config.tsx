@@ -61,6 +61,7 @@ interface ClientIntakeProps {
   phone: string;
   features: string[];
   hours: string;
+  config: Record<string, any>;
 }
 
 interface SubscriptionLinkProps {
@@ -204,6 +205,7 @@ export function ClientIntakeEmail({
   phone,
   features,
   hours,
+  config,
 }: ClientIntakeProps) {
   return (
     <Html>
@@ -228,10 +230,10 @@ export function ClientIntakeEmail({
             discussed and what happens next.
           </Text>
 
-          {/* ------ PROJECT SUMMARY ------ */}
+          {/* ------ VOICE AI CONFIG ------ */}
           <Section style={styles.summarySection}>
             <Heading as="h4" style={styles.summaryHeading}>
-              Your Project Summary
+              Voice AI Configuration
             </Heading>
 
             <Text style={styles.summaryText}>
@@ -240,13 +242,28 @@ export function ClientIntakeEmail({
             </Text>
 
             <Text style={styles.summaryText}>
-              <strong>Key Features:</strong>
+              <strong>Voice Settings:</strong>
             </Text>
 
             <ul style={styles.intakeList}>
-              {features.map((feature, index) => (
-                <li key={index}> ✅ {feature}</li>
-              ))}
+              <li>
+                <strong>Twilio Number:</strong> {config.twilioNumber}
+              </li>
+              <li>
+                <strong>Transfer Number:</strong> {config.transferNumber}
+              </li>
+              <li>
+                <strong>Voice Gender:</strong> {config.voiceGender}
+              </li>
+              <li>
+                <strong>Voice Name:</strong> {config.voiceName}
+              </li>
+              <li>
+                <strong>Subdomain:</strong> {config.subDomain}
+              </li>
+              <li>
+                <strong>CRM:</strong> {config.crm}
+              </li>
             </ul>
 
             {hours && (
@@ -259,15 +276,34 @@ export function ClientIntakeEmail({
             )}
           </Section>
 
+          {/* ------ ADDITIONAL FEATURES ------ */}
+          {features && features.length > 0 && (
+            <Section style={styles.summarySection}>
+              <Heading as="h4" style={styles.summaryHeading}>
+                Additional Features
+              </Heading>
+
+              <ul style={styles.intakeList}>
+                {features.map((feature, index) => (
+                  <li key={index}>✅ {feature}</li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
           {/* ------ CLIENT INFO RECAP ------ */}
           <Section style={{ marginTop: "24px" }}>
             <Heading as="h4" style={styles.subHeading}>
               Your Contact Info
             </Heading>
             <Text style={styles.summaryText}>
+              <strong>Name:</strong> {name}
+              <br />
               <strong>Email:</strong> {email}
               <br />
               <strong>Phone:</strong> {phone || "N/A"}
+              <br />
+              <strong>Company:</strong> {company}
             </Text>
           </Section>
 
@@ -282,7 +318,9 @@ export function ClientIntakeEmail({
               AI solution.
             </Text>
             <Link
-              href={StripePaymentLinks.oneTimeSetupFee}
+              href={`${
+                StripePaymentLinks.monthlyPlan
+              }?prefilled_email=${encodeURIComponent(email)}`}
               style={styles.primaryButton}
             >
               Complete Setup Payment

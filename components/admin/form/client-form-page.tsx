@@ -224,7 +224,7 @@ export default function ClientFormPage() {
               <div>
                 <header className="mb-4">
                   <h1 className="text-xl text-blue-950 font-medium">
-                    Desired Features
+                    Additional Features
                   </h1>
                   <p className="text-sm text-muted-foreground">
                     List the features you want for your AI assistant

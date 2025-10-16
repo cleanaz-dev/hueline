@@ -6,7 +6,6 @@ import { MakeHandler } from '@/lib/handlers/make-handler';
 import { getClientByEmail } from '@/lib/query';
 import { markFeeAsPaid } from '@/lib/handlers/client-status-handler';
 
-
 interface ClientRecord {
   name: string;
   email: string;
@@ -14,6 +13,7 @@ interface ClientRecord {
   phone?: string;
   features?: string[];
   hours?: string;
+  config?: Record<string, any>;
 }
 
 export async function setupFeeHandler(session: Stripe.Checkout.Session): Promise<void> {
@@ -52,10 +52,14 @@ export async function setupFeeHandler(session: Stripe.Checkout.Session): Promise
 
     console.log(`📧 Onboarding email sent to ${customerEmail}`);
 
+    // Combine config with aiInfo
     const aiInfo = `
 ${(client.features || []).map((f) => `• ${f}`).join('\n')}
 
 Active Hours: ${client.hours || 'N/A'}
+
+Configuration:
+${client.config ? JSON.stringify(client.config, null, 2) : 'No additional configuration'}
     `.trim();
 
     await MakeHandler({
