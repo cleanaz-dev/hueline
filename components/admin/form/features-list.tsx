@@ -101,7 +101,7 @@ export default function FeaturesList({
             onChange={(e) => updateField("transferNumber", e.target.value || undefined)}
             disabled={disabled}
           />
-          <p className="text-sm text-gray-500">
+          <p className="text-xs md:text-sm text-gray-500">
             Optional: Number to transfer calls to
           </p>
         </div>
@@ -161,7 +161,7 @@ export default function FeaturesList({
 
           {/* Voice Name */}
           <div className="space-y-2">
-            <Label htmlFor="voiceName">
+            <Label htmlFor="voiceName" className="text-blue-950">
               Voice Name <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -176,7 +176,7 @@ export default function FeaturesList({
             {errors.voiceName && (
               <p className="text-sm text-red-600">{errors.voiceName}</p>
             )}
-            <p className="text-sm text-gray-500">
+            <p className="text-xs md:text-sm text-gray-500">
               The name your AI assistant will introduce itself as
             </p>
           </div>

@@ -29,12 +29,7 @@ export default function ClientInformationList({
 
   return (
     <div>
-      <header className="mb-4">
-        <h1 className="text-xl text-blue-950 font-medium">Client Information</h1>
-        <p className="text-sm text-muted-foreground">
-          Basic contact and company information
-        </p>
-      </header>
+      
       
       <div className="space-y-4">
         {/* Name */}
@@ -128,7 +123,7 @@ export default function ClientInformationList({
           {errors.hours && (
             <p className="text-sm text-red-600">{errors.hours}</p>
           )}
-          <p className="text-sm text-gray-500">
+          <p className="text-xs md:text-sm text-gray-500">
             Specify your business hours for call handling
           </p>
         </div>

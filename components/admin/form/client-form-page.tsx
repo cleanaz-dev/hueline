@@ -16,11 +16,11 @@ import { Loader2, Plus, X } from "lucide-react";
 import Logo from "@/public/images/logo-2--increased-brightness.png";
 import FeaturesList from "@/components/admin/form/features-list";
 import ClientInformationList from "@/components/admin/form/client-information-list";
-import { 
-  ClientFormData, 
+import {
+  ClientFormData,
   ClientInformationData,
   FeaturesData,
-  clientFormSchema 
+  clientFormSchema,
 } from "@/lib/schema";
 import { toast } from "sonner";
 
@@ -40,7 +40,9 @@ export default function ClientFormPage() {
     voiceName: "",
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof ClientFormData, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof ClientFormData, string>>
+  >({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -77,7 +79,9 @@ export default function ClientFormPage() {
   // Submit Handler
   // ------------------------------
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
@@ -126,7 +130,7 @@ export default function ClientFormPage() {
       });
 
       setTimeout(() => setMessage(""), 5000);
-      toast.success("Form Submitted Successfully")
+      toast.success("Form Submitted Successfully");
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Unexpected error occurred";
@@ -141,15 +145,17 @@ export default function ClientFormPage() {
   // ------------------------------
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
+    <div className="min-h-screen bg-gray-50 py-6 md:py-10 px-2 md:px-4">
       <div className="max-w-3xl mx-auto">
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-4 md:mb-8">
           <Image src={Logo} width={150} height={150} priority alt="logo" />
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-3xl text-blue-950">Client Intake Form</CardTitle>
+            <CardTitle className="text-3xl text-blue-950">
+              Client Intake Form
+            </CardTitle>
             <CardDescription>
               Tell us about your project and we&apos;ll get back to you soon.
             </CardDescription>
@@ -189,10 +195,37 @@ export default function ClientFormPage() {
                 }}
               />
 
-              {/* Features Array Section */}
+             
+
+              {/* Features List Component */}
+
+              <FeaturesList
+                data={{
+                  twilioNumber: form.twilioNumber,
+                  crm: form.crm,
+                  transferNumber: form.transferNumber,
+                  subDomain: form.subDomain,
+                  voiceGender: form.voiceGender,
+                  voiceName: form.voiceName,
+                }}
+                onChange={handleFeaturesChange}
+                disabled={loading}
+                errors={{
+                  twilioNumber: errors.twilioNumber,
+                  crm: errors.crm,
+                  transferNumber: errors.transferNumber,
+                  subDomain: errors.subDomain,
+                  voiceGender: errors.voiceGender,
+                  voiceName: errors.voiceName,
+                }}
+              />
+
+               {/* Features Array Section */}
               <div>
                 <header className="mb-4">
-                  <h1 className="text-xl text-blue-950 font-medium">Desired Features</h1>
+                  <h1 className="text-xl text-blue-950 font-medium">
+                    Desired Features
+                  </h1>
                   <p className="text-sm text-muted-foreground">
                     List the features you want for your AI assistant
                   </p>
@@ -201,9 +234,13 @@ export default function ClientFormPage() {
                   {form.features.map((feature, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <Input
-                        placeholder={`Feature ${index + 1} (e.g., Call screening, Appointment scheduling)`}
+                        placeholder={`Feature ${
+                          index + 1
+                        } (e.g., Call screening, Appointment scheduling)`}
                         value={feature}
-                        onChange={(e) => handleFeatureChange(index, e.target.value)}
+                        onChange={(e) =>
+                          handleFeatureChange(index, e.target.value)
+                        }
                         disabled={loading}
                         className={errors.features ? "border-red-500" : ""}
                       />
@@ -221,11 +258,11 @@ export default function ClientFormPage() {
                       )}
                     </div>
                   ))}
-                  
+
                   {errors.features && (
                     <p className="text-sm text-red-600">{errors.features}</p>
                   )}
-                  
+
                   <Button
                     type="button"
                     variant="outline"
@@ -239,40 +276,13 @@ export default function ClientFormPage() {
                 </div>
               </div>
 
-              {/* Features List Component */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl text-blue-950">Technical Configuration</CardTitle>
-                  <CardDescription>
-                    Setup your AI assistant&apos;s technical settings
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FeaturesList
-                    data={{
-                      twilioNumber: form.twilioNumber,
-                      crm: form.crm,
-                      transferNumber: form.transferNumber,
-                      subDomain: form.subDomain,
-                      voiceGender: form.voiceGender,
-                      voiceName: form.voiceName,
-                    }}
-                    onChange={handleFeaturesChange}
-                    disabled={loading}
-                    errors={{
-                      twilioNumber: errors.twilioNumber,
-                      crm: errors.crm,
-                      transferNumber: errors.transferNumber,
-                      subDomain: errors.subDomain,
-                      voiceGender: errors.voiceGender,
-                      voiceName: errors.voiceName,
-                    }}
-                  />
-                </CardContent>
-              </Card>
-
               {/* Submit Button */}
-              <Button type="submit" disabled={loading} className="w-full" size="lg">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full"
+                size="lg"
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -15,9 +15,8 @@ import {
   Column,
 } from "@react-email/components";
 import { styles } from "./email-styles";
-import { StripePaymentLinks } from '@/lib/config/strilpe-config'
+import { StripePaymentLinks } from "@/lib/config/strilpe-config";
 import { StringToBoolean } from "class-variance-authority/types";
-
 
 const LOGO_URL =
   "https://res.cloudinary.com/dmllgn0t7/image/upload/v1760295280/logo-2--increased-brightness_wdn9il.png";
@@ -83,7 +82,7 @@ export function OnboardingEmail({
       <Body style={styles.body}>
         <Container style={styles.container}>
           {/* ------ LOGO + COMPANY ------ */}
-         <LogoSection />
+          <LogoSection />
 
           {/* ------ BODY ------ */}
           <Heading style={styles.heading}>Welcome aboard, {username}!</Heading>
@@ -159,7 +158,7 @@ export function SubscriptionEmail({
       <Body style={styles.body}>
         <Container style={styles.container}>
           {/* ------  LOGO + COMPANY  ------ */}
-         <LogoSection />
+          <LogoSection />
 
           {/* ------  BODY CONTENT  ------ */}
           <Heading style={styles.heading}>
@@ -178,7 +177,10 @@ export function SubscriptionEmail({
               💡 Bookmark this email! Use the link below anytime to manage your
               subscription, update billing info, or view invoices.
             </Text>
-            <Link href={StripePaymentLinks.customerPortal} style={styles.primaryButton}>
+            <Link
+              href={StripePaymentLinks.customerPortal}
+              style={styles.primaryButton}
+            >
               Manage Subscription
             </Link>
           </Section>
@@ -203,12 +205,12 @@ export function ClientIntakeEmail({
   features,
   hours,
 }: ClientIntakeProps) {
-
-
   return (
     <Html>
       <Head />
-      <Preview>Thanks for meeting with us, {name}! Here&apos;s what&apos;s next.</Preview>
+      <Preview>
+        Thanks for meeting with us, {name}! Here&apos;s what&apos;s next.
+      </Preview>
 
       <Body style={styles.body}>
         <Container style={styles.container}>
@@ -276,10 +278,13 @@ export function ClientIntakeEmail({
             </Heading>
             <Text style={styles.text}>
               To kick things off, complete your one-time setup payment below.
-              Once processed, we&apos;ll immediately begin building your custom AI
-              solution.
+              Once processed, we&apos;ll immediately begin building your custom
+              AI solution.
             </Text>
-            <Link href={StripePaymentLinks.oneTimeSetupFee} style={styles.primaryButton}>
+            <Link
+              href={StripePaymentLinks.oneTimeSetupFee}
+              style={styles.primaryButton}
+            >
               Complete Setup Payment
             </Link>
             <Text
@@ -298,8 +303,8 @@ export function ClientIntakeEmail({
 
           <Text style={styles.footerText}>
             Questions before completing payment? Just hit reply or give me a
-            call—I&apos;m here to help. Looking forward to building something amazing
-            for {company}!
+            call—I&apos;m here to help. Looking forward to building something
+            amazing for {company}!
           </Text>
         </Container>
       </Body>
@@ -311,7 +316,7 @@ export function ClientIntakeEmail({
 export function SubscriptionLink({
   name,
   company,
-  email
+  email,
 }: SubscriptionLinkProps) {
   return (
     <Html>
@@ -319,13 +324,13 @@ export function SubscriptionLink({
       <Body style={styles.body}>
         <Container style={styles.container}>
           {/* ------ LOGO + COMPANY ------ */}
-         <LogoSection />
+          <LogoSection />
 
           <Heading style={styles.heading}>You&apos;re almost live! 🚀</Heading>
           <Text style={styles.text}>
-            Hi {name}! Great news — your project for <strong>{company}</strong> is ready to
-            go! The final step is to activate your subscription so we can move
-            your Voice AI live.
+            Hi {name}! Great news — your project for <strong>{company}</strong>{" "}
+            is ready to go! The final step is to activate your subscription so
+            we can move your Voice AI live.
           </Text>
           <Section style={styles.featureHighlight}>
             <Heading as="h4" style={styles.subHeading}>
@@ -335,7 +340,12 @@ export function SubscriptionLink({
               Click below to complete your monthly subscription. Your email will
               be pre-filled for a faster checkout.
             </Text>
-            <Link href={StripePaymentLinks.monthlyPlan} style={styles.primaryButton}>
+            <Link
+              href={`${
+                StripePaymentLinks.monthlyPlan
+              }?prefilled_email=${encodeURIComponent(email)}`}
+              style={styles.primaryButton}
+            >
               Activate Subscription
             </Link>
             <Text
