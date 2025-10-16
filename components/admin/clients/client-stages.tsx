@@ -72,6 +72,8 @@ export function ClientStages({
             <span className="truncate">{data.company}</span>
             <span>•</span>
             <span>{data.hours || "Standard hours"}</span>
+            <span>•</span>
+            <span>{data.phone}</span>
           </div>
         </div>
       </div>

@@ -8,6 +8,9 @@ export async function POST(req: Request) {
 
     const { email, company, phone, features, hours, name } = body;
 
+    console.log("body", body);
+    return NextResponse.json({ message: "Data Recieved" }, { status: 200 });
+
     if (!email || !company || !phone || !name) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -45,8 +48,8 @@ export async function GET(req: Request) {
     const form = await prisma.formData.findUnique({
       where: { email },
       include: {
-        activities: true
-      }
+        activities: true,
+      },
     });
 
     if (!form) {

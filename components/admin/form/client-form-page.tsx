@@ -1,11 +1,10 @@
+// app/client-form/page.tsx
 "use client";
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -13,29 +12,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, X } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import Logo from "@/public/images/logo-2--increased-brightness.png";
-
-// ------------------------------
-// Validation Schema & Types
-// ------------------------------
-
-const clientFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  company: z.string().min(2, "Company name is required"),
-  phone: z.string().optional(),
-  features: z
-    .array(z.string().min(1, "Feature cannot be empty"))
-    .min(1, "At least one feature is required"),
-  hours: z.string().optional(),
-});
-
-type ClientFormData = z.infer<typeof clientFormSchema>;
-
-// ------------------------------
-// Component
-// ------------------------------
+import FeaturesList from "@/components/admin/form/features-list";
+import ClientInformationList from "@/components/admin/form/client-information-list";
+import { 
+  ClientFormData, 
+  ClientInformationData,
+  FeaturesData,
+  clientFormSchema 
+} from "@/lib/schema";
+import { toast } from "sonner";
 
 export default function ClientFormPage() {
   const [form, setForm] = useState<ClientFormData>({
@@ -43,8 +30,14 @@ export default function ClientFormPage() {
     email: "",
     company: "",
     phone: "",
-    features: [""],
     hours: "",
+    features: [""],
+    twilioNumber: "",
+    crm: "",
+    transferNumber: "",
+    subDomain: "",
+    voiceGender: "male",
+    voiceName: "",
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof ClientFormData, string>>>({});
@@ -52,13 +45,21 @@ export default function ClientFormPage() {
   const [message, setMessage] = useState("");
 
   // ------------------------------
-  // Helpers
+  // Handlers
   // ------------------------------
 
-  const updateFeature = (index: number, value: string): void => {
-    const updated = [...form.features];
-    updated[index] = value;
-    setForm({ ...form, features: updated });
+  const handleClientInfoChange = (clientInfo: ClientInformationData): void => {
+    setForm({ ...form, ...clientInfo });
+  };
+
+  const handleFeaturesChange = (featuresData: FeaturesData): void => {
+    setForm({ ...form, ...featuresData });
+  };
+
+  const handleFeatureChange = (index: number, value: string): void => {
+    const newFeatures = [...form.features];
+    newFeatures[index] = value;
+    setForm({ ...form, features: newFeatures });
   };
 
   const addFeature = (): void => {
@@ -66,8 +67,10 @@ export default function ClientFormPage() {
   };
 
   const removeFeature = (index: number): void => {
-    const updated = form.features.filter((_, i) => i !== index);
-    setForm({ ...form, features: updated });
+    if (form.features.length > 1) {
+      const newFeatures = form.features.filter((_, i) => i !== index);
+      setForm({ ...form, features: newFeatures });
+    }
   };
 
   // ------------------------------
@@ -112,11 +115,18 @@ export default function ClientFormPage() {
         email: "",
         company: "",
         phone: "",
-        features: [""],
         hours: "",
+        features: [""],
+        twilioNumber: "",
+        crm: "",
+        transferNumber: "",
+        subDomain: "",
+        voiceGender: "male",
+        voiceName: "",
       });
 
       setTimeout(() => setMessage(""), 5000);
+      toast.success("Form Submitted Successfully")
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Unexpected error occurred";
@@ -132,14 +142,14 @@ export default function ClientFormPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <div className="flex justify-center mb-8">
           <Image src={Logo} width={150} height={150} priority alt="logo" />
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-3xl">Client Intake Form</CardTitle>
+            <CardTitle className="text-3xl text-blue-950">Client Intake Form</CardTitle>
             <CardDescription>
               Tell us about your project and we&apos;ll get back to you soon.
             </CardDescription>
@@ -159,132 +169,107 @@ export default function ClientFormPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Full Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  disabled={loading}
-                  className={errors.name ? "border-red-500" : ""}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-600">{errors.name}</p>
-                )}
-              </div>
+              {/* Client Information List Component */}
+              <ClientInformationList
+                data={{
+                  name: form.name,
+                  email: form.email,
+                  company: form.company,
+                  phone: form.phone,
+                  hours: form.hours,
+                }}
+                onChange={handleClientInfoChange}
+                disabled={loading}
+                errors={{
+                  name: errors.name,
+                  email: errors.email,
+                  company: errors.company,
+                  phone: errors.phone,
+                  hours: errors.hours,
+                }}
+              />
 
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">
-                  Email <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john@company.com"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  disabled={loading}
-                  className={errors.email ? "border-red-500" : ""}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email}</p>
-                )}
-              </div>
-
-              {/* Company */}
-              <div className="space-y-2">
-                <Label htmlFor="company">
-                  Company <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="company"
-                  type="text"
-                  placeholder="Acme Inc."
-                  value={form.company}
-                  onChange={(e) => setForm({ ...form, company: e.target.value })}
-                  disabled={loading}
-                  className={errors.company ? "border-red-500" : ""}
-                />
-                {errors.company && (
-                  <p className="text-sm text-red-600">{errors.company}</p>
-                )}
-              </div>
-
-              {/* Phone */}
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+1 (555) 123-4567"
-                  value={form.phone ?? ""}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  disabled={loading}
-                />
-              </div>
-
-              {/* Features */}
-              <div className="space-y-2">
-                <Label>
-                  Project Features <span className="text-red-500">*</span>
-                </Label>
-                <div className="space-y-3">
+              {/* Features Array Section */}
+              <div>
+                <header className="mb-4">
+                  <h1 className="text-xl text-blue-950 font-medium">Desired Features</h1>
+                  <p className="text-sm text-muted-foreground">
+                    List the features you want for your AI assistant
+                  </p>
+                </header>
+                <div className="space-y-4">
                   {form.features.map((feature, index) => (
-                    <div key={index} className="flex gap-2">
+                    <div key={index} className="flex items-center gap-2">
                       <Input
-                        type="text"
+                        placeholder={`Feature ${index + 1} (e.g., Call screening, Appointment scheduling)`}
                         value={feature}
-                        onChange={(e) => updateFeature(index, e.target.value)}
-                        placeholder="e.g., Voice AI integration"
+                        onChange={(e) => handleFeatureChange(index, e.target.value)}
                         disabled={loading}
-                        className="flex-1"
+                        className={errors.features ? "border-red-500" : ""}
                       />
                       {form.features.length > 1 && (
                         <Button
                           type="button"
-                          variant="destructive"
+                          variant="outline"
                           size="icon"
                           onClick={() => removeFeature(index)}
                           disabled={loading}
+                          className="shrink-0"
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
                   ))}
+                  
+                  {errors.features && (
+                    <p className="text-sm text-red-600">{errors.features}</p>
+                  )}
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addFeature}
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Another Feature
+                  </Button>
                 </div>
-                {errors.features && (
-                  <p className="text-sm text-red-600">{errors.features}</p>
-                )}
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={addFeature}
-                  disabled={loading}
-                  className="px-0"
-                >
-                  + Add another feature
-                </Button>
               </div>
 
-              {/* Preferred Hours */}
-              <div className="space-y-2">
-                <Label htmlFor="hours">Hours of Operation</Label>
-                <Input
-                  id="hours"
-                  type="text"
-                  placeholder="e.g., 9am–5pm EST"
-                  value={form.hours ?? ""}
-                  onChange={(e) => setForm({ ...form, hours: e.target.value })}
-                  disabled={loading}
-                />
-              </div>
+              {/* Features List Component */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl text-blue-950">Technical Configuration</CardTitle>
+                  <CardDescription>
+                    Setup your AI assistant's technical settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FeaturesList
+                    data={{
+                      twilioNumber: form.twilioNumber,
+                      crm: form.crm,
+                      transferNumber: form.transferNumber,
+                      subDomain: form.subDomain,
+                      voiceGender: form.voiceGender,
+                      voiceName: form.voiceName,
+                    }}
+                    onChange={handleFeaturesChange}
+                    disabled={loading}
+                    errors={{
+                      twilioNumber: errors.twilioNumber,
+                      crm: errors.crm,
+                      transferNumber: errors.transferNumber,
+                      subDomain: errors.subDomain,
+                      voiceGender: errors.voiceGender,
+                      voiceName: errors.voiceName,
+                    }}
+                  />
+                </CardContent>
+              </Card>
 
               {/* Submit Button */}
               <Button type="submit" disabled={loading} className="w-full" size="lg">

@@ -4,7 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import LogoImage from "@/public/images/mini-logo-min.png";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -43,6 +44,7 @@ export default function RootLayout({
         <ThemeProvider forcedTheme="light">
           {" "}
           {children}
+          <Toaster />
           <SpeedInsights />
           <Analytics />
         </ThemeProvider>

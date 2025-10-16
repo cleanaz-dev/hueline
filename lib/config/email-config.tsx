@@ -15,9 +15,8 @@ import {
   Column,
 } from "@react-email/components";
 import { styles } from "./email-styles";
+import { StripePaymentLinks } from '@/lib/config/strilpe-config'
 
-const billingPortalUrl =
-  "https://billing.stripe.com/p/login/aFaeVe9790w84JW5Jj1sQ00";
 
 const LOGO_URL =
   "https://res.cloudinary.com/dmllgn0t7/image/upload/v1760295280/logo-2--increased-brightness_wdn9il.png";
@@ -67,9 +66,8 @@ interface ClientIntakeProps {
 interface SubscriptionLinkProps {
   name: string;
   company: string;
-  subLink: string;
 }
-
+// After One-Time Setup Fee
 export function OnboardingEmail({
   username,
   useremail,
@@ -143,7 +141,7 @@ export function OnboardingEmail({
     </Html>
   );
 }
-
+// Subscription Fee Paid
 export function SubscriptionEmail({
   username,
   company,
@@ -178,7 +176,7 @@ export function SubscriptionEmail({
               💡 Bookmark this email! Use the link below anytime to manage your
               subscription, update billing info, or view invoices.
             </Text>
-            <Link href={billingPortalUrl} style={styles.primaryButton}>
+            <Link href={StripePaymentLinks.customerPortal} style={styles.primaryButton}>
               Manage Subscription
             </Link>
           </Section>
@@ -194,7 +192,7 @@ export function SubscriptionEmail({
     </Html>
   );
 }
-
+// After Intake Form (Zoom)
 export function ClientIntakeEmail({
   name,
   email,
@@ -203,7 +201,7 @@ export function ClientIntakeEmail({
   features,
   hours,
 }: ClientIntakeProps) {
-  const setupFeeUrl = "https://buy.stripe.com/test_7sYaEY6W83Zr8kQbfPgQE00";
+
 
   return (
     <Html>
@@ -279,7 +277,7 @@ export function ClientIntakeEmail({
               Once processed, we&apos;ll immediately begin building your custom AI
               solution.
             </Text>
-            <Link href={setupFeeUrl} style={styles.primaryButton}>
+            <Link href={StripePaymentLinks.oneTimeSetupFee} style={styles.primaryButton}>
               Complete Setup Payment
             </Link>
             <Text
@@ -307,11 +305,10 @@ export function ClientIntakeEmail({
   );
 }
 
-
+// After Completing Working Voice Agent
 export function SubscriptionLink({
   name,
   company,
-  subLink,
 }: SubscriptionLinkProps) {
   return (
     <Html>
@@ -335,7 +332,7 @@ export function SubscriptionLink({
               Click below to complete your monthly subscription. Your email will
               be pre-filled for a faster checkout.
             </Text>
-            <Link href={subLink} style={styles.primaryButton}>
+            <Link href={StripePaymentLinks.monthlyPlan} style={styles.primaryButton}>
               Activate Subscription
             </Link>
             <Text
