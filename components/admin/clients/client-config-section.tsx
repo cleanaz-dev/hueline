@@ -4,9 +4,19 @@ import { Label } from "@/components/ui/label";
 import { Plus, Trash2, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
+interface ClientConfig {
+  twilioNumber?: string;
+  crm?: string;
+  transferNumber?: string;
+  subDomain?: string;
+  voiceGender?: string;
+  voiceName?: string;
+  [key: string]: string | undefined; // Add index signature
+}
+
 interface ClientConfigSectionProps {
-  config?: Record<string, any>;
-  onConfigChange: (config: Record<string, any>) => void;
+  config?: ClientConfig;
+  onConfigChange: (config: ClientConfig) => void;
   disabled?: boolean;
 }
 
@@ -90,7 +100,7 @@ export function ClientConfigSection({
                   className="bg-muted"
                 />
                 <Input
-                  value={String(value)}
+                  value={String(value || '')}
                   onChange={(e) => updateConfigValue(key, e.target.value)}
                   placeholder="Field value"
                   disabled={disabled}
