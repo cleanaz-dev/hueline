@@ -1,6 +1,7 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Clock, User2, Palette, Calendar } from "lucide-react";
-
+import Image from "next/image";
+import PaletteImage from "@/public/images/pallete-no-bg.png"
 
 interface BookingHeroProps {
   booking: {
@@ -13,40 +14,57 @@ interface BookingHeroProps {
 export function BookingHero({ booking, formatTime }: BookingHeroProps) {
   return (
     <section className="space-y-6">
-      <div className="flex items-center justify-center gap-2">
-        <Palette className="h-8 w-8 text-primary" />
-        <h1 className="text-4xl md:text-5xl font-bold leading-20 text-primary">
+      <div className="flex items-center justify-center gap-1">
+        <Image 
+        src={PaletteImage}
+        alt="palette-image"
+        className="size-10 md:size-14"
+        />
+        <h1 className="text-3xl md:text-5xl font-bold leading-20 text-primary ">
           Painting Report
         </h1>
       </div>
-      <div className="p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-xl flex flex-col md:flex-row justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-lg md:text-xl flex items-center gap-2">
-            <User2 className="h-5 w-5 text-primary" />
-            <span className="font-medium">Prepared for:</span> {booking.name}
-          </p>
-          <div className="text-lg md:text-xl flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            <span className="font-medium">Call Duration:</span>{" "}
-            {formatTime(booking.call_duration)}
-          </div>
-          <div className="text-lg md:text-xl flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            <span className="font-medium">Date:</span>{" "}
-            {new Date().toLocaleDateString()}
+      
+      <div className="flex flex-col md:flex-row gap-0 rounded-xl overflow-hidden bg-white shadow-sm">
+        {/* Report Info Section - Subtle and professional */}
+        <div className="flex-1 p-6 bg-gray-50/50">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <User2 className="h-4 w-4 text-gray-500" />
+              <span className="font-medium">Prepared for:</span>
+              <span>{booking.name}</span>
+            </div>
+
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <Clock className="h-4 w-4 text-gray-500" />
+              <span className="font-medium">Call Duration:</span>
+              <span>{formatTime(booking.call_duration)}</span>
+            </div>
+
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <Calendar className="h-4 w-4 text-gray-500" />
+              <span className="font-medium">Date:</span>
+              <span>{new Date().toLocaleDateString()}</span>
+            </div>
+
+            <div className="flex items-center gap-3 text-sm text-amber-600 font-medium">
+              <Clock className="h-4 w-4" />
+              <span>Expires in: 48h</span>
+            </div>
           </div>
         </div>
 
-        <div className="inline-flex items-center justify-center gap-3 md:justify-end mt-4 md:mt-0">
-          <Avatar className="size-12">
-            <AvatarImage src="/images/agent-avatar.png" />
-            <AvatarFallback>AN</AvatarFallback>
-          </Avatar>
-          <div className="text-left">
-            <p className="text-base md:text-lg font-medium">By: Annalia</p>
-            <p className="text-base md:text-lg text-muted-foreground">
-              HueLine Design Consultant
-            </p>
+        {/* Agent Section - Full height white background */}
+        <div className="md:w-64 p-6 bg-white  flex items-center">
+          <div className="flex items-center gap-3 w-full">
+            <Avatar className="size-10">
+              <AvatarImage src="/images/agent-avatar.png" />
+              <AvatarFallback>AN</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">By: Annalia</p>
+              <p className="text-xs text-gray-500 truncate">Hue-Line Design Consultant</p>
+            </div>
           </div>
         </div>
       </div>

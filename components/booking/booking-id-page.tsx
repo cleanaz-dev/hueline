@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
-import Logo from "@/public/images/logo-w-brand-min.png";
-import MascotImage from "@/public/images/mascot.png";
+import Logo from "@/public/images/logo-2--increased-brightness.png";
+import MascotImage from "@/public/images/mascot-new.png";
 import {
   Palette,
   Lightbulb,
@@ -70,7 +70,6 @@ function EmptyState({ onRefresh }: { onRefresh?: () => void }) {
                 width={120}
                 height={120}
               />
-
             </div>
             <div className="flex items-center">
               <ThemeChanger />
@@ -210,27 +209,26 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 />
               </Link>
             </div>
-            <div className="flex items-center">
-              <ThemeChanger />
-            </div>
           </div>
         </header>
 
-        <main className="max-w-6xl mx-auto px-2 md:px-12 space-y-12 py-8">
+        <main className="max-w-6xl mx-auto px-2 md:px-12 space-y-12 py-4 md:py-8">
           {/* Hero Section */}
           <BookingHero booking={booking} formatTime={formatTime} />
 
           {/* Project Vision */}
           <section>
-            <div className="bg-background rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
+            <div className="bg-background rounded-2xl shadow-sm py-8 px-6 md:px-8 md:py-10">
               <div className="flex items-center mb-6">
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
                   <Lightbulb className="h-5 w-5 text-primary" />
                 </div>
-                <h2 className="ml-3 text-2xl font-semibold ">Project Vision</h2>
+                <h2 className="ml-3 text-lg md:text-2xl font-semibold ">
+                  Project Vision
+                </h2>
               </div>
-              <div className="bg-primary/5 rounded-xl p-6 border border-primary/10">
-                <p className="text-lg italic leading-relaxed">
+              <div className="bg-primary/5 rounded-xl p-4 md:p-6 border border-primary/10">
+                <p className="md:text-lg italic leading-relaxed">
                   {`"${booking.prompt}"`}
                 </p>
               </div>
@@ -240,10 +238,10 @@ export default function BookingPage({ booking, onRefresh }: Props) {
           {/* Before & After Images */}
           <section className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl py-8 px-4 md:px-8 md:py-10">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2">
+              <h2 className="text-xl md:text-3xl font-bold md:mb-2">
                 Transformation Gallery
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-sm md:text-base text-muted-foreground">
                 Visualizing your space before and after
               </p>
             </div>
@@ -352,11 +350,11 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                   <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
                     <Sparkles className="h-5 w-5 text-primary" />
                   </div>
-                  <h2 className="ml-3 text-2xl font-semibold">
+                  <h2 className="ml-3 text-lg md:text-2xl font-semibold">
                     Design Analysis
                   </h2>
                 </div>
-                <div className="prose prose-lg max-w-none">
+                <div className="prose prose-lg max-w-none text-sm md:text-base leading-6 md:leading-normal">
                   <p>{booking.summary}</p>
                 </div>
               </div>
@@ -370,7 +368,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
                   <Palette className="h-5 w-5 text-primary" />
                 </div>
-                <h2 className="ml-3 text-2xl font-semibold">Paint Colors</h2>
+                <h2 className="ml-3 text-lg md:text-2xl font-semibold">Paint Colors</h2>
               </div>
 
               {/* Main Paint Colors */}
@@ -595,7 +593,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 asChild
               >
                 <Link href="/booking">
-                  Get HueLine AI for Your Business
+                  Get Hue-Line AI for Your Business
                   <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
@@ -619,7 +617,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
               />
             </div>
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Hue-Line Interior Design. All rights
+              © {new Date().getFullYear()} Hue-Line AI Voice Agent. All rights
               reserved.
             </p>
           </div>

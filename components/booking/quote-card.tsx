@@ -36,7 +36,7 @@ const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
     <div className="grid md:grid-cols-2 gap-6 mx-auto">
       {/* Coupon Card */}
       <Card className="border-2 border-dashed border-orange-400/70 bg-gradient-to-br from-orange-50 to-amber-50">
-        <CardContent className="p-6 text-center">
+        <CardContent className="md:p-6 text-center">
           <div className="mb-4">
             <div className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 py-1 rounded-full mb-2">
               <Timer className="h-4 w-4" />
@@ -87,7 +87,7 @@ const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
 
       {/* Quote Card */}
       <Card className="border-2 border-blue-400/70 bg-gradient-to-br from-blue-50 to-indigo-50">
-        <CardContent className="p-6">
+        <CardContent className="md:p-6">
           <div className="text-center mb-4">
             <div className="inline-flex items-center gap-2 bg-blue-500 text-white px-4 py-1 rounded-full mb-2">
               <FileText className="h-4 w-4" />
