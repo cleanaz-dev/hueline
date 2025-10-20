@@ -1,5 +1,3 @@
-//lib/query/index.ts
-
 import { prisma } from "../prisma";
 
 interface BookingData {
@@ -11,22 +9,25 @@ interface BookingData {
 export async function getClientByEmail(email: string) {
   return await prisma.formData.findUniqueOrThrow({
     where: {
-      email: email, // or using ES6 shorthand: { email }
+      email: email,
     },
   });
 }
 
-export async function saveBookingData(data: BookingData): Promise<void> {
-  if (!data?.phone) return; // null-guard only
+export async function saveBookingData(data: BookingData): Promise<boolean> {
+  if (!data?.phone) return false;
 
   const bookingExist = await prisma.bookingData.findFirst({
     where: { phone: data.phone },
   });
-  if (bookingExist) return;
+
+  if (bookingExist) return false; // Already exists, don't notify
 
   await prisma.bookingData.create({
     data: { name: data.name, phone: data.phone },
   });
+
+  return true; // New booking created
 }
 
 export async function getBookingData(): Promise<BookingData[]> {
