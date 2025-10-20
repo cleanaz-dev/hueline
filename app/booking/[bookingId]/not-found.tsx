@@ -3,7 +3,6 @@ import Image from "next/image";
 import Logo from "@/public/images/logo-2--increased-brightness.png";
 import MascotImage from "@/public/images/mascot-new.png";
 import { AlertCircle, ChevronRight, Home } from "lucide-react";
-import ThemeChanger from "@/hooks/use-theme-changer";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,9 +21,6 @@ export default function BookingNotFound() {
                 width={120}
                 height={120}
               />
-            </div>
-            <div className="flex items-center">
-              <ThemeChanger />
             </div>
           </div>
         </header>
@@ -65,7 +61,7 @@ export default function BookingNotFound() {
                 asChild
               >
                 <Link href="/booking">
-                  Book a New Consultation
+                  Get Hue-Line Now!
                   <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
@@ -82,7 +78,7 @@ export default function BookingNotFound() {
             <div className="bg-background/60 rounded-xl p-6 max-w-md mx-auto border border-primary/10">
               <p className="text-sm text-muted-foreground">
                 Design reports are temporarily stored and may expire after a period of time. 
-                If you believe this is an error, please contact support or create a new consultation.
+              
               </p>
             </div>
           </div>
@@ -94,14 +90,11 @@ export default function BookingNotFound() {
               <Image
                 src={Logo}
                 alt="HueLine Logo"
-                className="object-contain h-8 w-8"
+                className="object-contain w-20 md:w-32"
               />
-              <span className="text-lg font-medium italic text-primary">
-                HueLine
-              </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} HueLine Interior Design. All rights reserved.
+              © {new Date().getFullYear()} Hue-Line Interior Design. All rights reserved.
             </p>
           </div>
         </footer>
