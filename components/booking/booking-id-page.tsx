@@ -197,13 +197,13 @@ export default function BookingPage({ booking, onRefresh }: Props) {
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
         {/* Header with Logo */}
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm ">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-6 py-2 md:py-4 flex items-center justify-between">
             <div className="">
               <Link href="/" className="flex items-center space-x-2">
                 <Image
                   src={Logo}
                   alt="HueLine Logo"
-                  className="object-contain"
+                    className="object-contain w-20 md:w-[130px]"
                   width={130}
                   height={130}
                 />
@@ -269,7 +269,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
                       <div className="absolute top-4 left-0">
-                        <div className="text-white px-4 py-2 rounded-r-lg shadow-lg bg-card/10 font-semibold text-sm uppercase tracking-wide">
+                        <div className="text-white px-4 py-2 rounded-r-lg shadow-lg bg-card/25 font-semibold text-sm uppercase tracking-wide">
                           <span className="flex items-center gap-2">
                             Original {index + 1}
                           </span>
@@ -302,7 +302,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
                       <div className="absolute top-4 left-0">
-                        <div className="text-white px-4 py-2 rounded-r-lg bg-card/10 shadow-lg font-semibold text-sm uppercase tracking-wide">
+                        <div className="text-white px-4 py-2 rounded-r-lg bg-card/25 shadow-lg font-semibold text-sm uppercase tracking-wide">
                           <span className="flex items-center gap-2">
                             Design {index + 1}
                           </span>
