@@ -2,7 +2,7 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Logo from "@/public/images/logo3-2-min.png";
+import Logo from "@/public/images/logo-2--increased-brightness.png";
 import Image from "next/image";
 import { z } from "zod";
 
