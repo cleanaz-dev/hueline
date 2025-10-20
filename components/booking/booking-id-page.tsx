@@ -534,7 +534,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             onClose={() => setShowGenerateDialog(false)}
             selectedColor={selectedColor}
             phoneNumber={booking.phone || ""}
-            originalImages={booking.mockup_urls}
+            originalImages={booking.original_images}
             removeFurniture={removeFurniture}
           />
 

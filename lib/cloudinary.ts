@@ -11,7 +11,8 @@ export async function uploadToCloudinary(url: string, folder: string) {
     folder,
     transformation: [
       {
-        overlay: "watermark_hl_2"
+        overlay: "new-watermark",
+        opacity: 50
       }
     ]
   });
