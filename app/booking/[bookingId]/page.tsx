@@ -4,7 +4,7 @@ import { getBooking } from "@/lib/redis";
 import { saveBookingData } from "@/lib/query";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"; // Use your existing admin auth
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 
 type Props = {
   params: Promise<{
@@ -18,7 +18,7 @@ export default async function page({ params }: Props) {
   const booking = await getBooking(bookingId);
   
   if (!booking) {
-    redirect("/");
+    notFound();
   }
   
   const session = await getServerSession(authOptions);
