@@ -1,4 +1,5 @@
 import { prisma } from "../prisma";
+import { sendBookingNotification } from "../slack";
 
 interface BookingData {
   name: string;
@@ -25,6 +26,12 @@ export async function saveBookingData(data: BookingData): Promise<boolean> {
 
   await prisma.bookingData.create({
     data: { name: data.name, phone: data.phone },
+  });
+
+  // 🔥 Send Slack notification after creating new booking
+  await sendBookingNotification({
+    name: data.name,
+    phone: data.phone,
   });
 
   return true; // New booking created

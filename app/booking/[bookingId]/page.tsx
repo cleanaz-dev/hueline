@@ -2,9 +2,8 @@ import BookingWrapper from "@/components/booking/booking-wrapper";
 import React from "react";
 import { getBooking } from "@/lib/redis";
 import { saveBookingData } from "@/lib/query";
-import { sendBookingNotification } from "@/lib/slack";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/auth"; // Use your existing admin auth
 import { redirect, notFound } from "next/navigation";
 
 type Props = {
@@ -29,20 +28,6 @@ export default async function page({ params }: Props) {
     redirect(`/booking/login?bookingId=${bookingId}`);
   }
 
-  // Save to database and check if it's a new booking
-  const isNewBooking = await saveBookingData(booking);
-  
-  // 🔥 Only send Slack notification for NEW bookings
-  if (isNewBooking) {
-    await sendBookingNotification({
-      bookingId,
-      name: booking.name,
-      phone: booking.phone,
-      prompt: booking.prompt,
-      mockup_urls: booking.mockup_urls,
-      paint_colors: booking.paint_colors,
-    });
-  }
-  
+  await saveBookingData(booking);
   return <BookingWrapper booking={booking} />;
 }
