@@ -49,7 +49,7 @@ export function BookingHero({ booking, formatTime }: BookingHeroProps) {
 
             <div className="flex items-center gap-3 text-sm text-amber-600 font-medium">
               <Clock className="h-4 w-4" />
-              <span>Expires in: 48h</span>
+              <span>Expires in: 72h</span>
             </div>
           </div>
         </div>
