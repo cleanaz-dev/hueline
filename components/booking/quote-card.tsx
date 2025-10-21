@@ -17,7 +17,7 @@ type BookingProps = {
 };
 
 const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
-  const [timeLeft, setTimeLeft] = useState(48 * 60 * 60); // 48 hours in seconds = 172800
+  const [timeLeft, setTimeLeft] = useState(72 * 60 * 60); // 48 hours in seconds = 172800
 
   useEffect(() => {
     const timer = setInterval(() => {
