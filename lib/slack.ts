@@ -50,3 +50,70 @@ export async function sendBookingNotification(booking: {
     console.error("Failed to send Slack notification:", error);
   }
 }
+
+
+export async function sendCalendlyBooking(booking: {
+  name: string;
+  email: string;
+  eventType: string;
+  scheduledTime: string;
+}) {
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+  if (!webhookUrl) {
+    console.warn("SLACK_WEBHOOK_URL not configured");
+    return;
+  }
+
+  const message = {
+    blocks: [
+      {
+        type: "header",
+        text: {
+          type: "plain_text",
+          text: "📅 Calendly Booking",
+          emoji: true,
+        },
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: `*Name:*\n${booking.name}`,
+          },
+          {
+            type: "mrkdwn", 
+            text: `*Email:*\n${booking.email}`,
+          },
+        ],
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: `*Event:*\n${booking.eventType}`,
+          },
+          {
+            type: "mrkdwn",
+            text: `*Time:*\n${booking.scheduledTime}`,
+          },
+        ],
+      },
+    ],
+  };
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(message),
+    });
+
+    if (!response.ok) {
+      console.error("Slack webhook failed:", response.statusText);
+    }
+  } catch (error) {
+    console.error("Failed to send Slack notification:", error);
+  }
+}
