@@ -7,13 +7,13 @@ export async function POST(request: Request) {
   const body = await request.json();
   console.log('📅 Calendly Webhook Received:', body);
   
-  // Extract data from Calendly payload and send to Slack
-  if (body.payload?.invitee && body.payload?.event) {
+  // FIXED: Use the actual payload structure from your logs
+  if (body.payload) {
     await sendCalendlyBooking({
-      name: body.payload.invitee.name || 'Unknown',
-      email: body.payload.invitee.email,
-      eventType: body.payload.event_type.name,
-      scheduledTime: new Date(body.payload.scheduled_time).toLocaleString()
+      name: body.payload.name || 'Unknown',
+      email: body.payload.email,
+      eventType: body.payload.scheduled_event?.name || 'Meeting',
+      scheduledTime: new Date(body.payload.scheduled_event?.start_time).toLocaleString() || 'Not scheduled'
     });
   }
   
