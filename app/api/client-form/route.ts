@@ -1,3 +1,5 @@
+// api/client-form
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clientIntakeHandler } from "@/lib/handlers/client-intake-handler";
@@ -7,9 +9,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const { email, company, phone, features, hours, name, ...rest } = body;
+    const { email, company, phone, features, hours, name, crm, ...rest } = body;
 
-    console.log("body", body);
+    console.log("📦 body", body);
 
     if (!email || !company || !phone || !name) {
       return NextResponse.json(
@@ -23,13 +25,13 @@ export async function POST(req: Request) {
 
     const form = await prisma.formData.upsert({
       where: { email },
-      update: { company, phone, features, hours, name, config },
-      create: { email, company, phone, features, hours, name, config },
+      update: { company, phone, features, hours, name, crm, config },
+      create: { email, company, phone, features, hours, name, crm, config },
     });
 
-    console.log("config:", config);
+    console.log("🔧 config:", config);
 
-    // return NextResponse.json({ message: "OK!" }, { status: 200 });
+    return NextResponse.json({ message: "OK!" }, { status: 200 });
 
     // Pass the structured data with config to the handler
     await clientIntakeHandler({
@@ -39,6 +41,7 @@ export async function POST(req: Request) {
       features,
       hours,
       name,
+      crm,
       config,
     });
 

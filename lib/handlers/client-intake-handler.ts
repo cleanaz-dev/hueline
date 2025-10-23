@@ -6,7 +6,6 @@ import { ClientIntakeEmail } from "../config/email-config";
 
 interface ClientConfig {
   twilioNumber?: string;
-  crm?: string;
   transferNumber?: string;
   subDomain?: string;
   voiceGender?: string;
@@ -22,6 +21,7 @@ interface ClientIntakeData {
   phone?: string;
   features: string[];
   hours?: string;
+  crm: string;
   config: ClientConfig;
 }
 
@@ -36,6 +36,7 @@ export async function clientIntakeHandler(data: ClientIntakeData) {
         phone: data.phone || "",
         features: data.features,
         hours: data.hours || "",
+        crm: data.crm || "",
         config: data.config,
       })
     );

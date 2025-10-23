@@ -1,9 +1,9 @@
-// lib/handlers/make-handler.ts
 export async function MakeHandler({
   company,
   customerName,
   customerEmail,
   phone,
+  crm,
   stripeID,
   voiceAIInfo,
   plan,
@@ -12,10 +12,11 @@ export async function MakeHandler({
   customerName: string;
   customerEmail: string;
   phone?: string;
+  crm: string;
   stripeID: string;
   voiceAIInfo?: string;
   plan?: string;
-}) {
+}): Promise<{ project_url: string }> { // Add return type
   const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL!;
   
   try {
@@ -29,6 +30,7 @@ export async function MakeHandler({
         customerName,
         customerEmail,
         phone,
+        crm,
         stripeID,
         voiceAIInfo,
         plan,
@@ -38,10 +40,17 @@ export async function MakeHandler({
     if (!res.ok) {
       const text = await res.text();
       console.error('❌ Make webhook failed:', text);
-    } else {
-      console.log(`✅ Sent client ${company} to Make`);
+      throw new Error(`Make webhook failed: ${res.status}`);
     }
+
+    // Parse the JSON response from Make
+    const result = await res.json();
+    console.log(`✅ Sent client ${company} to Make, project URL: ${result.project_url}`);
+    
+    return result; // Return the parsed response
+
   } catch (err) {
     console.error('❌ Error sending to Make:', err);
+    throw err; // Re-throw to handle in the calling function
   }
 }

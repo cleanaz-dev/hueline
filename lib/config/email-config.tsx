@@ -16,7 +16,6 @@ import {
 } from "@react-email/components";
 import { styles } from "./email-styles";
 import { StripePaymentLinks } from "@/lib/config/strilpe-config";
-import { StringToBoolean } from "class-variance-authority/types";
 
 const LOGO_URL =
   "https://res.cloudinary.com/dmllgn0t7/image/upload/v1760295280/logo-2--increased-brightness_wdn9il.png";
@@ -71,6 +70,7 @@ interface ClientIntakeProps {
   phone: string;
   features: string[];
   hours: string;
+  crm: string;
   config: ClientConfig;
 }
 
@@ -215,6 +215,7 @@ export function ClientIntakeEmail({
   phone,
   features,
   hours,
+  crm,
   config,
 }: ClientIntakeProps) {
   return (
@@ -272,7 +273,7 @@ export function ClientIntakeEmail({
                 <strong>Subdomain:</strong> {config.subDomain}
               </li>
               <li>
-                <strong>CRM:</strong> {config.crm}
+                <strong>CRM:</strong> {crm} {/* ← Changed from config.crm to crm prop */}
               </li>
             </ul>
 
@@ -314,6 +315,8 @@ export function ClientIntakeEmail({
               <strong>Phone:</strong> {phone || "N/A"}
               <br />
               <strong>Company:</strong> {company}
+              <br />
+              <strong>CRM Platform:</strong> {crm} {/* ← Added CRM here too for clarity */}
             </Text>
           </Section>
 
@@ -359,7 +362,6 @@ export function ClientIntakeEmail({
     </Html>
   );
 }
-
 // After Completing Working Voice Agent
 export function SubscriptionLink({
   name,

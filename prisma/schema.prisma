@@ -15,18 +15,19 @@ datasource db {
 }
 
 model FormData {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  email       String    @unique
-  company     String
-  phone       String
-  features    String[]
-  config      Json?
-  hours       String
-  name        String
-  stage       ClientStage @default(INTAKE_FORM_COMPLETE)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  activities  FormActivity[]
+  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  email      String         @unique
+  company    String
+  phone      String
+  features   String[]
+  config     Json?
+  hours      String
+  name       String
+  crm        String
+  stage      ClientStage    @default(INTAKE_FORM_COMPLETE)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  activities FormActivity[]
 }
 
 enum ClientStage {
@@ -37,7 +38,6 @@ enum ClientStage {
   DEMO_APPROVED
   JOB_COMPLETED
 }
-
 
 model BookingData {
   id        String     @id @default(auto()) @map("_id") @db.ObjectId
@@ -56,10 +56,10 @@ enum DemoStatus {
 }
 
 model FormActivity {
-  id        String      @id @default(auto()) @map("_id") @db.ObjectId
-  formId    String      @db.ObjectId
-  form      FormData    @relation(fields: [formId], references: [id], onDelete: Cascade)
-  action    String      // Simple text: "Sent setup link", "Fee paid", etc.
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  formId    String   @db.ObjectId
+  form      FormData @relation(fields: [formId], references: [id], onDelete: Cascade)
+  action    String // Simple text: "Sent setup link", "Fee paid", etc.
   details   String?
-  createdAt DateTime    @default(now())
+  createdAt DateTime @default(now())
 }
