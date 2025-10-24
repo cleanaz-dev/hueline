@@ -1,22 +1,49 @@
 // app/api/test/asana/route.ts
 import { NextResponse } from 'next/server';
 
+interface EnumOption {
+  gid: string;
+  name: string;
+  color: string;
+}
+
+interface CustomField {
+  gid: string;
+  name: string;
+  resource_subtype: string;
+  enum_options?: EnumOption[];
+}
+
+interface AsanaField {
+  custom_field: CustomField;
+}
+
+interface FieldMapEntry {
+  id: string;
+  type: string;
+  options: Array<{ id: string; name: string; color: string }> | null;
+}
+
+interface FieldMap {
+  [key: string]: FieldMapEntry;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     console.log('📦 Raw Asana data received');
 
     // Process fields by their names since they're consistent
-    const fieldMap: any = {};
+    const fieldMap: FieldMap = {};
     
-    body.data.forEach((field: any) => {
+    (body.data as AsanaField[]).forEach((field) => {
       const customField = field.custom_field;
       const fieldName = customField.name;
       
       fieldMap[fieldName] = {
         id: customField.gid,
         type: customField.resource_subtype,
-        options: customField.enum_options ? customField.enum_options.map((opt: any) => ({
+        options: customField.enum_options ? customField.enum_options.map((opt) => ({
           id: opt.gid,
           name: opt.name,
           color: opt.color

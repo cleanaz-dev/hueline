@@ -1,5 +1,5 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Clock, User2, Palette, Calendar } from "lucide-react";
+import { Clock, User2, Calendar } from "lucide-react";
 import Image from "next/image";
 import PaletteImage from "@/public/images/bucket-no-bg.png"
 
