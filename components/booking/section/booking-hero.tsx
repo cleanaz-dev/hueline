@@ -27,27 +27,27 @@ export function BookingHero({ booking, formatTime }: BookingHeroProps) {
       
       <div className="flex flex-col md:flex-row gap-0 rounded-xl overflow-hidden bg-white shadow-sm">
         {/* Report Info Section - Subtle and professional */}
-        <div className="flex-1 p-6 bg-gray-50/50">
+        <div className="flex-1 p-6 bg-gray-50">
           <div className="space-y-4">
-            <div className="flex items-center gap-3 text-sm text-gray-600">
+            <div className="flex items-center gap-3 text-gray-600">
               <User2 className="h-4 w-4 text-gray-500" />
               <span className="font-medium">Prepared for:</span>
               <span>{booking.name}</span>
             </div>
 
-            <div className="flex items-center gap-3 text-sm text-gray-600">
+            <div className="flex items-center gap-3 text-gray-600">
               <Clock className="h-4 w-4 text-gray-500" />
               <span className="font-medium">Call Duration:</span>
               <span>{formatTime(booking.call_duration)}</span>
             </div>
 
-            <div className="flex items-center gap-3 text-sm text-gray-600">
+            <div className="flex items-center gap-3 text-gray-600">
               <Calendar className="h-4 w-4 text-gray-500" />
               <span className="font-medium">Date:</span>
               <span>{new Date().toLocaleDateString()}</span>
             </div>
 
-            <div className="flex items-center gap-3 text-sm text-amber-600 font-medium">
+            <div className="flex items-center gap-3  text-amber-600 font-medium">
               <Clock className="h-4 w-4" />
               <span>Expires in: 72h</span>
             </div>

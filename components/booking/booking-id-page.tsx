@@ -203,7 +203,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 <Image
                   src={Logo}
                   alt="HueLine Logo"
-                    className="object-contain w-20 md:w-[130px]"
+                  className="object-contain w-20 md:w-[130px]"
                   width={130}
                   height={130}
                 />
@@ -256,27 +256,24 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                   <h3 className="ml-2 text-xl font-semibold">Current Space</h3>
                 </div>
                 <div className="space-y-6">
-                  {booking.original_images.map((image, index) => (
-                    <div
-                      key={index}
-                      className="relative overflow-hidden rounded-xl shadow-sm border border-primary/10"
-                    >
+                  {booking.original_images.length > 0 && (
+                    <div className="relative overflow-hidden rounded-xl shadow-sm border border-primary/10">
                       <Image
-                        src={image}
-                        alt={`Original image ${index + 1}`}
+                        src={booking.original_images[0]}
+                        alt="Original image 1"
                         width={600}
                         height={400}
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
                       <div className="absolute top-4 left-0">
-                        <div className="text-white px-4 py-2 rounded-r-lg shadow-lg bg-card/25 font-semibold text-sm uppercase tracking-wide">
+                        <div className="text-white px-4 py-2 rounded-r-lg shadow-lg bg-primary font-semibold text-xs uppercase tracking-wide">
                           <span className="flex items-center gap-2">
-                            Original {index + 1}
+                            Original 1
                           </span>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -302,7 +299,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
                       <div className="absolute top-4 left-0">
-                        <div className="text-white px-4 py-2 rounded-r-lg bg-card/25 shadow-lg font-semibold text-sm uppercase tracking-wide">
+                        <div className="text-white px-4 py-2 rounded-r-lg shadow-lg font-semibold text-xs uppercase tracking-wide bg-primary">
                           <span className="flex items-center gap-2">
                             Design {index + 1}
                           </span>
@@ -329,7 +326,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                         className="w-full h-72 object-cover transition-transform duration-1000 hover:scale-105"
                       />
                       <div className="absolute top-4 left-0">
-                        <div className="bg-gradient-to-r from-red-500/50 via-yellow-300/50 to-indigo-500/50 text-white px-4 py-2 rounded-r-lg shadow-lg font-semibold text-sm uppercase tracking-wide">
+                        <div className="bg-gradient-to-r from-red-500/50 via-yellow-300/50 to-indigo-500/50 text-white px-4 py-2 rounded-r-lg shadow-lg font-semibold text-xs uppercase tracking-wide">
                           <span className="flex items-center gap-2">
                             Hue Engine
                           </span>
@@ -368,7 +365,9 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                 <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
                   <Palette className="h-5 w-5 text-primary" />
                 </div>
-                <h2 className="ml-3 text-lg md:text-2xl font-semibold">Paint Colors</h2>
+                <h2 className="ml-3 text-lg md:text-2xl font-semibold">
+                  Paint Colors
+                </h2>
               </div>
 
               {/* Main Paint Colors */}
