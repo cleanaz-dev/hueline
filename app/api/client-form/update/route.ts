@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const { email, company, phone, features, hours, name, ...rest } = body;
+    const { email, company, phone, features, hours, name, crm, ...rest } = body;
 
     if (!email || !company || !phone || !name) {
       return NextResponse.json(
@@ -20,8 +20,8 @@ export async function POST(req: Request) {
 
     const form = await prisma.formData.upsert({
       where: { email },
-      update: { company, phone, features, hours, name, config },
-      create: { email, company, phone, features, hours, name, config },
+      update: { company, phone, features, hours, crm, name, config },
+      create: { email, company, phone, features, crm, hours, name, config },
     });
 
     await updateActivity(email, "Updated Client Form")
