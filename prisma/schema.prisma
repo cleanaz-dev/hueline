@@ -63,3 +63,15 @@ model FormActivity {
   details   String?
   createdAt DateTime @default(now())
 }
+
+model Subdomain {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  slug         String   @unique
+  projectUrl   String
+  logo         String?
+  splashScreen String?
+  theme        Json?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

@@ -21,18 +21,29 @@ interface AsanaField {
 interface FieldMapEntry {
   id: string;
   type: string;
-  options: Array<{ id: string; name: string; color: string }> | null;
+  notStartedId?: string; // Just the first option ID
 }
 
 interface FieldMap {
   [key: string]: FieldMapEntry;
 }
 
+const apiKey = process.env.ASANA_MAKE_API_KEY;
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    console.log('📦 Raw Asana data received');
+    // Check API key from header
+    const authHeader = request.headers.get('x-api-key');
+    
+    if (!authHeader || authHeader !== apiKey) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
+    const body = await request.json();
+  
     // Process fields by their names since they're consistent
     const fieldMap: FieldMap = {};
     
@@ -43,31 +54,25 @@ export async function POST(request: Request) {
       fieldMap[fieldName] = {
         id: customField.gid,
         type: customField.resource_subtype,
-        options: customField.enum_options ? customField.enum_options.map((opt) => ({
-          id: opt.gid,
-          name: opt.name,
-          color: opt.color
-        })) : null
+        // Only grab first option ID (Not Started) for enum fields
+        notStartedId: customField.enum_options?.[0]?.gid
       };
     });
 
-    console.log('🔄 Processed field map:', fieldMap);
+    console.log('🔄 Processed field map:', JSON.stringify(fieldMap, null, 2));
 
     // Return organized data that Make can use easily
     return NextResponse.json({ 
       success: true,
-      fields: fieldMap,
-      // Also return as array for different use cases
-      fieldArray: Object.keys(fieldMap).map(name => ({
-        name,
-        ...fieldMap[name]
-      })),
+      statusFieldId: fieldMap['Status']?.id,
+      notStartedId: fieldMap['Status']?.notStartedId,
       // Quick access to specific field IDs
       fieldIds: {
         companyInfo: fieldMap['Company Info']?.id,
         voiceAIConfig: fieldMap['Voice AI Configuration']?.id,
         crmPlatform: fieldMap['CRM Platform']?.id,
-        status: fieldMap['Status']?.id
+        status: fieldMap['Status']?.id,
+        notStarted: fieldMap['Status']?.notStartedId
       }
     });
     
