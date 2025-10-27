@@ -1,5 +1,10 @@
 // app/subdomains/[subdomain]/booking/[bookingId]/page.tsx
 
+import { SubDomainWrapper } from "@/components/subdomains/subdomain-wrapper";
+import { getSubdomainData } from "@/lib/query";
+import { getSubBooking } from "@/lib/redis";
+import { notFound } from "next/navigation";
+
 interface Props {
   params: Promise<{ 
     subdomain: string;
@@ -9,15 +14,16 @@ interface Props {
 
 export default async function BookingPage({ params }: Props) {
   const { subdomain, bookingId } = await params;
-  
-  // TODO: Fetch booking from Redis
-  // const booking = await getBooking(subdomain, bookingId);
-  
+  console.log("subdomain:", subdomain, "bookingId:", bookingId)
+  const subDomainData = await getSubdomainData(subdomain)
+  if (!subDomainData) notFound()
+  console.log("👀 Subdomain Data:", subDomainData)
+  const subBookingData = await getSubBooking(subdomain, bookingId)
+  if (!subBookingData) notFound()
+    console.log("🎯 Subdomain Booking Data:", subDomainData)
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold">Booking Details</h1>
-      <p>Subdomain: {subdomain}</p>
-      <p>Booking ID: {bookingId}</p>
+    <div>
+      <SubDomainWrapper booking={subBookingData} subdomain={subDomainData} />
     </div>
   );
 }

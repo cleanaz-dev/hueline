@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
     console.log("🔧 config:", config);
 
-    return NextResponse.json({ message: "OK!" }, { status: 200 });
+    // return NextResponse.json({ message: "OK!" }, { status: 200 });
 
     // Pass the structured data with config to the handler
     await clientIntakeHandler({
@@ -70,6 +70,12 @@ export async function GET(req: Request) {
       where: { email },
       include: {
         activities: true,
+        subdomain: {
+          select: {
+            logo: true,
+            splashScreen: true
+          }
+        }
       },
     });
 

@@ -33,7 +33,8 @@ export async function getRedisClient() {
 
 const keys = {
   sentImages: (phoneNumber: string) => `sentImages:${phoneNumber}`,
-  booking: (phoneNumber: string) => `booking:${phoneNumber}`
+  booking: (phoneNumber: string) => `booking:${phoneNumber}`,
+  subBooking: (subdomain: string, phoneNumber: string ) => `booking:${subdomain}:${phoneNumber}`
 }
 
 export async function pushImageUrl(phoneNumber: string, url: string, expirationSeconds = 3600) {
@@ -78,4 +79,17 @@ export async function updateBookingWithAltMockup(phoneNumber: string, altMockupU
   logWithTime(`✅ Updated booking with alt mockup for ${phoneNumber}`);
   
   return bookingData;
+}
+
+export async function getSubBooking(subdomain: string,phoneNumber: string) {
+  const client = await getRedisClient()
+  const key = keys.subBooking(subdomain,phoneNumber)
+  const data  = await client.get(key)
+
+  if (!data) {
+    return null
+  }
+
+ return JSON.parse(data)
+
 }

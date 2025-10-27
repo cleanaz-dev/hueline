@@ -2,17 +2,16 @@
 import { transporter } from "../mailer";
 import { render } from "@react-email/render";
 import { ClientIntakeEmail } from "../config/email-config";
-
+import { prisma } from "../prisma";
 
 interface ClientConfig {
   twilioNumber?: string;
   transferNumber?: string;
-  subDomain?: string;
+  subDomain: string;
   voiceGender?: string;
   voiceName?: string;
-  [key: string]: string | undefined; // Add index signature
+  [key: string]: string | undefined;
 }
-
 
 interface ClientIntakeData {
   name: string;
@@ -50,10 +49,20 @@ export async function clientIntakeHandler(data: ClientIntakeData) {
     });
 
     console.log(`✅ Client intake email sent to ${data.email}`);
+
+    // Create Sub Domain Data
+    const subdomain = await prisma.subdomain.create({
+      data: {
+        slug: data.config.subDomain,
+        companyName: data.company,
+      }
+    });
     
-    return { success: true };
+    console.log(`✅ Created subdomain: ${subdomain.slug}`);
+    
+    return { success: true, subdomain };
   } catch (error) {
-    console.error("❌ Error sending client intake email:", error);
-    throw new Error("Failed to send client intake email");
+    console.error("❌ Error in client intake handler:", error);
+    throw new Error("Failed to process client intake");
   }
 }

@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
         destination: '/booking/:tel',
         permanent: false,
       },
+      // Short URL for subdomain bookings
+      {
+        source: '/b/:bookingId',
+        destination: '/booking/:bookingId',
+        permanent: false,
+      },
     ];
   },
   images: {

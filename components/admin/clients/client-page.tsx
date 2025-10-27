@@ -17,6 +17,7 @@ import { BookingTable } from "./booking-table";
 import { ClientStages } from "./client-stages";
 import { ClientConfigSection } from "./client-config-section";
 import { ClientInformationSection } from "./client-information-section";
+import { ClientUISection } from "./client-ui-section";
 
 // ------------------------------
 // Types
@@ -32,7 +33,6 @@ interface ClientConfig {
   [key: string]: string | undefined; // Add index signature
 }
 
-
 interface ClientData {
   id: string;
   name: string;
@@ -43,7 +43,12 @@ interface ClientData {
   hours?: string;
   stage: string;
   activities: FormActivity[];
-  config?: ClientConfig
+  config?: ClientConfig;
+  subdomain?: {
+    // Change from logoUrl/splashScreenUrl to nested subdomain
+    logo?: string;
+    splashScreen?: string;
+  };
 }
 
 interface FormActivity {
@@ -112,6 +117,8 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
       setLoading(false);
     }
   };
+
+  console.log("client data:", data);
 
   const saveClient = async (): Promise<void> => {
     if (!data) return;
@@ -272,10 +279,32 @@ export default function ClientPage({ bookingData }: ClientPageProps) {
 
                 <ClientConfigSection
                   config={data.config}
-                  onConfigChange={(newConfig) => handleDataChange({ config: newConfig })}
+                  onConfigChange={(newConfig) =>
+                    handleDataChange({ config: newConfig })
+                  }
                   disabled={saving}
                 />
-
+                <ClientUISection
+                  logoUrl={data.subdomain?.logo || ""}
+                  splashScreenUrl={data.subdomain?.splashScreen || ""}
+                  onLogoUrlChange={(url) =>
+                    handleDataChange({
+                      subdomain: {
+                        ...data.subdomain,
+                        logo: url,
+                      },
+                    })
+                  }
+                  onSplashScreenUrlChange={(url) =>
+                    handleDataChange({
+                      subdomain: {
+                        ...data.subdomain,
+                        splashScreen: url,
+                      },
+                    })
+                  }
+                  disabled={saving}
+                />
                 <Button
                   type="submit"
                   disabled={saving}

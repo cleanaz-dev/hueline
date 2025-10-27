@@ -15,19 +15,21 @@ datasource db {
 }
 
 model FormData {
-  id         String         @id @default(auto()) @map("_id") @db.ObjectId
-  email      String         @unique
-  company    String
-  phone      String
-  features   String[]
-  config     Json?
-  hours      String
-  name       String
-  crm        String
-  stage      ClientStage    @default(INTAKE_FORM_COMPLETE)
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  activities FormActivity[]
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  email       String         @unique
+  company     String
+  phone       String
+  features    String[]
+  config      Json?
+  hours       String
+  name        String
+  crm         String
+  stage       ClientStage    @default(INTAKE_FORM_COMPLETE)
+  subdomainId String?        @unique @db.ObjectId
+  subdomain   Subdomain?     @relation(fields: [subdomainId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  activities  FormActivity[]
 }
 
 enum ClientStage {
@@ -65,13 +67,17 @@ model FormActivity {
 }
 
 model Subdomain {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  slug         String   @unique
-  projectUrl   String
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  slug         String    @unique
+  companyName  String?
+  projectUrl   String?
   logo         String?
+  logoWidth    Int?      @default(130)
+  logoHeight   Int?      @default(130)
   splashScreen String?
   theme        Json?
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  FormData     FormData?
 }

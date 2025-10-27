@@ -7,6 +7,20 @@ interface BookingData {
   createdAt?: Date;
 }
 
+interface SubDomainData {
+  slug: string;
+  projectUrl?: string;
+  logo?: string;
+  splashScreen?: string;
+  theme?: {
+    primaryColor?: string;
+    secondaryColor?: string;
+    font?: string;
+    [key: string]: any;
+  };
+}
+
+
 export async function getClientByEmail(email: string) {
   return await prisma.formData.findUniqueOrThrow({
     where: {
@@ -54,3 +68,21 @@ export async function updateActivity(email: string, action: string) {
     },
   });
 }
+
+export async function getSubdomainData(slug: string): Promise<SubDomainData | null> {
+  const subdomain = await prisma.subdomain.findUnique({
+    where: { slug, active: true }
+  });
+  
+  if (!subdomain) return null;
+  
+  return {
+    slug: subdomain.slug,
+    projectUrl: subdomain.projectUrl || "",
+    logo: subdomain.logo ?? undefined,
+    splashScreen: subdomain.splashScreen ?? undefined,
+    theme: subdomain.theme as SubDomainData['theme']
+  };
+}
+
+
