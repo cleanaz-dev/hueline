@@ -37,7 +37,7 @@ export async function saveBookingData(data: BookingData): Promise<boolean> {
   });
 
   if (bookingExist) return false; // Already exists, don't notify
-
+  // console.log("👀 User Does Not Exist In DB...Creating")
   await prisma.bookingData.create({
     data: { name: data.name, phone: data.phone },
   });

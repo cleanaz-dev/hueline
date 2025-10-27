@@ -475,8 +475,9 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                             className="mt-0.5"
                           />
                         </div>
+                        
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-32 mb-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-8 mb-6">
                           {booking.alternate_colors.map((color, index) => (
                             <button
                               key={index}
@@ -497,7 +498,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                                     {color.name}
                                   </p>
                                   <p className="text-xs text-muted-foreground font-mono">
-                                    {color.hex}
+                                    {color.hex} - {color.ral}
                                   </p>
                                 </div>
                               </div>
