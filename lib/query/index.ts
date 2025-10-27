@@ -8,6 +8,7 @@ interface BookingData {
 }
 
 interface SubDomainData {
+  companyName: string;
   slug: string;
   projectUrl?: string;
   logo?: string;
@@ -77,6 +78,7 @@ export async function getSubdomainData(slug: string): Promise<SubDomainData | nu
   if (!subdomain) return null;
   
   return {
+    companyName: subdomain.companyName || "",
     slug: subdomain.slug,
     projectUrl: subdomain.projectUrl || "",
     logo: subdomain.logo ?? undefined,
