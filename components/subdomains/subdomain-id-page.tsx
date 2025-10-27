@@ -54,7 +54,7 @@ interface SubDomainData {
     primaryColor?: string;
     secondaryColor?: string;
     font?: string;
-    [key: string]: any;
+    [key: string]: string | undefined;
   };
 }
 

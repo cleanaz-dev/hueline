@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
+import Image from "next/image";
 
 interface ClientUISectionProps {
   logoUrl?: string;
@@ -63,13 +64,14 @@ export function ClientUISection({
               <div className="mt-2">
                 <p className="text-sm text-muted-foreground mb-2">Logo Preview:</p>
                 <div className="border rounded-lg p-4 flex justify-center">
-                  <img 
+                  <Image
                     src={logoUrl} 
                     alt="Logo preview" 
                     className="max-h-16 max-w-full object-contain"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
+                    priority
                   />
                 </div>
               </div>
@@ -89,13 +91,14 @@ export function ClientUISection({
               <div className="mt-2">
                 <p className="text-sm text-muted-foreground mb-2">Splash Screen Preview:</p>
                 <div className="border rounded-lg p-4 flex justify-center">
-                  <img 
+                  <Image
                     src={splashScreenUrl} 
                     alt="Splash screen preview" 
                     className="max-h-32 max-w-full object-contain"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
+                    priority
                   />
                 </div>
               </div>
