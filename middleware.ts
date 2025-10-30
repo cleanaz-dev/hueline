@@ -1,35 +1,28 @@
 import { NextResponse, NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const { pathname, hostname } = request.nextUrl;
-
-  // ✅ Bypass all API routes and internal assets
-  if (
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/_next') ||
-    pathname === '/favicon.ico'
-  ) {
-    return NextResponse.next();
-  }
-
+  const hostname = request.headers.get('host') || '';
   const subdomain = hostname.split('.')[0];
+  
+  console.log('🔍 Hostname:', hostname);
+  console.log('🔍 Subdomain:', subdomain);
+  console.log('🔍 Pathname:', request.nextUrl.pathname);
 
-  // ✅ Bypass local and main domain
+  // Skip main domain (but allow subdomains on localhost)
   if (
-    hostname.includes('localhost') ||
-    hostname.includes('ngrok') ||
-    hostname === 'hue-line.com' ||
-    hostname === 'www.hue-line.com'
+    subdomain === 'www' ||
+    hostname === 'hueline.com' ||
+    hostname === 'localhost:3000'  // ← Change to exact match
   ) {
     return NextResponse.next();
   }
 
-  // 🧭 Rewrite subdomains only
   const url = request.nextUrl.clone();
   url.pathname = `/subdomains/${subdomain}${url.pathname}`;
+  console.log('🔍 REWRITING TO:', url.pathname);
   return NextResponse.rewrite(url);
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
