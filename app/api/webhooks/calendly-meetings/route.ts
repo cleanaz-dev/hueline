@@ -5,7 +5,7 @@ import { sendCalendlyBooking } from '@/lib/slack';
 export async function POST(request: Request) {
   console.log('🚨 WEBHOOK HIT - CALENDLY');
   const body = await request.json();
-  console.log('📅 Calendly Webhook Received:', body);
+  console.log('📅 FULL CALENDLY PAYLOAD:', JSON.stringify(body, null, 2));
   
   // FIXED: Use the actual payload structure from your logs
   if (body.payload) {
