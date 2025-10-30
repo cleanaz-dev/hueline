@@ -1,4 +1,4 @@
-// app/api/webhooks/calendly/route.ts
+// app/api/webhooks/calendly-meetings/route.ts
 import { NextResponse } from 'next/server';
 import { sendCalendlyBooking } from '@/lib/slack';
 
