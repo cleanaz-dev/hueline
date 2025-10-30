@@ -1,6 +1,6 @@
 // app/api/webhooks/calendly-meetings/route.ts
 import { NextResponse } from 'next/server';
-import { sendCalendlyBooking } from '@/lib/slack';
+import { sendCalendlyBooking } from '@/lib/slack/send-calendly-booking';
 
 export async function POST(request: Request) {
   console.log('🚨 WEBHOOK HIT - CALENDLY');

@@ -1,5 +1,5 @@
 import { prisma } from "../prisma";
-import { sendBookingNotification } from "../slack";
+import { sendBookingNotification } from "../slack/send-booking-notification";
 
 interface BookingData {
   name: string;
