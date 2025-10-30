@@ -9,12 +9,7 @@ export async function POST(request: Request) {
   
   // FIXED: Use the actual payload structure from your logs
   if (body.payload) {
-    await sendCalendlyBooking({
-      name: body.payload.name || 'Unknown',
-      email: body.payload.email,
-      eventType: body.payload.scheduled_event?.name || 'Meeting',
-      scheduledTime: new Date(body.payload.scheduled_event?.start_time).toLocaleString() || 'Not scheduled'
-    });
+   await sendCalendlyBooking(body.payload);
   }
   
   return NextResponse.json({ received: true });

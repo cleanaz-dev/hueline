@@ -54,17 +54,40 @@ export async function sendBookingNotification(booking: {
 }
 
 // WHEN CALENDLY IS BOOKED
-export async function sendCalendlyBooking(booking: {
+export async function sendCalendlyBooking(payload: {
   name: string;
   email: string;
-  eventType: string;
-  scheduledTime: string;
+  scheduled_event: {
+    name: string;
+    start_time: string;
+    end_time: string;
+    uri: string;
+  };
+  reschedule_url?: string;
+  cancel_url?: string;
 }) {
-  const webhookUrl = SLACK_WEBHOOKS.scheduled_meetings;
+  const webhookUrl = SLACK_WEBHOOKS.scheduled_meetings // your incoming-webhook URL
   if (!webhookUrl) {
     console.warn("SLACK_WEBHOOK_URL not configured");
     return;
   }
+
+  const { name, email, scheduled_event: evt } = payload;
+  const start = new Date(evt.start_time);
+  const end   = new Date(evt.end_time);
+
+  const dateStr = start.toLocaleDateString("en-US", {
+    weekday: "short", month: "short", day: "numeric",
+  });
+  const timeStr = `${start.toLocaleTimeString([], {
+    hour: "numeric", minute: "2-digit", hour12: true,
+  })} – ${end.toLocaleTimeString([], {
+    hour: "numeric", minute: "2-digit", hour12: true,
+  })} (${Intl.DateTimeFormat().resolvedOptions().timeZone})`;
+
+  // direct host link
+  const eventId = evt.uri.split("/").pop();
+  const eventLink = `https://calendly.com/scheduled_events/${eventId}`;
 
   const message = {
     blocks: [
@@ -79,26 +102,25 @@ export async function sendCalendlyBooking(booking: {
       {
         type: "section",
         fields: [
-          {
-            type: "mrkdwn",
-            text: `*Name:*\n${booking.name}`,
-          },
-          {
-            type: "mrkdwn",
-            text: `*Email:*\n${booking.email}`,
-          },
+          { type: "mrkdwn", text: `*Name:*\n${name}` },
+          { type: "mrkdwn", text: `*Email:*\n${email}` },
         ],
       },
       {
         type: "section",
         fields: [
+          { type: "mrkdwn", text: `*Event:*\n${evt.name}` },
+          { type: "mrkdwn", text: `*Time:*\n${dateStr} ${timeStr}` },
+        ],
+      },
+      {
+        type: "actions",
+        elements: [
           {
-            type: "mrkdwn",
-            text: `*Event:*\n${booking.eventType}`,
-          },
-          {
-            type: "mrkdwn",
-            text: `*Time:*\n${booking.scheduledTime}`,
+            type: "button",
+            text: { type: "plain_text", text: "🔗 View in Calendly" },
+            url: eventLink,
+            style: "primary",
           },
         ],
       },
@@ -106,20 +128,16 @@ export async function sendCalendlyBooking(booking: {
   };
 
   try {
-    const response = await fetch(webhookUrl, {
+    const res = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(message),
     });
-
-    if (!response.ok) {
-      console.error("Slack webhook failed:", response.statusText);
-    }
-  } catch (error) {
-    console.error("Failed to send Slack notification:", error);
+    if (!res.ok) console.error("Slack webhook failed:", res.statusText);
+  } catch (err) {
+    console.error("Failed to send Slack notification:", err);
   }
 }
-
 // When one time payment is received
 export async function sendPaymentNotification(payment: {
   name: string;
