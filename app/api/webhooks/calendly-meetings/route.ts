@@ -7,14 +7,18 @@ export async function POST(request: Request) {
   const body = await request.json();
   console.log('📅 FULL CALENDLY PAYLOAD:', JSON.stringify(body, null, 2));
   
-  // FIXED: Use the actual payload structure from your logs
   if (body.payload) {
-   await sendCalendlyBooking(body.payload);
+    // Pass the correct structure that sendCalendlyBooking expects
+    await sendCalendlyBooking({
+      event: body.event,  // "invitee.created"
+      name: body.payload.name,  // "Test Guy"
+      email: body.payload.email,  // "87hendricks@gmail.com"
+      scheduled_event: body.payload.scheduled_event  // the event details
+    });
   }
   
   return NextResponse.json({ received: true });
 }
-
 export async function GET() {
   console.log('✅ GET request received - endpoint is working');
   return NextResponse.json({ message: 'Calendly webhook endpoint is live! 🚀' });
