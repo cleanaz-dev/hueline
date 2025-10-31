@@ -1,8 +1,5 @@
 import { SLACK_WEBHOOKS } from "../config/slack-webhook-urls";
 
-// --------------------------------------------------------------------------
-// Types
-// --------------------------------------------------------------------------
 type CalendlyEvent =
   | "invitee.created"
   | "invitee.canceled"
@@ -24,20 +21,25 @@ type CalendlyPayload = {
   cancel_url?: string;
 };
 
-// --------------------------------------------------------------------------
-// Human-friendly labels
-// --------------------------------------------------------------------------
 const STATUS_LABEL: Record<CalendlyEvent, string> = {
   "invitee.created": "Meeting booked",
-  "invitee.canceled": "Meeting cancelled",
+  "invitee.canceled": "Meeting cancelled", 
   "invitee_no_show.created": "No-show marked",
   "invitee_no_show.deleted": "No-show removed",
   "routing_form_submission.created": "Routing form submitted",
 };
 
-// --------------------------------------------------------------------------
-// Slack poster
-// --------------------------------------------------------------------------
+function getColorForEvent(event: CalendlyEvent): string {
+  const colors = {
+    "invitee.created": "#36a64f",
+    "invitee.canceled": "#ff0000",
+    "invitee_no_show.created": "#ff8000",
+    "invitee_no_show.deleted": "#00bfff",
+    "routing_form_submission.created": "#8a2be2",
+  };
+  return colors[event] || "#757575";
+}
+
 export async function sendCalendlyBooking(payload: CalendlyPayload) {
   const webhookUrl = SLACK_WEBHOOKS.scheduled_meetings;
   if (!webhookUrl) {
@@ -68,27 +70,32 @@ export async function sendCalendlyBooking(payload: CalendlyPayload) {
   const status = STATUS_LABEL[event];
 
   const message = {
-    blocks: [
+    attachments: [
       {
-        type: "header",
-        text: {
-          type: "plain_text",
-          text: `📅 Calendly – ${status}`,
-          emoji: true,
-        },
-      },
-      {
-        type: "section",
-        fields: [
-          { type: "mrkdwn", text: `*Name:*\n${name}` },
-          { type: "mrkdwn", text: `*Email:*\n${email}` },
-        ],
-      },
-      {
-        type: "section",
-        fields: [
-          { type: "mrkdwn", text: `*Event:*\n${evt.name}` },
-          { type: "mrkdwn", text: `*Time:*\n${dateStr} ${timeStr}` },
+        color: getColorForEvent(event),
+        blocks: [
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: `📅 Calendly – ${status}`,
+              emoji: true,
+            },
+          },
+          {
+            type: "section",
+            fields: [
+              { type: "mrkdwn", text: `*Name:*\n${name}` },
+              { type: "mrkdwn", text: `*Email:*\n${email}` },
+            ],
+          },
+          {
+            type: "section", 
+            fields: [
+              { type: "mrkdwn", text: `*Event:*\n${evt.name}` },
+              { type: "mrkdwn", text: `*Time:*\n${dateStr} ${timeStr}` },
+            ],
+          },
         ],
       },
     ],
