@@ -1,6 +1,37 @@
 // lib/slack/send-booking-notification.ts
 import { SLACK_WEBHOOKS } from "../config/slack-webhook-urls";
 
+type SlackBlock = 
+  | {
+      type: "header";
+      text: {
+        type: "plain_text";
+        text: string;
+        emoji: boolean;
+      };
+    }
+  | {
+      type: "section";
+      fields: Array<{
+        type: "mrkdwn";
+        text: string;
+      }>;
+    }
+  | {
+      type: "actions";
+      elements: Array<{
+        type: "button";
+        text: {
+          type: "plain_text";
+          text: string;
+          emoji: boolean;
+        };
+        style?: string;
+        action_id: string;
+        value: string;
+      }>;
+    };
+
 export async function sendBookingNotification(booking: {
   name: string;
   phone?: string;
@@ -14,35 +45,33 @@ export async function sendBookingNotification(booking: {
   // Only show button if we have a phone number
   const hasPhone = booking.phone && booking.phone.length > 0;
 
-  const message: any = {
-    blocks: [
-      {
-        type: "header",
-        text: {
-          type: "plain_text",
-          text: "🎨 New Booking",
-          emoji: true,
+  const blocks: SlackBlock[] = [
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "🎨 New Booking",
+        emoji: true,
+      },
+    },
+    {
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: `*Name:*\n${booking.name}`,
         },
-      },
-      {
-        type: "section",
-        fields: [
-          {
-            type: "mrkdwn",
-            text: `*Name:*\n${booking.name}`,
-          },
-          {
-            type: "mrkdwn",
-            text: `*Phone:*\n${booking.phone || "No phone provided"}`,
-          },
-        ],
-      },
-    ],
-  };
+        {
+          type: "mrkdwn",
+          text: `*Phone:*\n${booking.phone || "No phone provided"}`,
+        },
+      ],
+    },
+  ];
 
   // Add action buttons only if we have a phone number
   if (hasPhone) {
-    message.blocks.push({
+    blocks.push({
       type: "actions",
       elements: [
         {
@@ -63,6 +92,8 @@ export async function sendBookingNotification(booking: {
       ]
     });
   }
+
+  const message = { blocks };
 
   try {
     const response = await fetch(webhookUrl, {
