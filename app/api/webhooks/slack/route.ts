@@ -29,9 +29,14 @@ export async function POST(req: NextRequest) {
       
       if (action.action_id === 'schedule_24h_sms') {
         console.log('📅 Handling 24h SMS scheduling request');
-        const response = await handleScheduleSMSFollowup(payload);
+        const responsePayload = await handleScheduleSMSFollowup(payload);
         console.log('✅ SMS scheduling handler completed successfully');
-        return NextResponse.json(response);
+
+        // ✅ Send raw JSON so Slack properly updates the original message
+        return new Response(JSON.stringify(responsePayload), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
       } else {
         console.warn('⚠️ Unknown action_id:', action.action_id);
       }
