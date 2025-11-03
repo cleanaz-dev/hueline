@@ -52,15 +52,36 @@ export async function handleScheduleSMSFollowup(interaction: SlackInteraction) {
     const result: SMSScheduleResponse = await response.json();
     console.log(`✅ SMS scheduled: ${result.schedule_name}`);
 
-    // 2. Update Slack message with success
+    // 2. Update Slack message with success (keep original booking info too)
     const updateMessage = {
       replace_original: true,
       blocks: [
         {
+          type: "header" as const,
+          text: {
+            type: "plain_text" as const,
+            text: "🎨 New Booking",
+            emoji: true,
+          },
+        },
+        {
+          type: "section" as const,
+          fields: [
+            {
+              type: "mrkdwn" as const,
+              text: `*Name:*\n${customer_name}`,
+            },
+            {
+              type: "mrkdwn" as const,
+              text: `*Phone:*\n${customer_phone}`,
+            },
+          ],
+        },
+        {
           type: "section" as const,
           text: {
             type: "mrkdwn" as const,
-            text: `✅ *24h Follow-up SMS Scheduled*\n\n*Customer:* ${customer_name}\n*Phone:* ${customer_phone}\n*Scheduled for:* ${result.scheduled_for} UTC\n*Schedule ID:* \`${result.schedule_name}\``
+            text: `✅ *24h Follow-up SMS Scheduled*\n*Scheduled for:* ${result.scheduled_for} UTC\n*Schedule ID:* \`${result.schedule_name}\``
           }
         },
         {
@@ -68,7 +89,7 @@ export async function handleScheduleSMSFollowup(interaction: SlackInteraction) {
           elements: [
             {
               type: "mrkdwn" as const,
-              text: `Message: "${smsRequest.body}"`
+              text: `📱 Message: "${smsRequest.body}"`
             }
           ]
         }
@@ -84,10 +105,31 @@ export async function handleScheduleSMSFollowup(interaction: SlackInteraction) {
       replace_original: true,
       blocks: [
         {
+          type: "header" as const,
+          text: {
+            type: "plain_text" as const,
+            text: "🎨 New Booking",
+            emoji: true,
+          },
+        },
+        {
+          type: "section" as const,
+          fields: [
+            {
+              type: "mrkdwn" as const,
+              text: `*Name:*\n${customer_name}`,
+            },
+            {
+              type: "mrkdwn" as const,
+              text: `*Phone:*\n${customer_phone}`,
+            },
+          ],
+        },
+        {
           type: "section" as const,
           text: {
             type: "mrkdwn" as const,
-            text: `❌ *Failed to Schedule SMS*\n\n*Customer:* ${customer_name}\n*Phone:* ${customer_phone}\n*Error:* ${error instanceof Error ? error.message : 'Unknown error'}`
+            text: `❌ *Failed to Schedule SMS*\n*Error:* ${error instanceof Error ? error.message : 'Unknown error'}`
           }
         }
       ]
