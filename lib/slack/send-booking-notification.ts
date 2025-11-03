@@ -1,7 +1,6 @@
-// lib/slack.ts
+// lib/slack/send-booking-notification.ts
 import { SLACK_WEBHOOKS } from "../config/slack-webhook-urls";
 
-// WHEN SOMEONE USES DEMO
 export async function sendBookingNotification(booking: {
   name: string;
   phone?: string;
@@ -12,7 +11,10 @@ export async function sendBookingNotification(booking: {
     return;
   }
 
-  const message = {
+  // Only show button if we have a phone number
+  const hasPhone = booking.phone && booking.phone.length > 0;
+
+  const message: any = {
     blocks: [
       {
         type: "header",
@@ -31,12 +33,36 @@ export async function sendBookingNotification(booking: {
           },
           {
             type: "mrkdwn",
-            text: `*Phone:*\n${booking.phone || "N/A"}`,
+            text: `*Phone:*\n${booking.phone || "No phone provided"}`,
           },
         ],
       },
     ],
   };
+
+  // Add action buttons only if we have a phone number
+  if (hasPhone) {
+    message.blocks.push({
+      type: "actions",
+      elements: [
+        {
+          type: "button",
+          text: {
+            type: "plain_text",
+            text: "📅 Send Calendly Link in 24h",
+            emoji: true,
+          },
+          style: "primary",
+          action_id: "schedule_24h_sms",
+          value: JSON.stringify({
+            customer_name: booking.name,
+            customer_phone: booking.phone,
+            booking_type: "demo"
+          })
+        }
+      ]
+    });
+  }
 
   try {
     const response = await fetch(webhookUrl, {
