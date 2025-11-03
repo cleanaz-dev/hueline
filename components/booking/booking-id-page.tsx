@@ -458,24 +458,28 @@ export default function BookingPage({ booking, onRefresh }: Props) {
                           Select a color below and generate a new mockup
                           instantly.
                         </p>
+                        <div className="flex flex-col md:max-w-sm mb-6 p-4 bg-background/60 rounded-lg border border-primary/50 relative">
+                          {/* Beta Badge - Top Right Corner */}
+                          <div className="absolute -top-2 -left-2 px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-md shadow-sm">
+                            BETA
+                          </div>
 
-                        {/* Remove Furniture Toggle */}
-                        <div className="flex md:max-w-sm items-center justify-center gap-3 mb-6 p-4 bg-background/60 rounded-lg border border-primary/50">
-                          <Sofa className="h-4 w-4 text-primary" />
-                          <Label
-                            htmlFor="remove-furniture"
-                            className="text-sm font-medium"
-                          >
-                            Remove furniture from mockup
-                          </Label>
-                          <Switch
-                            id="remove-furniture"
-                            checked={removeFurniture}
-                            onCheckedChange={setRemoveFurniture}
-                            className="mt-0.5"
-                          />
+                          <div className="flex items-center justify-center gap-3">
+                            <Sofa className="h-4 w-4 text-primary" />
+                            <Label
+                              htmlFor="remove-furniture"
+                              className="text-sm font-medium"
+                            >
+                              Remove furniture from mockup
+                            </Label>
+                            <Switch
+                              id="remove-furniture"
+                              checked={removeFurniture}
+                              onCheckedChange={setRemoveFurniture}
+                              className="mt-0.5"
+                            />
+                          </div>
                         </div>
-                        
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-8 mb-6">
                           {booking.alternate_colors.map((color, index) => (
