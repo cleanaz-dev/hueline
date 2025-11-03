@@ -25,6 +25,8 @@ export async function handleScheduleSMSFollowup(interaction: SlackInteraction) {
   };
   const { customer_name, customer_phone } = values;
 
+  console.log(`📱 Scheduling SMS for ${customer_name} (${customer_phone})`);
+
   try {
     // 1. POST to your SMS scheduler Lambda
     const smsRequest: SMSScheduleRequest = {
@@ -32,6 +34,8 @@ export async function handleScheduleSMSFollowup(interaction: SlackInteraction) {
       body: `Hi ${customer_name}, thanks for visiting! Book a follow-up appointment here: ${process.env.CALENDLY_LINK}`,
       delay_hours: 24
     };
+
+    console.log(`🚀 Posting to Lambda: ${process.env.SMS_SCHEDULER_URL}`);
 
     const response = await fetch(process.env.SMS_SCHEDULER_URL!, {
       method: 'POST',
@@ -41,10 +45,12 @@ export async function handleScheduleSMSFollowup(interaction: SlackInteraction) {
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error(`❌ Lambda error: ${response.status}`, errorData);
       throw new Error(errorData.error || `HTTP ${response.status}`);
     }
 
     const result: SMSScheduleResponse = await response.json();
+    console.log(`✅ SMS scheduled: ${result.schedule_name}`);
 
     // 2. Update Slack message with success
     const updateMessage = {
@@ -72,8 +78,7 @@ export async function handleScheduleSMSFollowup(interaction: SlackInteraction) {
     return updateMessage;
 
   } catch (error) {
-    // 3. Handle errors and update Slack message
-    console.error('Failed to schedule SMS:', error);
+    console.error('❌ Failed to schedule SMS:', error);
     
     const errorMessage = {
       replace_original: true,
