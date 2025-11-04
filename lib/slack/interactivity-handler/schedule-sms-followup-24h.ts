@@ -217,15 +217,15 @@ export async function handleScheduleSMSFollowup(interaction: SlackInteraction) {
             text: `✅ *24h Follow-up SMS Scheduled*\n*Scheduled for:* ${result.scheduled_for} UTC\n*Schedule ID:* \`${result.schedule_name}\``
           }
         },
-        {
-          type: "context" as const,
-          elements: [
-            {
-              type: "mrkdwn" as const,
-              text: `📱 Message: "${smsRequest.body}"`
-            }
-          ]
-        },
+        // {
+        //   type: "context" as const,
+        //   elements: [
+        //     {
+        //       type: "mrkdwn" as const,
+        //       text: `📱 Message: "${smsRequest.body}"`
+        //     }
+        //   ]
+        // },
         {
             type: "context" as const,
             elements: [
