@@ -4,6 +4,7 @@ import { handleScheduleSMSFollowup } from '@/lib/slack/interactivity-handler/sch
 import { SlackInteraction } from '@/lib/slack/types';
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now(); // ⏱️ Start timer
   console.log('📥 Received Slack webhook request');
   
   try {
@@ -29,8 +30,16 @@ export async function POST(req: NextRequest) {
       
       if (action.action_id === 'schedule_24h_sms') {
         console.log('📅 Handling 24h SMS scheduling request');
+        
+        const handlerStartTime = Date.now(); // ⏱️ Handler start
         const responsePayload = await handleScheduleSMSFollowup(payload);
+        const handlerDuration = Date.now() - handlerStartTime; // ⏱️ Handler duration
+        
+        console.log(`⏱️ Handler took ${handlerDuration}ms`);
         console.log('✅ SMS scheduling handler completed successfully');
+
+        const totalDuration = Date.now() - startTime; // ⏱️ Total duration
+        console.log(`⏱️ TOTAL REQUEST DURATION: ${totalDuration}ms`);
 
         // ✅ Send raw JSON so Slack properly updates the original message
         return new Response(JSON.stringify(responsePayload), {
@@ -50,6 +59,8 @@ export async function POST(req: NextRequest) {
     });
     
   } catch (error) {
+    const totalDuration = Date.now() - startTime;
+    console.error(`⏱️ Request failed after ${totalDuration}ms`);
     console.error('❌ Error processing Slack interaction:', error);
     console.error('❌ Error details:', {
       name: error instanceof Error ? error.name : 'Unknown',
