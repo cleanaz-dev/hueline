@@ -40,7 +40,7 @@ export function HeroSection() {
 
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-4 md:mb-8 text-slate-600 muted-foreground">
             Stop paying $300 a mock-up. Hue-Line: unlimited AI visuals + 24/7
-            AI voice agent for <span className="font-bold">$999/mo.</span>
+            AI voice agent for <span className="font-bold">$1,499/mo.</span>
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

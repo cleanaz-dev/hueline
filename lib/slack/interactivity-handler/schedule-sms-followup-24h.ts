@@ -160,7 +160,7 @@ export async function handleScheduleSMSFollowup(interaction: SlackInteraction) {
     // 1. POST to your SMS scheduler Lambda
     const smsRequest: SMSScheduleRequest = {
       phone: customer_phone,
-      body: `Hi ${customer_name}, thanks for visiting! Book a follow-up appointment here: ${process.env.CALENDLY_LINK}`,
+      body: `Hi ${customer_name}, thanks for visiting Hue-Line! Book a follow-up appointment here: ${process.env.CALENDLY_LINK}. Reply STOP to opt out.`,
       delay_hours: 24
     };
 
