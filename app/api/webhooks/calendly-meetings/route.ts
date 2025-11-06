@@ -1,11 +1,15 @@
 // app/api/webhooks/calendly-meetings/route.ts
 import { NextResponse } from 'next/server';
 import { sendCalendlyBooking } from '@/lib/slack/send-calendly-booking';
+import { removeSmsNotification } from '@/lib/aws/remove-sms-notfication';
 
 export async function POST(request: Request) {
   console.log('🚨 WEBHOOK HIT - CALENDLY');
   const body = await request.json();
   console.log('📅 FULL CALENDLY PAYLOAD:', JSON.stringify(body, null, 2));
+  const sessionId = body.payload.tracking.utm_source
+
+  await removeSmsNotification(sessionId)
   
   if (body.payload) {
     // Pass the correct structure that sendCalendlyBooking expects

@@ -42,8 +42,6 @@ export async function sendBookingNotification(booking: {
     return;
   }
 
-  // Only show button if we have a phone number
-  const hasPhone = booking.phone && booking.phone.length > 0;
 
   const blocks: SlackBlock[] = [
     {
@@ -69,29 +67,6 @@ export async function sendBookingNotification(booking: {
     },
   ];
 
-  // Add action buttons only if we have a phone number
-  if (hasPhone) {
-    blocks.push({
-      type: "actions",
-      elements: [
-        {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: "📅 Send Calendly Link in 24h",
-            emoji: true,
-          },
-          style: "primary",
-          action_id: "schedule_24h_sms",
-          value: JSON.stringify({
-            customer_name: booking.name,
-            customer_phone: booking.phone,
-            booking_type: "demo"
-          })
-        }
-      ]
-    });
-  }
 
   const message = { blocks };
 

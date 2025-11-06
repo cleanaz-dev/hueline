@@ -1,9 +1,11 @@
 import { prisma } from "../prisma";
 import { sendBookingNotification } from "../slack/send-booking-notification";
+import { sendSmsNotification } from "../aws/send-sms-notification";
 
 interface BookingData {
   name: string;
   phone: string;
+  sessionId: string;
   createdAt?: Date;
 }
 
@@ -38,9 +40,16 @@ export async function saveBookingData(data: BookingData): Promise<boolean> {
   });
 
   if (bookingExist) return false; // Already exists, don't notify
-  // console.log("👀 User Does Not Exist In DB...Creating")
+
   await prisma.bookingData.create({
     data: { name: data.name, phone: data.phone },
+  });
+
+  // 🔥 Schedule SMS notification (24h delay)
+  await sendSmsNotification({
+    name: data.name,
+    phone: data.phone,
+    sessionId: data.sessionId
   });
 
   // 🔥 Send Slack notification after creating new booking
@@ -52,7 +61,7 @@ export async function saveBookingData(data: BookingData): Promise<boolean> {
   return true; // New booking created
 }
 
-export async function getBookingData(): Promise<BookingData[]> {
+export async function getBookingData() {
   return await prisma.bookingData.findMany({
     orderBy: {
       createdAt: "desc",
@@ -86,5 +95,3 @@ export async function getSubdomainData(slug: string): Promise<SubDomainData | nu
     theme: subdomain.theme as SubDomainData['theme']
   };
 }
-
-

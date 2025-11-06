@@ -3,7 +3,7 @@ import React from "react";
 import { getBooking } from "@/lib/redis";
 import { saveBookingData } from "@/lib/query";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // Use your existing admin auth
+import { authOptions } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 
 type Props = {
@@ -29,6 +29,10 @@ export default async function page({ params }: Props) {
   }
   console.log('✅ User Auth')
 
-  await saveBookingData(booking);
+  await saveBookingData({
+    ...booking,
+    sessionId: session.user.id // bookingId is the sessionId
+  });
+  
   return <BookingWrapper booking={booking} />;
 }
