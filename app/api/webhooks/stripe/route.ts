@@ -67,3 +67,16 @@ export async function POST(req: Request) {
 
   return new Response(JSON.stringify({ received: true }), { status: 200 });
 }
+
+export async function GET() {
+  return new Response(
+    JSON.stringify({ 
+      status: "ok", 
+      timestamp: new Date().toISOString() 
+    }),
+    { 
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    }
+  );
+}
