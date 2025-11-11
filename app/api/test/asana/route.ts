@@ -69,8 +69,8 @@ export async function POST(request: Request) {
       // Quick access to specific field IDs
       fieldIds: {
         companyInfo: fieldMap['Company Info']?.id,
-        voiceAIConfig: fieldMap['Voice AI Configuration']?.id,
-        crmPlatform: fieldMap['CRM Platform']?.id,
+        voiceAIConfig: fieldMap['Voice AI Info']?.id,
+        crmPlatform: fieldMap['CRM']?.id,
         status: fieldMap['Status']?.id,
         notStarted: fieldMap['Status']?.notStartedId
       }

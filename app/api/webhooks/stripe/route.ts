@@ -9,7 +9,11 @@ export async function POST(req: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2025-09-30.clover",
   });
-  const webhookSecret = process.env.STRIPE_TEST_WEBHOOK_SECRET!;
+  
+  // Use the correct webhook secret based on the mode
+  // For live mode events, use STRIPE_WEBHOOK_SECRET
+  // For test mode events, use STRIPE_TEST_WEBHOOK_SECRET
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
   const body = await req.text();
   const headersList = await headers();
