@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Phone, Star } from "lucide-react";
-import videoThumbnail from "@/public/images/thumbnail-image-3.png";
+import videoThumbnail from "@/public/images/thumbnail-image-3.jpg";
 import Link from "next/link";
 
 export function HeroSection() {

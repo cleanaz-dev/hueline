@@ -61,7 +61,8 @@ export default function NavSection() {
             alt="logo"
             height={100}
             width={100}
-            className="object-contain  "
+            className="object-contain"
+            priority
           />
           {/* <span className="font-bold text-lg md:text-xl text-primary">
             Hue-Line
