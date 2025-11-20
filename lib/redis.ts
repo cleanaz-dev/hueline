@@ -50,7 +50,7 @@ export async function getBooking(phoneNumber: string) {
   const client = await getRedisClient();
   const key = keys.booking(phoneNumber);
   const data = await client.get(key);
-  
+
   if (!data) {
     return null;
   }

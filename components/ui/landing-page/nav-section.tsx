@@ -75,7 +75,7 @@ export default function NavSection() {
             <a
               key={n.id}
               href={`#${n.hash}`}
-              className="hover:text-accent transition-colors"
+              className="hover:text-primary transition-colors"
             >
               {n.title}
             </a>

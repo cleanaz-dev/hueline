@@ -14,6 +14,8 @@ type Props = {
 
 export default async function page({ params }: Props) {
   const { bookingId } = await params;
+
+  console.log("bookingID:", bookingId)
   
   const booking = await getBooking(bookingId);
   
