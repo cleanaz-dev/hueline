@@ -11,7 +11,7 @@ export default async function Page() {
   return (
     <main className="h-screen">
       <iframe
-        src={`${calendlyLink}=${sessionId || 'no-session'}`}
+        src={`${calendlyLink}?utm_source=${sessionId || 'no-session'}`}
         width="100%"
         height="100%"
       />
