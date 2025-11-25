@@ -5,11 +5,13 @@ export default async function Page() {
   const session = await getServerSession(authOptions);
   
   const sessionId = session?.user?.id;
+
+  const calendlyLink = process.env.CALENDLY_LINK
   
   return (
     <main className="h-screen">
       <iframe
-        src={`https://calendly.com/team-hue-line/30min?utm_source=${sessionId || 'no-session'}`}
+        src={`${calendlyLink}=${sessionId || 'no-session'}`}
         width="100%"
         height="100%"
       />
