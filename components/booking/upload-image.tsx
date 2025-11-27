@@ -114,7 +114,7 @@ export function ImageUploadDialog({
                 Need to add more photos?
               </p>
               <p className="text-xs text-blue-700">
-                Call Hue-Line and we'll help you add new photos to your project
+                Call Hue-Line and we&apos;ll help you add new photos to your project
               </p>
             </div>
           </div>

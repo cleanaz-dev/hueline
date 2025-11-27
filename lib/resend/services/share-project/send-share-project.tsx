@@ -48,7 +48,7 @@ export function ShareProjectEmail({
 
           {message && (
             <Text style={styles.text}>
-              "{message}"
+              &quot;{message}&quot;
             </Text>
           )}
 
