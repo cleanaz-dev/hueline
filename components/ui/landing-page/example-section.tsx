@@ -51,7 +51,7 @@ return (
    <div className="max-w-xl md:max-w-4xl mx-auto">
       <div className='header-section-div'>
         <h1 className='section-badge'>Examples</h1>
-        <p className='section-header'>Hear how <span className='text-primary '>Hue-Line</span> handles actual painting consultations</p>
+        <p className='section-header'>How <span className='text-primary '>Hue-Line</span> handles actual painting consultations</p>
       </div>
 
       <div className="space-y-8 py-8">

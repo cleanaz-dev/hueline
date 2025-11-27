@@ -1,7 +1,11 @@
+import BusinessChallenges from "@/components/ui/landing-page/business-challenges";
+import CalculateROI from "@/components/ui/landing-page/calculate-roi";
 import CTASection from "@/components/ui/landing-page/cta-section";
 import ExamplesSection from "@/components/ui/landing-page/example-section";
+import FeatureSection from "@/components/ui/landing-page/features-section";
 import FooterSection from "@/components/ui/landing-page/footer-section";
 import { HeroSection } from "@/components/ui/landing-page/hero-section";
+import LogoStroke from "@/components/ui/landing-page/logo-stroke";
 import NavSection from "@/components/ui/landing-page/nav-section";
 import SolutionSection from "@/components/ui/landing-page/solutions-section";
 import WYGSection from "@/components/ui/landing-page/wyg-section";
@@ -14,9 +18,16 @@ export default function Home() {
       </div>
       <div className="space-y-12 md:space-y-16">
         <HeroSection />
-        <SolutionSection />
-        <ExamplesSection />
-        <WYGSection />
+        <LogoStroke />
+        <BusinessChallenges />
+        <LogoStroke />
+        {/* <SolutionSection /> */}
+        <FeatureSection />
+        {/* <ExamplesSection /> */}
+        {/* <WYGSection /> */}
+        <LogoStroke />
+        <CalculateROI />
+         <LogoStroke />
         <CTASection />
         <FooterSection />
       </div>

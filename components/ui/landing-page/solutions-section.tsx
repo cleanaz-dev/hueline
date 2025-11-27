@@ -36,7 +36,7 @@ const solutions: Solution[] = [
 
 export default function SolutionSection() {
  return (
-   <section id="solutions" className="px-4 bg-gradient-to-b from-primary/05 via-primary/10 to-primary/05">
+   <section id="solutions" className="px-4 ">
      <div className="max-w-6xl mx-auto">
        <div className='header-section-div'>
        <h1 className='section-badge'>How It Works</h1>

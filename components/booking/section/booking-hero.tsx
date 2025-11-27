@@ -1,12 +1,14 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Clock, User2, Calendar } from "lucide-react";
+import { Clock, User2, Calendar, Share2 } from "lucide-react";
 import Image from "next/image";
-import PaletteImage from "@/public/images/bucket-no-bg.png"
+import PaletteImage from "@/public/images/bucket-no-bg.png";
+import ShareProjectDialog from "../booking-id-page/share-project-dialog";
 
 interface BookingHeroProps {
   booking: {
     name: string;
     call_duration?: string;
+    phone: string;
   };
   formatTime: (duration?: string) => string;
 }
@@ -15,19 +17,20 @@ export function BookingHero({ booking, formatTime }: BookingHeroProps) {
   return (
     <section className="space-y-6">
       <div className="flex items-center justify-center gap-1">
-        <Image 
-        src={PaletteImage}
-        alt="palette-image"
-        className="size-10 md:size-14"
+        <Image
+          src={PaletteImage}
+          alt="palette-image"
+          className="size-10 md:size-14"
         />
         <h1 className="text-3xl md:text-5xl font-bold leading-20 text-primary ">
           Painting Report
         </h1>
       </div>
-      
+
       <div className="flex flex-col md:flex-row gap-0 rounded-xl overflow-hidden bg-white shadow-sm">
         {/* Report Info Section - Subtle and professional */}
-        <div className="flex-1 p-6 bg-gray-50">
+        {/* Report Info Section - Subtle and professional */}
+        <div className="flex flex-col md:flex-row flex-1 p-6 bg-gray-50 justify-between md:items-start">
           <div className="space-y-4">
             <div className="flex items-center gap-3 text-gray-600">
               <User2 className="h-4 w-4 text-gray-500" />
@@ -47,10 +50,15 @@ export function BookingHero({ booking, formatTime }: BookingHeroProps) {
               <span>{new Date().toLocaleDateString()}</span>
             </div>
 
-            <div className="flex items-center gap-3  text-amber-600 font-medium">
+            <div className="flex items-center gap-3 text-amber-600 font-medium">
               <Clock className="h-4 w-4" />
               <span>Expires in: 72h</span>
             </div>
+          </div>
+
+          <div className="flex items-center gap-3 mt-4 md:mt-0">
+            <Share2 className="h-4 w-4 text-gray-500" />
+            <ShareProjectDialog bookingId={booking.phone} />
           </div>
         </div>
 
@@ -62,8 +70,12 @@ export function BookingHero({ booking, formatTime }: BookingHeroProps) {
               <AvatarFallback>AN</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">By: Annalia</p>
-              <p className="text-xs text-gray-500 truncate">Hue-Line Design Consultant</p>
+              <p className="text-sm font-medium text-gray-900 truncate">
+                By: Annalia
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                Hue-Line Design Consultant
+              </p>
             </div>
           </div>
         </div>

@@ -10,17 +10,28 @@ type PaintColor = {
   name: string;
   hex: string;
   ral: string;
+  variant?: string;
+};
+
+type MockupUrl = {
+  url: string;
+  room_type: string;
+  color: PaintColor;
 };
 
 type Booking = {
   name: string;
   prompt: string;
   original_images: string[];
-  mockup_urls: string[];
-  paint_colors: PaintColor[]; // Array of paint color objects
+  mockup_urls: MockupUrl[];
+  paint_colors: PaintColor[];
+  alternate_colors?: PaintColor[];
   summary: string;
+  call_duration?: string;
+  phone: string;
+  dimensions?: string;
+  booking_id?: string;
 };
-
 type Props = {
   booking: Booking
 }

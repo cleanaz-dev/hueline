@@ -1,0 +1,39 @@
+import { createClient } from "redis"
+
+declare global {
+  var redisClient: ReturnType<typeof createClient> | undefined
+}
+
+export function logWithTime(message: string) {
+  const timestamp = new Date().toLocaleTimeString();
+  console.log(`[${timestamp}] ${message}`);
+}
+function connectOnceToRedis() {
+  if (!globalThis.redisClient) {
+    globalThis.redisClient = createClient({
+      url: process.env.REDIS_URL,
+    });
+
+    globalThis.redisClient.on("error", (err) =>
+      console.log("Redis Client Error:", err)
+    );
+  }
+  return globalThis.redisClient;
+}
+
+export async function getRedisClient() {
+  const client = connectOnceToRedis();
+
+  if (!client.isReady) {
+    await client.connect();
+  }
+
+  return client;
+}
+
+
+export const keys = {
+  sentImages: (phoneNumber: string) => `sentImages:${phoneNumber}`,
+  booking: (phoneNumber: string) => `booking:${phoneNumber}`,
+  subBooking: (subdomain: string, phoneNumber: string ) => `booking:${subdomain}:${phoneNumber}`
+}
