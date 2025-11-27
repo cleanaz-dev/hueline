@@ -36,7 +36,7 @@ type Booking = {
   call_duration?: string;
   alternate_colors?: PaintColor[];
   alt_mockup_url?: string;
-  phone?: string;
+  phone: string;
   dimensions?: string;
 };
 
