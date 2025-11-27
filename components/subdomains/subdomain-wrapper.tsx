@@ -18,6 +18,7 @@ type Booking = {
   mockup_urls: string[];
   paint_colors: PaintColor[]; // Array of paint color objects
   summary: string;
+  phone: string
 };
 
 type Props = {
