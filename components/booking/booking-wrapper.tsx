@@ -32,38 +32,66 @@ type Booking = {
   dimensions?: string;
   booking_id?: string;
 };
+
 type Props = {
   booking: Booking
 }
 
 export default function BookingWrapper({ booking }: Props) {
   const [showSplash, setShowSplash] = useState(true)
-  const [splashComplete, setSplashComplete] = useState(false)
+  const [enrichedBooking, setEnrichedBooking] = useState<Booking>(booking)
+  const [urlsReady, setUrlsReady] = useState(false)
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false)
 
-  // Hide splash after ~2s
+  // Start fetching URLs immediately
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 2000)
+    fetchPresignedUrls()
+  }, [])
+
+  // Minimum 2 second timer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinTimeElapsed(true)
+    }, 2000)
     return () => clearTimeout(timer)
   }, [])
 
-  const handleSplashEnd = () => {
-    setShowSplash(false)
+  // Hide splash only when BOTH conditions are met
+  useEffect(() => {
+    if (minTimeElapsed && urlsReady) {
+      setShowSplash(false)
+    }
+  }, [minTimeElapsed, urlsReady])
+
+  const fetchPresignedUrls = async () => {
+    try {
+      const res = await fetch(`/api/booking/${booking.phone}/get-presigned-urls`)
+      if (!res.ok) throw new Error('Failed to fetch URLs')
+      
+      const { original_images, mockup_urls } = await res.json()
+      
+      setEnrichedBooking({
+        ...booking,
+        original_images,
+        mockup_urls
+      })
+      setUrlsReady(true)
+    } catch (error) {
+      console.error('Failed to load presigned URLs:', error)
+      setUrlsReady(true) // Still proceed to show the page
+    }
   }
 
   return (
     <>
-      {(showSplash || !splashComplete) && (
+      {showSplash && (
         <motion.div
           initial={{ opacity: 1 }}
-          animate={{ opacity: showSplash ? 1 : 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          onAnimationComplete={() => {
-            if (!showSplash) {
-              setSplashComplete(true)
-            }
-          }}
         >
-          <SplashScreen onVideoEnd={handleSplashEnd} />
+          <SplashScreen onVideoEnd={() => {}} />
         </motion.div>
       )}
 
@@ -73,7 +101,7 @@ export default function BookingWrapper({ booking }: Props) {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, ease: "easeIn" }}
         >
-          <BookingPage booking={booking} />
+          <BookingPage booking={enrichedBooking} />
         </motion.div>
       )}
     </>

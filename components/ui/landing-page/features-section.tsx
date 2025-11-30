@@ -1,5 +1,11 @@
 import { StaticImageData } from "next/image";
 import NoImage from "@/public/file.svg";
+import TwentyFourSevenImage from "@/public/images/247.png";
+import PremiumMockupImage from "@/public/images/mockup.png"
+import SecureImage from "@/public/images/secure.png"
+import OptionsImage from "@/public/images/options.png"
+import SharingImage from "@/public/images/sharing.png"
+import CrmImage from "@/public/images/crm.png"
 import Image from "next/image";
 
 interface Features {
@@ -12,42 +18,42 @@ interface Features {
 const features: Features[] = [
   {
     id: 0,
-    image: NoImage,
+    image: TwentyFourSevenImage,
     title: "24/7 Premium Call Handling",
     description:
       "Never miss a potential high-value client. Our AI handles inbound calls with premium, customizable voice prompts.",
   },
   {
     id: 1,
-    image: NoImage,
+    image: PremiumMockupImage,
     title: "Instant Premium Mockups",
     description:
       "Generate professional paint visualizations while the client is still on the phone. Send premium proposals directly to their personal portal.",
   },
   {
     id: 2,
-    image: NoImage,
+    image: SecureImage,
     title: "Secure Client Experience",
     description:
       "Each client receives a branded portal with PIN authentication and secure AWS-signed URLs for their project images.",
   },
   {
     id: 3,
-    image: NoImage,
+    image: OptionsImage,
     title: "Multiple Premium Options",
     description:
       "Show clients different color combinations and finish options in their portal, helping them visualize premium possibilities.",
   },
   {
     id: 4,
-    image: NoImage,
+    image: SharingImage,
     title: "Premium Project Sharing",
     description:
       "Clients can share their project visualizations via email directly from the portal, making referrals and collaboration seamless.",
   },
   {
     id: 5,
-    image: NoImage,
+    image: CrmImage,
     title: "Exclusive CRM Integration",
     description:
       "Automatically update your premium CRM with client interactions. Returning callers are recognized and their information is prefilled.",
@@ -61,28 +67,30 @@ export default function FeatureSection() {
         <div className="header-section-div text-center mb-16">
           <h1 className="section-badge">Exclusive Features</h1>
           <p className="section-header">
-            Everything you need to <span className="text-primary">streamline operations</span> and secure high-value
-            contracts
+            Everything you need to{" "}
+            <span className="text-primary">streamline operations</span> and
+            secure high-value contracts
           </p>
         </div>
-        
+
         <div className="space-y-20">
           {features.map((feature, index) => (
             <div
               key={feature.id}
               className={`flex flex-col lg:flex-row items-center gap-8 ${
-                index % 2 === 1 ? 'lg:flex-row-reverse' : ''
+                index % 2 === 1 ? "lg:flex-row-reverse" : ""
               }`}
             >
               {/* Image - Always first on mobile, staggered on desktop */}
               <div className="flex-1 w-full">
-                <div className="relative w-full h-64 lg:h-80 bg-gray-100 rounded-2xl flex items-center justify-center">
+<div className="relative w-full h-64 lg:h-80 rounded-2xl flex items-center justify-center bg-primary">
+  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.25),transparent)] rounded-2xl"></div>
                   <Image
                     src={feature.image}
                     alt={feature.title}
-                    width={120}
-                    height={120}
-                    className="object-contain opacity-60"
+                    width={250}
+                    height={250}
+                    className="object-cover filter invert brightness-0"
                   />
                 </div>
               </div>

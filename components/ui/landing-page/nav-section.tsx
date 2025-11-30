@@ -18,9 +18,9 @@ import { motion, Variants } from "framer-motion";
 
 /* -------------------------------- data --------------------------------- */
 const nav = [
-  { id: 1, title: "How It Works", hash: "solutions" },
-  { id: 2, title: "Examples", hash: "examples" },
-  { id: 3, title: "What You Get", hash: "wyg" },
+  { id: 1, title: "Solutions", hash: "solutions" },
+  { id: 2, title: "Features", hash: "features" },
+  { id: 3, title: "ROI", hash: "roi" },
 ];
 
 /* -------------------------------- component ---------------------------- */
@@ -56,6 +56,7 @@ export default function NavSection() {
       <nav className="relative z-20 flex items-center text-muted-foreground justify-between px-3 md:px-6 py-2 md:py-2 backdrop-blur-sm flex-shrink-0 bg-white/50">
         {/* Logo */}
         <div className="flex items-center gap-2">
+          <Link href="#hero">
           <Image
             src={Logo}
             alt="logo"
@@ -64,6 +65,7 @@ export default function NavSection() {
             className="object-contain"
             priority
           />
+          </Link>
           {/* <span className="font-bold text-lg md:text-xl text-primary">
             Hue-Line
           </span> */}

@@ -5,7 +5,9 @@ import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { X, Send } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { X, Send, Eye, Edit } from "lucide-react"
 
 interface ShareProjectDialogProps {
   bookingId: string
@@ -13,10 +15,13 @@ interface ShareProjectDialogProps {
 
 const emailSchema = z.string().email()
 
+type AccessType = "customer" | "viewer"
+
 export default function ShareProjectDialog({ bookingId }: ShareProjectDialogProps) {
   const [emails, setEmails] = useState<string[]>([])
   const [currentEmail, setCurrentEmail] = useState("")
   const [emailError, setEmailError] = useState("")
+  const [accessType, setAccessType] = useState<AccessType>("viewer")
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -61,7 +66,7 @@ export default function ShareProjectDialog({ bookingId }: ShareProjectDialogProp
       const response = await fetch(`/api/booking/${bookingId}/share-project`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emails }),
+        body: JSON.stringify({ emails, accessType }),
       })
 
       if (response.ok) {
@@ -69,6 +74,7 @@ export default function ShareProjectDialog({ bookingId }: ShareProjectDialogProp
         setEmails([])
         setCurrentEmail("")
         setEmailError("")
+        setAccessType("viewer")
       }
     } catch (error) {
       console.error("Failed to share project:", error)
@@ -96,6 +102,41 @@ export default function ShareProjectDialog({ bookingId }: ShareProjectDialogProp
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Access Type Selection */}
+          <div>
+            <label className="text-sm font-medium">Access Type</label>
+            <RadioGroup
+              value={accessType}
+              onValueChange={(value) => setAccessType(value as AccessType)}
+              className="mt-2 space-y-2"
+            >
+              <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                <RadioGroupItem value="viewer" id="viewer" />
+                <Label htmlFor="viewer" className="flex-1 cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-blue-500" />
+                    <div>
+                      <div className="font-medium">View Only</div>
+                      <div className="text-xs text-gray-500">Can view project details but cannot make changes</div>
+                    </div>
+                  </div>
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                <RadioGroupItem value="customer" id="customer" />
+                <Label htmlFor="customer" className="flex-1 cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    <Edit className="h-4 w-4 text-green-500" />
+                    <div>
+                      <div className="font-medium">Full Access</div>
+                      <div className="text-xs text-gray-500">Can view and edit project details</div>
+                    </div>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
 
           {/* Email input */}
           <div>

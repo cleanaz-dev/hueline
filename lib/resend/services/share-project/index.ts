@@ -1,2 +1,2 @@
-export * from "./send-share-project"
+export * from "./share-project-email"
 export * from "./send"

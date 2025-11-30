@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export function HeroSection() {
   return (
-    <section className="relative h-screen sm:h-auto flex flex-col overflow-hidden mt-2 md:mt-6 pb-12">
+    <section id="hero" className="relative h-screen sm:h-auto flex flex-col overflow-hidden mt-2 md:mt-6 pb-12">
       {/* Ratings */}
       <div className="flex flex-col md:flex-row text-center justify-center items-center gap-2 py-6 relative z-10">
         <div className="flex items-center gap-1">

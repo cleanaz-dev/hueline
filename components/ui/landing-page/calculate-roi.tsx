@@ -17,7 +17,7 @@ export default function CalculateROI() {
   const yearlyRevenue = monthlyRevenue * 12;
 
   return (
-    <section className="py-20">
+    <section id="roi" className="py-20">
       <div className="container mx-auto px-6">
         {/* HEADER */}
         <div className="header-section-div mb-12 text-center">

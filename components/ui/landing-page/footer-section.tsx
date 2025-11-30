@@ -24,14 +24,14 @@ export default function FooterSection() {
 
           {/* Navigation Links */}
           <div className="flex flex-wrap justify-center gap-8 text-muted-foreground">
-            <a href="#solutions" className="hover:text-accent transition-colors">
+            <a href="#solutions" className="hover:text-primary transition-colors">
               Solutions
             </a>
-            <a href="#examples" className="hover:text-accent transition-colors">
-              Examples
+            <a href="#features" className="hover:text-primary transition-colors">
+              Features
             </a>
-            <a href="#contact" className="hover:text-accent transition-colors">
-              Contact
+            <a href="#roi" className="hover:text-primary transition-colors">
+             ROI
             </a>
           </div>
 

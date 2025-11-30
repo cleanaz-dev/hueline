@@ -37,7 +37,7 @@ const challenges: Challenges[] = [
 
 export default function BusinessChallenges() {
   return (
-    <section id="challenges" className="px-4 py-20 bg-gray-50/50">
+    <section id="solutions" className="px-4 py-20 bg-gray-50/50">
       <div className="max-w-6xl mx-auto">
         <div className='header-section-div text-center mb-16'>
           <h1 className='section-badge'>Solve Your Biggest Business Challenges</h1>

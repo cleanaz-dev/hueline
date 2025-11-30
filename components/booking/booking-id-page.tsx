@@ -65,9 +65,7 @@ function formatTime(duration?: string): string {
 }
 
 export default function BookingPage({ booking, onRefresh }: Props) {
-  const [selectedColor, setSelectedColor] = useState<PaintColor | null>(null);
-  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
-  const [removeFurniture, setRemoveFurniture] = useState<boolean>(false);
+
 
   // Show empty state if no booking data
   if (!booking) {
@@ -85,13 +83,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
     return <EmptyState onRefresh={onRefresh} />;
   }
 
-  // Check if there's already an alternate mockup generated
-  const hasAlternateMockup = booking.mockup_urls.length > 1;
 
-  const handleGenerateAlternate = () => {
-    if (!selectedColor) return;
-    setShowGenerateDialog(true);
-  };
   return (
     <ScrollArea>
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">

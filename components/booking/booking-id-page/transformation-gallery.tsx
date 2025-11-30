@@ -10,6 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import GenerateDialog from "../generate-dialog";
 import { RandomColorButton } from "./random-color-button";
+import {
+  ReactCompareSlider,
+  ReactCompareSliderImage,
+} from "react-compare-slider";
+import AlternateDesign from "./alternate-colors";
 
 interface PaintColor {
   name: string;
@@ -40,18 +45,14 @@ export default function TransformationGallery(booking: BookingParams) {
   const [selectedColor, setSelectedColor] = useState<PaintColor | null>(null);
   const [removeFurniture, setRemoveFurniture] = useState<boolean>(false);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+  const [showComparison, setShowComparison] = useState(true);
 
   // Support both mockup_urls and mockups for backwards compatibility
   const mockupUrls = booking.mockup_urls || booking.mockups || [];
   const selectedMockup = mockupUrls[selectedDesignImage];
 
   // Check if we have more than 1 mockup (means alternate was generated)
-  const hasGeneratedImage = mockupUrls.length > 2;
-
-  const handleGenerateAlternate = () => {
-    if (!selectedColor) return;
-    setShowGenerateDialog(true);
-  };
+  const hasGeneratedImage = mockupUrls.length > 1;
 
   return (
     <section className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl py-6 px-4 md:py-8">
@@ -85,28 +86,131 @@ export default function TransformationGallery(booking: BookingParams) {
 
         {/* Original Images Tab */}
         <TabsContent value="original" className="space-y-6">
-          {/* Large Main Image */}
+          {/* Compare Toggle Button */}
+          {mockupUrls.length > 0 && booking.original_images.length > 0 && (
+            <div className="flex justify-center mb-4">
+              <Button
+                onClick={() => setShowComparison(!showComparison)}
+                variant={showComparison ? "default" : "outline"}
+                size="sm"
+                className="gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                {showComparison ? "Hide Comparison" : "Compare Before/After"}
+              </Button>
+            </div>
+          )}
+
+          {/* Large Main Image or Comparison Slider */}
           <div className="relative overflow-hidden rounded-xl shadow-lg border border-primary/20">
-            <GlareHover>
-              <Image
-                src={booking.original_images[selectedOriginalImage]}
-                alt={`Original image ${selectedOriginalImage + 1}`}
-                width={800}
-                height={500}
-                className="w-full h-auto aspect-video object-cover"
-                priority
+            {showComparison ? (
+              <ReactCompareSlider
+                itemOne={
+                  <ReactCompareSliderImage
+                    src={booking.original_images[selectedOriginalImage]}
+                    alt="Original"
+                    style={{ objectFit: "cover" }}
+                  />
+                }
+                itemTwo={
+                  <ReactCompareSliderImage
+                    src={selectedMockup.url}
+                    alt="Design"
+                    style={{ objectFit: "cover" }}
+                  />
+                }
+                style={{
+                  width: "100%",
+                  aspectRatio: "16/9",
+                }}
+                className="rounded-xl"
               />
-            </GlareHover>
+            ) : (
+              <GlareHover>
+                <Image
+                  src={booking.original_images[selectedOriginalImage]}
+                  alt={`Original image ${selectedOriginalImage + 1}`}
+                  width={800}
+                  height={500}
+                  className="w-full h-auto aspect-video object-cover"
+                  priority
+                />
+              </GlareHover>
+            )}
 
             {/* Image Badge */}
-            <div className="absolute top-4 left-0">
-              <div className="px-4 py-2 bg-primary text-white rounded-r-lg shadow-lg font-semibold text-xs uppercase tracking-wide">
-                <span className="flex items-center gap-2">
-                  Original {selectedOriginalImage + 1}
+            {!showComparison && (
+              <div className="absolute top-4 left-0">
+                <div className="px-4 py-2 bg-primary text-white rounded-r-lg shadow-lg font-semibold text-xs uppercase tracking-wide">
+                  <span className="flex items-center gap-2">
+                    Original {selectedOriginalImage + 1}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Comparison Labels */}
+            {showComparison && (
+              <>
+                <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/70 text-white rounded-lg text-xs font-semibold">
+                  BEFORE
+                </div>
+                <div className="absolute top-4 right-4 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold">
+                  AFTER
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Design Selector for Comparison Mode */}
+          {showComparison && mockupUrls.length > 1 && (
+            <div className="bg-white rounded-lg p-4 border border-primary/20">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-medium">
+                    Compare Different Colors
+                  </p>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {selectedDesignImage + 1} of {mockupUrls.length}
                 </span>
               </div>
+
+              {/* Color Options Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {mockupUrls.map((mockup, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedDesignImage(index)}
+                    className={`group cursor-pointer relative overflow-hidden rounded-lg border-2 transition-all duration-200 ${
+                      selectedDesignImage === index
+                        ? "border-primary shadow-md scale-105"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div
+                      className="w-full h-12"
+                      style={{ backgroundColor: mockup.color.hex }}
+                    />
+                    <div className="p-2 bg-background">
+                      <p className="text-xs font-medium truncate text-center">
+                        {mockup.color.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground text-center">
+                        {mockup.color.ral}
+                      </p>
+                    </div>
+                    {selectedDesignImage === index && (
+                      <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-1">
+                        <Eye className="h-3 w-3" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Thumbnail Grid */}
           <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
@@ -138,9 +242,6 @@ export default function TransformationGallery(booking: BookingParams) {
                 </div>
               </button>
             ))}
-            {booking.bookingId && (
-              <ImageUploadDialog bookingId={booking.bookingId} />
-            )}
           </div>
         </TabsContent>
 
@@ -158,6 +259,7 @@ export default function TransformationGallery(booking: BookingParams) {
                 priority
               />
             </GlareHover>
+
             {/* Image Badge */}
             <div className="absolute top-4 left-0">
               <div className="px-4 py-2 bg-primary text-white rounded-r-lg shadow-lg font-semibold text-xs uppercase tracking-wide">
@@ -192,13 +294,8 @@ export default function TransformationGallery(booking: BookingParams) {
                     className="w-full h-full object-cover"
                   />
                   <div
-                    className={`absolute bottom-0 left-0 right-0 text-xs font-medium py-1 text-center text-white`}
-                    style={{
-                      backgroundColor:
-                        selectedDesignImage === index
-                          ? mockup.color.hex
-                          : "rgba(0,0,0,0.7)",
-                    }}
+                    className="absolute bottom-0 left-0 right-0 text-xs font-medium py-1 text-center text-white"
+                    style={{ backgroundColor: mockup.color.hex }}
                   >
                     {index + 1}
                   </div>
@@ -218,165 +315,10 @@ export default function TransformationGallery(booking: BookingParams) {
             ))}
           </div>
 
-          {/* Color Info for Selected Mockup */}
-          <div className="bg-white rounded-xl p-4 md:p-6 border border-primary/10">
-            <div className="flex items-center gap-2 mb-4">
-              <Palette className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">
-                Alternate Colors for This Design
-              </h3>
-            </div>
-
-            {/* Hue Engine Section */}
-            {booking.alternate_colors &&
-              booking.alternate_colors.length > 0 && (
-                <div className="border-t border-primary/10 pt-6 mt-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-semibold flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-primary" />
-                      HUE-LINE ENGINE
-                    </h4>
-                    <RandomColorButton 
-                      bookingId={booking.phone}
-                    />
-                  </div>
-
-                  {hasGeneratedImage ? (
-                    /* Already generated - show completed state */
-                    <div className="text-center space-y-4 opacity-60">
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Alternative design has been generated!
-                      </p>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pointer-events-none">
-                        {booking.alternate_colors.map((color, index) => (
-                          <div
-                            key={index}
-                            className="relative overflow-hidden rounded-lg border-2 border-muted"
-                          >
-                            <div
-                              className="w-full h-16"
-                              style={{ backgroundColor: color.hex }}
-                            />
-                            <div className="p-2 bg-background">
-                              <div className="text-left">
-                                <p className="font-medium text-xs truncate">
-                                  {color.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground font-mono">
-                                  {color.hex} - {color.ral}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex justify-center pt-2">
-                        <Button disabled size="sm" className="opacity-50">
-                          <Zap className="h-3 w-3 mr-2" />
-                          Already Generated
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Active - allow generation */
-                    <>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Select a color below and generate a new mockup
-                        instantly.
-                      </p>
-
-                      <div className="flex flex-col md:flex-row gap-6 mb-6">
-                        {/* Block 1 */}
-                        <div className="flex flex-col md:max-w-sm p-4 bg-background/60 rounded-lg border border-primary/50 relative">
-                          {/* Beta Badge */}
-                          <div className="absolute -top-2 -left-2 px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-md shadow-sm">
-                            BETA
-                          </div>
-
-                          <div className="flex items-center justify-center gap-3">
-                            <Sofa className="h-4 w-4 text-primary" />
-                            <Label
-                              htmlFor="remove-furniture-gallery"
-                              className="text-sm font-medium"
-                            >
-                              Remove Furniture From Mockup
-                            </Label>
-                            <Switch
-                              id="remove-furniture-gallery"
-                              checked={removeFurniture}
-                              onCheckedChange={setRemoveFurniture}
-                              className="mt-0.5"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Block 2 */}
-                        {/* <div className="flex flex-col md:max-w-sm p-4 bg-background/60 rounded-lg border border-gray-300/50 relative">
-                      
-                          <div className="absolute -top-2 -left-2 px-2 py-1 bg-gray-300 text-white text-xs font-bold rounded-md shadow-sm">
-                            COMING SOON
-                          </div>
-
-                          <div className="flex items-center justify-center gap-3">
-                            <PaintRoller className="h-4 w-4 text-gray-300" />
-                            <Label className="text-muted-foreground font-medium">
-                              Generate Premium Mockup
-                            </Label>
-                            <Switch disabled className="mt-0.5" />
-                          </div>
-                        </div> */}
-                      </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6">
-                        {booking.alternate_colors.map((color, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setSelectedColor(color)}
-                            className={`group cursor-pointer relative overflow-hidden rounded-lg border-2 transition-all duration-300 ${
-                              selectedColor?.hex === color.hex
-                                ? "border-primary shadow-md scale-105"
-                                : "border-primary/20 hover:border-primary/40"
-                            }`}
-                          >
-                            <div
-                              className="w-full h-16 transition-all duration-300"
-                              style={{ backgroundColor: color.hex }}
-                            />
-                            <div className="p-2 bg-background">
-                              <div className="text-center">
-                                <p className="font-medium text-xs truncate">
-                                  {color.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground font-mono">
-                                  {color.hex}
-                                </p>
-                              </div>
-                            </div>
-                            {selectedColor?.hex === color.hex && (
-                              <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-1">
-                                <Zap className="h-2 w-2" />
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="flex justify-center">
-                        <Button
-                          onClick={handleGenerateAlternate}
-                          disabled={!selectedColor}
-                          size="lg"
-                          className="group inline-flex items-center gap-2 px-6"
-                        >
-                          <Zap className="h-3 w-3 group-hover:scale-110 transition-transform" />
-                          Generate Mockup
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-          </div>
+          <AlternateDesign
+            booking={booking}
+            hasGeneratedImage={hasGeneratedImage}
+          />
         </TabsContent>
       </Tabs>
 
