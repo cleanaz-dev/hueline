@@ -5,20 +5,29 @@ import { authOptions } from "@/lib/auth";
 import { getPresignedUrl } from "@/lib/aws/s3/services";
 import { getBooking } from "@/lib/redis";
 
-interface Params {
+interface RouteContext {
   params: Promise<{
     bookingId: string;
   }>;
 }
 
-export async function GET(request: Request, { params }: Params) {
+interface Mockup {
+  s3_key: string;
+  room_type: string;
+  color: string;
+}
+
+export async function GET(
+  request: Request,
+  context: RouteContext
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { bookingId } = await params;
+    const { bookingId } = await context.params;
 
     if (session.user.id !== bookingId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -40,7 +49,7 @@ export async function GET(request: Request, { params }: Params) {
 
     // Convert mockup s3_key to presigned URLs
     const mockupUrls = await Promise.all(
-      (booking.mockup_urls || []).map(async (mockup: any) => ({
+      (booking.mockup_urls || []).map(async (mockup: Mockup) => ({
         url: await getPresignedUrl(mockup.s3_key, 3600),
         room_type: mockup.room_type,
         color: mockup.color
