@@ -75,7 +75,7 @@ export function ShareProjectEmail({
           </Section>
 
           <Text style={{ ...styles.text, fontSize: '14px', color: '#666' }}>
-            You'll need to enter the PIN above to access the project.
+            You&apos;ll need to enter the PIN above to access the project.
           </Text>
 
           <Hr style={styles.hr} />
