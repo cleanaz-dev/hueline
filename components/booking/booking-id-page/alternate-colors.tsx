@@ -1,17 +1,18 @@
 "use client";
-import { Palette, Sofa, Zap } from "lucide-react";
+import { Palette, Sofa, Zap, Share2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  RiDice1Line,
   RiMoonFill,
   RiSparkling2Line,
   RiSunFill,
   RiDiceLine,
 } from "react-icons/ri";
+
+import { toast } from "sonner"
 
 interface PaintColor {
   ral: string;
@@ -29,11 +30,13 @@ interface BookingParams {
 interface ComponentProps {
   booking: BookingParams;
   hasGeneratedImage: boolean;
+  hasSharedAccess: boolean;
 }
 
 export default function AlternateDesign({
   booking,
   hasGeneratedImage,
+  hasSharedAccess,
 }: ComponentProps) {
   const [removeFurniture, setRemoveFurniture] = useState(false);
   const [selectedOption, setSelectedOption] = useState("");
@@ -47,12 +50,12 @@ export default function AlternateDesign({
   ];
 
   const handleSelectOption = (optionId: string) => {
-    if (hasGeneratedImage) return;
+    if (hasGeneratedImage || !hasSharedAccess) return;
     setSelectedOption(selectedOption === optionId ? "" : optionId);
   };
 
   const handleGenerateNewMockUp = async () => {
-    if (!selectedOption || hasGeneratedImage) return;
+    if (!selectedOption || hasGeneratedImage || !hasSharedAccess) return;
 
     setIsGenerating(true);
     try {
@@ -77,9 +80,11 @@ export default function AlternateDesign({
       }
 
       const data = await response.json();
+      toast.success("🖼️ Image Generated!")
       console.log("Mockup generated:", data);
     } catch (error) {
       console.error("Error generating mockup:", error);
+      toast.error("Failed to generate mockup");
     } finally {
       setIsGenerating(false);
     }
@@ -104,6 +109,15 @@ export default function AlternateDesign({
           Select an option below and generate a new mockup instantly.
         </p>
 
+        {!hasSharedAccess && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+            <Share2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
+            <p className="text-sm text-blue-700">
+              Share this project with others to unlock alternate design generation
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row gap-6 mb-6">
           <div className="flex flex-col md:max-w-sm p-4 bg-background/60 rounded-lg border border-primary/50 relative">
             <div className="absolute -top-2 -left-2 px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-md shadow-sm">
@@ -122,7 +136,7 @@ export default function AlternateDesign({
                 id="remove-furniture-gallery"
                 checked={removeFurniture}
                 onCheckedChange={setRemoveFurniture}
-                disabled={hasGeneratedImage}
+                disabled={hasGeneratedImage || !hasSharedAccess}
                 className="mt-0.5"
               />
             </div>
@@ -136,7 +150,7 @@ export default function AlternateDesign({
               <Button
                 key={option.id}
                 onClick={() => handleSelectOption(option.id)}
-                disabled={hasGeneratedImage}
+                disabled={hasGeneratedImage || !hasSharedAccess}
                 variant={selectedOption === option.id ? "default" : "outline"}
                 className="relative flex flex-col items-center justify-center gap-2 h-28 py-4 transition-color duration-200"
               >
@@ -155,12 +169,14 @@ export default function AlternateDesign({
         <div className="flex justify-center mb-1">
           <Button
             onClick={handleGenerateNewMockUp}
-            disabled={!selectedOption || isGenerating || hasGeneratedImage}
+            disabled={!selectedOption || isGenerating || hasGeneratedImage || !hasSharedAccess}
             size="lg"
             className="group inline-flex items-center gap-2 px-6"
           >
             <Zap className="h-3 w-3 group-hover:scale-110 transition-transform" />
-            {hasGeneratedImage
+            {!hasSharedAccess
+              ? "Share Project to Generate"
+              : hasGeneratedImage
               ? "Already Generated"
               : isGenerating
               ? "Generating..."

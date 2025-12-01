@@ -3,13 +3,13 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import type { NextAuthOptions } from "next-auth";
 import { getBooking } from "./redis";
 
-
-// 🔥 you will eventually replace this with getViewer()
-// for now just reuse getBooking() so it works without changing anything else.
-async function getViewer(id: string) {
-  const data = await getBooking(id);
-  return data;
-}
+type SharedAccess = {
+  email: string;
+  accessType: "viewer" | "customer";
+  pin: string;
+  createdAt: string;
+  updatedAt?: string;
+};
 
 export const authOptions = {
   providers: [
@@ -34,6 +34,7 @@ export const authOptions = {
             id: "admin",
             name: "Admin",
             email: credentials.email,
+            role: "admin",
           };
         }
 
@@ -56,42 +57,70 @@ export const authOptions = {
         if (!credentials?.bookingId || !credentials?.pin) return null;
 
         const booking = await getBooking(credentials.bookingId);
+        if (!booking) return null;
 
-        if (booking && booking.pin === credentials.pin) {
+        // Check if PIN matches the main booking PIN (original customer)
+        if (booking.pin === credentials.pin) {
           return {
             id: credentials.bookingId,
-            name: `Customer ${credentials.bookingId}`,
-            email: `customer-${credentials.bookingId}@example.com`,
+            name: booking.name || `Customer ${credentials.bookingId}`,
+            role: "customer", // Original customer = full access
           };
+        }
+
+        // Check if PIN matches any shared access PIN
+        if (booking.sharedAccess) {
+          const access = booking.sharedAccess.find(
+            (sa: SharedAccess) => sa.pin === credentials.pin
+          );
+
+          if (access) {
+            return {
+              id: credentials.bookingId,
+              name: access.email.split("@")[0], // Just username part
+              role: access.accessType, // "customer" or "viewer"
+            };
+          }
         }
 
         return null;
       },
     }),
-
-    // ------------------------------
-    // 🟣 VIEWER LOGIN (READ-ONLY)
-    // Shared access - can view but not edit
-    // ------------------------------
     CredentialsProvider({
       id: "viewer",
       name: "Viewer",
       credentials: {
-        viewerId: { label: "Viewer ID", type: "text" },
+        bookingId: { label: "Booking ID", type: "text" },
         pin: { label: "PIN", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.viewerId || !credentials?.pin) return null;
+        if (!credentials?.bookingId || !credentials?.pin) return null;
 
-        const viewer = await getViewer(credentials.viewerId);
+        const booking = await getBooking(credentials.bookingId);
+        if (!booking) return null;
 
-        // viewer.viewerPin is where you store the PIN
-        if (viewer && viewer.viewerPin === credentials.pin) {
+        // Check if PIN matches the main booking PIN (original customer)
+        if (booking.pin === credentials.pin) {
           return {
-            id: `viewer-${credentials.viewerId}`,
-            name: `Viewer ${credentials.viewerId}`,
-            email: `viewer-${credentials.viewerId}@example.com`,
+            id: credentials.bookingId,
+            name: booking.name || `Customer ${credentials.bookingId}`,
+            role: "customer", // Original customer = full access
           };
+        }
+
+        // Check if PIN matches any shared access PIN
+        if (booking.sharedAccess) {
+          const access = booking.sharedAccess.find(
+            (sa: SharedAccess) => sa.pin === credentials.pin
+          );
+
+          if (access) {
+            return {
+              id: credentials.bookingId,
+              name: access.email.split("@")[0], // Just username part
+              role: access.accessType, // "customer" or "viewer"
+            };
+          }
         }
 
         return null;
@@ -103,18 +132,16 @@ export const authOptions = {
   // 🔐 JWT + SESSION
   // ------------------------------
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.provider = account?.provider; // admin | customer | viewer
-        token.role = account?.provider;     // same thing, easier to check
+        token.role = user.role; // Use the role from authorize()
       }
       return token;
     },
 
     async session({ session, token }) {
       if (token.id) session.user.id = token.id as string;
-      if (token.provider) session.provider = token.provider as string;
       if (token.role) session.role = token.role as string;
       return session;
     },

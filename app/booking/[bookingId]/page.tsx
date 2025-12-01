@@ -29,7 +29,7 @@ export default async function page({ params }: Props) {
   if (!isAuthorized) {
     redirect(`/booking/login?bookingId=${bookingId}`);
   }
-  console.log('✅ User Auth')
+  console.log('✅ User Auth:', session)
 
   await saveBookingData({
     ...booking,

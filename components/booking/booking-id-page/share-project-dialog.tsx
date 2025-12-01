@@ -1,99 +1,109 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { X, Send, Eye, Edit } from "lucide-react"
+import { useState, useEffect } from "react";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { X, Send, Eye, Edit } from "lucide-react";
+import { toast } from "sonner";
 
 interface ShareProjectDialogProps {
-  bookingId: string
+  bookingId: string;
 }
 
-const emailSchema = z.string().email()
+const emailSchema = z.string().email();
 
-type AccessType = "customer" | "viewer"
+type AccessType = "customer" | "viewer";
 
-export default function ShareProjectDialog({ bookingId }: ShareProjectDialogProps) {
-  const [emails, setEmails] = useState<string[]>([])
-  const [currentEmail, setCurrentEmail] = useState("")
-  const [emailError, setEmailError] = useState("")
-  const [accessType, setAccessType] = useState<AccessType>("viewer")
-  const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+export default function ShareProjectDialog({
+  bookingId,
+}: ShareProjectDialogProps) {
+  const [emails, setEmails] = useState<string[]>([]);
+  const [currentEmail, setCurrentEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [accessType, setAccessType] = useState<AccessType>("viewer");
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Autofocus email input when dialog opens
-  const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null)
+  const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
   useEffect(() => {
     if (isOpen && inputRef) {
-      inputRef.focus()
+      inputRef.focus();
     }
-  }, [isOpen, inputRef])
+  }, [isOpen, inputRef]);
 
   const addEmail = () => {
-    setEmailError("")
+    setEmailError("");
 
-    if (!currentEmail.trim()) return
+    if (!currentEmail.trim()) return;
 
-    const result = emailSchema.safeParse(currentEmail.trim())
+    const result = emailSchema.safeParse(currentEmail.trim());
 
     if (!result.success) {
-      setEmailError("Please enter a valid email address.")
-      return
+      setEmailError("Please enter a valid email address.");
+      return;
     }
 
-    const email = result.data
+    const email = result.data;
 
     if (!emails.includes(email)) {
-      setEmails((prev) => [...prev, email])
-      setCurrentEmail("")
+      setEmails((prev) => [...prev, email]);
+      setCurrentEmail("");
     }
-  }
+  };
 
   const removeEmail = (email: string) => {
-    setEmails((prev) => prev.filter((e) => e !== email))
-  }
+    setEmails((prev) => prev.filter((e) => e !== email));
+  };
 
   const handleSubmit = async () => {
-    if (emails.length === 0) return
+    if (emails.length === 0) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       const response = await fetch(`/api/booking/${bookingId}/share-project`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ emails, accessType }),
-      })
+      });
 
       if (response.ok) {
-        setIsOpen(false)
-        setEmails([])
-        setCurrentEmail("")
-        setEmailError("")
-        setAccessType("viewer")
+        setIsOpen(false);
+        setEmails([]);
+        setCurrentEmail("");
+        setEmailError("");
+        setAccessType("viewer");
       }
+      toast.success("📧 Email Sent Successfully!");
     } catch (error) {
-      console.error("Failed to share project:", error)
+      console.error("Failed to share project:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      e.preventDefault()
-      addEmail()
+      e.preventDefault();
+      addEmail();
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Share Project</Button>
+        <Button variant="outline" size="sm">Share Project</Button>
       </DialogTrigger>
 
       <DialogContent>
@@ -117,7 +127,9 @@ export default function ShareProjectDialog({ bookingId }: ShareProjectDialogProp
                     <Eye className="h-4 w-4 text-blue-500" />
                     <div>
                       <div className="font-medium">View Only</div>
-                      <div className="text-xs text-gray-500">Can view project details but cannot make changes</div>
+                      <div className="text-xs text-gray-500">
+                        Can view project details but cannot make changes
+                      </div>
                     </div>
                   </div>
                 </Label>
@@ -130,7 +142,9 @@ export default function ShareProjectDialog({ bookingId }: ShareProjectDialogProp
                     <Edit className="h-4 w-4 text-green-500" />
                     <div>
                       <div className="font-medium">Full Access</div>
-                      <div className="text-xs text-gray-500">Can view and edit project details</div>
+                      <div className="text-xs text-gray-500">
+                        Can view and edit project details
+                      </div>
                     </div>
                   </div>
                 </Label>
@@ -149,12 +163,16 @@ export default function ShareProjectDialog({ bookingId }: ShareProjectDialogProp
                 value={currentEmail}
                 ref={setInputRef}
                 onChange={(e) => {
-                  setCurrentEmail(e.target.value)
-                  setEmailError("")
+                  setCurrentEmail(e.target.value);
+                  setEmailError("");
                 }}
                 onKeyDown={handleKeyDown}
               />
-              <Button type="button" onClick={addEmail}>
+              <Button
+                type="button"
+                onClick={addEmail}
+                disabled={!currentEmail.trim()}
+              >
                 Add
               </Button>
             </div>
@@ -201,5 +219,5 @@ export default function ShareProjectDialog({ bookingId }: ShareProjectDialogProp
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

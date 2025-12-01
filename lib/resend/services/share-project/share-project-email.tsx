@@ -22,7 +22,12 @@ export function ShareProjectEmail({
   pin: string;
   bookingId: string;
 }) {
-  const projectUrl = `https://originsociety.ai/bookings/${bookingId}`;
+  const projectUrl = `https://hue-line.com/j/${bookingId}`;
+  
+  // Convert "customer" to "standard" for display
+  const displayAccessType = accessType.toLowerCase() === 'customer' 
+    ? 'Standard' 
+    : accessType.charAt(0).toUpperCase() + accessType.slice(1);
   
   return (
     <Html>
@@ -33,11 +38,11 @@ export function ShareProjectEmail({
         <Container style={styles.container}>
 
           <Section style={styles.logoSection}>
-            <Img src={LOGO_URL} width="120" style={styles.logo} alt="Origin Society Logo" />
+            <Img src={LOGO_URL} width="120" style={styles.logo} alt="Hue-Line Logo" />
           </Section>
 
           <Text style={styles.text}>
-            A project has been shared with you on Origin Society.
+            A project has been shared with you on Hue-Line.
           </Text>
 
           <Section style={{
@@ -48,7 +53,7 @@ export function ShareProjectEmail({
             marginBottom: '16px'
           }}>
             <Text style={{ ...styles.text, margin: '0 0 12px 0' }}>
-              <strong>Access Level:</strong> {accessType.charAt(0).toUpperCase() + accessType.slice(1)}
+              <strong>Access Level:</strong> {displayAccessType}
             </Text>
             <Text style={{ ...styles.text, margin: '0' }}>
               <strong>Access PIN:</strong> <span style={{ 
@@ -76,7 +81,7 @@ export function ShareProjectEmail({
           <Hr style={styles.hr} />
 
           <Text style={styles.footerText}>
-            © {new Date().getFullYear()} Origin Society. All rights reserved.
+            © {new Date().getFullYear()} Hue-Line. All rights reserved.
           </Text>
 
         </Container>

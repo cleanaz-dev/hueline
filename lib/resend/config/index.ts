@@ -19,7 +19,7 @@ export { styles } from "./styles"
 export { StripePaymentLinks } from "@/lib/config/strilpe-config";
 
 export const LOGO_URL =
-  "https://res.cloudinary.com/dmllgn0t7/image/upload/v1760295280/logo-2--increased-brightness_wdn9il.png";
+  "https://res.cloudinary.com/dmllgn0t7/image/upload/v1764544174/url-image.png";
 export const AVATAR_URL =
   "https://res.cloudinary.com/dmllgn0t7/image/upload/v1759892366/Generated_Image_October_07_2025_-_10_58PM_oiyrvu.png";
 

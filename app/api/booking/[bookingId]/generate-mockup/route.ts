@@ -15,14 +15,21 @@ export async function POST(req: Request, { params }: Params) {
 
     const { option, currentColor } = body;
 
-    const color = await getMockUpColorMoonshot(option, currentColor);
+    // Extract first color from array
+    const color = currentColor[0];
     
-    console.log("Current color:", currentColor);
+    // Extract hue from color name
+    const hueKeywords = ['blue', 'red', 'green', 'yellow', 'orange', 'purple', 'violet', 'grey', 'gray', 'brown', 'beige', 'white', 'black', 'pink', 'turquoise'];
+    const mainHue = hueKeywords.find(hue => color.name.toLowerCase().includes(hue)) || 'blue';
 
+    const newColor = await getMockUpColorMoonshot(option, color, mainHue);
+    
+    console.log("Current color:", color);
+    console.log("Extracted hue:", mainHue);
 
     return NextResponse.json({ 
       message: "success", 
-      color,
+      color: newColor,
       bookingId 
     }, { status: 200 });
     

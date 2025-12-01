@@ -3,28 +3,17 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Logo from "@/public/images/logo-2--increased-brightness.png";
 import {
-  Palette,
   Lightbulb,
   Sparkles,
-  ChevronRight,
-  PaintBucket,
-  Eye,
-  AlertCircle,
-  RefreshCw,
-  Zap,
-  Sofa,
 } from "lucide-react";
 import Link from "next/link";
-import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
-import GenerateDialog from "./generate-dialog";
-import { Label } from "../ui/label";
-import { Switch } from "../ui/switch";
 import CouponQuoteCards from "./quote-card";
 import { BookingHero } from "./section/booking-hero";
 import BookindgIdCTA from "./booking-id-page/booking-id-cta";
 import TransformationGallery from "./booking-id-page/transformation-gallery";
 import EmptyState from "./booking-id-page/empty-state";
+
 
 type PaintColor = {
   name: string;
@@ -39,6 +28,14 @@ type MockupUrl = {
   color: PaintColor;
 };
 
+type SharedAccess = {
+  email: string;
+  accessType: "customer" | "viewer" | "admin"
+  pin: string;
+  createdAt: string;
+}
+
+
 type Booking = {
   name: string;
   prompt: string;
@@ -51,6 +48,7 @@ type Booking = {
   phone: string;
   dimensions?: string;
   booking_id?: string;
+  sharedAccess?: SharedAccess[]
 };
 
 type Props = {
@@ -134,7 +132,8 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             paint_colors={booking.paint_colors}
             alternate_colors={booking.alternate_colors} // ← Do you have this?
             bookingId={booking.booking_id}
-            phone={booking.phone} // ← And this?
+            phone={booking.phone} 
+            sharedAccess={booking.sharedAccess}
           />
           {/* Design Summary */}
           {booking.summary && (

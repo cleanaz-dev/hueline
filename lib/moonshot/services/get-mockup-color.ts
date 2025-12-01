@@ -1,11 +1,15 @@
-import { filterColorsByHue, RANDOM_COLOR_MAP, TRENDY_COLOR_MAP } from "@/lib/utils";
+import {
+  filterColorsByHue,
+  RANDOM_COLOR_MAP,
+  TRENDY_COLOR_MAP,
+} from "@/lib/utils";
 import { moonshot } from "../config";
 import { getRalClassicColors } from "@/lib/utils/server";
 
 export const getMockUpColorMoonshot = async (
   option: string,
   currentColor: string,
-  mainHue?: string | "blue"
+  mainHue: string
 ) => {
   if (!currentColor) {
     throw new Error("Current color is required");
@@ -18,7 +22,7 @@ export const getMockUpColorMoonshot = async (
   } else if (option === "random") {
     color_map = RANDOM_COLOR_MAP;
   } else if (option === "brighter" || option === "darker") {
-    const allColors = await getRalClassicColors();
+    const allColors = getRalClassicColors();
     color_map = mainHue ? filterColorsByHue(mainHue, allColors) : allColors;
   }
 

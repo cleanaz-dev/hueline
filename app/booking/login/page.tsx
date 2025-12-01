@@ -102,7 +102,7 @@ const handleSubmit = async (enteredPin?: string) => {
   setError("");
 
   try {
-    const result = await signIn("booking", {
+    const result = await signIn("customer", {
       bookingId,
       pin: finalPin,
       redirect: false,

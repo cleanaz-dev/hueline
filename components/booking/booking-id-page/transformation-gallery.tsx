@@ -1,19 +1,16 @@
 "use client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Sparkles, Palette, Zap, Sofa, PaintRoller } from "lucide-react";
+import { Eye, Sparkles, Palette } from "lucide-react";
 import Image from "next/image";
 import React, { useState } from "react";
-import { ImageUploadDialog } from "../upload-image";
 import GlareHover from "@/components/GlareHover";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import GenerateDialog from "../generate-dialog";
-import { RandomColorButton } from "./random-color-button";
 import {
   ReactCompareSlider,
   ReactCompareSliderImage,
 } from "react-compare-slider";
+
 import AlternateDesign from "./alternate-colors";
 
 interface PaintColor {
@@ -29,6 +26,14 @@ interface MockupUrl {
   color: PaintColor;
 }
 
+interface SharedAccess {
+  email: string;
+  accessType: "customer" | "viewer" | "admin"
+  pin: string;
+  createdAt: string;
+}
+
+
 interface BookingParams {
   original_images: string[];
   mockup_urls?: MockupUrl[];
@@ -37,6 +42,7 @@ interface BookingParams {
   alternate_colors?: PaintColor[];
   bookingId?: string;
   phone: string;
+  sharedAccess?: SharedAccess[]
 }
 
 export default function TransformationGallery(booking: BookingParams) {
@@ -53,6 +59,9 @@ export default function TransformationGallery(booking: BookingParams) {
 
   // Check if we have more than 1 mockup (means alternate was generated)
   const hasGeneratedImage = mockupUrls.length > 1;
+
+  const hasSharedAccess = !!booking.sharedAccess?.length;
+  console.log("Shared Access:", booking)
 
   return (
     <section className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl py-6 px-4 md:py-8">
@@ -73,7 +82,7 @@ export default function TransformationGallery(booking: BookingParams) {
             className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md text-sm font-medium transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-primary cursor-pointer"
           >
             <Eye className="h-4 w-4" />
-            Current Space
+            Compare Space
           </TabsTrigger>
           <TabsTrigger
             value="design"
@@ -264,7 +273,7 @@ export default function TransformationGallery(booking: BookingParams) {
             <div className="absolute top-4 left-0">
               <div className="px-4 py-2 bg-primary text-white rounded-r-lg shadow-lg font-semibold text-xs uppercase tracking-wide">
                 <span className="flex items-center gap-2">
-                  {selectedMockup.room_type} - Design {selectedDesignImage + 1}
+                  {selectedMockup.room_type} 
                 </span>
               </div>
             </div>
@@ -295,7 +304,7 @@ export default function TransformationGallery(booking: BookingParams) {
                   />
                   <div
                     className="absolute bottom-0 left-0 right-0 text-xs font-medium py-1 text-center text-white"
-                    style={{ backgroundColor: mockup.color.hex }}
+                   
                   >
                     {index + 1}
                   </div>
@@ -318,6 +327,7 @@ export default function TransformationGallery(booking: BookingParams) {
           <AlternateDesign
             booking={booking}
             hasGeneratedImage={hasGeneratedImage}
+            hasSharedAccess={hasSharedAccess}
           />
         </TabsContent>
       </Tabs>

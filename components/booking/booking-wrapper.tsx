@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import BookingPage from '@/components/booking/booking-id-page'
 import SplashScreen from '../ui/splash-screeen/splash-screen'
 
+
 // Booking type definition
 type PaintColor = {
   name: string;
@@ -19,6 +20,14 @@ type MockupUrl = {
   color: PaintColor;
 };
 
+type SharedAccess = {
+  email: string;
+  accessType: "customer" | "viewer" | "admin"
+  pin: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 type Booking = {
   name: string;
   prompt: string;
@@ -31,6 +40,7 @@ type Booking = {
   phone: string;
   dimensions?: string;
   booking_id?: string;
+  sharedAccess?: SharedAccess[]
 };
 
 type Props = {
@@ -42,6 +52,8 @@ export default function BookingWrapper({ booking }: Props) {
   const [enrichedBooking, setEnrichedBooking] = useState<Booking>(booking)
   const [urlsReady, setUrlsReady] = useState(false)
   const [minTimeElapsed, setMinTimeElapsed] = useState(false)
+
+
 
   // Start fetching URLs immediately
   useEffect(() => {
