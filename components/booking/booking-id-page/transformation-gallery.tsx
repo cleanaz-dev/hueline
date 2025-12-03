@@ -121,6 +121,7 @@ export default function TransformationGallery(booking: BookingParams) {
                       objectFit: "contain",
                       width: "100%",
                       height: "auto",
+                      aspectRatio: "4/3"
                     }}
                   />
                 }
@@ -132,13 +133,14 @@ export default function TransformationGallery(booking: BookingParams) {
                       objectFit: "contain",
                       width: "100%",
                       height: "auto",
+                      aspectRatio: "4/3"
                     }}
                   />
                 }
                 style={{
                   width: "100%",
                   height: "auto",
-                  aspectRatio: "4/3"
+                  
                 }}
                 className="rounded-xl"
                 position={50} // Start at center
