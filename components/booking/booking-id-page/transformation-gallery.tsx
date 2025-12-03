@@ -28,11 +28,10 @@ interface MockupUrl {
 
 interface SharedAccess {
   email: string;
-  accessType: "customer" | "viewer" | "admin"
+  accessType: "customer" | "viewer" | "admin";
   pin: string;
   createdAt: string;
 }
-
 
 interface BookingParams {
   original_images: string[];
@@ -42,7 +41,7 @@ interface BookingParams {
   alternate_colors?: PaintColor[];
   bookingId?: string;
   phone: string;
-  sharedAccess?: SharedAccess[]
+  sharedAccess?: SharedAccess[];
 }
 
 export default function TransformationGallery(booking: BookingParams) {
@@ -61,7 +60,7 @@ export default function TransformationGallery(booking: BookingParams) {
   const hasGeneratedImage = mockupUrls.length > 1;
 
   const hasSharedAccess = !!booking.sharedAccess?.length;
-  console.log("Shared Access:", booking)
+  console.log("Shared Access:", booking);
 
   return (
     <section className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl py-6 px-4 md:py-8">
@@ -118,21 +117,31 @@ export default function TransformationGallery(booking: BookingParams) {
                   <ReactCompareSliderImage
                     src={booking.original_images[selectedOriginalImage]}
                     alt="Original"
-                    style={{ objectFit: "cover" }}
+                    style={{
+                      objectFit: "contain",
+                      width: "100%",
+                      height: "auto",
+                    }}
                   />
                 }
                 itemTwo={
                   <ReactCompareSliderImage
                     src={selectedMockup.url}
                     alt="Design"
-                    style={{ objectFit: "cover" }}
+                    style={{
+                      objectFit: "contain",
+                      width: "100%",
+                      height: "auto",
+                    }}
                   />
                 }
                 style={{
                   width: "100%",
-                  aspectRatio: "16/9",
+                  height: "auto",
                 }}
                 className="rounded-xl"
+                position={50} // Start at center
+                onlyHandleDraggable={false} // Allow clicking anywhere to move slider
               />
             ) : (
               <GlareHover>
@@ -141,7 +150,7 @@ export default function TransformationGallery(booking: BookingParams) {
                   alt={`Original image ${selectedOriginalImage + 1}`}
                   width={800}
                   height={800}
-                  className="w-full h-auto aspect-video object-cover"
+                  className="w-full h-auto object-contain"
                   priority
                 />
               </GlareHover>
@@ -149,7 +158,7 @@ export default function TransformationGallery(booking: BookingParams) {
 
             {/* Image Badge */}
             {!showComparison && (
-              <div className="absolute top-4 left-0">
+              <div className="absolute top-4 left-0 z-10">
                 <div className="px-4 py-2 bg-primary text-white rounded-r-lg shadow-lg font-semibold text-xs uppercase tracking-wide">
                   <span className="flex items-center gap-2">
                     Original {selectedOriginalImage + 1}
@@ -161,10 +170,10 @@ export default function TransformationGallery(booking: BookingParams) {
             {/* Comparison Labels */}
             {showComparison && (
               <>
-                <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/70 text-white rounded-lg text-xs font-semibold">
+                <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/70 text-white rounded-lg text-xs font-semibold z-10">
                   BEFORE
                 </div>
-                <div className="absolute top-4 right-4 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold">
+                <div className="absolute top-4 right-4 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold z-10">
                   AFTER
                 </div>
               </>
@@ -273,7 +282,7 @@ export default function TransformationGallery(booking: BookingParams) {
             <div className="absolute top-4 left-0">
               <div className="px-4 py-2 bg-primary text-white rounded-r-lg shadow-lg font-semibold text-xs uppercase tracking-wide">
                 <span className="flex items-center gap-2">
-                  {selectedMockup.room_type} 
+                  {selectedMockup.room_type}
                 </span>
               </div>
             </div>
@@ -302,10 +311,7 @@ export default function TransformationGallery(booking: BookingParams) {
                     height={80}
                     className="w-full h-full object-cover"
                   />
-                  <div
-                    className="absolute bottom-0 left-0 right-0 text-xs font-medium py-1 text-center text-white"
-                   
-                  >
+                  <div className="absolute bottom-0 left-0 right-0 text-xs font-medium py-1 text-center text-white">
                     {index + 1}
                   </div>
                 </button>
