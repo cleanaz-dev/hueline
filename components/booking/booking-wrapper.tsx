@@ -1,10 +1,9 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import BookingPage from '@/components/booking/booking-id-page'
-import SplashScreen from '../ui/splash-screeen/splash-screen'
-
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import BookingPage from "@/components/booking/booking-id-page";
+import SplashScreen from "../ui/splash-screeen/splash-screen";
 
 // Booking type definition
 type PaintColor = {
@@ -22,11 +21,11 @@ type MockupUrl = {
 
 type SharedAccess = {
   email: string;
-  accessType: "customer" | "viewer" | "admin"
+  accessType: "customer" | "viewer" | "admin";
   pin: string;
   createdAt: string;
   updatedAt?: string;
-}
+};
 
 type Booking = {
   name: string;
@@ -40,59 +39,58 @@ type Booking = {
   phone: string;
   dimensions?: string;
   booking_id?: string;
-  sharedAccess?: SharedAccess[]
+  sharedAccess?: SharedAccess[];
 };
 
 type Props = {
-  booking: Booking
-}
+  booking: Booking;
+};
 
 export default function BookingWrapper({ booking }: Props) {
-  const [showSplash, setShowSplash] = useState(true)
-  const [enrichedBooking, setEnrichedBooking] = useState<Booking>(booking)
-  const [urlsReady, setUrlsReady] = useState(false)
-  const [minTimeElapsed, setMinTimeElapsed] = useState(false)
-
-
+  const [showSplash, setShowSplash] = useState(true);
+  const [enrichedBooking, setEnrichedBooking] = useState<Booking>(booking);
+  const [urlsReady, setUrlsReady] = useState(false);
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   // Start fetching URLs immediately
   useEffect(() => {
-    fetchPresignedUrls()
-  }, [])
+    const fetchPresignedUrls = async () => {
+      try {
+        const res = await fetch(
+          `/api/booking/${booking.phone}/get-presigned-urls`
+        );
+        if (!res.ok) throw new Error("Failed to fetch URLs");
+
+        const { original_images, mockup_urls } = await res.json();
+
+        setEnrichedBooking({
+          ...booking,
+          original_images,
+          mockup_urls,
+        });
+        setUrlsReady(true);
+      } catch (error) {
+        console.error("Failed to load presigned URLs:", error);
+        setUrlsReady(true); // Still proceed to show the page
+      }
+    };
+    fetchPresignedUrls();
+  }, []);
 
   // Minimum 2 second timer
   useEffect(() => {
     const timer = setTimeout(() => {
-      setMinTimeElapsed(true)
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [])
+      setMinTimeElapsed(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Hide splash only when BOTH conditions are met
   useEffect(() => {
     if (minTimeElapsed && urlsReady) {
-      setShowSplash(false)
+      setShowSplash(false);
     }
-  }, [minTimeElapsed, urlsReady])
-
-  const fetchPresignedUrls = async () => {
-    try {
-      const res = await fetch(`/api/booking/${booking.phone}/get-presigned-urls`)
-      if (!res.ok) throw new Error('Failed to fetch URLs')
-      
-      const { original_images, mockup_urls } = await res.json()
-      
-      setEnrichedBooking({
-        ...booking,
-        original_images,
-        mockup_urls
-      })
-      setUrlsReady(true)
-    } catch (error) {
-      console.error('Failed to load presigned URLs:', error)
-      setUrlsReady(true) // Still proceed to show the page
-    }
-  }
+  }, [minTimeElapsed, urlsReady]);
 
   return (
     <>
@@ -117,5 +115,5 @@ export default function BookingWrapper({ booking }: Props) {
         </motion.div>
       )}
     </>
-  )
+  );
 }

@@ -26,3 +26,21 @@ export function getRalClassicCSV(): string {
   const csvContent = fs.readFileSync(csvPath, 'utf-8');
   return csvContent;
 }
+
+export function getRalHexName() {
+  const csvPath = path.join(process.cwd(), 'lib', 'utils', 'ral_classic.csv');
+  const csvContent = fs.readFileSync(csvPath, 'utf-8');
+  
+  const lines = csvContent.trim().split('\n');
+  
+  const colors = lines.slice(1).map(line => {
+    const values = line.split(',');
+    return {
+      name: values[5], // English name
+      ral: values[0],  // RAL code
+      hex: values[2],
+    };
+  }).filter(color => color.ral && color.name && color.hex);
+  
+  return colors;
+}

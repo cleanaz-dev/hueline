@@ -106,3 +106,15 @@ export function filterColorsByHue(
 export function generatePin(): string {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
+
+
+    // Extract hue from color name
+export const hueKeywords = [
+  'blue', 'red', 'green', 'yellow', 'orange', 'purple', 'violet',
+  'grey', 'gray', 'brown', 'beige', 'white', 'black', 'pink', 'turquoise'
+];
+
+export const extractMainHue = (colorName: string) => {
+  const lower = colorName.toLowerCase();
+  return hueKeywords.find(hue => lower.includes(hue)) || 'blue';
+};

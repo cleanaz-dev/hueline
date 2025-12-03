@@ -27,9 +27,9 @@ const shareSchema = z.object({
 
 export async function POST(req: Request, { params }: Params) {
   const { bookingId } = await params;
-  
+
   console.log("📧 Share booking request received for:", bookingId);
-  
+
   try {
     const session = await getServerSession(authOptions);
 
@@ -44,7 +44,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const body = await req.json();
     console.log("📝 Request body:", body);
-    
+
     const result = shareSchema.safeParse(body);
 
     if (!result.success) {
@@ -54,7 +54,7 @@ export async function POST(req: Request, { params }: Params) {
         { status: 400 }
       );
     }
-    
+
     const { emails, accessType } = result.data;
     const booking = await getBooking(bookingId);
 
@@ -112,12 +112,16 @@ export async function POST(req: Request, { params }: Params) {
 
     console.log("✅ Process completed");
 
-    return NextResponse.json({ 
-      message: "Access shared successfully",
-      sharedCount: emails.length,
-      newSharesCount: newShares.length
-    }, { status: 200 });
-    
+    return NextResponse.json(
+      {
+        message: "Access shared successfully",
+        sharedCount: emails.length,
+        newSharesCount: newShares.length,
+        updatedSharesCount: emails.length - newShares.length,
+        emailsSent: newShares.length > 0,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("❌ Error sharing booking:", error);
     return NextResponse.json(

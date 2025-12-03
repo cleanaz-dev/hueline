@@ -140,7 +140,7 @@ export default function TransformationGallery(booking: BookingParams) {
                   src={booking.original_images[selectedOriginalImage]}
                   alt={`Original image ${selectedOriginalImage + 1}`}
                   width={800}
-                  height={500}
+                  height={800}
                   className="w-full h-auto aspect-video object-cover"
                   priority
                 />

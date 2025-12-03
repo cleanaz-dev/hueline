@@ -6,7 +6,7 @@ import { OnboardingEmail } from "@/lib/config/email-config";
 import { MakeHandler } from "@/lib/handlers/make-handler";
 import { getClientByEmail } from "@/lib/query";
 import { markFeeAsPaid } from "@/lib/handlers/client-status-handler";
-import { generateProjectTemplate } from "../aws-template-builder";
+import { generateProjectTemplate } from "../aws/aws-template-builder";
 import { sendPaymentNotification } from "../slack/send-payment-notification";
 import { sendProjectNotification } from "../slack/send-asana-notification";
 

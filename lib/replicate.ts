@@ -1,6 +1,5 @@
 //  lib/replicate.ts
 import Replicate from "replicate";
-import { uploadToCloudinary } from "./cloudinary";
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
@@ -36,9 +35,8 @@ if (removeFurniture) {
     // Get the URL string from the FileOutput object
     const imageUrl = firstOutput.url().href;
 
-    // Upload to Cloudinary and return the secure URL
-    const secureUrl = await uploadToCloudinary(imageUrl, "hueline");
-    return secureUrl;
+
+    return imageUrl;
   } catch (error) {
     console.error("Error generating mockup:", error);
     throw error;

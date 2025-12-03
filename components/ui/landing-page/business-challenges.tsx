@@ -1,4 +1,3 @@
-import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "../card"
 import { ReactNode } from "react";
 import { ClockAlert, PhoneMissed, Users2 } from "lucide-react";

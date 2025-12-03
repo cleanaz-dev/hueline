@@ -23,7 +23,7 @@ export default function CalculateROI() {
         <div className="header-section-div mb-12 text-center">
           <h2 className="section-badge">Calculate Your ROI</h2>
           <h1 className="section-header text-balance">
-            <span className="text-primary">Hue-Line </span>Pays for Itself
+            <span className="text-primary">Hue-Line </span>pays for itself
           </h1>
           <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
             See how much revenue you could recover by never missing another call
@@ -32,7 +32,7 @@ export default function CalculateROI() {
 
         {/* CENTERED BOX */}
         <div className="flex justify-center">
-          <Card className="p-8 w-full max-w-4xl rounded-2xl shadow-lg border-2 border-gray-100 bg-gradient-to-br from-white to-gray-50">
+          <Card className="p-4 md:p-8 w-full max-w-4xl rounded-2xl shadow-lg border-2 border-gray-100 bg-gradient-to-br from-white to-gray-50">
             <CardContent className="space-y-10 p-0">
               {/* INPUTS — grid layout */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -88,7 +88,7 @@ export default function CalculateROI() {
                 {/* Monthly Revenue */}
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-primary rounded-xl p-8 text-center transform transition-all hover:shadow-md">
                   <div className="flex items-center justify-center gap-2 mb-3">
-                    <TrendingUp className="w-6 h-6 text-primary" />
+                    <TrendingUp className="hidden md:block w-6 h-6 text-primary" />
                     <h3 className="text-lg md:text-xl font-semibold text-gray-900">
                       Monthly Revenue Potential
                     </h3>

@@ -1,5 +1,4 @@
 import { StaticImageData } from "next/image";
-import NoImage from "@/public/file.svg";
 import TwentyFourSevenImage from "@/public/images/247.png";
 import PremiumMockupImage from "@/public/images/mockup.png"
 import SecureImage from "@/public/images/secure.png"

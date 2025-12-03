@@ -18,14 +18,16 @@ import { toast } from "sonner";
 
 interface ShareProjectDialogProps {
   bookingId: string;
+  hasSharedAccess: boolean;
 }
 
-const emailSchema = z.string().email();
+const emailSchema = z.email();
 
 type AccessType = "customer" | "viewer";
 
 export default function ShareProjectDialog({
   bookingId,
+  hasSharedAccess
 }: ShareProjectDialogProps) {
   const [emails, setEmails] = useState<string[]>([]);
   const [currentEmail, setCurrentEmail] = useState("");
@@ -67,31 +69,60 @@ export default function ShareProjectDialog({
   };
 
   const handleSubmit = async () => {
-    if (emails.length === 0) return;
+  if (emails.length === 0) return;
+  setIsLoading(true);
 
-    setIsLoading(true);
+  try {
+    const response = await fetch(`/api/booking/${bookingId}/share-project`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emails, accessType }),
+    });
 
-    try {
-      const response = await fetch(`/api/booking/${bookingId}/share-project`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emails, accessType }),
-      });
-
-      if (response.ok) {
-        setIsOpen(false);
-        setEmails([]);
-        setCurrentEmail("");
-        setEmailError("");
-        setAccessType("viewer");
+    if (response.ok) {
+      const data = await response.json();
+      
+      setIsOpen(false);
+      setEmails([]);
+      setCurrentEmail("");
+      setEmailError("");
+      setAccessType("viewer");
+      
+      // Show different toast based on what actually happened
+      if (data.newSharesCount > 0 && data.updatedSharesCount > 0) {
+        // Mixed: some new, some updated
+        toast.success(`📧 ${data.newSharesCount} email(s) sent, ${data.updatedSharesCount} access updated`, {
+          description: !hasSharedAccess ? "Unlock Image Generation" : undefined,
+          duration: 5000,
+          action: !hasSharedAccess ? {
+            label: "Unlock",
+            onClick: () => window.location.reload(),
+          } : undefined,
+        });
+      } else if (data.newSharesCount > 0) {
+        // Only new shares
+        toast.success(`📧 ${data.newSharesCount} email(s) sent successfully!`, {
+          description: !hasSharedAccess ? "Unlock Image Gen" : undefined,
+          duration: 5000,
+          action: !hasSharedAccess ? {
+            label: "Unlock",
+            onClick: () => window.location.reload(),
+          } : undefined,
+        });
+      } else {
+        // Only updates (no emails sent)
+        toast.success(`✅ Access updated for ${data.updatedSharesCount} user(s)`, {
+          
+        });
       }
-      toast.success("📧 Email Sent Successfully!");
-    } catch (error) {
-      console.error("Failed to share project:", error);
-    } finally {
-      setIsLoading(false);
     }
-  };
+  } catch (error) {
+    console.error("Failed to share project:", error);
+    toast.error("Failed to share project");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -103,7 +134,9 @@ export default function ShareProjectDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">Share Project</Button>
+        <Button variant="outline" size="sm">
+          Share Project
+        </Button>
       </DialogTrigger>
 
       <DialogContent>

@@ -4,16 +4,26 @@ import Image from "next/image";
 import PaletteImage from "@/public/images/bucket-no-bg.png";
 import ShareProjectDialog from "../booking-id-page/share-project-dialog";
 
+type SharedAccess = {
+  email: string;
+  accessType: "customer" | "viewer" | "admin";
+  pin: string;
+  createdAt: string;
+};
+
 interface BookingHeroProps {
   booking: {
     name: string;
     call_duration?: string;
     phone: string;
+    sharedAccess?: SharedAccess[];
   };
   formatTime: (duration?: string) => string;
 }
 
 export function BookingHero({ booking, formatTime }: BookingHeroProps) {
+  const hasSharedAccess = !!booking.sharedAccess?.length;
+
   return (
     <section className="space-y-6">
       <div className="flex items-center justify-center gap-1">
@@ -58,7 +68,10 @@ export function BookingHero({ booking, formatTime }: BookingHeroProps) {
 
           <div className="flex items-center gap-3 mt-4 md:mt-0">
             <Share2 className="h-4 w-4 text-gray-500" />
-            <ShareProjectDialog bookingId={booking.phone} />
+            <ShareProjectDialog
+              bookingId={booking.phone}
+              hasSharedAccess={hasSharedAccess}
+            />
           </div>
         </div>
 

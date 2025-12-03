@@ -25,6 +25,7 @@ interface BookingParams {
   id?: string;
   phone: string;
   paint_colors?: PaintColor[];
+  original_images: string[]
 }
 
 interface ComponentProps {
@@ -43,8 +44,8 @@ export default function AlternateDesign({
   const [isGenerating, setIsGenerating] = useState(false);
 
   const options = [
-    { id: "brighter", icon: RiSunFill, label: "Brighten" },
-    { id: "darker", icon: RiMoonFill, label: "Darken" },
+    { id: "brighter", icon: RiSunFill, label: "Brighter" },
+    { id: "darker", icon: RiMoonFill, label: "Darker" },
     { id: "trendy", icon: RiSparkling2Line, label: "Trendy" },
     { id: "random", icon: RiDiceLine, label: "Random" },
   ];
@@ -67,10 +68,10 @@ export default function AlternateDesign({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            bookingId: booking.id,
             option: selectedOption,
             removeFurniture: removeFurniture,
-            currentColor: booking.paint_colors
+            currentColor: booking.paint_colors,
+            originalImageS3Key: booking.original_images[0]
           }),
         }
       );

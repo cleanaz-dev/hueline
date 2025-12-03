@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
 import Logo from "@/public/images/logo-2--increased-brightness.png";
 import {
