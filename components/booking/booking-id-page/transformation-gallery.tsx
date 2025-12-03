@@ -138,6 +138,7 @@ export default function TransformationGallery(booking: BookingParams) {
                 style={{
                   width: "100%",
                   height: "auto",
+                  aspectRatio: "16/9"
                 }}
                 className="rounded-xl"
                 position={50} // Start at center
