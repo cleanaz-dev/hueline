@@ -403,7 +403,7 @@ export default function SubDomainIdPage({ booking, subdomain }: Props) {
                 )}
             </section>
           )}
-
+{/* 
           <GenerateDialog
             isOpen={showGenerateDialog}
             onClose={() => setShowGenerateDialog(false)}
@@ -411,7 +411,7 @@ export default function SubDomainIdPage({ booking, subdomain }: Props) {
             phoneNumber={booking.phone || ""}
             originalImages={booking.original_images}
             removeFurniture={removeFurniture}
-          />
+          /> */}
 
           <CouponQuoteCards booking={booking} />
 
