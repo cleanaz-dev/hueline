@@ -4,6 +4,8 @@
 import { useState, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Image from "next/image";
+import LogoImage from "@/public/images/url-image.png"
 
 
 
@@ -155,6 +157,16 @@ const handleSubmit = async (enteredPin?: string) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full mx-auto">
+        <div className="flex justify-center my-4">
+        <Image 
+          src={LogoImage}
+          alt="hue-line logo"
+          width={150}
+          height={150}
+          priority
+        
+        />
+        </div>
         <div className="bg-white p-8 rounded-lg shadow-md">
           {/* Header */}
           <div className="text-center mb-8">
