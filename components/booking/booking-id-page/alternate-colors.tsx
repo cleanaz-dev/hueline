@@ -42,14 +42,16 @@ export default function AlternateDesign({
   hasSharedAccess,
 }: ComponentProps) {
   const router = useRouter();
-  
+
   // State
   const [removeFurniture, setRemoveFurniture] = useState(false);
   const [selectedOption, setSelectedOption] = useState("");
-  
+
   // FIX: Added missing state for the dialog
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
-  const [generateStatus, setGenerateStatus] = useState<"idle" | "generating" | "success" | "error">("idle");
+  const [generateStatus, setGenerateStatus] = useState<
+    "idle" | "generating" | "success" | "error"
+  >("idle");
 
   const options = [
     { id: "brighter", icon: RiSunFill, label: "Brighter" },
@@ -97,7 +99,6 @@ export default function AlternateDesign({
       // 2. On success, update status so Dialog shows the "View Design" button
       setGenerateStatus("success");
       // toast.success("Image Generated Successfully!");
-
     } catch (error) {
       console.error("Error generating mockup:", error);
       toast.error("Failed to generate mockup");
@@ -107,16 +108,16 @@ export default function AlternateDesign({
   };
 
   // 3. Handle the "View Design" click
-const handleViewDesign = () => {
-  setShowGenerateDialog(false);
+  const handleViewDesign = () => {
+    setShowGenerateDialog(false);
 
-  // Reload the full page
-  window.location.reload();
+    // Reload the full page
+    window.location.reload();
 
-  // Scroll to top AFTER reload is impossible — page unloads.
-  // If you want scroll to top after navigation,
-  // put scrollTo in a useEffect on mount instead.
-};
+    // Scroll to top AFTER reload is impossible — page unloads.
+    // If you want scroll to top after navigation,
+    // put scrollTo in a useEffect on mount instead.
+  };
 
   return (
     <div className="bg-white rounded-xl p-4 md:p-6 border border-primary/10">
@@ -141,14 +142,27 @@ const handleViewDesign = () => {
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
             <Share2 className="h-5 w-5 text-blue-600 flex-shrink-0" />
             <p className="text-sm text-blue-700">
-              Share this project with others to unlock alternate design generation
+              Share this project with others to unlock alternate design
+              generation
             </p>
           </div>
         )}
 
         <div className="flex flex-col md:flex-row gap-6 mb-6">
-          <div className="flex flex-col md:max-w-sm p-4 bg-background/60 rounded-lg border border-primary/50 relative">
-            <div className="absolute -top-2 -left-2 px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-md shadow-sm">
+          <div
+            className={`flex flex-col md:max-w-sm p-4 bg-background/60 rounded-lg relative ${
+              hasGeneratedImage || !hasSharedAccess
+                ? "border border-gray-300 opacity-60"
+                : "border border-primary/50"
+            }`}
+          >
+            <div
+              className={`absolute -top-2 -left-2 px-2 py-1 text-white text-xs font-bold rounded-md shadow-sm ${
+                hasGeneratedImage || !hasSharedAccess
+                  ? "bg-gray-400"
+                  : "bg-blue-500"
+              }`}
+            >
               BETA
             </div>
 
@@ -197,7 +211,12 @@ const handleViewDesign = () => {
         <div className="flex justify-center mb-1">
           <Button
             onClick={handleGenerateClick}
-            disabled={!selectedOption || generateStatus === "generating" || hasGeneratedImage || !hasSharedAccess}
+            disabled={
+              !selectedOption ||
+              generateStatus === "generating" ||
+              hasGeneratedImage ||
+              !hasSharedAccess
+            }
             size="lg"
             className="group inline-flex items-center gap-2 px-6"
           >
@@ -205,7 +224,7 @@ const handleViewDesign = () => {
             {!hasSharedAccess
               ? "Share Project to Generate"
               : hasGeneratedImage
-              ? "Already Generated"
+              ? "Alternate Image Generated"
               : generateStatus === "generating"
               ? "Generating..."
               : "Generate Mockup"}

@@ -16,7 +16,7 @@ export async function POST(req: Request) {
         position: "center",
         scale: 1,
         margin: 0,
-        opacity: 0.25
+        opacity: 0.3
       }
     );
     

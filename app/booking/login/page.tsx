@@ -245,7 +245,7 @@ const handleSubmit = async (enteredPin?: string) => {
             <button
               onClick={clearPin}
               disabled={isLoading}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
+              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200 cursor-pointer"
             >
               Clear
             </button>

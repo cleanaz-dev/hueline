@@ -106,8 +106,8 @@ const CouponQuoteCards = ({ booking }: { booking?: BookingProps }) => {
               Recommended Colors
             </h3>
             {booking?.paint_colors && booking.paint_colors.length > 0 ? (
-              <div className="space-y-2">
-                {booking.paint_colors.slice(0, 1).map((color, index) => (
+              <div className="space-y-2 flex justify-between">
+                {booking.paint_colors.map((color, index) => (
                   <div key={index} className="flex items-center gap-3">
                     <div
                       className="w-6 h-6 rounded-full border-2 border-gray-300"

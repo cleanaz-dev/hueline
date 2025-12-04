@@ -10,6 +10,7 @@ import {
 } from "react-compare-slider";
 
 import AlternateDesign from "./alternate-colors";
+import ComparisonSlider from "./compare-slider";
 
 interface PaintColor {
   name: string;
@@ -69,17 +70,11 @@ export default function TransformationGallery(booking: BookingParams) {
       <Tabs defaultValue="original" className="max-w-4xl mx-auto">
         {/* Tabs List */}
         <TabsList className="flex border border-gray-200 rounded-lg p-1 bg-white max-w-md mx-auto gap-4 mb-4">
-          <TabsTrigger
-            value="original"
-            className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md text-sm font-medium transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-primary cursor-pointer"
-          >
+          <TabsTrigger value="original" className="tab-original">
             <Eye className="h-4 w-4" />
             Compare Space
           </TabsTrigger>
-          <TabsTrigger
-            value="design"
-            className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md text-sm font-medium transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-primary cursor-pointer"
-          >
+          <TabsTrigger value="design" className="tab-design">
             <Sparkles className="h-4 w-4" />
             Design Vision
           </TabsTrigger>
@@ -89,52 +84,13 @@ export default function TransformationGallery(booking: BookingParams) {
         <TabsContent value="original" className="space-y-6">
           {/* Comparison Slider */}
           {mockupUrls.length > 0 && booking.original_images.length > 0 && (
-            <div className="relative overflow-hidden rounded-xl shadow-lg border border-primary/20 h-[600px]">
-              <ReactCompareSlider
-                key={selectedDesignImage}
-                itemOne={
-                  <div className="w-full h-full">
-                    <ReactCompareSliderImage
-                      src={booking.original_images[selectedOriginalImage]}
-                      alt="Original"
-                      style={{
-                        objectFit: "cover",
-                        width: "100%",
-                        height: "100%",
-                      }}
-                    />
-                  </div>
-                }
-                itemTwo={
-                  <div className="w-full h-full">
-                    <ReactCompareSliderImage
-                      src={selectedMockup.url}
-                      alt="Design"
-                      style={{
-                        objectFit: "cover",
-                        width: "100%",
-                        height: "100%",
-                      }}
-                    />
-                  </div>
-                }
-                style={{
-                  width: "100%",
-                  height: "100%",
-                }}
-                className="rounded-xl"
-                position={50}
-                onlyHandleDraggable={false}
-              />
-
-              {/* Comparison Labels */}
-              <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/70 text-white rounded-lg text-xs font-semibold z-10">
-                BEFORE
-              </div>
-              <div className="absolute top-4 right-4 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold z-10">
-                AFTER
-              </div>
-            </div>
+            <ComparisonSlider
+              key={selectedDesignImage}
+              beforeImage={booking.original_images[selectedOriginalImage]}
+              afterImage={selectedMockup.url}
+              beforeLabel="BEFORE"
+              afterLabel="AFTER"
+            />
           )}
 
           {/* Design Selector for Comparison Mode */}
@@ -225,18 +181,32 @@ export default function TransformationGallery(booking: BookingParams) {
           {/* Large Main Image */}
           <div className="relative overflow-hidden rounded-xl shadow-lg border border-primary/20">
             <GlareHover>
-              <Image
-                src={selectedMockup.url}
-                alt={`Design image ${selectedDesignImage + 1}`}
-                width={800}
-                height={500}
-                className="w-full h-auto object-cover"
-                priority
-              />
+              <>
+                <Image
+                  src={selectedMockup.url}
+                  alt={`Design image ${selectedDesignImage + 1}`}
+                  width={800}
+                  height={500}
+                  className="w-full h-auto object-cover"
+                  priority
+                />
+                {/* Watermark Overlay */}
+                <div
+                  className="absolute inset-0 pointer-events-none rounded-xl"
+                  style={{
+                    backgroundImage:
+                      "url(https://res.cloudinary.com/dmllgn0t7/image/upload/v1760933379/new-watermark.png)",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                    opacity: 0.45,
+                  }}
+                />
+              </>
             </GlareHover>
 
             {/* Image Badge */}
-            <div className="absolute top-4 left-0">
+            <div className="absolute top-4 left-0 z-10">
               <div className="px-4 py-2 bg-primary text-white rounded-r-lg shadow-lg font-semibold text-xs uppercase tracking-wide">
                 <span className="flex items-center gap-2">
                   {selectedMockup.room_type}

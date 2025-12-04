@@ -5,7 +5,7 @@ interface WatermarkOptions {
   position?: "bottom-right" | "bottom-left" | "top-right" | "top-left" | "center";
   scale?: number;
   margin?: number;
-  opacity?: number; // ✅ 0 to 1 (0 = transparent, 1 = opaque)
+  opacity?: number;
 }
 
 export async function addWatermarkToImage(
@@ -14,10 +14,7 @@ export async function addWatermarkToImage(
   options: WatermarkOptions = {}
 ): Promise<Buffer> {
   const {
-    position = "bottom-right",
-    scale = 0.1,
-    margin = 20,
-    opacity = 0.5 // ✅ Default 50% opacity
+    opacity = 0.5
   } = options;
 
   try {
@@ -33,11 +30,9 @@ export async function addWatermarkToImage(
     const imageWidth = metadata.width || 1000;
     const imageHeight = metadata.height || 1000;
 
-    const logoWidth = Math.floor(imageWidth * scale);
-    
-    // ✅ Apply opacity to the watermark
+    // Resize watermark pattern to match image dimensions exactly
     const resizedLogo = await sharp(logoBuffer)
-      .resize({ width: logoWidth })
+      .resize(imageWidth, imageHeight, { fit: 'fill' })
       .composite([{
         input: Buffer.from([255, 255, 255, Math.round(opacity * 255)]),
         raw: {
@@ -46,43 +41,13 @@ export async function addWatermarkToImage(
           channels: 4
         },
         tile: true,
-        blend: 'dest-in' // Apply opacity mask
+        blend: 'dest-in'
       }])
       .toBuffer();
-
-    const logoMetadata = await sharp(resizedLogo).metadata();
-    const logoHeight = logoMetadata.height || 0;
-
-    let left = 0, top = 0;
-    
-    switch (position) {
-      case "bottom-right":
-        left = imageWidth - logoWidth - margin;
-        top = imageHeight - logoHeight - margin;
-        break;
-      case "bottom-left":
-        left = margin;
-        top = imageHeight - logoHeight - margin;
-        break;
-      case "top-right":
-        left = imageWidth - logoWidth - margin;
-        top = margin;
-        break;
-      case "top-left":
-        left = margin;
-        top = margin;
-        break;
-      case "center":
-        left = Math.floor((imageWidth - logoWidth) / 2);
-        top = Math.floor((imageHeight - logoHeight) / 2);
-        break;
-    }
 
     const watermarkedBuffer = await image
       .composite([{
         input: resizedLogo,
-        left: left,
-        top: top,
         blend: 'over'
       }])
       .jpeg({ quality: 95 })
