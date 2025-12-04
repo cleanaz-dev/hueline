@@ -107,15 +107,16 @@ export default function AlternateDesign({
   };
 
   // 3. Handle the "View Design" click
-  const handleViewDesign = () => {
-    setShowGenerateDialog(false);
-    
-    // Refresh the page data
-    router.refresh();
+const handleViewDesign = () => {
+  setShowGenerateDialog(false);
 
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  // Reload the full page
+  window.location.reload();
+
+  // Scroll to top AFTER reload is impossible — page unloads.
+  // If you want scroll to top after navigation,
+  // put scrollTo in a useEffect on mount instead.
+};
 
   return (
     <div className="bg-white rounded-xl p-4 md:p-6 border border-primary/10">
