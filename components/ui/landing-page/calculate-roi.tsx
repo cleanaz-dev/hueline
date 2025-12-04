@@ -18,7 +18,7 @@ export default function CalculateROI() {
 
   return (
     <section id="roi" className="py-20">
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-4 sm:px-6">
         {/* HEADER */}
         <div className="header-section-div mb-12 text-center">
           <h2 className="section-badge">Calculate Your ROI</h2>

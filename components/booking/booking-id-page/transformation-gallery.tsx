@@ -2,10 +2,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, Sparkles, Palette } from "lucide-react";
 import Image from "next/image";
-import React, { useState } from "react";
+import { useState } from "react";
 import GlareHover from "@/components/GlareHover";
-import { Button } from "@/components/ui/button";
-import GenerateDialog from "../generate-dialog";
 import {
   ReactCompareSlider,
   ReactCompareSliderImage,
@@ -47,11 +45,6 @@ interface BookingParams {
 export default function TransformationGallery(booking: BookingParams) {
   const [selectedOriginalImage, setSelectedOriginalImage] = useState(0);
   const [selectedDesignImage, setSelectedDesignImage] = useState(0);
-  const [selectedColor, setSelectedColor] = useState<PaintColor | null>(null);
-  const [removeFurniture, setRemoveFurniture] = useState<boolean>(false);
-  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
-  const [showComparison, setShowComparison] = useState(true);
-
   // Support both mockup_urls and mockups for backwards compatibility
   const mockupUrls = booking.mockup_urls || booking.mockups || [];
   const selectedMockup = mockupUrls[selectedDesignImage];
@@ -94,97 +87,58 @@ export default function TransformationGallery(booking: BookingParams) {
 
         {/* Original Images Tab */}
         <TabsContent value="original" className="space-y-6">
-          {/* Compare Toggle Button */}
+          {/* Comparison Slider */}
           {mockupUrls.length > 0 && booking.original_images.length > 0 && (
-            <div className="flex justify-center mb-4">
-              <Button
-                onClick={() => setShowComparison(!showComparison)}
-                variant={showComparison ? "default" : "outline"}
-                size="sm"
-                className="gap-2"
-              >
-                <Sparkles className="h-4 w-4" />
-                {showComparison ? "Hide Comparison" : "Compare Before/After"}
-              </Button>
-            </div>
-          )}
-
-          {/* Large Main Image or Comparison Slider */}
-          <div className="relative overflow-hidden rounded-xl shadow-lg border border-primary/20">
-            {showComparison ? (
+            <div className="relative overflow-hidden rounded-xl shadow-lg border border-primary/20 h-[600px]">
               <ReactCompareSlider
+                key={selectedDesignImage}
                 itemOne={
-                  <ReactCompareSliderImage
-                    src={booking.original_images[selectedOriginalImage]}
-                    alt="Original"
-                    style={{
-                      objectFit: "contain",
-                      width: "100%",
-                      height: "auto",
-                      aspectRatio: "4/3"
-                    }}
-                  />
+                  <div className="w-full h-full">
+                    <ReactCompareSliderImage
+                      src={booking.original_images[selectedOriginalImage]}
+                      alt="Original"
+                      style={{
+                        objectFit: "cover",
+                        width: "100%",
+                        height: "100%",
+                      }}
+                    />
+                  </div>
                 }
                 itemTwo={
-                  <ReactCompareSliderImage
-                    src={selectedMockup.url}
-                    alt="Design"
-                    style={{
-                      objectFit: "contain",
-                      width: "100%",
-                      height: "auto",
-                      aspectRatio: "4/3"
-                    }}
-                  />
+                  <div className="w-full h-full">
+                    <ReactCompareSliderImage
+                      src={selectedMockup.url}
+                      alt="Design"
+                      style={{
+                        objectFit: "cover",
+                        width: "100%",
+                        height: "100%",
+                      }}
+                    />
+                  </div>
                 }
                 style={{
                   width: "100%",
-                  height: "auto",
-                  
+                  height: "100%",
                 }}
                 className="rounded-xl"
-                position={50} // Start at center
-                onlyHandleDraggable={false} // Allow clicking anywhere to move slider
+                position={50}
+                onlyHandleDraggable={false}
               />
-            ) : (
-              <GlareHover>
-                <Image
-                  src={booking.original_images[selectedOriginalImage]}
-                  alt={`Original image ${selectedOriginalImage + 1}`}
-                  width={800}
-                  height={800}
-                  className="w-full h-auto object-contain"
-                  priority
-                />
-              </GlareHover>
-            )}
 
-            {/* Image Badge */}
-            {!showComparison && (
-              <div className="absolute top-4 left-0 z-10">
-                <div className="px-4 py-2 bg-primary text-white rounded-r-lg shadow-lg font-semibold text-xs uppercase tracking-wide">
-                  <span className="flex items-center gap-2">
-                    Original {selectedOriginalImage + 1}
-                  </span>
-                </div>
+              {/* Comparison Labels */}
+              <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/70 text-white rounded-lg text-xs font-semibold z-10">
+                BEFORE
               </div>
-            )}
-
-            {/* Comparison Labels */}
-            {showComparison && (
-              <>
-                <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/70 text-white rounded-lg text-xs font-semibold z-10">
-                  BEFORE
-                </div>
-                <div className="absolute top-4 right-4 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold z-10">
-                  AFTER
-                </div>
-              </>
-            )}
-          </div>
+              <div className="absolute top-4 right-4 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold z-10">
+                AFTER
+              </div>
+            </div>
+          )}
 
           {/* Design Selector for Comparison Mode */}
-          {showComparison && mockupUrls.length > 1 && (
+          {mockupUrls.length > 1 && (
             <div className="bg-white rounded-lg p-4 border border-primary/20">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -276,7 +230,7 @@ export default function TransformationGallery(booking: BookingParams) {
                 alt={`Design image ${selectedDesignImage + 1}`}
                 width={800}
                 height={500}
-                className="w-full h-auto aspect-video object-cover"
+                className="w-full h-auto object-cover"
                 priority
               />
             </GlareHover>
@@ -340,16 +294,6 @@ export default function TransformationGallery(booking: BookingParams) {
           />
         </TabsContent>
       </Tabs>
-
-      {/* Generate Dialog */}
-      <GenerateDialog
-        isOpen={showGenerateDialog}
-        onClose={() => setShowGenerateDialog(false)}
-        selectedColor={selectedColor}
-        phoneNumber={booking.phone || ""}
-        originalImages={booking.original_images}
-        removeFurniture={removeFurniture}
-      />
     </section>
   );
 }

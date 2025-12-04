@@ -151,7 +151,7 @@ export default function ShareProjectDialog({
             <RadioGroup
               value={accessType}
               onValueChange={(value) => setAccessType(value as AccessType)}
-              className="mt-2 space-y-2"
+              className="mt-2 space-y-2 "
             >
               <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
                 <RadioGroupItem value="viewer" id="viewer" />
@@ -160,7 +160,7 @@ export default function ShareProjectDialog({
                     <Eye className="h-4 w-4 text-blue-500" />
                     <div>
                       <div className="font-medium">View Only</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="hidden sm:block text-xs text-gray-500">
                         Can view project details but cannot make changes
                       </div>
                     </div>
@@ -175,7 +175,7 @@ export default function ShareProjectDialog({
                     <Edit className="h-4 w-4 text-green-500" />
                     <div>
                       <div className="font-medium">Full Access</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="hidden sm:block text-xs text-gray-500">
                         Can view and edit project details
                       </div>
                     </div>

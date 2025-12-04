@@ -8,105 +8,58 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Zap, CheckCircle, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Zap, CheckCircle, Loader2, Sparkles } from "lucide-react";
 
-type PaintColor = {
-  name: string;
-  hex: string;
-  ral: string;
-};
+type GenerateStatus = "idle" | "generating" | "success" | "error";
 
-type Props = {
+interface Props {
   isOpen: boolean;
-  onClose: () => void;
-  selectedColor: PaintColor | null;
-  phoneNumber: string;
-  originalImages: string[];
+  onClose: () => void; // Called when closing without success (e.g. error)
+  onConfirmComplete: () => void; // Called when user clicks "View Design"
+  status: GenerateStatus;
+  selectedOption: string;
   removeFurniture: boolean;
-};
+}
 
 export default function GenerateDialog({
   isOpen,
   onClose,
-  selectedColor,
-  phoneNumber,
-  originalImages,
+  onConfirmComplete,
+  status,
+  selectedOption,
   removeFurniture,
 }: Props) {
-  const [stage, setStage] = useState<"generating" | "complete">("generating");
   const [progress, setProgress] = useState(0);
-  const router = useRouter();
 
+  // Handle Progress Bar Simulation
   useEffect(() => {
-    if (!isOpen || !selectedColor) return;
+    let interval: NodeJS.Timeout;
 
-    let progressInterval: NodeJS.Timeout;
-
-    const runGeneration = async () => {
-      try {
-        // Start progress animation
-        progressInterval = setInterval(() => {
-          setProgress((prev) => {
-            if (prev >= 90) return prev; // Stop at 90% until API completes
-            return prev + Math.random() * 15;
-          });
-        }, 500);
-
-        // Make API call
-        const response = await fetch("/api/generate-image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phoneNumber,
-            prompt: `Paint the room to: ${selectedColor.hex}`,
-            imageUrl: originalImages,
-            removeFurniture,
-          }),
-        });
-
-        if (!response.ok) throw new Error("Generation failed");
-
-        // Complete progress
-        clearInterval(progressInterval);
-        setProgress(100);
-
-        // Wait a moment then show completion
-        setTimeout(() => {
-          setStage("complete");
-        }, 500);
-      } catch (error) {
-        console.error("Error generating mockup:", error);
-        clearInterval(progressInterval);
-        onClose(); // Close dialog on error
-      }
-    };
-
-    if (isOpen) {
-      setStage("generating");
+    if (isOpen && status === "generating") {
       setProgress(0);
-      runGeneration();
+      interval = setInterval(() => {
+        setProgress((prev) => {
+          // Stall at 90% until the parent tells us status is 'success'
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 5;
+        });
+      }, 200);
+    } else if (status === "success") {
+      setProgress(100);
     }
 
-    return () => {
-      if (progressInterval) clearInterval(progressInterval);
-    };
-  }, [
-    isOpen,
-    selectedColor,
-    phoneNumber,
-    originalImages,
-    onClose,
-    removeFurniture,
-  ]);
+    return () => clearInterval(interval);
+  }, [isOpen, status]);
 
-  const handleComplete = () => {
-    onClose();
-    // Revalidate/refresh the page to show new image
-    router.refresh();
+  const getOptionLabel = (opt: string) => {
+    switch (opt) {
+      case "brighter": return "Brightness Enhancement";
+      case "darker": return "Moody Atmosphere";
+      case "trendy": return "Trendy Style";
+      case "random": return "Random Surprise";
+      default: return "New Design";
+    }
   };
-
-  if (!selectedColor) return null;
 
   return (
     <AlertDialog open={isOpen}>
@@ -119,107 +72,74 @@ export default function GenerateDialog({
         </AlertDialogHeader>
 
         <div className="space-y-6 py-4">
-          {stage === "generating" ? (
-            <>
-              {/* Generating State */}
-              <div className="text-center space-y-4">
-                {/* Video Splash Screen */}
-                <div className="flex justify-center mb-4">
-                  <div className="relative w-48 h-32 rounded-lg overflow-hidden bg-black">
-                    <video
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      className="w-full h-full object-cover"
-                      src="/videos/booking-splash.mp4"
-                    />
+          {status === "generating" || (status === "success" && progress < 100) ? (
+            /* ------------------- GENERATING STATE ------------------- */
+            <div className="text-center space-y-4">
+              {/* Video Splash Screen */}
+              <div className="flex justify-center mb-4">
+                <div className="relative w-48 h-32 rounded-lg overflow-hidden bg-black shadow-md border border-gray-200">
+                  <video
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    poster="/videos/generate-thumbnail.png"
+                    className="w-full h-full object-cover opacity-80"
+                    src="/videos/booking-splash.mp4" 
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 text-white animate-spin drop-shadow-md" />
                   </div>
-                </div>
-
-                <div className="flex justify-center">
-                  <div className="relative">
-                    <div
-                      className="w-20 h-20 rounded-full border-4 border-primary/20"
-                      style={{ backgroundColor: `${selectedColor.hex}20` }}
-                    />
-                    <div
-                      className="absolute inset-2 rounded-full animate-pulse"
-                      style={{ backgroundColor: selectedColor.hex }}
-                    />
-                    <Loader2 className="absolute inset-0 m-auto h-8 w-8 text-primary animate-spin" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">
-                    Generating Your Mockup
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Creating your space with{" "}
-                    <span
-                      className="font-medium"
-                      style={{ color: selectedColor.hex }}
-                    >
-                      {selectedColor.name}
-                    </span>
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Progress value={progress} className="w-full" />
-                  <p className="text-xs text-muted-foreground">
-                    {progress < 30 && "Analyzing your space..."}
-                    {progress >= 30 &&
-                      progress < 60 &&
-                      "Applying paint colors..."}
-                    {progress >= 60 &&
-                      progress < 90 &&
-                      "Rendering final image..."}
-                    {progress >= 90 && "Almost done..."}
-                  </p>
                 </div>
               </div>
-            </>
+
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold animate-pulse">
+                  Generating New Look...
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Applying <span className="font-medium text-primary">{getOptionLabel(selectedOption)}</span>
+                  {removeFurniture && " & removing furniture"}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Progress value={progress} className="w-full h-2" />
+                <p className="text-xs text-muted-foreground">
+                  {progress < 40 && "Analyzing room structure..."}
+                  {progress >= 40 && progress < 80 && "Applying lighting & textures..."}
+                  {progress >= 80 && "Finalizing render..."}
+                </p>
+              </div>
+            </div>
           ) : (
-            <>
-              {/* Complete State */}
-              <div className="text-center space-y-4">
-                <div className="flex justify-center">
-                  <div className="relative">
-                    <div
-                      className="w-20 h-20 rounded-full border-4 border-green-200"
-                      style={{ backgroundColor: `${selectedColor.hex}20` }}
-                    />
-                    <div
-                      className="absolute inset-2 rounded-full"
-                      style={{ backgroundColor: selectedColor.hex }}
-                    />
-                    <CheckCircle className="absolute inset-0 m-auto h-8 w-8 text-green-600" />
+            /* ------------------- SUCCESS STATE ------------------- */
+            <div className="text-center space-y-5">
+              <div className="flex justify-center mt-2">
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center animate-in zoom-in duration-300">
+                    <CheckCircle className="h-10 w-10 text-green-600" />
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold text-green-600">
-                    Mockup Complete!
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Your new design with{" "}
-                    <span
-                      className="font-medium"
-                      style={{ color: selectedColor.hex }}
-                    >
-                      {selectedColor.name}
-                    </span>{" "}
-                    is ready
-                  </p>
-                </div>
-
-                <Button onClick={handleComplete} className="w-full">
-                  View Your New Design
-                </Button>
               </div>
-            </>
+
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-green-700">
+                  Design Complete!
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Your alternate design is ready to view.
+                </p>
+              </div>
+
+              <Button 
+                onClick={onConfirmComplete} 
+                className="w-full bg-green-600 hover:bg-green-700 text-white shadow-lg transition-all hover:scale-[1.02]"
+                size="lg"
+              >
+                View Design
+              </Button>
+            </div>
           )}
         </div>
       </AlertDialogContent>

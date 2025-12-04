@@ -116,5 +116,20 @@ export const hueKeywords = [
 
 export const extractMainHue = (colorName: string) => {
   const lower = colorName.toLowerCase();
+  
+  // Check for compound colors first
+  if (lower.includes('lavender') || lower.includes('lilac') || lower.includes('mauve')) return 'violet';
+  if (lower.includes('sage') || lower.includes('mint') || lower.includes('olive')) return 'green';
+  if (lower.includes('peach') || lower.includes('coral') || lower.includes('salmon')) return 'orange';
+  if (lower.includes('navy') || lower.includes('cobalt') || lower.includes('azure')) return 'blue';
+  if (lower.includes('burgundy') || lower.includes('maroon') || lower.includes('crimson')) return 'red';
+  if (lower.includes('ivory') || lower.includes('cream')) return 'beige';
+  if (lower.includes('charcoal') || lower.includes('slate') || lower.includes('graphite')) return 'grey';
+  if (lower.includes('orchid')) return 'purple';
+  if (lower.includes('rose')) return 'pink';
+  if (lower.includes('cocoa') || lower.includes('chocolate') || lower.includes('mocha')) return 'brown';
+  if (lower.includes('terracotta') || lower.includes('rust')) return 'orange';
+  
+  // Then check basic hues
   return hueKeywords.find(hue => lower.includes(hue)) || 'blue';
 };

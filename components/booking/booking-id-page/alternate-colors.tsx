@@ -1,4 +1,5 @@
 "use client";
+
 import { Palette, Sofa, Zap, Share2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -11,8 +12,9 @@ import {
   RiSunFill,
   RiDiceLine,
 } from "react-icons/ri";
-
-import { toast } from "sonner"
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import GenerateDialog from "../generate-dialog";
 
 interface PaintColor {
   ral: string;
@@ -25,7 +27,7 @@ interface BookingParams {
   id?: string;
   phone: string;
   paint_colors?: PaintColor[];
-  original_images: string[]
+  original_images: string[];
 }
 
 interface ComponentProps {
@@ -39,9 +41,15 @@ export default function AlternateDesign({
   hasGeneratedImage,
   hasSharedAccess,
 }: ComponentProps) {
+  const router = useRouter();
+  
+  // State
   const [removeFurniture, setRemoveFurniture] = useState(false);
   const [selectedOption, setSelectedOption] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  
+  // FIX: Added missing state for the dialog
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+  const [generateStatus, setGenerateStatus] = useState<"idle" | "generating" | "success" | "error">("idle");
 
   const options = [
     { id: "brighter", icon: RiSunFill, label: "Brighter" },
@@ -55,10 +63,13 @@ export default function AlternateDesign({
     setSelectedOption(selectedOption === optionId ? "" : optionId);
   };
 
-  const handleGenerateNewMockUp = async () => {
+  const handleGenerateClick = async () => {
     if (!selectedOption || hasGeneratedImage || !hasSharedAccess) return;
 
-    setIsGenerating(true);
+    // 1. Open Dialog immediately and set status to generating
+    setShowGenerateDialog(true);
+    setGenerateStatus("generating");
+
     try {
       const response = await fetch(
         `/api/booking/${booking.phone}/generate-mockup`,
@@ -71,7 +82,7 @@ export default function AlternateDesign({
             option: selectedOption,
             removeFurniture: removeFurniture,
             currentColor: booking.paint_colors,
-            originalImageS3Key: booking.original_images[0]
+            originalImageS3Key: booking.original_images[0],
           }),
         }
       );
@@ -81,14 +92,29 @@ export default function AlternateDesign({
       }
 
       const data = await response.json();
-      toast.success("🖼️ Image Generated!")
       console.log("Mockup generated:", data);
+
+      // 2. On success, update status so Dialog shows the "View Design" button
+      setGenerateStatus("success");
+      // toast.success("Image Generated Successfully!");
+
     } catch (error) {
       console.error("Error generating mockup:", error);
       toast.error("Failed to generate mockup");
-    } finally {
-      setIsGenerating(false);
+      setGenerateStatus("error");
+      setShowGenerateDialog(false); // Close dialog if it fails
     }
+  };
+
+  // 3. Handle the "View Design" click
+  const handleViewDesign = () => {
+    setShowGenerateDialog(false);
+    
+    // Refresh the page data
+    router.refresh();
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -169,8 +195,8 @@ export default function AlternateDesign({
 
         <div className="flex justify-center mb-1">
           <Button
-            onClick={handleGenerateNewMockUp}
-            disabled={!selectedOption || isGenerating || hasGeneratedImage || !hasSharedAccess}
+            onClick={handleGenerateClick}
+            disabled={!selectedOption || generateStatus === "generating" || hasGeneratedImage || !hasSharedAccess}
             size="lg"
             className="group inline-flex items-center gap-2 px-6"
           >
@@ -179,12 +205,22 @@ export default function AlternateDesign({
               ? "Share Project to Generate"
               : hasGeneratedImage
               ? "Already Generated"
-              : isGenerating
+              : generateStatus === "generating"
               ? "Generating..."
               : "Generate Mockup"}
           </Button>
         </div>
       </div>
+
+      {/* Generate Dialog */}
+      <GenerateDialog
+        isOpen={showGenerateDialog}
+        status={generateStatus}
+        selectedOption={selectedOption}
+        removeFurniture={removeFurniture}
+        onClose={() => setShowGenerateDialog(false)}
+        onConfirmComplete={handleViewDesign}
+      />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { extractMainHue } from "@/lib/utils";
 import { getPresignedUrl, uploadMockupToS3 } from "@/lib/aws/s3";
 import { getOriginalImageS3Key } from "@/lib/redis";
 import { updateBookingWithMockData } from "@/lib/redis/services/update-booking-with-mockdata";
+import { extractHex } from "@/lib/moonshot/services/extract-hex";
+import { selectClosestRAL } from "@/lib/moonshot/services/select-closest-ral";
 
 interface Params {
   params: Promise<{
@@ -17,35 +19,51 @@ export async function POST(req: Request, { params }: Params) {
 
   try {
     const body = await req.json();
-
     const { option, currentColor, removeFurniture } = body;
+    console.log("📦 Request body:", body);
 
-    // Extract first color from array
     const color = currentColor[0];
     const { originalImageS3Key, roomType } = await getOriginalImageS3Key(bookingId);
     
     const preSignedUrl = await getPresignedUrl(originalImageS3Key);
 
-    // Get hue using imported function
     const mainHue = extractMainHue(color.name);
+    console.log("🔎 Main Hue:", mainHue)
 
     const newColor = await getMockUpColorMoonshot(option, color, mainHue);
+    console.log("🎨 New Color:", newColor)
 
-    const colorPrompt = `Apply color ${color.name}, ${color.hex} to the walls of room`;
+    const colorPrompt = `Apply color: ${newColor.hex} to the walls of room`;
     console.log("PresignedUrl:", preSignedUrl);
 
+    // Generate mockup
     const mockupUrl = await generateMockup(
       colorPrompt,
       preSignedUrl,
       removeFurniture
     );
 
+    // // Upload to S3 and get the new S3 key
     const newS3Key = await uploadMockupToS3(mockupUrl, bookingId);
+    
+    // // Get presigned URL for the newly uploaded mockup
+    const mockupPresignedUrl = await getPresignedUrl(newS3Key);
 
+    // // Extract hex color from the generated mockup
+    const extractedColor = await extractHex(mockupPresignedUrl);
+    
+    let ralColor = null;
+    if (extractedColor) {
+      // Select closest RAL color based on extracted hex
+      ralColor = await selectClosestRAL(extractedColor);
+      console.log("🎨 Closest RAL color:", ralColor);
+    }
+
+    // // Update booking with mockup data and RAL color
     const updatedBooking = await updateBookingWithMockData(
       newS3Key,
       roomType,
-      color,
+      ralColor || color, // Use RAL color if available, otherwise use original color
       bookingId
     );
 
@@ -55,6 +73,7 @@ export async function POST(req: Request, { params }: Params) {
       {
         message: "success",
         color: newColor,
+        ralColor: ralColor,
         bookingId,
       },
       { status: 200 }
