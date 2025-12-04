@@ -41,9 +41,9 @@ export default function GenerateDialog({
         setProgress((prev) => {
           // Stall at 90% until the parent tells us status is 'success'
           if (prev >= 90) return prev;
-          return prev + Math.random() * 5;
+          return prev + Math.random() * 2;
         });
-      }, 200);
+      }, 500);
     } else if (status === "success") {
       setProgress(100);
     }
