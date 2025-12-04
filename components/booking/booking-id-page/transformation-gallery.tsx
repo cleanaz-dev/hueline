@@ -4,10 +4,6 @@ import { Eye, Sparkles, Palette } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import GlareHover from "@/components/GlareHover";
-import {
-  ReactCompareSlider,
-  ReactCompareSliderImage,
-} from "react-compare-slider";
 
 import AlternateDesign from "./alternate-colors";
 import ComparisonSlider from "./compare-slider";
@@ -55,6 +51,7 @@ export default function TransformationGallery(booking: BookingParams) {
 
   const hasSharedAccess = !!booking.sharedAccess?.length;
   console.log("Shared Access:", booking);
+
 
   return (
     <section className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl py-6 px-4 md:py-8">

@@ -1,5 +1,5 @@
 "use client";
-import { ReactCompareSlider, ReactCompareSliderImage } from "react-compare-slider";
+import { ReactCompareSlider, ReactCompareSliderImage, ReactCompareSliderHandle } from "react-compare-slider";
 import { useEffect, useState, useRef } from "react";
 
 interface ComparisonSliderProps {
@@ -42,7 +42,7 @@ export default function ComparisonSlider({
             setTimeout(() => {
               setPosition(50);
             }, 3000); // Pause at 0 for 1.5s
-          }, 300); // Start after 300ms
+          }, 500); // Start after 300ms
         }
       },
       { threshold: 0.7 }
@@ -66,6 +66,7 @@ export default function ComparisonSlider({
         <ReactCompareSlider
           position={position}
           onPositionChange={setPosition}
+          
           itemOne={
             <ReactCompareSliderImage
               src={beforeImage}
@@ -95,7 +96,14 @@ export default function ComparisonSlider({
           className="rounded-lg sm:rounded-xl"
           onlyHandleDraggable={false}
           transition="1.5s ease-in-out"
-        />
+           handle={
+            <ReactCompareSliderHandle
+              linesStyle={{
+                opacity: 0.5
+              }}
+            />
+          }
+          />
 
         {/* Watermark Overlay */}
         {showWatermark && (
