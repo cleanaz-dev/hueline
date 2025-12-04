@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import BookingPage from "@/components/booking/booking-id-page";
 import SplashScreen from "../ui/splash-screeen/splash-screen";
