@@ -49,6 +49,7 @@
     "react-compare-slider": "^3.1.0",
     "react-dom": "19.1.0",
     "react-icons": "^5.5.0",
+    "react-intersection-observer": "^10.0.0",
     "redis": "^5.8.2",
     "replicate": "^1.2.0",
     "resend": "^6.1.2",
