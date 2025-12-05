@@ -27,7 +27,7 @@ const features: Features[] = [
     image: PremiumMockupImage,
     title: "Instant Premium Mockups",
     description:
-      "Generate professional paint visualizations while the client is still on the phone. Send premium proposals directly to their personal portal.",
+      "Generate professional paint visualizations while the client is still on the phone. Send premium mockups directly to their personal portal.",
   },
   {
     id: 2,
