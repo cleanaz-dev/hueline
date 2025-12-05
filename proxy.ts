@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {  // ← Changed from 'middleware' to 'proxy'
   const hostname = request.headers.get('host') || '';
   const subdomain = hostname.split('.')[0];
   
@@ -12,15 +12,19 @@ export function middleware(request: NextRequest) {
   if (
     subdomain === 'www' ||
     hostname === 'hueline.com' ||
-    hostname === 'localhost:3000'  // ← Change to exact match
+    hostname === 'localhost:3000'
   ) {
     return NextResponse.next();
   }
 
-  const url = request.nextUrl.clone();
-  url.pathname = `/subdomains/${subdomain}${url.pathname}`;
-  console.log('🔍 REWRITING TO:', url.pathname);
-  return NextResponse.rewrite(url);
+  // SUBDOMAIN ROUTING - COMMENTED OUT FOR NOW
+  // const url = request.nextUrl.clone();
+  // url.pathname = `/subdomains/${subdomain}${url.pathname}`;
+  // console.log('🔍 REWRITING TO:', url.pathname);
+  // return NextResponse.rewrite(url);
+
+  // For now, just pass through all requests
+  return NextResponse.next();
 }
 
 export const config = {
