@@ -7,8 +7,6 @@ interface ComparisonSliderProps {
   beforeLabel?: string;
   afterLabel?: string;
   className?: string;
-  showWatermark?: boolean;
-  watermarkUrl?: string;
 }
 
 export default function ComparisonSlider({
@@ -17,14 +15,12 @@ export default function ComparisonSlider({
   beforeLabel = "BEFORE",
   afterLabel = "AFTER",
   className = "",
-  showWatermark = true,
-  watermarkUrl = "https://res.cloudinary.com/dmllgn0t7/image/upload/v1760933379/new-watermark.png",
 }: ComparisonSliderProps) {
   return (
     <div 
       className={`relative overflow-hidden rounded-lg sm:rounded-xl shadow-lg border border-primary/20 w-full ${className}`}
       style={{ 
-        aspectRatio: "14/10",
+        aspectRatio: "4/3",
       }}
     >
       <ReactCompareSlider
@@ -59,20 +55,6 @@ export default function ComparisonSlider({
         onlyHandleDraggable={false}
         transition="0.55s cubic-bezier(.17,.67,.83,.67)"
       />
-
-      {/* Watermark Overlay */}
-      {showWatermark && (
-        <div 
-          className="absolute inset-0 pointer-events-none z-[5] rounded-lg sm:rounded-xl"
-          style={{
-            backgroundImage: `url(${watermarkUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            opacity: 0.45,
-          }}
-        />
-      )}
 
       {/* Comparison Labels - Responsive */}
       <div className="absolute top-2 left-2 sm:top-4 sm:left-4 px-2 py-1 sm:px-3 sm:py-1.5 bg-black/70 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-semibold z-10 backdrop-blur-sm">
