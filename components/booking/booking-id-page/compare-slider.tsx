@@ -13,6 +13,23 @@ interface ComparisonSliderProps {
   autoSlide?: boolean;
 }
 
+// Custom hook for media query
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    setMatches(media.matches);
+
+    const listener = () => setMatches(media.matches);
+    media.addEventListener("change", listener);
+
+    return () => media.removeEventListener("change", listener);
+  }, [query]);
+
+  return matches;
+}
+
 export default function ComparisonSlider({
   beforeImage,
   afterImage,
@@ -23,9 +40,12 @@ export default function ComparisonSlider({
   watermarkUrl = "https://res.cloudinary.com/dmllgn0t7/image/upload/v1760933379/new-watermark.png",
   autoSlide = true,
 }: ComparisonSliderProps) {
-  const [position, setPosition] = useState(100); // Start at 100 (right side)
+  const [position, setPosition] = useState(100);
   const [hasAnimated, setHasAnimated] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Detect if desktop (768px and above)
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   useEffect(() => {
     if (!autoSlide || hasAnimated) return;
@@ -35,14 +55,13 @@ export default function ComparisonSlider({
         if (entries[0].isIntersecting && !hasAnimated) {
           setHasAnimated(true);
 
-          // Slide from 100 (right) to 0 (left) then back to 50 (middle)
           setTimeout(() => {
             setPosition(0);
 
             setTimeout(() => {
               setPosition(50);
-            }, 3000); // Pause at 0 for 1.5s
-          }, 500); // Start after 300ms
+            }, 3000);
+          }, 500);
         }
       },
       { threshold: 0.7 }
@@ -60,13 +79,12 @@ export default function ComparisonSlider({
       <div 
         className={`relative overflow-hidden rounded-lg sm:rounded-xl shadow-lg border border-primary/20 w-full ${className}`}
         style={{ 
-          aspectRatio: "14/10",
+          aspectRatio: isDesktop ? "14/10" : "3/4", // Desktop: 14/10, Mobile: 3/4
         }}
       >
         <ReactCompareSlider
           position={position}
           onPositionChange={setPosition}
-          
           itemOne={
             <ReactCompareSliderImage
               src={beforeImage}
@@ -96,14 +114,14 @@ export default function ComparisonSlider({
           className="rounded-lg sm:rounded-xl"
           onlyHandleDraggable={false}
           transition="1.5s ease-in-out"
-           handle={
+          handle={
             <ReactCompareSliderHandle
               linesStyle={{
                 opacity: 0.5
               }}
             />
           }
-          />
+        />
 
         {/* Watermark Overlay */}
         {showWatermark && (
