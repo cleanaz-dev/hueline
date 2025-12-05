@@ -1,19 +1,14 @@
 "use client";
-import React from "react";
-import Image from "next/image";
-import Logo from "@/public/images/logo-2--increased-brightness.png";
-import {
-  Lightbulb,
-  Sparkles,
-} from "lucide-react";
-import Link from "next/link";
 import { ScrollArea } from "../ui/scroll-area";
 import CouponQuoteCards from "./quote-card";
 import { BookingHero } from "./section/booking-hero";
 import BookindgIdCTA from "./booking-id-page/booking-id-cta";
 import TransformationGallery from "./booking-id-page/transformation-gallery";
 import EmptyState from "./booking-id-page/empty-state";
-
+import Header from "./booking-id-page/booking-page-header";
+import ProjectVision from "./booking-id-page/project-vision";
+import DesignAnalysis from "./booking-id-page/design-analysis";
+import BookingPageFooter from "./booking-id-page/booking-page-footer";
 
 type PaintColor = {
   name: string;
@@ -30,11 +25,10 @@ type MockupUrl = {
 
 type SharedAccess = {
   email: string;
-  accessType: "customer" | "viewer" | "admin"
+  accessType: "customer" | "viewer" | "admin";
   pin: string;
   createdAt: string;
-}
-
+};
 
 type Booking = {
   name: string;
@@ -48,7 +42,7 @@ type Booking = {
   phone: string;
   dimensions?: string;
   booking_id?: string;
-  sharedAccess?: SharedAccess[]
+  sharedAccess?: SharedAccess[];
 };
 
 type Props = {
@@ -63,8 +57,6 @@ function formatTime(duration?: string): string {
 }
 
 export default function BookingPage({ booking, onRefresh }: Props) {
-
-
   // Show empty state if no booking data
   if (!booking) {
     return <EmptyState onRefresh={onRefresh} />;
@@ -81,49 +73,16 @@ export default function BookingPage({ booking, onRefresh }: Props) {
     return <EmptyState onRefresh={onRefresh} />;
   }
 
-
   return (
     <ScrollArea>
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
         {/* Header with Logo */}
-        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm ">
-          <div className="max-w-6xl mx-auto px-6 py-2 md:py-4 flex items-center justify-between">
-            <div className="">
-              <Link href="/" className="flex items-center space-x-2">
-                <Image
-                  src={Logo}
-                  alt="HueLine Logo"
-                  className="object-contain w-20 md:w-[130px]"
-                  width={130}
-                  height={130}
-                />
-              </Link>
-            </div>
-          </div>
-        </header>
-
+        <Header />
         <main className="max-w-6xl mx-auto px-2 md:px-12 space-y-12 py-4 md:py-8">
           {/* Hero Section */}
           <BookingHero booking={booking} formatTime={formatTime} />
-
           {/* Project Vision */}
-          <section>
-            <div className="bg-background rounded-2xl shadow-sm py-8 px-6 md:px-8 md:py-10">
-              <div className="flex items-center mb-6">
-                <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
-                  <Lightbulb className="h-5 w-5 text-primary" />
-                </div>
-                <h2 className="ml-3 text-lg md:text-2xl font-semibold ">
-                  Project Vision
-                </h2>
-              </div>
-              <div className="bg-primary/5 rounded-xl p-4 md:p-6 border border-primary/10">
-                <p className="md:text-lg italic leading-relaxed">
-                  {`"${booking.prompt}"`}
-                </p>
-              </div>
-            </div>
-          </section>
+          <ProjectVision booking={booking} />
 
           {/* Before & After Images */}
           <TransformationGallery
@@ -132,27 +91,11 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             paint_colors={booking.paint_colors}
             alternate_colors={booking.alternate_colors} // ← Do you have this?
             bookingId={booking.booking_id}
-            phone={booking.phone} 
+            phone={booking.phone}
             sharedAccess={booking.sharedAccess}
           />
           {/* Design Summary */}
-          {booking.summary && (
-            <section>
-              <div className="bg-background rounded-2xl shadow-sm border border-primary/10 py-8 px-6 md:px-8 md:py-10">
-                <div className="flex items-center mb-6">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/20">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <h2 className="ml-3 text-lg md:text-2xl font-semibold">
-                    Design Analysis
-                  </h2>
-                </div>
-                <div className="prose prose-lg max-w-none text-sm md:text-base leading-6 md:leading-normal">
-                  <p>{booking.summary}</p>
-                </div>
-              </div>
-            </section>
-          )}
+          <DesignAnalysis booking={booking} />
 
           <CouponQuoteCards booking={booking} />
 
@@ -161,23 +104,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-primary/10 bg-background mt-12">
-          <div className="max-w-6xl mx-auto px-6 py-8 text-center">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <Image
-                src={Logo}
-                alt="HueLine Logo"
-                className="object-contain"
-                width={130}
-                height={130}
-              />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Hue-Line AI Voice Agent. All rights
-              reserved.
-            </p>
-          </div>
-        </footer>
+        <BookingPageFooter />
       </div>
     </ScrollArea>
   );
