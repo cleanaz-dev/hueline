@@ -34,7 +34,7 @@ const features: Features[] = [
     image: SecureImage,
     title: "Secure Client Experience",
     description:
-      "Each client receives a branded portal with PIN authentication and secure AWS-signed URLs for their project images.",
+      "Each client receives a branded portal with PIN authentication and encrypted, time-limited access links for complete privacy.",
   },
   {
     id: 3,
