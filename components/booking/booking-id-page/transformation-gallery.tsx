@@ -140,7 +140,7 @@ export default function TransformationGallery(booking: BookingParams) {
                     </div>
                     {selectedDesignImage === index && (
                       <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-1">
-                        <Eye className="h-3 w-3" />
+                        {/* <Eye className="h-3 w-3" /> */}
                       </div>
                     )}
                   </button>
