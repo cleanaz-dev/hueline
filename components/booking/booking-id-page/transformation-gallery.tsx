@@ -1,5 +1,4 @@
 "use client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, Sparkles, Palette } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -40,18 +39,14 @@ interface BookingParams {
 }
 
 export default function TransformationGallery(booking: BookingParams) {
+  const [activeTab, setActiveTab] = useState<"original" | "design">("original");
   const [selectedOriginalImage, setSelectedOriginalImage] = useState(0);
   const [selectedDesignImage, setSelectedDesignImage] = useState(0);
-  // Support both mockup_urls and mockups for backwards compatibility
+  
   const mockupUrls = booking.mockup_urls || booking.mockups || [];
   const selectedMockup = mockupUrls[selectedDesignImage];
-
-  // Check if we have more than 1 mockup (means alternate was generated)
   const hasGeneratedImage = mockupUrls.length > 1;
-
   const hasSharedAccess = !!booking.sharedAccess?.length;
-  console.log("Shared Access:", booking);
-
 
   return (
     <section className="bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 rounded-2xl py-6 px-4 md:py-8">
@@ -64,21 +59,35 @@ export default function TransformationGallery(booking: BookingParams) {
         </p>
       </div>
 
-      <Tabs defaultValue="original" className="max-w-4xl mx-auto">
-        {/* Tabs List */}
-        <TabsList className="flex border border-gray-200 rounded-lg p-1 bg-white max-w-md mx-auto gap-4 mb-4">
-          <TabsTrigger value="original" className="tab-original">
+      <div className="max-w-4xl mx-auto">
+        {/* Custom Tabs List */}
+        <div className="flex border border-gray-200 rounded-lg p-1 bg-white max-w-md mx-auto gap-4 mb-4">
+          <button
+            onClick={() => setActiveTab("original")}
+            className={`flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all cursor-pointer ${
+              activeTab === "original"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
             <Eye className="h-4 w-4" />
             Compare Space
-          </TabsTrigger>
-          <TabsTrigger value="design" className="tab-design">
+          </button>
+          <button
+            onClick={() => setActiveTab("design")}
+            className={`flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all cursor-pointer ${
+              activeTab === "design"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
             <Sparkles className="h-4 w-4" />
             Design Vision
-          </TabsTrigger>
-        </TabsList>
+          </button>
+        </div>
 
-        {/* Original Images Tab */}
-        <TabsContent value="original" className="space-y-6">
+        {/* Original Images Tab - Always rendered but hidden */}
+        <div className={activeTab === "original" ? "space-y-6" : "hidden"}>
           {/* Comparison Slider */}
           {mockupUrls.length > 0 && booking.original_images.length > 0 && (
             <ComparisonSlider
@@ -158,6 +167,7 @@ export default function TransformationGallery(booking: BookingParams) {
                   width={80}
                   height={80}
                   className="w-full h-full object-cover"
+                  loading="eager"
                 />
                 <div
                   className={`absolute bottom-0 left-0 right-0 text-xs font-medium py-1 text-center ${
@@ -171,10 +181,10 @@ export default function TransformationGallery(booking: BookingParams) {
               </button>
             ))}
           </div>
-        </TabsContent>
+        </div>
 
-        {/* Design Images Tab */}
-        <TabsContent value="design" className="space-y-6">
+        {/* Design Images Tab - Always rendered but hidden */}
+        <div className={activeTab === "design" ? "space-y-6" : "hidden"}>
           {/* Large Main Image */}
           <div className="relative overflow-hidden rounded-xl shadow-lg border border-primary/20">
             <GlareHover>
@@ -185,7 +195,7 @@ export default function TransformationGallery(booking: BookingParams) {
                   width={800}
                   height={500}
                   className="w-full h-auto object-cover"
-                  priority
+                  loading="eager"
                 />
                 {/* Watermark Overlay */}
                 <div
@@ -213,7 +223,7 @@ export default function TransformationGallery(booking: BookingParams) {
           </div>
 
           {/* Thumbnail Grid */}
-          <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 ">
+          <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
             {mockupUrls.map((mockup, index) => (
               <div key={index} className="flex flex-col gap-1">
                 <button
@@ -234,6 +244,7 @@ export default function TransformationGallery(booking: BookingParams) {
                     width={80}
                     height={80}
                     className="w-full h-full object-cover"
+                    loading="eager"
                   />
                   <div className="absolute bottom-0 left-0 right-0 text-xs font-medium py-1 text-center text-white">
                     {index + 1}
@@ -259,8 +270,8 @@ export default function TransformationGallery(booking: BookingParams) {
             hasGeneratedImage={hasGeneratedImage}
             hasSharedAccess={hasSharedAccess}
           />
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </section>
   );
 }
