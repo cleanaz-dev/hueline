@@ -64,7 +64,7 @@ export default function TransformationGallery(booking: BookingParams) {
         <div className="flex border border-gray-200 rounded-lg p-1 bg-white max-w-md mx-auto gap-4 mb-4">
           <button
             onClick={() => setActiveTab("original")}
-            className={`flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md text-xs md:text-sm font-medium transition-all cursor-pointer ${
               activeTab === "original"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -75,7 +75,7 @@ export default function TransformationGallery(booking: BookingParams) {
           </button>
           <button
             onClick={() => setActiveTab("design")}
-            className={`flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 flex-1 px-4 py-2 rounded-md text-xs md:text-sm font-medium transition-all cursor-pointer ${
               activeTab === "design"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
