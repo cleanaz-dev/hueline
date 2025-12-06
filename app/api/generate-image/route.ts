@@ -1,4 +1,4 @@
-import { generateAltMockup } from "@/lib/replicate";
+import { generateAltMockup } from "@/lib/replicate-old";
 import { updateBookingWithAltMockup } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
 
