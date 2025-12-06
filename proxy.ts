@@ -6,14 +6,25 @@ export function proxy(request: NextRequest) {
   console.log('🔍 Hostname:', hostname);
   console.log('🔍 Pathname:', request.nextUrl.pathname);
 
-  const currentHost =
-    process.env.NODE_ENV === 'production'
-      ? hostname.replace('.hueline.com', '')
-      : hostname.replace('.localhost:3000', '');
+  // Handle BOTH domains
+  let currentHost = hostname;
+  
+  if (process.env.NODE_ENV === 'production') {
+    // Try to remove both possible root domains
+    if (hostname.includes('.hue-line.com')) {
+      currentHost = hostname.replace('.hue-line.com', '');
+    } else if (hostname.includes('.hueline.com')) {
+      currentHost = hostname.replace('.hueline.com', '');
+    }
+  } else {
+    currentHost = hostname.replace('.localhost:3000', '');
+  }
 
   console.log('🔍 Current Host:', currentHost);
 
+  // Check if it's the main domain (not a subdomain)
   if (
+    currentHost === 'hue-line' ||
     currentHost === 'hueline' ||
     currentHost === 'www' ||
     currentHost === 'localhost:3000'
