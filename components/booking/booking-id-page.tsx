@@ -75,7 +75,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
 
   return (
     <ScrollArea>
-      <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
+      <div className="min-h-screen bg-gradient-to-b from-primary/30 via-secondary/05 to-primary/30">
         {/* Header with Logo */}
         <Header />
         <main className="max-w-6xl mx-auto px-2 md:px-12 space-y-12 py-4 md:py-8">

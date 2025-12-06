@@ -1,7 +1,7 @@
 import BookingWrapper from "@/components/booking/booking-wrapper";
 import React from "react";
 import { getBooking } from "@/lib/redis";
-import { saveBookingData } from "@/lib/query";
+import { saveBookingData } from "@/lib/prisma/queries";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";

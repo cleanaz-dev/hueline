@@ -2,23 +2,27 @@ import { NextResponse, NextRequest } from 'next/server';
 
 export function proxy(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
-  const subdomain = hostname.split('.')[0];
   
   console.log('🔍 Hostname:', hostname);
-  console.log('🔍 Subdomain:', subdomain);
   console.log('🔍 Pathname:', request.nextUrl.pathname);
 
-  // Skip main domain (but allow subdomains on localhost)
+  const currentHost =
+    process.env.NODE_ENV === 'production'
+      ? hostname.replace('.hueline.com', '')
+      : hostname.replace('.localhost:3000', '');
+
+  console.log('🔍 Current Host:', currentHost);
+
   if (
-    subdomain === 'www' ||
-    hostname === 'hueline.com' ||
-    hostname === 'localhost:3000'  // ← Change to exact match
+    currentHost === 'hueline' ||
+    currentHost === 'www' ||
+    currentHost === 'localhost:3000'
   ) {
     return NextResponse.next();
   }
 
   const url = request.nextUrl.clone();
-  url.pathname = `/subdomains/${subdomain}${url.pathname}`;
+  url.pathname = `/subdomains/${currentHost}${url.pathname}`;
   console.log('🔍 REWRITING TO:', url.pathname);
   return NextResponse.rewrite(url);
 }

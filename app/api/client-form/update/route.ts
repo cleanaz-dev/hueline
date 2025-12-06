@@ -1,7 +1,7 @@
 // api/client-form/update/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { updateActivity } from "@/lib/query";
+import { updateActivity } from "@/lib/prisma/queries";
 
 export async function POST(req: Request) {
   try {

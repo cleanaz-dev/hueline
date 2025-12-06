@@ -4,7 +4,7 @@ import { render } from "@react-email/render";
 import { transporter } from "@/lib/mailer";
 import { OnboardingEmail } from "@/lib/config/email-config";
 import { MakeHandler } from "@/lib/handlers/make-handler";
-import { getClientByEmail } from "@/lib/query";
+import { getClientByEmail } from "@/lib/prisma/queries";
 import { markFeeAsPaid } from "@/lib/handlers/client-status-handler";
 import { generateProjectTemplate } from "../aws/aws-template-builder";
 import { sendPaymentNotification } from "../slack/send-payment-notification";

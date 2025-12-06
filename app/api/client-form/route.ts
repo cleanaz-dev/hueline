@@ -3,7 +3,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clientIntakeHandler } from "@/lib/handlers/client-intake-handler";
-import { updateActivity } from "@/lib/query";
+import { updateActivity } from "@/lib/prisma/queries";
 
 export async function POST(req: Request) {
   try {

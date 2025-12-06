@@ -61,23 +61,103 @@ model FormActivity {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   formId    String   @db.ObjectId
   form      FormData @relation(fields: [formId], references: [id], onDelete: Cascade)
-  action    String // Simple text: "Sent setup link", "Fee paid", etc.
+  action    String
   details   String?
   createdAt DateTime @default(now())
 }
 
 model Subdomain {
-  id           String    @id @default(auto()) @map("_id") @db.ObjectId
-  slug         String    @unique
+  id           String           @id @default(auto()) @map("_id") @db.ObjectId
+  slug         String           @unique
   companyName  String?
   projectUrl   String?
   logo         String?
-  logoWidth    Int?      @default(130)
-  logoHeight   Int?      @default(130)
+  logoWidth    Int?             @default(130)
+  logoHeight   Int?             @default(130)
   splashScreen String?
   theme        Json?
-  active       Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  active       Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
   FormData     FormData?
+  bookings     SubBookingData[]
+}
+
+model SubBookingData {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId   String    @unique
+  subdomainId String    @db.ObjectId
+  subdomain   Subdomain @relation(fields: [subdomainId], references: [id], onDelete: Cascade)
+  huelineId   String    @unique
+
+  name           String
+  phone          String
+  roomType       String
+  prompt         String
+  originalImages String
+  summary        String
+  audioUrl       String?
+  callDuration   String?
+  dimensions     String?
+  dateTime       DateTime
+  pin            String
+  expiresAt      Int
+
+  mockups         Mockup[]
+  paintColors     PaintColor[]
+  alternateColors AlternateColor[]
+  sharedAccess    SharedAccess[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Mockup {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  bookingDataId String         @db.ObjectId
+  bookingData   SubBookingData @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
+
+  s3Key        String
+  roomType     String
+  presignedUrl String?
+  colorRal     String
+  colorName    String
+  colorHex     String
+
+  createdAt DateTime @default(now())
+}
+
+model PaintColor {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  bookingDataId String         @db.ObjectId
+  bookingData   SubBookingData @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
+
+  ral  String
+  name String
+  hex  String
+
+  createdAt DateTime @default(now())
+}
+
+model AlternateColor {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  bookingDataId String         @db.ObjectId
+  bookingData   SubBookingData @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
+
+  ral  String
+  name String
+  hex  String
+
+  createdAt DateTime @default(now())
+}
+
+model SharedAccess {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  bookingDataId String         @db.ObjectId
+  bookingData   SubBookingData @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
+
+  email      String
+  accessType String
+  pin        String
+  createdAt  DateTime @default(now())
 }

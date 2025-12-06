@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import ClientPage from '@/components/admin/clients/client-page';
-import { getBookingData } from '@/lib/query';
+import { getBookingData } from '@/lib/prisma/queries';
 
 export default async function Clients() {
   const session = await getServerSession(authOptions);

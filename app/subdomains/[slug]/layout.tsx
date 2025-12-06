@@ -1,16 +1,26 @@
 // app/subdomains/[subdomain]/layout.tsx
 
 import { Metadata } from 'next';
-import { getSubdomainData } from '@/lib/query';
+import { getSubDomainAccount } from '@/lib/prisma';
+import { getSubAccountData } from '@/lib/redis';
+import SubdomainNav from '@/components/subdomains/layout/subdomain-nav';
+import { cache } from 'react';
 
 interface Props {
-  params: Promise<{ subdomain: string }>;
+  params: Promise<{ slug: string }>;
   children: React.ReactNode;
 }
 
+const getSubdomainData = cache(async (slug: string) => {
+  const cached = await getSubAccountData(slug);
+  if (cached) return cached;
+  
+  return await getSubDomainAccount(slug);
+});
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { subdomain } = await params;
-  const subData = await getSubdomainData(subdomain);
+  const { slug } = await params;
+  const subData = await getSubdomainData(slug);
   
   if (!subData) {
     return {
@@ -37,6 +47,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function SubDomainLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <div>{children}</div>;
+export default async function SubDomainLayout({children }: Props) {
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
+      {children}
+    </div>
+  );
 }

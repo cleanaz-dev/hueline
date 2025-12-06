@@ -33,7 +33,8 @@ export async function getRedisClient() {
 
 
 export const keys = {
-  sentImages: (phoneNumber: string) => `sentImages:${phoneNumber}`,
-  booking: (phoneNumber: string) => `booking:${phoneNumber}`,
-  subBooking: (subdomain: string, phoneNumber: string ) => `booking:${subdomain}:${phoneNumber}`
+  sentImages: (phoneNumber: string): string => `sentImages:${phoneNumber}`,
+  booking: (phoneNumber: string): string => `booking:${phoneNumber}`,
+  subBooking: (subdomain: string, phoneNumber: string): string => `booking:${subdomain}:${phoneNumber}`,
+  slug: (slug: string): string => `slug:${slug}`
 }

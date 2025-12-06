@@ -3,7 +3,7 @@ import React, { useRef, useEffect } from 'react';
 
 type SplashScreenProps = {
   onVideoEnd?: () => void;
-  splashScreenUrl?: string
+  splashScreenUrl: string;
 };
 
 export default function SubDomainSplashScreen({ onVideoEnd, splashScreenUrl }: SplashScreenProps) {

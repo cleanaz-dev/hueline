@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { headers } from 'next/headers'
-import { getSubdomainData } from '@/lib/query';
+import { getSubDomainData } from "@/lib/prisma";
 import { AlertCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -13,26 +13,12 @@ export default async function BookingNotFound() {
   const subdomain = hostname.split('.')[0];
   
   // Fetch subdomain data
-  const subDomainData = await getSubdomainData(subdomain);
+  const subDomainData = await getSubDomainData(subdomain);
   const logoUrl = subDomainData?.logo || '/images/logo-2--increased-brightness.png';
   const companyName = subDomainData?.companyName || 'Company';
   return (
     <ScrollArea className="h-screen">
       <div className="h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
-        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-center">
-            <div className="flex items-center space-x-2">
-              <Image
-                src={logoUrl}
-                alt="HueLine Logo"
-                className="object-contain w-14 md:w-20"
-                width={120}
-                height={120}
-              />
-            </div>
-          </div>
-        </header>
-
         <main className="max-w-4xl mx-auto px-6 py-16">
           <div className="text-center space-y-8">
             <div className="flex justify-center">
