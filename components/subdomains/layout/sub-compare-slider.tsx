@@ -42,8 +42,8 @@ export default function SubComparisonSlider({
             setPosition(0);
             setTimeout(() => {
               setPosition(50);
-            }, 1500);
-          }, 300);
+            }, 3000); // Changed from 1500 to 3000 (slower)
+          }, 500); // Changed from 300 to 500 (longer initial delay)
         }
       },
       { threshold: 0.3 }
@@ -59,7 +59,7 @@ export default function SubComparisonSlider({
   // Handle slider position
   const updatePosition = (clientX: number) => {
     if (!containerRef.current) return;
-    
+
     const rect = containerRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
     const percentage = (x / rect.width) * 100;
@@ -158,7 +158,7 @@ export default function SubComparisonSlider({
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
-             opacity: 0.45
+              opacity: 0.45,
             }}
           />
         )}
