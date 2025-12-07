@@ -81,6 +81,25 @@ model Subdomain {
   updatedAt    DateTime         @updatedAt
   FormData     FormData?
   bookings     SubBookingData[]
+  users        SubdomainUser[]
+}
+
+model SubdomainUser {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  email        String  @unique
+  name         String?
+  passwordHash String
+
+  // ✅ NEW: Role management (OWNER, ADMIN, MEMBER)
+  role String @default("MEMBER")
+
+  // ✅ NEW: Link to the Subdomain via ID (Not Unique!)
+  // This allows multiple users to have the same subdomainId
+  subdomainId String    @db.ObjectId
+  subdomain   Subdomain @relation(fields: [subdomainId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SubBookingData {

@@ -1,170 +1,289 @@
 "use client";
+
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Logo from "@/public/images/logo-2--increased-brightness.png";
 import Image from "next/image";
 import { z } from "zod";
+import { Loader2, UserCircle, Building2 } from "lucide-react";
 
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+// --- Validation Schemas ---
+const partnerSchema = z.object({
+  email: z.email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
-type LoginFormData = z.infer<typeof loginSchema>;
+const clientSchema = z.object({
+  bookingId: z.string().min(3, "Invalid Booking ID"),
+  pin: z.string().min(4, "PIN must be at least 4 digits"),
+});
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof LoginFormData, string>>
-  >({});
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  
+  // State
+  const [loginMethod, setLoginMethod] = useState<"partner" | "client">("client");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  
+  // Form State
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    bookingId: "",
+    pin: "",
+  });
 
-  async function handleLogin(e: React.FormEvent) {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
+    setError(""); // Clear errors on type
+  };
+
+  // --- 1. HANDLE PARTNER LOGIN (SaaS Owner) ---
+async function handlePartnerLogin(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
-    setErrors({});
     setIsLoading(true);
+    setError("");
 
-    // Validate with Zod
-    const result = loginSchema.safeParse({ email, password });
+    // Validate
+    const validation = partnerSchema.safeParse({ 
+      email: formData.email, 
+      password: formData.password 
+    });
 
-    if (!result.success) {
-      const fieldErrors: Partial<Record<keyof LoginFormData, string>> = {};
-      result.error.issues.forEach((issue) => {
-        if (issue.path[0]) {
-          fieldErrors[issue.path[0] as keyof LoginFormData] = issue.message;
-        }
-      });
-      setErrors(fieldErrors);
+    if (!validation.success) {
+      setError(validation.error.issues[0].message);
       setIsLoading(false);
       return;
     }
 
     try {
-      const signInResult = await signIn("admin", {
-        email: result.data.email,
-        password: result.data.password,
+      const res = await signIn("saas-account", {
+        email: formData.email,
+        password: formData.password,
         redirect: false,
       });
 
-      if (signInResult?.error) {
+      if (res?.error) {
         setError("Invalid email or password");
         setIsLoading(false);
         return;
       }
 
-      if (signInResult?.ok) {
+      // Success! Fetch session to get the slug
+      const sessionReq = await fetch("/api/auth/session");
+      const session = await sessionReq.json();
+      const slug = session?.user?.subdomainSlug;
+
+      if (slug) {
+        const host = window.location.host; // e.g. "localhost:3000" or "app.hue-line.com"
+        const protocol = window.location.protocol; // "http:" or "https:"
+
+        if (host.includes("localhost")) {
+          // ✅ FIX: Force redirect to the subdomain structure on localhost
+          // This creates "http://acmepaint.localhost:3000/dashboard"
+          window.location.href = `${protocol}//${slug}.localhost:3000/dashboard`;
+        } else {
+          // Production: Cross-domain redirect
+          // e.g., app.hue-line.com -> joes-painting.hue-line.com/dashboard
+          const rootDomain = host.split('.').slice(-2).join('.');
+          window.location.href = `${protocol}//${slug}.${rootDomain}/dashboard`;
+        }
+      } else {
+        // Fallback if no slug found (e.g. Super Admin)
         router.push("/form");
-        router.refresh();
       }
+
     } catch (err) {
       console.error("Login error:", err);
-      setError("Something went wrong. Please try again.");
+      setError("An unexpected error occurred.");
+      setIsLoading(false);
+    }
+  }
+
+  // --- 2. HANDLE CLIENT LOGIN (Booking Portal) ---
+  async function handleClientLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    // Validate
+    const validation = clientSchema.safeParse({ 
+      bookingId: formData.bookingId, 
+      pin: formData.pin 
+    });
+
+    if (!validation.success) {
+      setError(validation.error.issues[0].message);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const res = await signIn("booking-portal", {
+        bookingId: formData.bookingId,
+        pin: formData.pin,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        setError("Invalid Booking ID or PIN");
+        setIsLoading(false);
+        return;
+      }
+
+      // Success! Clients usually view their specific booking page or a generic dashboard
+      // Since they don't own a subdomain, we keep them on the current domain
+      router.push("/dashboard");
+      router.refresh();
+
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An unexpected error occurred.");
       setIsLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-gray-50">
-      <Image src={Logo} width={125} height={125} alt="Logo" priority />
-      <form
-        onSubmit={handleLogin}
-        className="p-8 bg-white shadow-lg rounded-lg w-96 space-y-4"
-      >
-        <h2 className="text-2xl font-bold text-center text-gray-800">
-          Admin Login
-        </h2>
-
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
-            {error}
-          </div>
-        )}
-
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            placeholder="admin@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={isLoading}
-            className={`w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-black focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition ${
-              errors.email ? "border-red-500" : "border-gray-300"
+    <div className="min-h-screen flex flex-col items-center justify-center gap-8 bg-gray-50 px-4">
+      <Image src={Logo} width={140} height={140} alt="Logo" priority className="opacity-90" />
+      
+      <div className="bg-white shadow-xl rounded-2xl w-full max-w-[400px] overflow-hidden border border-gray-100">
+        
+        {/* Toggle Header */}
+        <div className="flex border-b border-gray-100 bg-gray-50/50 p-1 m-2 rounded-xl">
+          <button
+            type="button"
+            onClick={() => { setLoginMethod("client"); setError(""); }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+              loginMethod === "client" 
+                ? "bg-white text-gray-900 shadow-sm ring-1 ring-black/5" 
+                : "text-gray-500 hover:text-gray-700"
             }`}
-          />
-          {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-          )}
+          >
+            <UserCircle className="w-4 h-4" />
+            Client Access
+          </button>
+          <button
+            type="button"
+            onClick={() => { setLoginMethod("partner"); setError(""); }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+              loginMethod === "partner" 
+                ? "bg-white text-gray-900 shadow-sm ring-1 ring-black/5" 
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            Partner Login
+          </button>
         </div>
 
-        <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isLoading}
-            className={`w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-black focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition ${
-              errors.password ? "border-red-500" : "border-gray-300"
-            }`}
-          />
-          {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-          )}
-        </div>
+        <div className="p-8 pt-6">
+          <h2 className="text-xl font-bold text-center text-gray-900 mb-2">
+            {loginMethod === "partner" ? "Partner Dashboard" : "View Your Project"}
+          </h2>
+          <p className="text-center text-gray-500 text-sm mb-6">
+            {loginMethod === "partner" 
+              ? "Sign in to manage your subdomains and leads." 
+              : "Enter your Booking ID and PIN to view details."}
+          </p>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-black text-white p-2.5 rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-medium flex items-center justify-center gap-2"
-        >
-          {isLoading ? (
-            <>
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm font-medium text-center animate-in fade-in slide-in-from-top-2">
+              {error}
+            </div>
+          )}
+
+          {/* --- PARTNER FORM --- */}
+          {loginMethod === "partner" && (
+            <form onSubmit={handlePartnerLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5 ml-1">
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="name@company.com"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-black/5 focus:border-black transition-all outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5 ml-1">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-black/5 focus:border-black transition-all outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 disabled:opacity-70 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2 mt-2 shadow-lg shadow-gray-200"
               >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Signing in...
-            </>
-          ) : (
-            "Login"
+                {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Sign In"}
+              </button>
+            </form>
           )}
-        </button>
-      </form>
+
+          {/* --- CLIENT FORM --- */}
+          {loginMethod === "client" && (
+            <form onSubmit={handleClientLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5 ml-1">
+                  Booking ID
+                </label>
+                <input
+                  id="bookingId"
+                  type="text"
+                  placeholder="e.g. GUYfknsT"
+                  value={formData.bookingId}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-black/5 focus:border-black transition-all outline-none font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5 ml-1">
+                  Security PIN
+                </label>
+                <input
+                  id="pin"
+                  type="password"
+                  placeholder="••••"
+                  maxLength={6}
+                  value={formData.pin}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-black/5 focus:border-black transition-all outline-none font-mono tracking-widest"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 disabled:opacity-70 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2 mt-2 shadow-lg shadow-gray-200"
+              >
+                {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Access Project"}
+              </button>
+            </form>
+          )}
+
+        </div>
+      </div>
+      
+      <p className="text-xs text-gray-400">
+        &copy; {new Date().getFullYear()} Hue-Line. All rights reserved.
+      </p>
     </div>
   );
 }
