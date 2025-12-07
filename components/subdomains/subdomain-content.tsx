@@ -1,70 +1,67 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion"; // Import AnimatePresence
 import SubDomainIdPage from "./subdomain-id-page";
 import SubDomainSplashScreen from "./subdomain-splash-screen";
 import { useBooking } from "@/context/booking-context";
 
 export function SubDomainContent() {
-  const { booking, subdomain, isLoading } = useBooking(); // Access data from Context
+  const { booking, subdomain } = useBooking();
   
-  const [showSplash, setShowSplash] = useState(true);
+  // Start true. If there is no splash video, we might want to flip this earlier.
+  const [showSplash, setShowSplash] = useState(!!subdomain.splashScreen);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
-  // Minimum 2 second timer for splash
+  // 1. Forced Branding Timer (Optional)
+  // Even if data loads instantly, show logo for at least 1.5s so it doesn't flicker
   useEffect(() => {
     const timer = setTimeout(() => {
       setMinTimeElapsed(true);
-    }, 2000);
+    }, 1500);
     return () => clearTimeout(timer);
   }, []);
 
-  // Hide splash only when BOTH conditions are met:
-  // 1. Minimum time has passed
-  // 2. Data is done loading (isLoading is false)
-  useEffect(() => {
-    if (minTimeElapsed && !isLoading) {
-      setShowSplash(false);
-    }
-  }, [minTimeElapsed, isLoading]);
-
+  // 2. Dismiss Logic
   const handleSplashEnd = () => {
     setShowSplash(false);
   };
 
+  // If there is no splash video url, we rely purely on the timer
+  useEffect(() => {
+    if (!subdomain.splashScreen && minTimeElapsed) {
+      setShowSplash(false);
+    }
+  }, [minTimeElapsed, subdomain.splashScreen]);
+
   return (
     <>
-      {showSplash && (
-        <motion.div
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          // Ensure splash covers everything
-          className="fixed inset-0 z-50 bg-white" 
-        >
-          {subdomain.splashScreen && (
+      <AnimatePresence mode="wait">
+        {showSplash && subdomain.splashScreen ? (
+          <motion.div
+            key="splash"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="fixed inset-0 z-50 bg-white"
+          >
             <SubDomainSplashScreen
-              onVideoEnd={handleSplashEnd}
+              // Passing the callback ensures we wait for video/animation to finish
+              onVideoEnd={handleSplashEnd} 
               splashScreenUrl={subdomain.splashScreen}
             />
-          )}
-        </motion.div>
-      )}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
-      {!showSplash && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeIn" }}
-        >
-          {/* We don't need to pass props here anymore if SubDomainIdPage uses the hook,
-              but we can pass them if SubDomainIdPage expects props. 
-              Ideally, update SubDomainIdPage to use the hook too! */}
-          <SubDomainIdPage booking={booking} subdomain={subdomain} />
-        </motion.div>
-      )}
+      {/* Main Content - Always rendered in background or revealed after splash */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showSplash ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <SubDomainIdPage booking={booking} subdomain={subdomain} />
+      </motion.div>
     </>
   );
 }

@@ -5,6 +5,7 @@ import LogoImage from "@/public/images/url-image.png";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
+import { NextAuthSessionProvider } from "@/providers/session-provider";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -40,11 +41,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${roboto.className} ${geistMono.variable} antialiased`}>
-        {" "}
-        {children}
-        <Toaster mobileOffset={{ bottom: "16px" }} position="bottom-center" />
-        <SpeedInsights />
-        <Analytics />
+        <NextAuthSessionProvider>
+          {" "}
+          {children}
+          <Toaster mobileOffset={{ bottom: "16px" }} position="bottom-center" />
+          <SpeedInsights />
+          <Analytics />
+        </NextAuthSessionProvider>
       </body>
     </html>
   );

@@ -3,7 +3,6 @@
 import { Metadata } from 'next';
 import { getSubDomainAccount } from '@/lib/prisma';
 import { getSubAccountData } from '@/lib/redis';
-import SubdomainNav from '@/components/subdomains/layout/subdomain-nav';
 import { cache } from 'react';
 
 interface Props {

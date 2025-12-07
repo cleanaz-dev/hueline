@@ -1,59 +1,36 @@
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { NextAuthOptions, DefaultSession } from "next-auth";
-import { getBooking } from "@/lib/redis"; // Your Redis fetcher
-import { prisma } from "@/lib/prisma";   // Your DB connection
+import type { NextAuthOptions } from "next-auth";
+import { getBooking } from "@/lib/redis";
+import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-// 1. Type Definitions
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      subdomainSlug?: string;
-      bookingId?: string;
-      accessLevel?: string; // "owner", "viewer"
-    } & DefaultSession["user"];
-    role?: string;
-  }
-
-  interface User {
-    id: string;
-    role?: string;
-    subdomainSlug?: string;
-    bookingId?: string;
-    accessLevel?: string;
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    id?: string;
-    role?: string;
-    subdomainSlug?: string;
-    bookingId?: string;
-    accessLevel?: string;
-  }
-}
+// Determine the cookie domain based on environment
+// Production: .hue-line.com (accessible by app.hue-line.com and tenant.hue-line.com)
+// Development: localhost (accessible by app.localhost and tenant.localhost)
+const cookieDomain = process.env.NODE_ENV === 'production' 
+  ? '.hue-line.com' 
+  : 'localhost'; // Changed from undefined to 'localhost'
 
 export const authOptions: NextAuthOptions = {
-  // 🍪 Cookie Configuration
-  // Allows the session to persist across subdomains (app.domain.com -> joe.domain.com)
+  // ------------------------------------------------------------------
+  // 1. COOKIE CONFIGURATION (The "Glue" for Subdomains)
+  // ------------------------------------------------------------------
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'lax', // 'lax' is best for redirects between subdomains
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? '.hue-line.com' : undefined 
+        domain: cookieDomain
       }
     }
   },
 
   providers: [
     // ------------------------------------------------------------------
-    // PROVIDER A: SAAS OWNERS (The Painters)
+    // PROVIDER A: SAAS ACCOUNTS (Partners & Super Admin)
     // ------------------------------------------------------------------
     CredentialsProvider({
       id: "saas-account",
@@ -65,10 +42,9 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // Fetch User + Subdomain Slug
         const user = await prisma.subdomainUser.findUnique({
           where: { email: credentials.email },
-          include: { subdomain: true } // Need this to redirect them correctly!
+          include: { subdomain: true } // We need this to know where to redirect them
         });
 
         if (!user || !user.passwordHash) return null;
@@ -80,14 +56,14 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name || user.email.split("@")[0],
           email: user.email,
-          role: "saas_owner",
-          subdomainSlug: user.subdomain?.slug, 
+          role: user.role, // e.g., 'account_owner', 'SUPER_ADMIN'
+          subdomainSlug: user.subdomain?.slug,
         };
       },
     }),
 
     // ------------------------------------------------------------------
-    // PROVIDER B: CLIENT PORTAL (Fail-Safe Logic)
+    // PROVIDER B: CLIENT PORTAL (The Booking Access)
     // ------------------------------------------------------------------
     CredentialsProvider({
       id: "booking-portal",
@@ -102,61 +78,51 @@ export const authOptions: NextAuthOptions = {
         let bookingData: any = null;
         let subdomainSlug: string | undefined = undefined;
 
-        // 🟢 STEP 1: CHECK REDIS (The "Buffer")
+        // 1. Redis Check (Fast Path)
         const redisData = await getBooking(credentials.bookingId);
         
         if (redisData) {
           bookingData = redisData;
           
-          // The Agent now sends 'subdomain_id'. We use this to find the live slug.
-          // This is safer than hardcoding the slug in Redis.
+          // Optimization Note: In the future, save 'slug' directly in Redis 
+          // to avoid this extra Prisma call.
           if (redisData.subdomain_id) {
-            const subdomain = await prisma.subdomain.findUnique({
-              where: { id: redisData.subdomain_id },
-              select: { slug: true }
-            });
-            subdomainSlug = subdomain?.slug;
+             const subdomain = await prisma.subdomain.findUnique({
+                where: { id: redisData.subdomain_id },
+                select: { slug: true }
+             });
+             subdomainSlug = subdomain?.slug;
           }
         } 
         
-        // 🟠 STEP 2: CHECK MONGODB (The "Vault")
-        // If Redis failed or expired, we look here.
+        // 2. Database Fallback (Slow Path / Cache Miss)
         if (!bookingData) {
           const dbBooking = await prisma.subBookingData.findUnique({
             where: { bookingId: credentials.bookingId },
-            include: { 
-              subdomain: true, // Get the slug!
-              sharedAccess: true // Get the viewers!
-            }
+            include: { subdomain: true, sharedAccess: true }
           });
 
           if (dbBooking) {
-            bookingData = {
-              ...dbBooking,
-              booking_id: dbBooking.bookingId, // Normalize to match Redis structure
-            };
+            bookingData = { ...dbBooking, booking_id: dbBooking.bookingId };
             subdomainSlug = dbBooking.subdomain?.slug;
           }
         }
 
-        // If neither Redis nor DB has it, access denied.
         if (!bookingData) return null;
 
-        // 🔵 STEP 3: VERIFY PIN (The Gatekeeper)
-        
-        // A. Is it the Owner?
+        // 3. Verify PIN (Owner)
         if (String(bookingData.pin) === String(credentials.pin)) {
           return {
             id: bookingData.booking_id,
-            name: bookingData.name,
+            name: bookingData.name || "Guest",
             role: "customer",
-            accessLevel: "owner", // Full Access
+            accessLevel: "owner",
             bookingId: bookingData.booking_id,
-            subdomainSlug: subdomainSlug || "app",
+            subdomainSlug: subdomainSlug || "app", // Fallback to 'app' if orphan
           };
         }
 
-        // B. Is it a Shared Viewer?
+        // 4. Verify PIN (Shared Access / Family)
         if (bookingData.sharedAccess && Array.isArray(bookingData.sharedAccess)) {
           const sharedUser = bookingData.sharedAccess.find(
             (u: any) => String(u.pin) === String(credentials.pin)
@@ -164,10 +130,11 @@ export const authOptions: NextAuthOptions = {
 
           if (sharedUser) {
             return {
-              id: `${bookingData.booking_id}-${sharedUser.email}`, // Unique Session ID
+              // Composite ID to ensure uniqueness for shared users
+              id: `${bookingData.booking_id}-${sharedUser.email}`, 
               name: sharedUser.email.split("@")[0],
               role: "customer",
-              accessLevel: sharedUser.accessType || "viewer", // "viewer"
+              accessLevel: sharedUser.accessType || "viewer",
               bookingId: bookingData.booking_id,
               subdomainSlug: subdomainSlug || "app",
             };
@@ -179,7 +146,6 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  // 4. Session Handling
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -192,7 +158,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (token) {
+      if (token && session.user) {
         session.user.id = token.id as string;
         session.role = token.role as string;
         session.user.subdomainSlug = token.subdomainSlug as string;
@@ -203,10 +169,10 @@ export const authOptions: NextAuthOptions = {
     },
   },
 
-  pages: {
-    signIn: "/login",
-  },
-  
+  // This directs unauthenticated users. 
+  // SaaS users go here naturally. 
+  // Portal users bypass this via custom login forms.
+  pages: { signIn: "/login" }, 
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
 };
