@@ -51,7 +51,7 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
           <div className="bg-white border-2 border-orange-300 rounded-lg p-3 mb-4">
             <div className="text-sm text-gray-600 mb-1">Booking Id:</div>
             <div className="text-3xl font-mono font-bold text-orange-600">
-              {booking.bookingId}
+              {booking.huelineId}
             </div>
           </div>
 

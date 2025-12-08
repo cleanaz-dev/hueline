@@ -33,6 +33,7 @@ interface BookingParams {
   mockups?: MockupUrl[];
   paint_colors?: PaintColor[];
   alternate_colors?: PaintColor[];
+  huelineId: string;
   bookingId?: string;
   phone: string;
   sharedAccess?: SharedAccess[];

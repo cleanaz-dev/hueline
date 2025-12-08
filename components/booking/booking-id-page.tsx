@@ -40,6 +40,7 @@ type Booking = {
   summary: string;
   call_duration?: string;
   phone: string;
+  huelineId:string;
   dimensions?: string;
   booking_id?: string;
   sharedAccess?: SharedAccess[];
@@ -90,7 +91,7 @@ export default function BookingPage({ booking, onRefresh }: Props) {
             mockup_urls={booking.mockup_urls}
             paint_colors={booking.paint_colors}
             alternate_colors={booking.alternate_colors} // ← Do you have this?
-            bookingId={booking.booking_id}
+            huelineId={booking.huelineId}
             phone={booking.phone}
             sharedAccess={booking.sharedAccess}
           />
