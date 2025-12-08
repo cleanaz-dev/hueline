@@ -1,26 +1,24 @@
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { NextAuthOptions } from "next-auth";
+import type { NextAuthOptions, DefaultSession } from "next-auth"; // Ensure DefaultSession is imported
 import { getBooking } from "@/lib/redis";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-// Determine the cookie domain based on environment
-// Production: .hue-line.com (accessible by app.hue-line.com and tenant.hue-line.com)
-// Development: localhost (accessible by app.localhost and tenant.localhost)
+// ⚠️ COOKIE CONFIG NOTE:
+// 'localhost' as a domain is often invalid in browsers. 
+// We use undefined for dev, which means cookies are host-only.
+// In Prod, we use the dot prefix (.hue-line.com) to share across subdomains.
 const cookieDomain = process.env.NODE_ENV === 'production' 
   ? '.hue-line.com' 
-  : 'localhost'; // Changed from undefined to 'localhost'
+  : undefined; 
 
 export const authOptions: NextAuthOptions = {
-  // ------------------------------------------------------------------
-  // 1. COOKIE CONFIGURATION (The "Glue" for Subdomains)
-  // ------------------------------------------------------------------
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax', // 'lax' is best for redirects between subdomains
+        sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: cookieDomain
@@ -29,9 +27,7 @@ export const authOptions: NextAuthOptions = {
   },
 
   providers: [
-    // ------------------------------------------------------------------
-    // PROVIDER A: SAAS ACCOUNTS (Partners & Super Admin)
-    // ------------------------------------------------------------------
+    // --- PROVIDER A: SAAS ACCOUNT ---
     CredentialsProvider({
       id: "saas-account",
       name: "Partner Login",
@@ -44,7 +40,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.subdomainUser.findUnique({
           where: { email: credentials.email },
-          include: { subdomain: true } // We need this to know where to redirect them
+          include: { subdomain: true } 
         });
 
         if (!user || !user.passwordHash) return null;
@@ -56,20 +52,18 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name || user.email.split("@")[0],
           email: user.email,
-          role: user.role, // e.g., 'account_owner', 'SUPER_ADMIN'
+          role: user.role, 
           subdomainSlug: user.subdomain?.slug,
         };
       },
     }),
 
-    // ------------------------------------------------------------------
-    // PROVIDER B: CLIENT PORTAL (The Booking Access)
-    // ------------------------------------------------------------------
+    // --- PROVIDER B: BOOKING PORTAL ---
     CredentialsProvider({
       id: "booking-portal",
       name: "Booking Access",
       credentials: {
-        bookingId: { label: "Booking ID", type: "text" },
+        bookingId: { label: "Booking ID", type: "text" }, // We call it bookingId in the form
         pin: { label: "PIN", type: "text" },
       },
       async authorize(credentials) {
@@ -78,14 +72,18 @@ export const authOptions: NextAuthOptions = {
         let bookingData: any = null;
         let subdomainSlug: string | undefined = undefined;
 
-        // 1. Redis Check (Fast Path)
+        // 🟢 1. Redis Check
+        // The input 'credentials.bookingId' contains the 'huelineId' string
         const redisData = await getBooking(credentials.bookingId);
         
         if (redisData) {
-          bookingData = redisData;
+          // 🛠️ FIX: Normalize the Redis data keys to match what we expect later
+          // Python sends 'hueline_id', but we use 'booking_id' internally in the return object
+          bookingData = {
+            ...redisData,
+            booking_id: redisData.hueline_id || redisData.booking_id, // Handle both snake_case and potential legacy keys
+          };
           
-          // Optimization Note: In the future, save 'slug' directly in Redis 
-          // to avoid this extra Prisma call.
           if (redisData.subdomain_id) {
              const subdomain = await prisma.subdomain.findUnique({
                 where: { id: redisData.subdomain_id },
@@ -95,22 +93,27 @@ export const authOptions: NextAuthOptions = {
           }
         } 
         
-        // 2. Database Fallback (Slow Path / Cache Miss)
+        // 🟠 2. Database Fallback
         if (!bookingData) {
           const dbBooking = await prisma.subBookingData.findUnique({
-            where: { bookingId: credentials.bookingId },
+            where: { huelineId: credentials.bookingId }, // Query by huelineId
             include: { subdomain: true, sharedAccess: true }
           });
 
           if (dbBooking) {
-            bookingData = { ...dbBooking, booking_id: dbBooking.bookingId };
+            // 🛠️ FIX: Map DB 'huelineId' to 'booking_id' for consistency
+            bookingData = { 
+              ...dbBooking, 
+              booking_id: dbBooking.huelineId 
+            };
             subdomainSlug = dbBooking.subdomain?.slug;
           }
         }
 
         if (!bookingData) return null;
 
-        // 3. Verify PIN (Owner)
+        // 🔵 3. Verify PIN
+        // (Ensure we compare strings to avoid type mismatches)
         if (String(bookingData.pin) === String(credentials.pin)) {
           return {
             id: bookingData.booking_id,
@@ -118,11 +121,11 @@ export const authOptions: NextAuthOptions = {
             role: "customer",
             accessLevel: "owner",
             bookingId: bookingData.booking_id,
-            subdomainSlug: subdomainSlug || "app", // Fallback to 'app' if orphan
+            subdomainSlug: subdomainSlug || "app",
           };
         }
 
-        // 4. Verify PIN (Shared Access / Family)
+        // Shared Access check
         if (bookingData.sharedAccess && Array.isArray(bookingData.sharedAccess)) {
           const sharedUser = bookingData.sharedAccess.find(
             (u: any) => String(u.pin) === String(credentials.pin)
@@ -130,7 +133,6 @@ export const authOptions: NextAuthOptions = {
 
           if (sharedUser) {
             return {
-              // Composite ID to ensure uniqueness for shared users
               id: `${bookingData.booking_id}-${sharedUser.email}`, 
               name: sharedUser.email.split("@")[0],
               role: "customer",
@@ -146,6 +148,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
+  // ... Callbacks and Pages remain the same
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -169,10 +172,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
 
-  // This directs unauthenticated users. 
-  // SaaS users go here naturally. 
-  // Portal users bypass this via custom login forms.
-  pages: { signIn: "/login" }, 
+  pages: { signIn: "/login" },
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
 };

@@ -1,18 +1,18 @@
 import { transporter } from "@/lib/mailer";
 import { render } from "@react-email/render";
-import { ShareProjectEmail } from "./share-project-email";
+import { ShareProjectEmail } from "./share-project-email"; // Adjust path
 
 export async function sendShareProjectEmail(data: {
   email: string;
   accessType: string;
   pin: string;
-  bookingId: string;
+  url: string; // 🟢 Required now
 }) {
   const emailHtml = await render(
     ShareProjectEmail({
       accessType: data.accessType,
       pin: data.pin,
-      bookingId: data.bookingId,
+      url: data.url, // 🟢 Pass it through
     })
   );
 

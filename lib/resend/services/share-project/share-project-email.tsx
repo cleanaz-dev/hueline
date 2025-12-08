@@ -10,21 +10,20 @@ import {
   Hr,
   Button,
 } from "@react-email/components";
-import { styles } from "../../config";
+import { styles } from "../../config"; // Adjust path as needed
 import { LOGO_URL } from "@/lib/resend/config";
 
 export function ShareProjectEmail({
   accessType,
   pin,
-  bookingId,
+  url, // 🟢 NEW: Accept the full URL directly
 }: {
   accessType: string;
   pin: string;
-  bookingId: string;
+  url: string;
 }) {
-  const projectUrl = `https://hue-line.com/j/${bookingId}`;
   
-  // Convert "customer" to "standard" for display
+  // Convert "customer" to "Standard" for display
   const displayAccessType = accessType.toLowerCase() === 'customer' 
     ? 'Standard' 
     : accessType.charAt(0).toUpperCase() + accessType.slice(1);
@@ -66,8 +65,9 @@ export function ShareProjectEmail({
           </Section>
 
           <Section style={{ textAlign: 'center', marginTop: '24px', marginBottom: '24px' }}>
+            {/* 🟢 USE THE URL HERE */}
             <Button
-              href={projectUrl}
+              href={url}
               style={styles.primaryButton}
             >
               View Project

@@ -1,17 +1,17 @@
-// app/api/subdomain/[slug]/booking/[bookingId]/get-presigned-urls/route.ts
+// app/api/subdomain/[slug]/booking/[huelineId]/get-presigned-urls/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { getPresignedUrl } from "@/lib/aws/s3/services";
-import { getBookingByIdSlug } from "@/lib/prisma";
+import { getBookingByIdSlug } from "@/lib/prisma/mutations";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string; bookingId: string }> }
+  { params }: { params: Promise<{ slug: string; huelineId: string }> }
 ) {
   try {
-    const { slug, bookingId } = await params;
+    const { slug, huelineId } = await params;
     
-    const data = await getBookingByIdSlug(bookingId, slug);
+    const data = await getBookingByIdSlug(huelineId, slug);
     if (!data || data.bookings.length === 0) {
       return NextResponse.json(
         { error: "Booking not found" },

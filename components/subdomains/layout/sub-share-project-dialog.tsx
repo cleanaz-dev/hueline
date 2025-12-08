@@ -19,6 +19,7 @@ import { toast } from "sonner";
 interface ShareProjectDialogProps {
   bookingId: string;
   hasSharedAccess: boolean;
+  slug: string
 }
 
 const emailSchema = z.email();
@@ -27,7 +28,8 @@ type AccessType = "customer" | "viewer";
 
 export default function SubShareProjectDialog({
   bookingId,
-  hasSharedAccess
+  hasSharedAccess,
+  slug
 }: ShareProjectDialogProps) {
   const [emails, setEmails] = useState<string[]>([]);
   const [currentEmail, setCurrentEmail] = useState("");
@@ -73,7 +75,7 @@ export default function SubShareProjectDialog({
   setIsLoading(true);
 
   try {
-    const response = await fetch(`/api/booking/${bookingId}/share-project`, {
+    const response = await fetch(`/api/subdomain/${slug}/booking/${bookingId}/share-project`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ emails, accessType }),

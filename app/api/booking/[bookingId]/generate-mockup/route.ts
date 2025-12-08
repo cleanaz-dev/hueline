@@ -35,6 +35,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const colorPrompt = `Apply color: ${newColor.hex} to the walls of room`;
     console.log("PresignedUrl:", preSignedUrl);
+    
 
     // Generate mockup
     const mockupUrl = await generateMockup(

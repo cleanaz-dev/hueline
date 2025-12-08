@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getBookingByIdSlug(bookingId: string, slug: string) {
+export async function getBookingByIdSlug(huelineId: string, slug: string) {
   const data = await prisma.subdomain.findUniqueOrThrow({
     where: { slug },
     select: {
@@ -17,7 +17,7 @@ export async function getBookingByIdSlug(bookingId: string, slug: string) {
       active: true,
       updatedAt: true,
       bookings: {
-        where: { phone: bookingId },
+        where: { huelineId },
         include: {
           alternateColors: true,
           mockups: true,

@@ -17,7 +17,6 @@ export interface SubdomainAccountData {
 
 export interface BookingData {
   id: string;
-  bookingId: string;
   name: string;
   phone: string;
   roomType: string;

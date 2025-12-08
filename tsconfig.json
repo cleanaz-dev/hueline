@@ -35,7 +35,7 @@
     ".next/types/**/*.ts",
     "lib/seeds/seed-clear-redis.mjs",
     ".next/dev/types/**/*.ts"
-  ],
+, "lib/seeds/seed-demo-prisma.js"  ],
   "exclude": [
     "node_modules"
   ]

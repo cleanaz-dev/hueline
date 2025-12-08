@@ -5,39 +5,41 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 
 interface Props {
+  // 🟢 UPDATE: Matches folder name [huelineId]
   params: Promise<{
     slug: string;
-    bookingId: string;
+    huelineId: string; 
   }>;
 }
 
 export default async function BookingPage({ params }: Props) {
-  const { slug, bookingId } = await params;
+  // 🟢 UPDATE: Destructure huelineId
+  const { slug, huelineId } = await params;
 
   // 1. Fetch Data
-  const data = await getBookingByIdSlug(bookingId, slug);
+  // Ensure your query function now looks up by 'huelineId', not 'bookingId'
+  const data = await getBookingByIdSlug(huelineId, slug);
+  
   if (!data || data.bookings.length === 0) notFound();
 
   // 2. 🔒 SECURITY CHECK
   const session = await getServerSession(authOptions);
 
-  console.log(`🔐 Auth Check for [${slug}] / [${bookingId}]`);
-  console.log("👤 User:", session);
+  console.log(`🔐 Auth Check for [${slug}] / [${huelineId}]`);
   
   // --- AUTHORIZATION LOGIC ---
 
   // Condition A: Guest / Client (PIN Access)
-  // They have a specific bookingId attached to their session
-  const isAuthorizedGuest = session?.user?.bookingId === bookingId;
+  // Note: Your Auth Config maps the DB 'huelineId' to 'session.user.bookingId'
+  // so we compare the session ID against the URL huelineId.
+  const isAuthorizedGuest = session?.user?.bookingId === huelineId;
 
   // Condition B: Account Owner / Team Member
-  // They are logged in as a SaaS user AND their slug matches the URL slug
-  // We check that they are NOT a 'customer' (which is the role for PIN users)
   const isAccountOwner = 
-    session?.user?.subdomainSlug === slug && 
+    session?.user?.subdomainSlug?.toLowerCase() === slug.toLowerCase() && 
     session?.role !== 'customer';
 
-  // Condition C: Super Admin (Optional, if you have one)
+  // Condition C: Super Admin
   const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 
   const isAuthorized = isAuthorizedGuest || isAccountOwner || isSuperAdmin;
@@ -45,29 +47,26 @@ export default async function BookingPage({ params }: Props) {
   if (!isAuthorized) {
     console.warn("⛔ Access Denied");
 
-    // 3. SMART REDIRECT
-    // If they are logged in as an Owner but trying to access a DIFFERENT subdomain's booking,
-    // don't send them to the PIN page. That's confusing.
+    // 3. SMART REDIRECT (Owner trying to access wrong subdomain)
     if (session?.user && !isAuthorizedGuest) {
-       // Optional: Redirect to their own dashboard instead
-       // redirect(`${process.env.NEXT_PUBLIC_URL}/dashboard`);
        return (
          <div className="flex h-screen items-center justify-center bg-gray-50">
            <div className="text-center">
              <h1 className="text-2xl font-bold text-gray-900">Unauthorized</h1>
              <p className="text-gray-500 mt-2">
-               This booking belongs to a different organization.
+               This project belongs to a different organization.
              </p>
            </div>
          </div>
        );
     }
 
-    // Default: Send them to the PIN Portal (Main Domain)
+    // Default: Send them to the PIN Portal using the new HL-ID
     const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
     const rootDomain = process.env.NODE_ENV === "production" ? "hue-line.com" : "localhost:3000";
     
-    redirect(`${protocol}://${rootDomain}/p/${bookingId}`);
+    // 🟢 UPDATE: Redirect uses huelineId
+    redirect(`${protocol}://${rootDomain}/p/${huelineId}`);
   }
 
   return (

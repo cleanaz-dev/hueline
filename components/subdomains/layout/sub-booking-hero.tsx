@@ -10,9 +10,10 @@ import { Separator } from "@/components/ui/separator"; // Assuming shadcn separa
 interface BookingHeroProps {
   booking: BookingData;
   formatTime: (duration?: string | null) => string;
+  slug: string
 }
 
-export function SubBookingHero({ booking, formatTime }: BookingHeroProps) {
+export function SubBookingHero({ booking, formatTime, slug }: BookingHeroProps) {
   const hasSharedAccess = !!booking.sharedAccess?.length;
   
   // Calculate expiry hours effectively
@@ -51,6 +52,7 @@ export function SubBookingHero({ booking, formatTime }: BookingHeroProps) {
               <SubShareProjectDialog
                 bookingId={booking.bookingId}
                 hasSharedAccess={hasSharedAccess}
+                slug={slug}
               />
             </div>
 

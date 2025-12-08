@@ -38,7 +38,7 @@ export default function SubDomainIdPage({ booking, subdomain }: Props) {
 
         <main className="max-w-6xl mx-auto px-2 md:px-12 space-y-12 py-4 md:py-8">
           {/* Hero Section */}
-          <SubBookingHero booking={booking} formatTime={formatTime} />
+          <SubBookingHero booking={booking} formatTime={formatTime} slug={subdomain.slug} />
 
           {/* Project Vision */}
           <SubProjectVision booking={booking} />
