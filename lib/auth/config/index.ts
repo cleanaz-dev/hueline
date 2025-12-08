@@ -1,5 +1,5 @@
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { NextAuthOptions, DefaultSession } from "next-auth"; // Ensure DefaultSession is imported
+import type { NextAuthOptions, DefaultSession } from "next-auth";
 import { getBooking } from "@/lib/redis";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
@@ -63,25 +63,23 @@ export const authOptions: NextAuthOptions = {
       id: "booking-portal",
       name: "Booking Access",
       credentials: {
-        bookingId: { label: "Booking ID", type: "text" }, // We call it bookingId in the form
+        huelineId: { label: "Hueline ID", type: "text" },
         pin: { label: "PIN", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.bookingId || !credentials?.pin) return null;
+        if (!credentials?.huelineId || !credentials?.pin) return null;
 
         let bookingData: any = null;
         let subdomainSlug: string | undefined = undefined;
 
         // 🟢 1. Redis Check
-        // The input 'credentials.bookingId' contains the 'huelineId' string
-        const redisData = await getBooking(credentials.bookingId);
+        const redisData = await getBooking(credentials.huelineId);
         
         if (redisData) {
           // 🛠️ FIX: Normalize the Redis data keys to match what we expect later
-          // Python sends 'hueline_id', but we use 'booking_id' internally in the return object
           bookingData = {
             ...redisData,
-            booking_id: redisData.hueline_id || redisData.booking_id, // Handle both snake_case and potential legacy keys
+            booking_id: redisData.hueline_id || redisData.booking_id,
           };
           
           if (redisData.subdomain_id) {
@@ -96,7 +94,7 @@ export const authOptions: NextAuthOptions = {
         // 🟠 2. Database Fallback
         if (!bookingData) {
           const dbBooking = await prisma.subBookingData.findUnique({
-            where: { huelineId: credentials.bookingId }, // Query by huelineId
+            where: { huelineId: credentials.huelineId },
             include: { subdomain: true, sharedAccess: true }
           });
 
@@ -113,14 +111,13 @@ export const authOptions: NextAuthOptions = {
         if (!bookingData) return null;
 
         // 🔵 3. Verify PIN
-        // (Ensure we compare strings to avoid type mismatches)
         if (String(bookingData.pin) === String(credentials.pin)) {
           return {
             id: bookingData.booking_id,
             name: bookingData.name || "Guest",
             role: "customer",
             accessLevel: "owner",
-            bookingId: bookingData.booking_id,
+            huelineId: bookingData.booking_id,
             subdomainSlug: subdomainSlug || "app",
           };
         }
@@ -137,7 +134,7 @@ export const authOptions: NextAuthOptions = {
               name: sharedUser.email.split("@")[0],
               role: "customer",
               accessLevel: sharedUser.accessType || "viewer",
-              bookingId: bookingData.booking_id,
+              huelineId: bookingData.booking_id,
               subdomainSlug: subdomainSlug || "app",
             };
           }
@@ -148,14 +145,13 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  // ... Callbacks and Pages remain the same
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.subdomainSlug = user.subdomainSlug;
-        token.bookingId = user.bookingId;
+        token.huelineId = user.huelineId;
         token.accessLevel = user.accessLevel;
       }
       return token;
@@ -165,7 +161,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.role = token.role as string;
         session.user.subdomainSlug = token.subdomainSlug as string;
-        session.user.bookingId = token.bookingId as string;
+        session.user.huelineId = token.huelineId as string;
         session.user.accessLevel = token.accessLevel as string;
       }
       return session;
