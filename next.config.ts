@@ -29,7 +29,13 @@ const nextConfig: NextConfig = {
         hostname: 'hue-line.s3.us-east-1.amazonaws.com',
         port: '',
         pathname: "/**"
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: 'utfs.io',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };

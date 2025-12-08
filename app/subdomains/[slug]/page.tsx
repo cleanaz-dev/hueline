@@ -10,7 +10,9 @@ interface Params {
 
 export default async function SubdomainPage({ params }: Params) {
   const { slug } = await params;
+  console.log("👀 Slug:", slug)
   const subDomainData = await getSubDomainData(slug);
+    console.log("📦 Domain Data:", subDomainData)
 
   // ✅ HANDLE NULL CASE
   if (!subDomainData) {

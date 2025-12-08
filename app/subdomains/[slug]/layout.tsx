@@ -2,7 +2,6 @@
 
 import { Metadata } from 'next';
 import { getSubDomainAccount } from '@/lib/prisma';
-import { getSubAccountData } from '@/lib/redis';
 import { cache } from 'react';
 
 interface Props {
@@ -11,9 +10,7 @@ interface Props {
 }
 
 const getSubdomainData = cache(async (slug: string) => {
-  const cached = await getSubAccountData(slug);
-  if (cached) return cached;
-  
+  // Directly fetch from database without Redis caching
   return await getSubDomainAccount(slug);
 });
 

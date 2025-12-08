@@ -12,7 +12,7 @@ export interface SubdomainAccountData {
   theme: any | null;
   active: boolean;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt: Date | null
 }
 
 export interface BookingData {
@@ -31,7 +31,7 @@ export interface BookingData {
   pin: string;
   expiresAt: number;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt: Date | null;
   mockups: Mockup[];
   paintColors: PaintColor[];
   alternateColors: AlternateColor[];

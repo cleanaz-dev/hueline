@@ -18,8 +18,9 @@ export default function DashboardContent() {
          or pass the bookings (which start as server data) immediately 
          and they will "pop" in with images once the fetch finishes.
       */}
-      <ClientTable 
-      />
+
+
+      <ClientTable />
     </div>
   )
 }

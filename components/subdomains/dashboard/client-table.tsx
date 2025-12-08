@@ -224,11 +224,11 @@ export default function ClientTable() {
       columnHelper.accessor("huelineId", {
         header: "",
         cell: (info) => {
-          const phone = info.row.original.phone;
+          const huelineId = info.row.original.huelineId;
           return (
             <Link
               // 6. Using the slug derived from context
-              href={`/j/${phone}`}
+              href={`/j/${huelineId}`}
               className="inline-flex items-center justify-center p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
             >
               <ExternalLink className="w-4 h-4 group-hover:scale-110 transition-transform" />

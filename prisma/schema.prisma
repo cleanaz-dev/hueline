@@ -78,7 +78,7 @@ model Subdomain {
   theme        Json?
   active       Boolean          @default(true)
   createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  updatedAt    DateTime?        @updatedAt
   FormData     FormData?
   bookings     SubBookingData[]
   users        SubdomainUser[]
@@ -174,9 +174,9 @@ model SharedAccess {
   bookingDataId String         @db.ObjectId
   bookingData   SubBookingData @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
 
-  email      String?           
+  email      String?
   accessType String?
   pin        String?
   createdAt  DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt  DateTime @updatedAt
 }
