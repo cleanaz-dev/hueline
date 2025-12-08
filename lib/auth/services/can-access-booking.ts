@@ -1,11 +1,11 @@
 // lib/auth/permissions.ts
 import type { Session } from "next-auth";
 
-export function canAccessBooking(session: Session | null, bookingSlug: string, bookingId: string) {
+export function canAccessBooking(session: Session | null, bookingSlug: string, huelineId: string) {
   if (!session?.user) return false;
   
   if (session.role === 'SUPER_ADMIN') return true; // God mode
-  if (session.user.bookingId === bookingId) return true; // Guest
+  if (session.user.huelineId === huelineId) return true; // Guest
   
   // Owner check (Case insensitive is safer)
   if (
