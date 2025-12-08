@@ -17,7 +17,7 @@ import { X, Send, Eye, Edit } from "lucide-react";
 import { toast } from "sonner";
 
 interface ShareProjectDialogProps {
-  bookingId: string;
+  huelineId: string;
   hasSharedAccess: boolean;
   slug: string
 }
@@ -27,7 +27,7 @@ const emailSchema = z.email();
 type AccessType = "customer" | "viewer";
 
 export default function SubShareProjectDialog({
-  bookingId,
+  huelineId,
   hasSharedAccess,
   slug
 }: ShareProjectDialogProps) {
@@ -75,7 +75,7 @@ export default function SubShareProjectDialog({
   setIsLoading(true);
 
   try {
-    const response = await fetch(`/api/subdomain/${slug}/booking/${bookingId}/share-project`, {
+    const response = await fetch(`/api/subdomain/${slug}/booking/${huelineId}/share-project`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ emails, accessType }),

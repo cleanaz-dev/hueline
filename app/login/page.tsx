@@ -15,7 +15,7 @@ const partnerSchema = z.object({
 });
 
 const clientSchema = z.object({
-  bookingId: z.string().min(3, "Invalid Booking ID"),
+  huelineId: z.string().min(3, "Invalid Hueline ID"),
   pin: z.string().min(4, "PIN must be at least 4 digits"),
 });
 
@@ -31,7 +31,7 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    bookingId: "",
+    huelineId: "",
     pin: "",
   });
 
@@ -110,7 +110,7 @@ async function handlePartnerLogin(e: React.FormEvent) {
 
     // Validate
     const validation = clientSchema.safeParse({ 
-      bookingId: formData.bookingId, 
+      huelineId: formData.huelineId, 
       pin: formData.pin 
     });
 
@@ -122,13 +122,13 @@ async function handlePartnerLogin(e: React.FormEvent) {
 
     try {
       const res = await signIn("booking-portal", {
-        bookingId: formData.bookingId,
+        huelineId: formData.huelineId,
         pin: formData.pin,
         redirect: false,
       });
 
       if (res?.error) {
-        setError("Invalid Booking ID or PIN");
+        setError("Invalid Hueline ID or PIN");
         setIsLoading(false);
         return;
       }
@@ -186,7 +186,7 @@ async function handlePartnerLogin(e: React.FormEvent) {
           <p className="text-center text-gray-500 text-sm mb-6">
             {loginMethod === "partner" 
               ? "Sign in to manage your subdomains and leads." 
-              : "Enter your Booking ID and PIN to view details."}
+              : "Enter your Hueline ID and PIN to view details."}
           </p>
 
           {error && (
@@ -241,13 +241,13 @@ async function handlePartnerLogin(e: React.FormEvent) {
             <form onSubmit={handleClientLogin} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5 ml-1">
-                  Booking ID
+                  Hueline ID
                 </label>
                 <input
-                  id="bookingId"
+                  id="huelineId"
                   type="text"
-                  placeholder="e.g. GUYfknsT"
-                  value={formData.bookingId}
+                  placeholder="e.g. HL-9X2M4P"
+                  value={formData.huelineId}
                   onChange={handleInputChange}
                   disabled={isLoading}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-black/5 focus:border-black transition-all outline-none font-mono"

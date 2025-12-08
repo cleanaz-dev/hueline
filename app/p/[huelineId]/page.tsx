@@ -5,23 +5,17 @@ import { signIn, useSession } from "next-auth/react";
 import { Loader2, Lock, ArrowRight } from "lucide-react";
 import { toast } from "sonner"; 
 
-// Next.js 15+ Params are Promises
 interface Props {
-  params: Promise<{ bookingId: string }>;
+  params: { huelineId: string };
 }
 
 export default function PortalEntryPage({ params }: Props) {
-  const [bookingId, setBookingId] = useState<string>("");
+  const huelineId = params.huelineId;
   const { data: session, status } = useSession();
   
   const [pin, setPin] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
-
-  // Unwrap params
-  useEffect(() => {
-    params.then((p) => setBookingId(p.bookingId));
-  }, [params]);
 
   // --- REDIRECT HELPER ---
   const handleRedirect = (slug: string, id: string) => {
@@ -45,23 +39,23 @@ export default function PortalEntryPage({ params }: Props) {
 
   // --- AUTO REDIRECT (If already logged in) ---
   useEffect(() => {
-    if (status === "authenticated" && session?.user && bookingId) {
-      if (session.user.bookingId === bookingId) {
+    if (status === "authenticated" && session?.user && huelineId) {
+      if (session.user.huelineId === huelineId) {
         const slug = session.user.subdomainSlug || "app";
-        handleRedirect(slug, bookingId);
+        handleRedirect(slug, huelineId);
       }
     }
-  }, [status, session, bookingId]);
+  }, [status, session, huelineId]);
 
   // --- FORM SUBMIT ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!bookingId) return;
+    if (!huelineId) return;
     setIsSubmitting(true);
 
     try {
       const result = await signIn("booking-portal", {
-        bookingId,
+        huelineId,
         pin,
         redirect: false,
       });
@@ -80,7 +74,7 @@ export default function PortalEntryPage({ params }: Props) {
       
       if (slug) {
         toast.success("Access Granted");
-        handleRedirect(slug, bookingId);
+        handleRedirect(slug, huelineId);
       } else {
         toast.error("Error: Could not find project URL.");
         setIsSubmitting(false);
@@ -94,7 +88,7 @@ export default function PortalEntryPage({ params }: Props) {
   };
 
   // --- RENDER ---
-  if (status === "loading" || isRedirecting || !bookingId) {
+  if (status === "loading" || isRedirecting) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <Loader2 className="w-10 h-10 text-gray-900 animate-spin mb-4" />
@@ -114,7 +108,7 @@ export default function PortalEntryPage({ params }: Props) {
           </div>
           <h1 className="text-xl font-bold text-gray-900">Private Project</h1>
           <p className="text-sm text-gray-500 mt-2 font-mono bg-gray-100 inline-block px-2 py-1 rounded">
-            ID: {bookingId}
+            ID: {huelineId}
           </p>
         </div>
 

@@ -50,7 +50,7 @@ export function SubBookingHero({ booking, formatTime, slug }: BookingHeroProps) 
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Project Details</h3>
               <SubShareProjectDialog
-                bookingId={booking.bookingId}
+                huelineId={booking.huelineId}
                 hasSharedAccess={hasSharedAccess}
                 slug={slug}
               />

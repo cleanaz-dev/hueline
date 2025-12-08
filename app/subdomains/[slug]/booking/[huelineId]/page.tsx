@@ -32,12 +32,12 @@ export default async function BookingPage({ params }: Props) {
   // Condition A: Guest / Client (PIN Access)
   // Note: Your Auth Config maps the DB 'huelineId' to 'session.user.bookingId'
   // so we compare the session ID against the URL huelineId.
-  const isAuthorizedGuest = session?.user?.bookingId === huelineId;
+  const isAuthorizedGuest = session?.user?.huelineId === huelineId;
 
   // Condition B: Account Owner / Team Member
   const isAccountOwner = 
-    session?.user?.subdomainSlug?.toLowerCase() === slug.toLowerCase() && 
-    session?.role !== 'customer';
+  session?.user?.subdomainSlug?.toLowerCase() === slug.toLowerCase() && 
+  session?.role !== 'customer';
 
   // Condition C: Super Admin
   const isSuperAdmin = session?.role === 'SUPER_ADMIN';

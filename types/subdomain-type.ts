@@ -19,6 +19,7 @@ export interface BookingData {
   id: string;
   name: string;
   phone: string;
+  huelineId: string;
   roomType: string;
   prompt: string;
   audioUrl:string | null
@@ -29,7 +30,6 @@ export interface BookingData {
   dateTime: Date;
   pin: string;
   expiresAt: number;
-  huelineId: string;
   createdAt: Date;
   updatedAt: Date;
   mockups: Mockup[];

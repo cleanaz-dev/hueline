@@ -5,7 +5,7 @@ declare module "next-auth" {
     user: {
       id: string;
       subdomainSlug?: string;
-      bookingId?: string;
+      huelineId?: string;
       accessLevel?: string; // 'owner' | 'viewer'
     } & DefaultSession["user"];
     role?: string;
@@ -15,7 +15,7 @@ declare module "next-auth" {
     id: string;
     role?: string;
     subdomainSlug?: string;
-    bookingId?: string;
+    huelineId?: string;
     accessLevel?: string;
   }
 }
@@ -25,7 +25,7 @@ declare module "next-auth/jwt" {
     id?: string;
     role?: string;
     subdomainSlug?: string;
-    bookingId?: string;
+    huelineId?: string;
     accessLevel?: string;
   }
 }
