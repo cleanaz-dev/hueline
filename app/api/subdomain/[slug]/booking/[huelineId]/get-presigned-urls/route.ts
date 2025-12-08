@@ -11,15 +11,13 @@ export async function GET(
   try {
     const { slug, huelineId } = await params;
     
-    const data = await getBookingByIdSlug(huelineId, slug);
-    if (!data) {
+    const booking = await getBookingByIdSlug(huelineId, slug);
+    if (!booking) {
       return NextResponse.json(
         { error: "Booking not found" },
         { status: 404 }
       );
     }
-
-    const booking = data
 
     // Generate presigned URL for original image
     const originalImages = await getPresignedUrl(booking.originalImages);
