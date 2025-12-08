@@ -3,6 +3,7 @@ import { getBookingByIdSlug } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { getBookingForPage } from "@/lib/prisma/queries/get-booking-for-page";
 
 interface Props {
   params: Promise<{
@@ -15,9 +16,9 @@ export default async function BookingPage({ params }: Props) {
   const { slug, huelineId } = await params;
 
   // 1. Fetch Data
-  const data = await getBookingByIdSlug(huelineId, slug);
+  const booking = await getBookingForPage(huelineId, slug);
   
-  if (!data) notFound();
+  if (!booking) notFound();
 
   // 2. 🔒 SECURITY CHECK
   const session = await getServerSession(authOptions);
@@ -64,6 +65,6 @@ export default async function BookingPage({ params }: Props) {
   }
 
   return (
-    <SubDomainWrapper booking={data} subdomain={data.subdomain} />
+      <SubDomainWrapper booking={booking} subdomain={booking.subdomain} />
   );
 }

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 export async function getSubDomainData(slug: string) {
-  const data = await prisma.subdomain.findUniqueOrThrow({
+  const data = await prisma.subdomain.findUnique({
     where: { slug },
     include: {
       bookings: {

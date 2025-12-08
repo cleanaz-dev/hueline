@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getPresignedUrl } from "@/lib/aws/s3/services";
-import { getBookingByIdSlug } from "@/lib/prisma/mutations";
+import { getBookingForPresignedUrls } from "@/lib/prisma/mutations/s3key/get-booking-for-presigned-urls";
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +11,7 @@ export async function GET(
   try {
     const { slug, huelineId } = await params;
     
-    const booking = await getBookingByIdSlug(huelineId, slug);
+       const booking = await getBookingForPresignedUrls(huelineId, slug);
     if (!booking) {
       return NextResponse.json(
         { error: "Booking not found" },
