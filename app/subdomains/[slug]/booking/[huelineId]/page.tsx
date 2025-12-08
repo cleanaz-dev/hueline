@@ -5,7 +5,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 
 interface Props {
-  // 🟢 UPDATE: Matches folder name [huelineId]
   params: Promise<{
     slug: string;
     huelineId: string; 
@@ -13,14 +12,12 @@ interface Props {
 }
 
 export default async function BookingPage({ params }: Props) {
-  // 🟢 UPDATE: Destructure huelineId
   const { slug, huelineId } = await params;
 
   // 1. Fetch Data
-  // Ensure your query function now looks up by 'huelineId', not 'bookingId'
   const data = await getBookingByIdSlug(huelineId, slug);
   
-  if (!data || data.bookings.length === 0) notFound();
+  if (!data) notFound();
 
   // 2. 🔒 SECURITY CHECK
   const session = await getServerSession(authOptions);
@@ -30,14 +27,12 @@ export default async function BookingPage({ params }: Props) {
   // --- AUTHORIZATION LOGIC ---
 
   // Condition A: Guest / Client (PIN Access)
-  // Note: Your Auth Config maps the DB 'huelineId' to 'session.user.bookingId'
-  // so we compare the session ID against the URL huelineId.
   const isAuthorizedGuest = session?.user?.huelineId === huelineId;
 
   // Condition B: Account Owner / Team Member
   const isAccountOwner = 
-  session?.user?.subdomainSlug?.toLowerCase() === slug.toLowerCase() && 
-  session?.role !== 'customer';
+    session?.user?.subdomainSlug?.toLowerCase() === slug.toLowerCase() && 
+    session?.role !== 'customer';
 
   // Condition C: Super Admin
   const isSuperAdmin = session?.role === 'SUPER_ADMIN';
@@ -65,11 +60,10 @@ export default async function BookingPage({ params }: Props) {
     const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
     const rootDomain = process.env.NODE_ENV === "production" ? "hue-line.com" : "localhost:3000";
     
-    // 🟢 UPDATE: Redirect uses huelineId
     redirect(`${protocol}://${rootDomain}/p/${huelineId}`);
   }
 
   return (
-    <SubDomainWrapper booking={data.bookings[0]} subdomain={data} />
+    <SubDomainWrapper booking={data} subdomain={data.subdomain} />
   );
 }
