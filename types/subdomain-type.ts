@@ -67,8 +67,8 @@ export interface AlternateColor {
 
 export interface SharedAccess {
   id: string;
-  email: string;
-  accessType: string;
-  pin: string;
+  email: string | null;
+  accessType: string | null;
+  pin: string | null;
   createdAt: Date;
 }
