@@ -1,16 +1,10 @@
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { NextAuthOptions, DefaultSession } from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 import { getBooking } from "@/lib/redis";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-// ⚠️ COOKIE CONFIG NOTE:
-// 'localhost' as a domain is often invalid in browsers. 
-// We use undefined for dev, which means cookies are host-only.
-// In Prod, we use the dot prefix (.hue-line.com) to share across subdomains.
-const cookieDomain = process.env.NODE_ENV === 'production' 
-  ? '.hue-line.com' 
-  : undefined; 
+const cookieDomain = process.env.NODE_ENV === 'production' ? '.hue-line.com' : undefined; 
 
 export const authOptions: NextAuthOptions = {
   cookies: {
@@ -27,7 +21,6 @@ export const authOptions: NextAuthOptions = {
   },
 
   providers: [
-    // --- PROVIDER A: SAAS ACCOUNT ---
     CredentialsProvider({
       id: "saas-account",
       name: "Partner Login",
@@ -58,7 +51,6 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    // --- PROVIDER B: BOOKING PORTAL ---
     CredentialsProvider({
       id: "booking-portal",
       name: "Booking Access",
@@ -67,80 +59,79 @@ export const authOptions: NextAuthOptions = {
         pin: { label: "PIN", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.huelineId || !credentials?.pin) return null;
+        try { // ✅ FIX: Wrap entire auth in try/catch
+          if (!credentials?.huelineId || !credentials?.pin) return null;
 
-        let bookingData: any = null;
-        let subdomainSlug: string | undefined = undefined;
+          let bookingData: any = null;
+          let subdomainSlug = "app";
 
-        // 🟢 1. Redis Check
-        const redisData = await getBooking(credentials.huelineId);
-        
-        if (redisData) {
-          // 🛠️ FIX: Normalize the Redis data keys to match what we expect later
-          bookingData = {
-            ...redisData,
-            booking_id: redisData.hueline_id || redisData.booking_id,
-          };
+          const redisData = await getBooking(credentials.huelineId);
           
-          if (redisData.subdomain_id) {
-             const subdomain = await prisma.subdomain.findUnique({
+          if (redisData) {
+            bookingData = {
+              ...redisData,
+              booking_id: redisData.hueline_id || redisData.booking_id,
+            };
+            
+            if (redisData.subdomain_id) {
+              const subdomain = await prisma.subdomain.findUnique({
                 where: { id: redisData.subdomain_id },
                 select: { slug: true }
-             });
-             subdomainSlug = subdomain?.slug;
+              });
+              subdomainSlug = subdomain?.slug || "app";
+            }
+          } 
+          
+          if (!bookingData) {
+            const dbBooking = await prisma.subBookingData.findUnique({
+              where: { huelineId: credentials.huelineId },
+              include: { subdomain: true, sharedAccess: true }
+            });
+
+            if (dbBooking) {
+              bookingData = { 
+                ...dbBooking, 
+                booking_id: dbBooking.huelineId 
+              };
+              subdomainSlug = dbBooking.subdomain?.slug || "app";
+            }
           }
-        } 
-        
-        // 🟠 2. Database Fallback
-        if (!bookingData) {
-          const dbBooking = await prisma.subBookingData.findUnique({
-            where: { huelineId: credentials.huelineId },
-            include: { subdomain: true, sharedAccess: true }
-          });
 
-          if (dbBooking) {
-            // 🛠️ FIX: Map DB 'huelineId' to 'booking_id' for consistency
-            bookingData = { 
-              ...dbBooking, 
-              booking_id: dbBooking.huelineId 
-            };
-            subdomainSlug = dbBooking.subdomain?.slug;
-          }
-        }
+          if (!bookingData) return null;
 
-        if (!bookingData) return null;
-
-        // 🔵 3. Verify PIN
-        if (String(bookingData.pin) === String(credentials.pin)) {
-          return {
-            id: bookingData.booking_id,
-            name: bookingData.name || "Guest",
-            role: "customer",
-            accessLevel: "owner",
-            huelineId: bookingData.booking_id,
-            subdomainSlug: subdomainSlug || "app",
-          };
-        }
-
-        // Shared Access check
-        if (bookingData.sharedAccess && Array.isArray(bookingData.sharedAccess)) {
-          const sharedUser = bookingData.sharedAccess.find(
-            (u: any) => String(u.pin) === String(credentials.pin)
-          );
-
-          if (sharedUser) {
+          if (String(bookingData.pin) === String(credentials.pin)) {
             return {
-              id: `${bookingData.booking_id}-${sharedUser.email}`, 
-              name: sharedUser.email.split("@")[0],
+              id: bookingData.booking_id,
+              name: bookingData.name || "Guest",
               role: "customer",
-              accessLevel: sharedUser.accessType || "viewer",
+              accessLevel: "owner",
               huelineId: bookingData.booking_id,
-              subdomainSlug: subdomainSlug || "app",
+              subdomainSlug: subdomainSlug,
             };
           }
-        }
 
-        return null;
+          if (bookingData.sharedAccess?.length) {
+            const sharedUser = bookingData.sharedAccess.find(
+              (u: any) => String(u.pin) === String(credentials.pin)
+            );
+
+            if (sharedUser) {
+              return {
+                id: `${bookingData.booking_id}-${sharedUser.email}`, 
+                name: sharedUser.email.split("@")[0],
+                role: "customer",
+                accessLevel: sharedUser.accessType || "viewer",
+                huelineId: bookingData.booking_id,
+                subdomainSlug: subdomainSlug,
+              };
+            }
+          }
+
+          return null;
+        } catch (error) { // ✅ CATCH ERRORS HERE
+          console.error("Auth error:", error);
+          return null; // Fail auth gracefully instead of crashing
+        }
       },
     }),
   ],
