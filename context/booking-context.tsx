@@ -36,7 +36,7 @@ export function BookingProvider({
         // You can add a check here if (booking.mockups[0].presignedUrl) return; 
         
         const res = await fetch(
-          `/api/subdomain/${subdomain.slug}/booking/${initialBooking.phone}/get-presigned-urls`
+          `/api/subdomain/${subdomain.slug}/booking/${initialBooking.huelineId}/get-presigned-urls`
         );
 
         if (!res.ok) throw new Error("Failed to fetch URLs");
@@ -69,7 +69,7 @@ export function BookingProvider({
     return () => {
       isMounted = false;
     };
-  }, [initialBooking.phone, subdomain.slug]);
+  }, [initialBooking.huelineId, subdomain.slug]);
 
   return (
     <BookingContext.Provider value={{ booking, subdomain, isLoading, error }}>

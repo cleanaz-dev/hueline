@@ -30,7 +30,7 @@ export function DashboardProvider({
   const fetchUrlsForBooking = async (booking: BookingData) => {
     try {
       const res = await fetch(
-        `/api/subdomain/${subdomain.slug}/booking/${booking.phone}/get-presigned-urls`
+        `/api/subdomain/${subdomain.slug}/booking/${booking.huelineId}/get-presigned-urls`
       );
       if (!res.ok) return booking; // Return original if failed
       
@@ -45,7 +45,7 @@ export function DashboardProvider({
         })),
       };
     } catch (e) {
-      console.error(`Failed to enrich booking ${booking.phone}`, e);
+      console.error(`Failed to enrich booking ${booking.huelineId}`, e);
       return booking;
     }
   };
