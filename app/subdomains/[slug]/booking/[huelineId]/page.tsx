@@ -1,5 +1,4 @@
 import { SubDomainWrapper } from "@/components/subdomains/subdomain-wrapper";
-import { getBookingByIdSlug } from "@/lib/prisma"; 
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
@@ -17,6 +16,7 @@ export default async function BookingPage({ params }: Props) {
 
   // 1. Fetch Data
   const booking = await getBookingForPage(huelineId, slug);
+  console.log(" Booking from booking page/booking/[huelineId]:", booking)
   
   if (!booking) notFound();
 

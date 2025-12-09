@@ -3,8 +3,9 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Logo from "@/public/images/logo-2--increased-brightness.png";
-import Image from "next/image";
+import Image from "next/image"; 
+// Make sure this path is correct for your project
+import Logo from "@/public/images/logo-2--increased-brightness.png"; 
 import { z } from "zod";
 import { Loader2, UserCircle, Building2 } from "lucide-react";
 
@@ -37,16 +38,16 @@ export default function LoginPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
-    setError(""); // Clear errors on type
+    setError(""); 
   };
 
   // --- 1. HANDLE PARTNER LOGIN (SaaS Owner) ---
-async function handlePartnerLogin(e: React.FormEvent) {
+  async function handlePartnerLogin(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Validate
+    // 1. Validate Input
     const validation = partnerSchema.safeParse({ 
       email: formData.email, 
       password: formData.password 
@@ -59,6 +60,7 @@ async function handlePartnerLogin(e: React.FormEvent) {
     }
 
     try {
+      // 2. Attempt Login
       const res = await signIn("saas-account", {
         email: formData.email,
         password: formData.password,
@@ -71,28 +73,36 @@ async function handlePartnerLogin(e: React.FormEvent) {
         return;
       }
 
-      // Success! Fetch session to get the slug
+      // 3. Login Successful - Now Determine Destination
+      // We need to fetch the session to know WHICH subdomain this user owns
       const sessionReq = await fetch("/api/auth/session");
       const session = await sessionReq.json();
       const slug = session?.user?.subdomainSlug;
 
       if (slug) {
-        const host = window.location.host; // e.g. "localhost:3000" or "app.hue-line.com"
         const protocol = window.location.protocol; // "http:" or "https:"
+        const host = window.location.host;         // "localhost:3000" or "app.hue-line.com"
 
+        // 🟢 LOCALHOST LOGIC
         if (host.includes("localhost")) {
-          // ✅ FIX: Force redirect to the subdomain structure on localhost
-          // This creates "http://acmepaint.localhost:3000/dashboard"
-          window.location.href = `${protocol}//${slug}.localhost:3000/dashboard`;
-        } else {
-          // Production: Cross-domain redirect
-          // e.g., app.hue-line.com -> joes-painting.hue-line.com/dashboard
-          const rootDomain = host.split('.').slice(-2).join('.');
-          window.location.href = `${protocol}//${slug}.${rootDomain}/dashboard`;
+          // Force redirect to: http://tesla.localhost:3000/
+          window.location.href = `${protocol}//${slug}.localhost:3000/`;
+        } 
+        // 🌍 PRODUCTION LOGIC
+        else {
+           // We need to get the "root" domain (hue-line.com) to append the slug
+           // This handles "app.hue-line.com" or just "hue-line.com"
+           const parts = host.split('.');
+           const rootDomain = parts.length >= 2 
+             ? parts.slice(-2).join('.')  // grab last two parts: "hue-line.com"
+             : host;
+             
+           // Force redirect to: https://tesla.hue-line.com/
+           window.location.href = `${protocol}//${slug}.${rootDomain}/`;
         }
       } else {
-        // Fallback if no slug found (e.g. Super Admin)
-        router.push("/form");
+        // Fallback: If they are a Super Admin or have no subdomain, go to generic dashboard
+        router.push("/dashboard");
       }
 
     } catch (err) {
@@ -108,7 +118,6 @@ async function handlePartnerLogin(e: React.FormEvent) {
     setIsLoading(true);
     setError("");
 
-    // Validate
     const validation = clientSchema.safeParse({ 
       huelineId: formData.huelineId, 
       pin: formData.pin 
@@ -133,9 +142,10 @@ async function handlePartnerLogin(e: React.FormEvent) {
         return;
       }
 
-      // Success! Clients usually view their specific booking page or a generic dashboard
-      // Since they don't own a subdomain, we keep them on the current domain
-      router.push("/dashboard");
+      // Clients just go to the specific booking page
+      // Usually: /booking/[huelineId]
+      // Or if you use a generic dashboard for them:
+      router.push("/dashboard"); 
       router.refresh();
 
     } catch (err) {
@@ -147,6 +157,7 @@ async function handlePartnerLogin(e: React.FormEvent) {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-8 bg-gray-50 px-4">
+      {/* Ensure Logo is imported correctly */}
       <Image src={Logo} width={140} height={140} alt="Logo" priority className="opacity-90" />
       
       <div className="bg-white shadow-xl rounded-2xl w-full max-w-[400px] overflow-hidden border border-gray-100">

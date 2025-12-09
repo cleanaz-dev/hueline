@@ -1,4 +1,4 @@
-// app/subdomains/[subdomain]/layout.tsx
+// app/subdomains/[slug]/layout.tsx
 
 import { Metadata } from 'next';
 import { getSubDomainAccount } from '@/lib/prisma';

@@ -67,21 +67,41 @@ model FormActivity {
 }
 
 model Subdomain {
-  id           String           @id @default(auto()) @map("_id") @db.ObjectId
-  slug         String           @unique
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  slug         String  @unique
   companyName  String?
   projectUrl   String?
   logo         String?
-  logoWidth    Int?             @default(130)
-  logoHeight   Int?             @default(130)
+  logoWidth    Int?    @default(130)
+  logoHeight   Int?    @default(130)
   splashScreen String?
   theme        Json?
-  active       Boolean          @default(true)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime?        @updatedAt
-  FormData     FormData?
-  bookings     SubBookingData[]
-  users        SubdomainUser[]
+  active       Boolean @default(true)
+
+  // 1. Telephony (The numbers displayed in the Settings -> General tab)
+  twilioPhoneNumber String? // The number you bought them (e.g. +1555...)
+  forwardingNumber  String? // Where calls actually go (e.g. +1416...)
+
+  // 2. Billing (For the Settings -> Billing tab)
+  // We store these to generate Portal Links and show status
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+
+  // "active", "past_due", "canceled", "trialing"
+  planStatus String @default("active")
+
+  // "Professional", "Enterprise", "Starter"
+  planName String @default("Professional")
+
+  // To show "Renews on Dec 22"
+  currentPeriodEnd DateTime?
+  // --------------------------------------------------------
+
+  createdAt DateTime         @default(now())
+  updatedAt DateTime?        @updatedAt
+  FormData  FormData?
+  bookings  SubBookingData[]
+  users     SubdomainUser[]
 }
 
 model SubdomainUser {

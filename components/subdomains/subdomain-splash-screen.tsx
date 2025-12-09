@@ -1,59 +1,57 @@
-"use client"
-import React, { useRef, useEffect } from 'react';
+"use client";
 
-type SplashScreenProps = {
-  onVideoEnd?: () => void;
+import { useRef, useEffect, useState } from "react";
+// ... keep your other imports
+
+interface SubDomainSplashScreenProps {
   splashScreenUrl: string;
-};
+  onVideoEnd: () => void;
+}
 
-export default function SubDomainSplashScreen({ onVideoEnd, splashScreenUrl }: SplashScreenProps) {
+export default function SubDomainSplashScreen({
+  splashScreenUrl,
+  onVideoEnd,
+}: SubDomainSplashScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  
+  // 1. Add a state to track if we are on the client
+  const [isMounted, setIsMounted] = useState(false);
 
+  // 2. Trigger mounting after the first render
   useEffect(() => {
-    const video = videoRef.current;
-
-    if (video) {
-      video.play().catch((error) => {
-        console.error('Video autoplay failed:', error);
-
-        // If video fails to play, still call onVideoEnd after 3 seconds
-        setTimeout(() => {
-          if (onVideoEnd) {
-            onVideoEnd();
-          }
-        }, 3000);
-      });
-    }
-  }, [onVideoEnd]);
-
-  const handleVideoEnd = () => {
-    if (onVideoEnd) {
-      onVideoEnd();
-    }
-  };
+    setIsMounted(true);
+  }, []);
 
   const handleVideoError = () => {
-    console.error('Video failed to load');
-    // If video has an error, call onVideoEnd after a short delay
-    setTimeout(() => {
-      if (onVideoEnd) {
-        onVideoEnd();
-      }
-    }, 2000);
+    console.error("Error playing splash screen video");
+    onVideoEnd(); 
   };
 
+  // 3. Render a static placeholder (or null) during server-side rendering
+  // This prevents the mismatched attributes from being compared
+  if (!isMounted) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        {/* Optional: Add a spinner or loader here if you want */}
+      </div>
+    );
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center ">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
       <video
         ref={videoRef}
-        className="w-full h-full object-cover md:object-contain"
+        className="w-full h-full object-contain"
         autoPlay
         muted
         playsInline
-        preload='auto'
-        onEnded={handleVideoEnd}
+        onEnded={onVideoEnd}
         onError={handleVideoError}
       >
+        {/* 
+           The mismatch error happened here. 
+           Now that we are inside the isMounted check, this only runs on the client.
+        */}
         <source src={splashScreenUrl} type="video/mp4" />
       </video>
     </div>

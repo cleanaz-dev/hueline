@@ -2,7 +2,7 @@
 import { Eye, Sparkles, Maximize2, Palette } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import GlareHover from "@/components/GlareHover";
+import GlareHover from "@/components/ui/glare-over/GlareHover";
 import SubComparisonSlider from "./sub-compare-slider";
 import SubAlternateDesign from "./sub-alternate-colors";
 import { BookingData } from "@/types/subdomain-type";

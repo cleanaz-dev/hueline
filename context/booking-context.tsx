@@ -12,17 +12,15 @@ interface BookingContextType {
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
-interface BookingProviderProps {
-  children: ReactNode;
-  initialBooking: BookingData;
-  subdomain: SubdomainAccountData;
-}
-
 export function BookingProvider({
   children,
   initialBooking,
   subdomain,
-}: BookingProviderProps) {
+}: {
+  children: ReactNode;
+  initialBooking: BookingData;
+  subdomain: SubdomainAccountData;
+}) {
   const [booking, setBooking] = useState<BookingData>(initialBooking);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,44 +30,46 @@ export function BookingProvider({
 
     const fetchPresignedUrls = async () => {
       try {
-        // Only fetch if we suspect we don't have presigned URLs yet
-        // You can add a check here if (booking.mockups[0].presignedUrl) return; 
-        
         const res = await fetch(
           `/api/subdomain/${subdomain.slug}/booking/${initialBooking.huelineId}/get-presigned-urls`
         );
 
-        if (!res.ok) throw new Error("Failed to fetch URLs");
+        if (!res.ok) {
+           // If fetch fails, we stop loading but keep original data to prevent crash
+           console.error("Fetch failed");
+           if (isMounted) setIsLoading(false);
+           return;
+        }
 
         const { originalImages, mockups } = await res.json();
 
+        // MERGE LOGIC: Match the Dashboard pattern
+        const enrichedBooking = {
+          ...initialBooking,
+          originalImages,
+          mockups: mockups.map((mockup: any, index: number) => ({
+            ...(initialBooking.mockups ? initialBooking.mockups[index] : {}),
+            ...mockup,
+          })),
+        };
+
         if (isMounted) {
-          setBooking((prev) => ({
-            ...prev,
-            originalImages, // Update original images with presigned
-            // Merge existing mockup data with new presigned URLs
-            mockups: mockups.map((mockup: any, index: number) => ({
-              ...(prev.mockups ? prev.mockups[index] : {}),
-              ...mockup, // Assuming this contains the presignedUrl
-            })),
-          }));
+          setBooking(enrichedBooking);
           setIsLoading(false);
         }
       } catch (err) {
-        console.error("Failed to load presigned URLs:", err);
+        console.error("Error loading images:", err);
         if (isMounted) {
           setError("Failed to load images");
-          setIsLoading(false); // We stop loading even on error to show the page
+          setIsLoading(false);
         }
       }
     };
 
     fetchPresignedUrls();
 
-    return () => {
-      isMounted = false;
-    };
-  }, [initialBooking.huelineId, subdomain.slug]);
+    return () => { isMounted = false; };
+  }, [subdomain.slug]); // Only depend on slug, like your Dashboard
 
   return (
     <BookingContext.Provider value={{ booking, subdomain, isLoading, error }}>
@@ -78,11 +78,8 @@ export function BookingProvider({
   );
 }
 
-// Custom hook for easy access
 export function useBooking() {
   const context = useContext(BookingContext);
-  if (context === undefined) {
-    throw new Error("useBooking must be used within a BookingProvider");
-  }
+  if (!context) throw new Error("useBooking must be used within a BookingProvider");
   return context;
 }

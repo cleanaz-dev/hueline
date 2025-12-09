@@ -2,17 +2,8 @@
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ComparisonSlider } from "@/types/booking-page-types";
 
-interface ComparisonSliderProps {
-  beforeImage: string;
-  afterImage: string;
-  beforeLabel?: string;
-  afterLabel?: string;
-  className?: string;
-  showWatermark?: boolean;
-  watermarkUrl?: string;
-  autoSlide?: boolean;
-}
 
 export default function SubComparisonSlider({
   beforeImage,
@@ -23,7 +14,7 @@ export default function SubComparisonSlider({
   showWatermark = true,
   watermarkUrl = "https://res.cloudinary.com/dmllgn0t7/image/upload/v1760933379/new-watermark.png",
   autoSlide = true,
-}: ComparisonSliderProps) {
+}: ComparisonSlider) {
   const [position, setPosition] = useState(100); // Start at 100 (right side)
   const [isDragging, setIsDragging] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);

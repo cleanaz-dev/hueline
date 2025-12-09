@@ -4,23 +4,16 @@
 import { useDashboard } from "@/context/dashboard-context";
 import SubdomainNav from "../layout/subdomain-nav";
 import ClientTable from "./client-table";
+import StatCards from "./stat-cards";
 
 export default function DashboardContent() {
-  // 3. Access the data (which might be loading or fully enriched)
-  const { bookings, subdomain, isLoading } = useDashboard();
-
+  const { subdomain, stats, isStatsLoading } = useDashboard();
+  
   return (
     <div>
-      <SubdomainNav data={subdomain}/>
-      
-      {/* 
-         You can choose to show a loader here, 
-         or pass the bookings (which start as server data) immediately 
-         and they will "pop" in with images once the fetch finishes.
-      */}
-
-
+      <SubdomainNav data={subdomain} />
+      <StatCards stats={stats} isLoading={isStatsLoading} />
       <ClientTable />
     </div>
-  )
+  );
 }

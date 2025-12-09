@@ -21,9 +21,7 @@ export default function SubDesignSummary({
           {/* Left Column: Label & Icon */}
           <div className="md:w-1/4 flex-shrink-0">
             <div className="flex items-center gap-3 mb-2">
-              <div className="flex items-center justify-center size-8 rounded-lg bg-primary/10 text-primary">
-                <Sparkles className="h-4 w-4" />
-              </div>
+              
               <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
                Visual Summary
               </h2>

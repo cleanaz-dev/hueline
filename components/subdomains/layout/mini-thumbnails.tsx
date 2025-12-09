@@ -1,15 +1,7 @@
 import Image from "next/image";
-import { BookingData } from "@/types/subdomain-type";
+import type { MiniThumbnails } from "@/types/booking-page-types";
 
-interface MiniThumbnailsProps {
-  activeTab: "original" | "design";
-  originalImages: string[];
-  mockupUrls: BookingData["mockups"];
-  selectedOriginalImage: number;
-  selectedDesignImage: number;
-  onOriginalSelect: (index: number) => void;
-  onDesignSelect: (index: number) => void;
-}
+
 
 export default function MiniThumbnails({
   activeTab,
@@ -19,7 +11,7 @@ export default function MiniThumbnails({
   selectedDesignImage,
   onOriginalSelect,
   onDesignSelect,
-}: MiniThumbnailsProps) {
+}: MiniThumbnails) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">

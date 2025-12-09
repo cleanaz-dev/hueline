@@ -5,11 +5,16 @@ export async function getBookingForPage(huelineId: string, slug: string) {
     const booking = await prisma.subBookingData.findUnique({
       where: { huelineId },
       include: {
-        subdomain: true,
+        subdomain: {
+          include:{
+            users: true
+          }
+        },
         mockups: true,
         alternateColors: true,
         sharedAccess: true,
         paintColors: true,
+        
       },
     });
 

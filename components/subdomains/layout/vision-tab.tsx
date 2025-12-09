@@ -1,5 +1,5 @@
 import Image from "next/image";
-import GlareHover from "@/components/GlareHover";
+import GlareHover from "@/components/ui/glare-over/GlareHover";
 import { Badge } from "@/components/ui/badge";
 import { BookingData } from "@/types/subdomain-type";
 

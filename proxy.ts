@@ -17,22 +17,18 @@ export async function proxy(request: NextRequest) {
   let isMainDomain = false;
 
   if (process.env.NODE_ENV === 'production') {
-    // Production: hue-line.com, www.hue-line.com, app.hue-line.com -> Main
     if (hostname === 'hue-line.com' || hostname === 'www.hue-line.com' || hostname === 'app.hue-line.com') {
       currentHost = 'app';
       isMainDomain = true;
     } else {
-      // Subdomain: tenant.hue-line.com -> tenant
       currentHost = hostname.replace('.hue-line.com', '');
       isMainDomain = false;
     }
   } else {
-    // Localhost: localhost:3000 -> Main
     if (hostname === 'localhost:3000') {
       currentHost = 'app';
       isMainDomain = true;
     } else {
-      // Subdomain: tenant.localhost:3000 -> tenant
       currentHost = hostname.replace('.localhost:3000', '');
       isMainDomain = false;
     }
@@ -41,9 +37,6 @@ export async function proxy(request: NextRequest) {
   // -----------------------------------------------------------------------------
   // CRITICAL: PORTAL ENTRY (/p/) PROTECTION
   // -----------------------------------------------------------------------------
-  // Logic: If a user tries to access /p/123 from a Subdomain, 
-  // Force Redirect to Main Domain. 
-  // WHY: We need the cookie to be set on the Root Domain, not the subdomain.
   if (url.pathname.startsWith("/p/") && !isMainDomain) {
     const mainDomainUrl = new URL(url.pathname, request.url);
     if (process.env.NODE_ENV === 'production') {
@@ -62,17 +55,20 @@ export async function proxy(request: NextRequest) {
   // -----------------------------------------------------------------------------
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
-  // 🛡️ ADMIN ROUTES
+  // 🔥 FIX: If user is ALREADY logged in and tries to go to /login, FORCE them to /
+  // This ensures that after you sign in, if the router tries to stay on /login, the server pushes you to root.
+  if (token && (url.pathname === "/login" || url.pathname === "/register")) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   if (url.pathname.startsWith("/admin")) {
     if (!isMainDomain) return NextResponse.rewrite(new URL("/404", request.url));
     if (!token) return NextResponse.redirect(new URL("/login", request.url));
     if (token.role !== "SUPER_ADMIN") return new NextResponse("Unauthorized", { status: 403 });
   }
 
-  // 🛡️ DASHBOARD ROUTES
   if (url.pathname.startsWith("/dashboard")) {
     if (!token) return NextResponse.redirect(new URL("/login", request.url));
-    // Enforce Tenant Isolation
     if (!isMainDomain && token.subdomainSlug !== currentHost) {
       if (token.role !== "SUPER_ADMIN") {
         return new NextResponse("Unauthorized", { status: 403 });
@@ -85,13 +81,20 @@ export async function proxy(request: NextRequest) {
   // -----------------------------------------------------------------------------
   
   // 1. Main Domain Traffic
-  // Serves from root app/ folder (e.g. app/p/, app/login)
   if (isMainDomain) {
     return NextResponse.next();
   }
 
   // 2. Subdomain Traffic
-  // Rewrites to app/subdomains/[slug]/...
+  
+  // If we are here, we are on a subdomain (e.g. demo.hue-line.com)
+  // If the path is /login, we show the global login page.
+  // (Note: The check we added above ensures only LOGGED OUT users see this)
+  if (url.pathname === "/login" || url.pathname === "/register") {
+    return NextResponse.rewrite(new URL(url.pathname, request.url));
+  }
+
+  // Otherwise, rewrite to app/subdomains/[slug]/...
   const searchParams = request.nextUrl.searchParams.toString();
   const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ''}`;
   

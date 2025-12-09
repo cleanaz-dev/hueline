@@ -1,6 +1,7 @@
 import SubdomainDashboardPage from "@/components/subdomains/dashboard/client-dashboard-page";
+import { verifySubdomainOwner } from "@/lib/auth";
 import { getSubDomainData } from "@/lib/prisma";
-import { notFound } from "next/navigation"; // ✅ ADD THIS
+import { notFound } from "next/navigation"; 
 
 interface Params {
   params: Promise<{
@@ -11,14 +12,15 @@ interface Params {
 export default async function SubdomainPage({ params }: Params) {
   const { slug } = await params;
   console.log("👀 Slug:", slug)
+
+
+  await verifySubdomainOwner(slug);
+
   const subDomainData = await getSubDomainData(slug);
     console.log("📦 Domain Data:", subDomainData)
 
   // ✅ HANDLE NULL CASE
-  if (!subDomainData) {
-    console.warn(`Subdomain not found: ${slug}`);
-    notFound(); // This will show your 404 page
-  }
+  if (!subDomainData) notFound()
 
   return (
     <div>

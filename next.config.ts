@@ -36,6 +36,18 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+       {
+        protocol: 'https',
+        hostname: 'hue-line.s3.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
+       {
+        protocol: 'https',
+        hostname: 'cdn.hue-line.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };

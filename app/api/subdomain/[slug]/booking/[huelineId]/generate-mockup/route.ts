@@ -1,5 +1,6 @@
 import { handleNewS3Key } from "@/lib/aws/s3";
 import { getNewMockUpColorMoonshot } from "@/lib/moonshot";
+import { prisma } from "@/lib/prisma";
 import { updateMockupData } from "@/lib/prisma/mutations/booking-data";
 import { getOriginalImageUrl } from "@/lib/prisma/mutations/s3key";
 import { generateMockup } from "@/lib/replicate";
@@ -19,6 +20,24 @@ export async function POST(req: Request, { params }: Params) {
   try {
     // Need to await the JSON parsing
     const body = await req.json();
+
+    const subdomain = await prisma.subdomain.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!subdomain) {
+      return NextResponse.json(
+        {
+          message: "Missing required data",
+        },
+        { status: 400 }
+      );
+    }
+
+    const subdomainId = subdomain.id;
 
     const { option, currentColor, removeFurniture } = body;
     console.log("📦 Request body:", body);
@@ -51,7 +70,12 @@ export async function POST(req: Request, { params }: Params) {
       removeFurniture
     );
 
-    const s3key = await handleNewS3Key(mockupUrl, huelineId);
+    const s3key = await handleNewS3Key({
+      url: mockupUrl,
+      huelineId,
+      subdomainId,
+      isMockup: true,
+    });
 
     const newMockupData = await updateMockupData(
       huelineId,

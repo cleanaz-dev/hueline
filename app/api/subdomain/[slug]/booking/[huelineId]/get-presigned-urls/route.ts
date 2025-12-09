@@ -19,8 +19,12 @@ export async function GET(
       );
     }
 
+    console.log("API ROUTE Booking get-presigned-urls/route.ts:", booking)
+
     // Generate presigned URL for original image
     const originalImages = await getPresignedUrl(booking.originalImages);
+
+    console.log("Original Images:", originalImages)
 
     // Generate presigned URLs for all mockups
     const mockups = await Promise.all(
@@ -29,6 +33,8 @@ export async function GET(
         presignedUrl: await getPresignedUrl(mockup.s3Key),
       }))
     );
+
+    console.log("Mock ups:", mockups)
 
     return NextResponse.json({
       originalImages,

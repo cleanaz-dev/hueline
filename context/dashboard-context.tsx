@@ -1,12 +1,18 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import useSWR from "swr";
 import { BookingData, SubdomainAccountData } from "@/types/subdomain-type";
+import { DashboardStats } from "@/types/dashboard-types";
+
+
 
 interface DashboardContextType {
   bookings: BookingData[];
   subdomain: SubdomainAccountData;
+  stats: DashboardStats | undefined;
   isLoading: boolean;
+  isStatsLoading: boolean;
   refreshBookings: () => void;
 }
 
@@ -18,6 +24,8 @@ interface DashboardProviderProps {
   subdomain: SubdomainAccountData;
 }
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export function DashboardProvider({
   children,
   initialBookings,
@@ -26,13 +34,19 @@ export function DashboardProvider({
   const [bookings, setBookings] = useState<BookingData[]>(initialBookings);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch stats with SWR
+  const { data: stats, isLoading: isStatsLoading } = useSWR<DashboardStats>(
+    `/api/subdomain/${subdomain.slug}/stats`,
+    fetcher
+  );
+
   // Function to fetch presigned URLs for a specific booking
   const fetchUrlsForBooking = async (booking: BookingData) => {
     try {
       const res = await fetch(
         `/api/subdomain/${subdomain.slug}/booking/${booking.huelineId}/get-presigned-urls`
       );
-      if (!res.ok) return booking; // Return original if failed
+      if (!res.ok) return booking;
       
       const { originalImages, mockups } = await res.json();
       
@@ -54,8 +68,6 @@ export function DashboardProvider({
     let isMounted = true;
 
     const enrichAllBookings = async () => {
-      // PERFORMANCE NOTE: If you have 50+ bookings, this fires 50 API calls.
-      // Ideally, create a bulk API endpoint: /api/.../get-batch-presigned-urls
       const promises = initialBookings.map((b) => fetchUrlsForBooking(b));
       
       const enriched = await Promise.all(promises);
@@ -71,15 +83,17 @@ export function DashboardProvider({
     return () => {
       isMounted = false;
     };
-  }, [subdomain.slug]); // Removed initialBookings to prevent loops if prop reference changes
+  }, [subdomain.slug]);
 
   return (
     <DashboardContext.Provider 
       value={{ 
         bookings, 
-        subdomain, 
-        isLoading, 
-        refreshBookings: () => setBookings(initialBookings) // Reset/Re-fetch logic
+        subdomain,
+        stats,
+        isLoading,
+        isStatsLoading,
+        refreshBookings: () => setBookings(initialBookings)
       }}
     >
       {children}
