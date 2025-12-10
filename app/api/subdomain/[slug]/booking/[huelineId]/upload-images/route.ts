@@ -5,7 +5,8 @@ import { uploadToS3 } from "@/lib/aws/s3/services";
 
 interface Params {
   params: Promise<{
-    bookingId: string;
+    slug: string;
+    huelineId: string
   }>;
 }
 
@@ -16,10 +17,10 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { bookingId } = await params;
+    const { slug, huelineId } = await params;
 
     // Verify user owns this booking
-    if (session.user.id !== bookingId) {
+    if (session.user.id !== huelineId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -35,14 +36,11 @@ export async function POST(request: Request, { params }: Params) {
     for (const file of files) {
       const buffer = Buffer.from(await file.arrayBuffer());
       const timestamp = Date.now();
-      const key = `clients/${bookingId}/images/${timestamp}-${file.name}`;
+      const key = `clients/${huelineId}/images/${timestamp}-${file.name}`;
 
       await uploadToS3(buffer, key, file.type);
       uploadedKeys.push(key);
     }
-
-    // Store keys in Redis
-    // TODO: Add redis logic here to append to existing booking data
 
     return NextResponse.json({
       success: true,
