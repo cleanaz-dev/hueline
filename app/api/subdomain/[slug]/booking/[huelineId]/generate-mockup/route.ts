@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { updateMockupData } from "@/lib/prisma/mutations/booking-data";
 import { getOriginalImageUrl } from "@/lib/prisma/mutations/s3key";
 import { generateMockup } from "@/lib/replicate";
-import { generateAltMockup } from "@/lib/replicate-old";
 import { NextResponse } from "next/server";
 
 interface Params {
