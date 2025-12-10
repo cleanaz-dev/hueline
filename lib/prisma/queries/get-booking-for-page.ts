@@ -2,8 +2,14 @@ import { prisma } from "@/lib/prisma";
 
 export async function getBookingForPage(huelineId: string, slug: string) {
   try {
-    const booking = await prisma.subBookingData.findUnique({
-      where: { huelineId },
+    // 🔥 FIX: Use findFirst with mode: 'insensitive'
+    const booking = await prisma.subBookingData.findFirst({
+      where: { 
+        huelineId: {
+          equals: huelineId,
+          mode: 'insensitive', // This fixes the HL-123 vs hl-123 issue
+        }
+      },
       include: {
         subdomain: {
           include:{
@@ -14,7 +20,6 @@ export async function getBookingForPage(huelineId: string, slug: string) {
         alternateColors: true,
         sharedAccess: true,
         paintColors: true,
-        
       },
     });
 
@@ -27,10 +32,11 @@ export async function getBookingForPage(huelineId: string, slug: string) {
     // CRITICAL: Check if subdomain exists
     if (!booking.subdomain) {
       console.error(`Booking ${huelineId} has missing subdomain relation`);
-      return null; // Or redirect to error page
+      return null; 
     }
 
-    if (booking.subdomain.slug !== slug) {
+    // 🔥 FIX: Case insensitive slug check
+    if (booking.subdomain.slug.toLowerCase() !== slug.toLowerCase()) {
       console.warn(`Slug mismatch for ${huelineId}: expected ${slug}, got ${booking.subdomain.slug}`);
       return null;
     }

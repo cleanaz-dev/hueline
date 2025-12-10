@@ -16,54 +16,33 @@ export default async function BookingPage({ params }: Props) {
 
   // 1. Fetch Data
   const booking = await getBookingForPage(huelineId, slug);
-  console.log(" Booking from booking page/booking/[huelineId]:", booking)
-  
   if (!booking) notFound();
 
   // 2. 🔒 SECURITY CHECK
   const session = await getServerSession(authOptions);
 
-  console.log(`🔐 Auth Check for [${slug}] / [${huelineId}]`);
-  
-  // --- AUTHORIZATION LOGIC ---
+  // Normalize to lowercase to fix case-sensitivity issues
+  const urlId = huelineId.toLowerCase();
+  const sessionId = session?.user?.huelineId?.toLowerCase();
+  const urlSlug = slug.toLowerCase();
+  const sessionSlug = session?.user?.subdomainSlug?.toLowerCase();
 
-  // Condition A: Guest / Client (PIN Access)
-  const isAuthorizedGuest = session?.user?.huelineId === huelineId;
-
-  // Condition B: Account Owner / Team Member
-  const isAccountOwner = 
-    session?.user?.subdomainSlug?.toLowerCase() === slug.toLowerCase() && 
-    session?.role !== 'customer';
-
-  // Condition C: Super Admin
+  // AUTH CONDITIONS
+  const isAuthorizedGuest = sessionId === urlId;
+  const isAccountOwner = sessionSlug === urlSlug && session?.role !== 'customer';
   const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 
   const isAuthorized = isAuthorizedGuest || isAccountOwner || isSuperAdmin;
 
   if (!isAuthorized) {
-    console.warn("⛔ Access Denied");
-
-    // 3. SMART REDIRECT (Owner trying to access wrong subdomain)
-    if (session?.user && !isAuthorizedGuest) {
-       return (
-         <div className="flex h-screen items-center justify-center bg-gray-50">
-           <div className="text-center">
-             <h1 className="text-2xl font-bold text-gray-900">Unauthorized</h1>
-             <p className="text-gray-500 mt-2">
-               This project belongs to a different organization.
-             </p>
-           </div>
-         </div>
-       );
-    }
-
-    // Default: Send them to the PIN Portal using the new HL-ID
-    const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-    const rootDomain = process.env.NODE_ENV === "production" ? "hue-line.com" : "localhost:3000";
-    
-    redirect(`${protocol}://${rootDomain}/p/${huelineId}`);
+    // 🛑 CRITICAL FIX 🛑
+    // We use a RELATIVE path. 
+    // If the user is at "demo.hue-line.com/booking/123", 
+    // this sends them to "demo.hue-line.com/login?huelineId=123"
+    redirect(`/login?huelineId=${huelineId}`);
   }
 
+  // 3. Render Page
   return (
       <SubDomainWrapper booking={booking} subdomain={booking.subdomain} />
   );

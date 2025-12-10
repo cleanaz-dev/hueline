@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { Loader2, Lock, ArrowRight } from "lucide-react";
 import { toast } from "sonner"; 
+import { useRouter } from "next/navigation";
 
 interface Props {
   params: { huelineId: string };
@@ -11,89 +12,114 @@ interface Props {
 
 export default function PortalEntryPage({ params }: Props) {
   const huelineId = params.huelineId;
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession(); // Import update
+  const router = useRouter();
   
   const [pin, setPin] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // --- REDIRECT HELPER ---
-  const handleRedirect = (slug: string, id: string) => {
+  // --- 1. REDIRECT LOGIC ---
+  const handleRedirect = useCallback((slug: string, id: string) => {
     setIsRedirecting(true);
     const protocol = window.location.protocol;
     const host = window.location.host;
-
-    // We send them to '/j/' -> next.config.ts redirects to '/booking/'
-    const cleanPath = `/j/${id}`; 
+    const cleanPath = `/booking/${id}`; 
 
     let targetUrl = "";
+    
+    // Determine target domain
     if (host.includes("localhost")) {
       targetUrl = `${protocol}//${slug}.localhost:3000${cleanPath}`;
     } else {
-      const rootDomain = host.split('.').slice(-2).join('.');
+      const rootDomain = "hue-line.com"; // Change this if your domain differs
       targetUrl = `${protocol}//${slug}.${rootDomain}${cleanPath}`;
     }
 
+    console.log("🚀 Redirecting to:", targetUrl);
     window.location.href = targetUrl;
-  };
+  }, []);
 
-  // --- AUTO REDIRECT (If already logged in) ---
+  // --- 2. AUTO-REDIRECT IF ALREADY LOGGED IN ---
   useEffect(() => {
+    // Only run if we are fully authenticated and have data
     if (status === "authenticated" && session?.user && huelineId) {
-      if (session.user.huelineId === huelineId) {
+      const userHuelineId = session.user.huelineId || "";
+      
+      if (userHuelineId.toLowerCase() === huelineId.toLowerCase()) {
         const slug = session.user.subdomainSlug || "app";
         handleRedirect(slug, huelineId);
       }
     }
-  }, [status, session, huelineId]);
+  }, [status, session, huelineId, handleRedirect]);
 
-  // --- FORM SUBMIT ---
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!huelineId) return;
+  // --- 3. LOGIN ACTION ---
+  const performLogin = async (pinValue: string) => {
+    if (!huelineId) {
+      toast.error("Missing Project ID");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      // A. Authenticate
       const result = await signIn("booking-portal", {
         huelineId,
-        pin,
+        pin: pinValue,
         redirect: false,
       });
 
       if (result?.error) {
         toast.error("Incorrect PIN");
-        setIsSubmitting(false);
         setPin(""); 
+        setIsSubmitting(false);
         return;
       }
 
-      // Success! Fetch session to get the slug for the redirect
-      const sessionReq = await fetch("/api/auth/session");
-      const newSession = await sessionReq.json();
-      const slug = newSession?.user?.subdomainSlug;
-      
-      if (slug) {
+      // B. Force Session Update (This fixes the race condition)
+      // We await the update so the session object is hydrated before we check it
+      const newSession = await update();
+
+      // C. Check & Redirect
+      if (newSession?.user?.subdomainSlug) {
         toast.success("Access Granted");
-        handleRedirect(slug, huelineId);
+        handleRedirect(newSession.user.subdomainSlug, huelineId);
       } else {
-        toast.error("Error: Could not find project URL.");
-        setIsSubmitting(false);
+        // Fallback: Reload page to force server-side session check if client update failed
+        console.log("Session update lagging, forcing reload...");
+        window.location.reload(); 
       }
 
     } catch (error) {
-      console.error(error);
-      toast.error("Login failed");
+      console.error("Critical Login Error:", error);
+      toast.error("Connection failed. Please try again.");
       setIsSubmitting(false);
     }
   };
 
-  // --- RENDER ---
+  // --- 4. INPUT HANDLER ---
+  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    
+    // Numbers only
+    if (!/^\d*$/.test(val)) return;
+
+    setPin(val);
+
+    // Trigger login immediately on 4th digit
+    if (val.length === 4) {
+      performLogin(val);
+    }
+  };
+
+  // --- 5. LOADING STATES ---
   if (status === "loading" || isRedirecting) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <Loader2 className="w-10 h-10 text-gray-900 animate-spin mb-4" />
         <p className="text-gray-500 font-medium animate-pulse">
-          {isRedirecting ? "Redirecting to project..." : "Verifying..."}
+          {isRedirecting ? "Redirecting to project..." : "Verifying access..."}
         </p>
       </div>
     );
@@ -113,7 +139,7 @@ export default function PortalEntryPage({ params }: Props) {
         </div>
 
         <div className="p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={(e) => { e.preventDefault(); if(pin.length===4) performLogin(pin); }} className="space-y-6">
             <div className="space-y-2">
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest text-center">
                 Enter 4-Digit PIN
@@ -124,19 +150,20 @@ export default function PortalEntryPage({ params }: Props) {
                 pattern="[0-9]*"
                 maxLength={4}
                 value={pin}
-                onChange={(e) => setPin(e.target.value)}
+                onChange={handlePinChange}
                 disabled={isSubmitting}
                 className="w-full text-center text-4xl font-mono tracking-[0.5em] py-4 border-2 border-gray-100 rounded-xl focus:border-gray-900 focus:ring-0 outline-none transition-all placeholder:text-gray-200 text-gray-900"
                 placeholder="••••"
                 autoFocus
               />
             </div>
+            
             <button
               type="submit"
               disabled={isSubmitting || pin.length < 4}
               className="w-full bg-gray-900 text-white py-4 rounded-xl font-semibold hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
             >
-              {isSubmitting ? <Loader2 className="animate-spin w-5 h-5" /> : <>View Project <ArrowRight className="w-4 h-4" /></>}
+              {isSubmitting ? <Loader2 className="animate-spin w-5 h-5" /> : <>Access Project <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
           <p className="text-center text-xs text-gray-400 mt-6">

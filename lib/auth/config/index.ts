@@ -4,23 +4,26 @@ import { getBooking } from "@/lib/redis";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-const cookieDomain = process.env.NODE_ENV === 'production' ? '.hue-line.com' : undefined; 
-
 export const authOptions: NextAuthOptions = {
-  cookies: {
+  // 1. COOKIE CONFIGURATION (Allows cross-subdomain sessions)
+   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        domain: cookieDomain
-      }
-    }
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        // 👇 CHANGE THIS SECTION
+        domain: process.env.NODE_ENV === "production" 
+          ? ".hue-line.com" 
+          : undefined, // Leave undefined for localhost to support subdomains (demo.localhost) automatically
+      },
+    },
   },
 
   providers: [
+    // 2. PARTNER/ADMIN LOGIN (Email & Password)
     CredentialsProvider({
       id: "saas-account",
       name: "Partner Login",
@@ -51,6 +54,7 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
+    // 3. BOOKING PORTAL ACCESS (ID & PIN)
     CredentialsProvider({
       id: "booking-portal",
       name: "Booking Access",
@@ -59,18 +63,21 @@ export const authOptions: NextAuthOptions = {
         pin: { label: "PIN", type: "text" },
       },
       async authorize(credentials) {
-        try { // ✅ FIX: Wrap entire auth in try/catch
+        try {
           if (!credentials?.huelineId || !credentials?.pin) return null;
 
           let bookingData: any = null;
           let subdomainSlug = "app";
 
+          // A. Try Redis First (Note: Redis keys are usually case-sensitive)
+          // If this fails due to casing, it falls through to Step B (Database)
           const redisData = await getBooking(credentials.huelineId);
           
           if (redisData) {
             bookingData = {
               ...redisData,
               booking_id: redisData.hueline_id || redisData.booking_id,
+              pin: redisData.pin // Ensure PIN is pulled from Redis
             };
             
             if (redisData.subdomain_id) {
@@ -82,37 +89,51 @@ export const authOptions: NextAuthOptions = {
             }
           } 
           
+          // B. Database Fallback (CRITICAL FIX FOR CASE SENSITIVITY)
           if (!bookingData) {
-            const dbBooking = await prisma.subBookingData.findUnique({
-              where: { huelineId: credentials.huelineId },
+            // 🔥 CHANGED from findUnique to findFirst with insensitive mode
+            const dbBooking = await prisma.subBookingData.findFirst({
+              where: { 
+                huelineId: {
+                  equals: credentials.huelineId,
+                  mode: "insensitive" // <--- THIS FIXES THE "INCORRECT PIN" ERROR
+                }
+              },
               include: { subdomain: true, sharedAccess: true }
             });
 
             if (dbBooking) {
               bookingData = { 
                 ...dbBooking, 
-                booking_id: dbBooking.huelineId 
+                booking_id: dbBooking.huelineId,
+                pin: dbBooking.pin
               };
               subdomainSlug = dbBooking.subdomain?.slug || "app";
             }
           }
 
-          if (!bookingData) return null;
+          if (!bookingData) {
+            console.log(`Auth Failed: No booking found for ID ${credentials.huelineId}`);
+            return null;
+          }
 
-          if (String(bookingData.pin) === String(credentials.pin)) {
+          // C. Verify PIN (Main Owner)
+          // Convert both to strings to be safe
+          if (String(bookingData.pin).trim() === String(credentials.pin).trim()) {
             return {
               id: bookingData.booking_id,
               name: bookingData.name || "Guest",
               role: "customer",
               accessLevel: "owner",
-              huelineId: bookingData.booking_id,
+              huelineId: bookingData.booking_id, // Returns the DB casing (e.g. HL-123)
               subdomainSlug: subdomainSlug,
             };
           }
 
-          if (bookingData.sharedAccess?.length) {
+          // D. Verify Shared Access (Guests/Designers)
+          if (bookingData.sharedAccess && Array.isArray(bookingData.sharedAccess)) {
             const sharedUser = bookingData.sharedAccess.find(
-              (u: any) => String(u.pin) === String(credentials.pin)
+              (u: any) => String(u.pin).trim() === String(credentials.pin).trim()
             );
 
             if (sharedUser) {
@@ -127,10 +148,12 @@ export const authOptions: NextAuthOptions = {
             }
           }
 
+          console.log(`Auth Failed: PIN mismatch for ID ${credentials.huelineId}`);
           return null;
-        } catch (error) { // ✅ CATCH ERRORS HERE
-          console.error("Auth error:", error);
-          return null; // Fail auth gracefully instead of crashing
+
+        } catch (error) {
+          console.error("Critical Auth error:", error);
+          return null; 
         }
       },
     }),

@@ -55,18 +55,19 @@ export async function proxy(request: NextRequest) {
   // -----------------------------------------------------------------------------
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
-  // 🔥 FIX: If user is ALREADY logged in and tries to go to /login, FORCE them to /
-  // This ensures that after you sign in, if the router tries to stay on /login, the server pushes you to root.
+  // 1. If logged in and visiting /login or /register, kick to root (of that subdomain)
   if (token && (url.pathname === "/login" || url.pathname === "/register")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
+  // 2. Admin protection
   if (url.pathname.startsWith("/admin")) {
     if (!isMainDomain) return NextResponse.rewrite(new URL("/404", request.url));
     if (!token) return NextResponse.redirect(new URL("/login", request.url));
     if (token.role !== "SUPER_ADMIN") return new NextResponse("Unauthorized", { status: 403 });
   }
 
+  // 3. Dashboard protection
   if (url.pathname.startsWith("/dashboard")) {
     if (!token) return NextResponse.redirect(new URL("/login", request.url));
     if (!isMainDomain && token.subdomainSlug !== currentHost) {
@@ -80,21 +81,14 @@ export async function proxy(request: NextRequest) {
   // ROUTING & REWRITES
   // -----------------------------------------------------------------------------
   
-  // 1. Main Domain Traffic
   if (isMainDomain) {
     return NextResponse.next();
   }
 
-  // 2. Subdomain Traffic
-  
-  // If we are here, we are on a subdomain (e.g. demo.hue-line.com)
-  // If the path is /login, we show the global login page.
-  // (Note: The check we added above ensures only LOGGED OUT users see this)
-  if (url.pathname === "/login" || url.pathname === "/register") {
-    return NextResponse.rewrite(new URL(url.pathname, request.url));
-  }
+  // 🔥 DELETED THE /login CHECK HERE. 
+  // We WANT /login to go to the subdomain folder below.
 
-  // Otherwise, rewrite to app/subdomains/[slug]/...
+  // Rewrite to app/subdomains/[slug]/...
   const searchParams = request.nextUrl.searchParams.toString();
   const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ''}`;
   
