@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, ReactNode, useMemo } from "react";
+import { createContext, useContext, ReactNode, useMemo, useState } from "react";
 import useSWR, { KeyedMutator } from "swr";
 import { SubdomainAccountData } from "@/types/subdomain-type";
 
@@ -14,6 +14,10 @@ interface SettingsContextType {
   // Helpers
   isPlanActive: boolean;
   daysUntilRenewal: number | null;
+  
+  // Invite functionality
+  inviteUser: (email: string, role: "admin" | "member") => Promise<boolean>;
+  isInviting: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -26,6 +30,7 @@ interface SettingsProviderProps {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function SettingsProvider({ children, slug }: SettingsProviderProps) {
+  const [isInviting, setIsInviting] = useState(false);
   
   const { data, error, isLoading, mutate } = useSWR<SubdomainAccountData>(
     slug ? `/api/subdomain/${slug}/my-account` : null,
@@ -38,7 +43,6 @@ export function SettingsProvider({ children, slug }: SettingsProviderProps) {
   );
 
   // Helper Logic
-  // We check 'active' or 'trialing' directly on the flat data object
   const isPlanActive = data?.planStatus === 'active' || data?.planStatus === 'trialing';
   
   const daysUntilRenewal = useMemo(() => {
@@ -47,15 +51,44 @@ export function SettingsProvider({ children, slug }: SettingsProviderProps) {
     const today = new Date();
     const renewal = new Date(data.currentPeriodEnd);
     
-    // Handle invalid dates if API sends bad data
     if (isNaN(renewal.getTime())) return null;
 
     const diffTime = renewal.getTime() - today.getTime();
-    // Return 0 if date has passed
     if (diffTime < 0) return 0; 
     
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
   }, [data?.currentPeriodEnd]);
+
+  // Invite User Function
+  const inviteUser = async (email: string, role: "admin" | "member"): Promise<boolean> => {
+    setIsInviting(true);
+    
+    try {
+      const response = await fetch(`/api/subdomain/${slug}/invite-member`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, role }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Failed to invite user:", errorData);
+        // You could add toast notification here
+        return false;
+      }
+
+      // Revalidate the settings data to get updated user list
+      await mutate();
+      return true;
+    } catch (error) {
+      console.error("Error inviting user:", error);
+      return false;
+    } finally {
+      setIsInviting(false);
+    }
+  };
 
   const value = {
     settings: data,
@@ -63,7 +96,9 @@ export function SettingsProvider({ children, slug }: SettingsProviderProps) {
     isError: !!error,
     mutate,
     isPlanActive,
-    daysUntilRenewal
+    daysUntilRenewal,
+    inviteUser,
+    isInviting,
   };
 
   return (

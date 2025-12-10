@@ -19,12 +19,15 @@ import {
   FileAudio,
   Loader2,
   Camera,
+  Link2,
 } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
 // 1. Import the hook from your provider
 import { useDashboard } from "@/context/dashboard-context";
 import Link from "next/link";
 import Image from "next/image";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 
 // --- Audio Player (No changes) ---
 const AudioPlayer = ({ url }: { url: string }) => {
@@ -342,14 +345,29 @@ export default function ClientTable() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      {data.name}
+                <div className="flex-col justify-between items-start">
+                  <div className="flex justify-between">
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        {data.name}
+                      </div>
+                      <div className="text-muted-foreground text-xs font-normal">
+                        {data.phone}
+                      </div>
                     </div>
-                    <div className="text-muted-foreground text-xs font-normal">
-                      {data.phone}
-                    </div>
+                    <Button
+                    size="sm"
+                    variant="outline" 
+                    
+                    asChild>
+                    <Link href={`/j/${data.huelineId}`}>
+                     <span className="text-xs"> View </span>
+                    </Link>
+                    </Button>
+                  </div>
+                  <Separator />
+                  <div className="text-muted-foreground text-xs font-normal mt-2">
+                    {data.prompt}
                   </div>
                   {data.audioUrl && <AudioPlayer url={data.audioUrl} />}
                 </div>

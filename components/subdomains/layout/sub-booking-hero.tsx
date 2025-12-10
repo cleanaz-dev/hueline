@@ -41,7 +41,7 @@ export function SubBookingHero({ booking, formatTime, slug }: BookingHeroProps) 
       </div>
 
       {/* 2. The Premium Card */}
-      <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden relative">
+      <div className="bg-white rounded-2xl  border border-gray-100 overflow-hidden relative">
 
         <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-100">
           

@@ -15,6 +15,11 @@ import {
   ShieldCheck,
   AlertCircle
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 export default function SettingsContent() {
   const { settings, isPlanActive, daysUntilRenewal } = useSettings();
@@ -39,7 +44,7 @@ export default function SettingsContent() {
         {/* --- MOBILE OPTIMIZED NAVIGATION --- */}
         <nav className="w-full md:w-64 flex-shrink-0">
           {/* TWEAK: -mx-4 allows tabs to scroll edge-to-edge on mobile while keeping container padding elsewhere */}
-          <div className="flex flex-row md:flex-col gap-2 overflow-x-auto pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 no-scrollbar">
+         <div className="grid grid-cols-4 md:flex md:flex-col gap-2 pb-4 md:pb-0 md:overflow-visible">
             <NavButton 
               active={activeTab === "general"} 
               onClick={() => setActiveTab("general")}
@@ -58,24 +63,16 @@ export default function SettingsContent() {
               icon={Users}
               label="Team"
             />
-            <div className="hidden md:block md:pt-4 md:mt-4 md:border-t md:border-gray-100">
+            <Separator className="hidden md:block"/>
               <NavButton 
                 active={activeTab === "support"} 
                 onClick={() => setActiveTab("support")}
                 icon={LifeBuoy}
                 label="Concierge"
               />
+            
             </div>
-            {/* Mobile-only support button to keep it in the flow */}
-            <div className="md:hidden">
-              <NavButton 
-                active={activeTab === "support"} 
-                onClick={() => setActiveTab("support")}
-                icon={LifeBuoy}
-                label="Support"
-              />
-            </div>
-          </div>
+         
         </nav>
 
         {/* --- MAIN CONTENT AREA --- */}
@@ -187,6 +184,8 @@ export default function SettingsContent() {
                 <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-2">
                   <CardHeader title="Team Members" description="Users with access." />
                 </div>
+
+                <InviteUserSection />
                 
                 <div className="divide-y divide-gray-100 border rounded-xl overflow-hidden">
                    {settings.users && settings.users.length > 0 ? (
@@ -266,21 +265,20 @@ export default function SettingsContent() {
 
 // --- HELPER COMPONENTS ---
 
-function NavButton({ active, onClick, icon: Icon, label }: any) {
+function NavButton({ active, onClick, icon: Icon, label, fullWidth }: any) {
   return (
     <button
       onClick={onClick}
-      // TWEAK: whitespace-nowrap prevents text splitting on mobile
       className={`
-        whitespace-nowrap flex items-center space-x-3 px-4 py-2.5 rounded-full md:rounded-lg text-sm font-medium transition-colors text-left border md:border-0 cursor-pointer
+        flex items-center justify-center md:justify-start space-x-0 md:space-x-3 px-3 md:px-4 py-2.5 rounded-full md:rounded-lg text-sm font-medium transition-colors border md:border-0 cursor-pointer
+        ${fullWidth ? 'w-full' : ''}
         ${active 
           ? "bg-blue-600 text-white md:bg-blue-50 md:text-blue-700 border-blue-600 shadow-sm md:shadow-none" 
           : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900"}
       `}
     >
-      {/* TWEAK: Icon sizing slightly flexible */}
-      <Icon className={`w-4 h-4 md:w-5 md:h-5 ${active ? "text-white md:text-blue-600" : "text-gray-400"}`} />
-      <span>{label}</span>
+      <Icon className={`w-5 h-5 ${active ? "text-white md:text-blue-600" : "text-gray-400"}`} />
+      <span className="hidden md:inline">{label}</span>
     </button>
   );
 }
@@ -320,9 +318,8 @@ function ReadOnlyField({ label, value, copyable, isLink }: { label: string, valu
       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
         {label}
       </label>
-      {/* TWEAK: h-auto with py-3 allows content to wrap if screen is extremely small, preventing cut-off */}
-      <div className="group flex items-center justify-between px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg min-h-[3rem]">
-        <div className="min-w-0 flex-1 mr-2">
+      <div className="group relative flex items-center h-10 px-3 bg-gray-50 border border-gray-200 rounded-lg">
+        <div className="min-w-0 flex-1 pr-2">
             {isLink && value ? (
             <a href={value} target="_blank" rel="noopener noreferrer" className="block text-sm font-medium text-blue-600 hover:underline truncate">
                 {displayValue}
@@ -335,8 +332,7 @@ function ReadOnlyField({ label, value, copyable, isLink }: { label: string, valu
         {copyable && value && (
           <button 
             onClick={handleCopy}
-            // TWEAK: Increased touch target for mobile
-            className="flex-shrink-0 p-2 rounded-md hover:bg-white text-gray-400 hover:text-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="absolute right-2 flex-shrink-0 p-1.5 rounded-md hover:bg-white text-gray-400 hover:text-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
             title="Copy to clipboard"
           >
             {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
@@ -354,4 +350,91 @@ function FeatureItem({ text }: { text: string }) {
       <span className="leading-tight">{text}</span>
     </li>
   )
+}
+function InviteUserSection() {
+  const [showForm, setShowForm] = useState(false);
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"admin" | "member">("member");
+  const { inviteUser, isInviting } = useSettings();
+
+  const handleInvite = async () => {
+    if (!email.trim()) return;
+    
+    const success = await inviteUser(email, role);
+    if (success) {
+      setEmail("");
+      setRole("member");
+      setShowForm(false);
+    }
+  };
+
+  return (
+    <div className="mb-6">
+      {!showForm ? (
+        <Button
+          onClick={() => setShowForm(true)}
+          variant="outline"
+          className=""
+        >
+          <Users className="w-4 h-4 mr-2" />
+          Invite User
+        </Button>
+      ) : (
+        <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="invite-email" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Email Address
+              </Label>
+              <Input
+                id="invite-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="user@example.com"
+                disabled={isInviting}
+                className="h-10 bg-white"
+              />
+            </div>
+            
+            <div className="w-full sm:w-40 space-y-2">
+              <Label htmlFor="invite-role" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Role
+              </Label>
+              <Select value={role} onValueChange={(value) => setRole(value as "admin" | "member")} disabled={isInviting}>
+                <SelectTrigger id="invite-role" className="h-10 bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="member">Member</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={handleInvite}
+              disabled={isInviting || !email.trim()}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isInviting ? "Sending..." : "Send Invite"}
+            </Button>
+            <Button
+              onClick={() => {
+                setShowForm(false);
+                setEmail("");
+                setRole("member");
+              }}
+              disabled={isInviting}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

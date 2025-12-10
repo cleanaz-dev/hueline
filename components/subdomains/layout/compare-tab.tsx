@@ -28,7 +28,7 @@ export default function CompareTab({
 
       {/* Floating Color Configurator (Automotive Style) */}
       {mockupUrls.length > 1 && (
-        <div className="absolute bottom-2 md:bottom-6 left-1/2 -translate-x-1/2 z-20 bg-white/90 backdrop-blur-md p-1.5 md:p-3 rounded-2xl shadow-xl border border-white/50 flex gap-3 overflow-x-auto max-w-[90%] ">
+        <div className="absolute bottom-2 md:bottom-6 left-1/2 -translate-x-1/2 z-20 bg-white/50 backdrop-blur-md p-1.5 md:p-3 rounded-2xl shadow-xl border border-white/50 flex gap-4 md:gap-3 overflow-x-auto max-w-[90%] ">
           {mockupUrls.map((mockup, index) => (
             <button
               key={index}

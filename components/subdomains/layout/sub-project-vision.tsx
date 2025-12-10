@@ -9,7 +9,7 @@ interface BookingParams {
 export default function SubProjectVision({ booking: { prompt } }: BookingParams) {
   return (
     <section className="w-full max-w-5xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-6 md:p-10 relative overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-10 relative overflow-hidden">
         
         {/* Ambient Glow (Subtle yellow tint in top right to match 'Lightbulb' idea) */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-50/50 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />

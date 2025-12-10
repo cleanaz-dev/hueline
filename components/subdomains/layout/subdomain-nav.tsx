@@ -51,14 +51,14 @@ export default function SubdomainNav({
   const logoSrc = getPublicUrl(data.logo) || "/images/placeholder-logo.png";
 
   return (
-    <nav className="bg-white border-b border-gray-200 h-24 sticky top-0 z-40">
-      <div className="px-8 h-full flex items-center justify-between max-w-7xl mx-auto">
+    <nav className="bg-white border-b border-gray-200 h-16 md:h-24 sticky top-0 z-40">
+      <div className="px-4 md:px-8 h-full flex items-center justify-between max-w-7xl mx-auto">
         
         {/* Left Spacer */}
         <div className="w-20"></div>
 
         {/* Center Logo */}
-        <div className="flex-shrink-0 relative h-16 w-56">
+        <div className="flex-shrink-0 relative h-16 w-32 md:w-56">
           <Image
             src={logoSrc}
             alt="Logo"

@@ -1,7 +1,7 @@
 // subdomains/[slug]/my-account/page.tsx
 "use client";
 
-import SettingsContent from "@/components/subdomains/dashboard/settings-content";
+import SettingsContent from "@/components/subdomains/settings/settings-content";
 import SubdomainNav from "@/components/subdomains/layout/subdomain-nav";
 import { useSettings } from "@/context/settings-context";
 import { Loader2 } from "lucide-react";
@@ -22,7 +22,7 @@ export default function SettingsPage() {
   if (!settings) return <div>Error loading settings</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50">
       {/* 1. Pass the settings to your Nav */}
       <SubdomainNav data={settings}/>
       

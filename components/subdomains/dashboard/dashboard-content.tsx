@@ -10,7 +10,7 @@ export default function DashboardContent() {
   const { subdomain, stats, isStatsLoading } = useDashboard();
   
   return (
-    <div>
+    <div className="min-h-screen pb-20">
       <SubdomainNav data={subdomain} />
       <StatCards stats={stats} isLoading={isStatsLoading} />
       <ClientTable />
