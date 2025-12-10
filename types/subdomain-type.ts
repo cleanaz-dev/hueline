@@ -94,5 +94,5 @@ export interface SubdomainUser {
   name: string | null;
   email: string;
   role: string;
-  image?: string | null; // Optional if you have avatars
+  imageUrl?: string | null; // Optional if you have avatars
 }

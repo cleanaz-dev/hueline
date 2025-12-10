@@ -109,6 +109,7 @@ model SubdomainUser {
   email        String  @unique
   name         String?
   passwordHash String
+  imageUrl     String?
 
   // ✅ NEW: Role management (OWNER, ADMIN, MEMBER)
   role String @default("MEMBER")
