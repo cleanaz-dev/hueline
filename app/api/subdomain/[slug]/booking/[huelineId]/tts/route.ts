@@ -9,8 +9,6 @@ interface Params {
   }>
 }
 
-export const runtime = 'edge';
-
 export async function GET(
   req: NextRequest,
   { params }: Params

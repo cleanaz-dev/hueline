@@ -11,6 +11,7 @@ export async function POST(req: Request) {
 
     // 2. Parse the Python Payload (snake_case)
     const body = await req.json();
+    console.log("📦 Body:", body)
     
     console.log("📥 Ingesting Booking:", body.hueline_id);
 
