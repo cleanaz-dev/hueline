@@ -118,7 +118,7 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
       <div className="bg-white max-w-sm w-full rounded-2xl shadow-xl border border-gray-100 p-8">
         <div className="text-center mb-8">
           {logo ? (
-            <div className="w-20 h-20 mx-auto mb-4 relative">
+            <div className="w-32 h-20 mx-auto mb-4 relative">
               <Image
                 src={logo}
                 alt="Company Logo"

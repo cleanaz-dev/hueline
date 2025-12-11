@@ -11,9 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { X, Send, Eye, Edit } from "lucide-react";
+import { X, Send, Eye, Edit, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useBooking } from "@/context/booking-context";
 
@@ -143,42 +141,70 @@ export default function SubShareProjectDialog({
         <div className="space-y-4">
           {/* Access Type Selection */}
           <div>
-            <label className="text-sm font-medium">Access Type</label>
-            <RadioGroup
-              value={accessType}
-              onValueChange={(value) => setAccessType(value as AccessType)}
-              className="mt-2 grid grid-cols-2 gap-2"
-            >
-              <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
-                <RadioGroupItem value="viewer" id="viewer" />
-                <Label htmlFor="viewer" className="flex-1 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-blue-500" />
-                    <div>
-                      <div className="font-medium text-sm">View Only</div>
-                      <div className="hidden sm:block text-xs text-gray-500">
-                        Can view project details but cannot make changes
-                      </div>
-                    </div>
-                  </div>
-                </Label>
-              </div>
+            <label className="text-sm font-medium mb-2 block">Access Type</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setAccessType("viewer")}
+                className={`flex items-center gap-2 border rounded-lg p-3 cursor-pointer transition-all ${
+                  accessType === "viewer" 
+                    ? "border-blue-500 bg-blue-50" 
+                    : "border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  accessType === "viewer" 
+                    ? "border-blue-500" 
+                    : "border-gray-300"
+                }`}>
+                  {accessType === "viewer" && (
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  )}
+                </div>
+                <Eye className="h-4 w-4 text-blue-500" />
+                <div className="font-medium text-sm">View Only</div>
+              </button>
 
-              <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
-                <RadioGroupItem value="customer" id="customer" />
-                <Label htmlFor="customer" className="flex-1 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <Edit className="h-4 w-4 text-green-500" />
-                    <div>
-                      <div className="font-medium text-sm">Full Access</div>
-                      <div className="hidden sm:block text-xs text-gray-500">
-                        Can view and edit project details
-                      </div>
-                    </div>
-                  </div>
-                </Label>
+              <button
+                type="button"
+                onClick={() => setAccessType("customer")}
+                className={`flex items-center gap-2 border rounded-lg p-3 cursor-pointer transition-all ${
+                  accessType === "customer" 
+                    ? "border-green-500 bg-green-50" 
+                    : "border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  accessType === "customer" 
+                    ? "border-green-500" 
+                    : "border-gray-300"
+                }`}>
+                  {accessType === "customer" && (
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                  )}
+                </div>
+                <Edit className="h-4 w-4 text-green-500" />
+                <div className="font-medium text-sm">Full Access</div>
+              </button>
+            </div>
+
+            {/* Dynamic Description */}
+            <div className={`mt-3 rounded-lg p-3 border ${
+              accessType === "viewer" 
+                ? "bg-blue-50 border-blue-200" 
+                : "bg-green-50 border-green-200"
+            }`}>
+              <div className="flex items-center gap-2">
+                <Info className={`h-4 w-4 ${
+                  accessType === "viewer" ? "text-blue-500" : "text-green-500"
+                }`} />
+                <p className="text-xs text-gray-700">
+                  {accessType === "viewer" 
+                    ? "View project details but cannot make any changes or edits." 
+                    : "View and edit project details, including mockups and color selections."}
+                </p>
               </div>
-            </RadioGroup>
+            </div>
           </div>
 
           {/* Email input */}
