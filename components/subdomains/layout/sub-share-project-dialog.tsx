@@ -161,8 +161,8 @@ export default function SubShareProjectDialog({
                     <div className="w-2 h-2 rounded-full bg-blue-500" />
                   )}
                 </div>
-                <Eye className="h-4 w-4 text-blue-500" />
-                <div className="font-medium text-sm">View Only</div>
+                <Eye className="hidden md:block h-4 w-4 text-blue-500" />
+                <div className="font-medium text-xs md:text-sm">View Only</div>
               </button>
 
               <button
@@ -183,8 +183,8 @@ export default function SubShareProjectDialog({
                     <div className="w-2 h-2 rounded-full bg-green-500" />
                   )}
                 </div>
-                <Edit className="h-4 w-4 text-green-500" />
-                <div className="font-medium text-sm">Full Access</div>
+                <Edit className="hidden md:block h-4 w-4 text-green-500" />
+                <div className="ont-medium text-xs md:text-sm">Full Access</div>
               </button>
             </div>
 
