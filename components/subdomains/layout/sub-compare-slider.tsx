@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ComparisonSlider } from "@/types/booking-page-types";
 
-
 export default function SubComparisonSlider({
   beforeImage,
   afterImage,
@@ -33,8 +32,8 @@ export default function SubComparisonSlider({
             setPosition(0);
             setTimeout(() => {
               setPosition(50);
-            }, 3000); // Changed from 1500 to 3000 (slower)
-          }, 500); // Changed from 300 to 500 (longer initial delay)
+            }, 5000); // Increased from 3000 to 5000 (much slower slide)
+          }, 800); // Increased from 500 to 800 (longer pause before starting)
         }
       },
       { threshold: 0.3 }
