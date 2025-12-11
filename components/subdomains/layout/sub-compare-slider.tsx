@@ -32,8 +32,8 @@ export default function SubComparisonSlider({
             setPosition(0);
             setTimeout(() => {
               setPosition(50);
-            }, 5000); // Increased from 3000 to 5000 (much slower slide)
-          }, 800); // Increased from 500 to 800 (longer pause before starting)
+            }, 6000); // Increased from 3000 to 5000 (much slower slide)
+          }, 500); // Increased from 500 to 800 (longer pause before starting)
         }
       },
       { threshold: 0.3 }
