@@ -38,11 +38,14 @@ export default function SubShareProjectDialog({
   const [isLoading, setIsLoading] = useState(false);
 
   const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
-  useEffect(() => {
-    if (isShareDialogOpen && inputRef) {
+useEffect(() => {
+  if (isShareDialogOpen && inputRef) {
+    // Only auto-focus on desktop (screen width > 768px)
+    if (window.innerWidth >= 768) {
       inputRef.focus();
     }
-  }, [isShareDialogOpen, inputRef]);
+  }
+}, [isShareDialogOpen, inputRef]);
 
   const addEmail = () => {
     setEmailError("");
