@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import GenerateDialog from "@/components/booking/generate-dialog";
 import { BookingData } from "@/types/subdomain-type";
 import { cn } from "@/lib/utils"; // Assuming you have a cn utility, or just use string concat
+import { useBooking } from "@/context/booking-context";
 
 interface ComponentProps {
   booking: BookingData;
@@ -32,6 +33,7 @@ export default function SubAlternateDesign({
   const [selectedOption, setSelectedOption] = useState("");
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [generateStatus, setGenerateStatus] = useState<"idle" | "generating" | "success" | "error">("idle");
+  const { setIsShareDialogOpen } = useBooking()
 
   const options = [
     { id: "brighter", icon: RiSunFill, label: "Brighter" },
@@ -95,9 +97,13 @@ export default function SubAlternateDesign({
         </div>
         <h3 className="font-semibold text-gray-900 mb-1">Unlock AI Variations</h3>
         <p className="text-sm text-gray-500 mb-6 max-w-[200px]">
-          Share this project to generate alternate lighting & furniture options.
+          Share this project to generate alternate color options.
         </p>
-        <Button variant="outline" className="gap-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700">
+        <Button 
+          variant="outline"
+          onClick={() => setIsShareDialogOpen(true)} 
+          className="gap-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+          >
           <Share2 className="w-4 h-4" />
           Share to Unlock
         </Button>

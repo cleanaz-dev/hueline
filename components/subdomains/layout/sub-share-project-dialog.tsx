@@ -15,11 +15,12 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { X, Send, Eye, Edit } from "lucide-react";
 import { toast } from "sonner";
+import { useBooking } from "@/context/booking-context";
 
 interface ShareProjectDialogProps {
   huelineId: string;
   hasSharedAccess: boolean;
-  slug: string
+  slug: string;
 }
 
 const emailSchema = z.email();
@@ -31,20 +32,19 @@ export default function SubShareProjectDialog({
   hasSharedAccess,
   slug
 }: ShareProjectDialogProps) {
+  const { isShareDialogOpen, setIsShareDialogOpen } = useBooking();
   const [emails, setEmails] = useState<string[]>([]);
   const [currentEmail, setCurrentEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [accessType, setAccessType] = useState<AccessType>("viewer");
-  const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Autofocus email input when dialog opens
   const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
   useEffect(() => {
-    if (isOpen && inputRef) {
+    if (isShareDialogOpen && inputRef) {
       inputRef.focus();
     }
-  }, [isOpen, inputRef]);
+  }, [isShareDialogOpen, inputRef]);
 
   const addEmail = () => {
     setEmailError("");
@@ -71,60 +71,54 @@ export default function SubShareProjectDialog({
   };
 
   const handleSubmit = async () => {
-  if (emails.length === 0) return;
-  setIsLoading(true);
+    if (emails.length === 0) return;
+    setIsLoading(true);
 
-  try {
-    const response = await fetch(`/api/subdomain/${slug}/booking/${huelineId}/share-project`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ emails, accessType }),
-    });
+    try {
+      const response = await fetch(`/api/subdomain/${slug}/booking/${huelineId}/share-project`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emails, accessType }),
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      
-      setIsOpen(false);
-      setEmails([]);
-      setCurrentEmail("");
-      setEmailError("");
-      setAccessType("viewer");
-      
-      // Show different toast based on what actually happened
-      if (data.newSharesCount > 0 && data.updatedSharesCount > 0) {
-        // Mixed: some new, some updated
-        toast.success(`📧 ${data.newSharesCount} email(s) sent, ${data.updatedSharesCount} access updated`, {
-          description: !hasSharedAccess ? "Unlock Image Generation" : undefined,
-          duration: 5000,
-          action: !hasSharedAccess ? {
-            label: "Unlock",
-            onClick: () => window.location.reload(),
-          } : undefined,
-        });
-      } else if (data.newSharesCount > 0) {
-        // Only new shares
-        toast.success(`📧 ${data.newSharesCount} email(s) sent successfully!`, {
-          description: !hasSharedAccess ? "Unlock Image Gen" : undefined,
-          duration: 5000,
-          action: !hasSharedAccess ? {
-            label: "Unlock",
-            onClick: () => window.location.reload(),
-          } : undefined,
-        });
-      } else {
-        // Only updates (no emails sent)
-        toast.success(`✅ Access updated for ${data.updatedSharesCount} user(s)`, {
-          
-        });
+      if (response.ok) {
+        const data = await response.json();
+        
+        setIsShareDialogOpen(false);
+        setEmails([]);
+        setCurrentEmail("");
+        setEmailError("");
+        setAccessType("viewer");
+        
+        if (data.newSharesCount > 0 && data.updatedSharesCount > 0) {
+          toast.success(`📧 ${data.newSharesCount} email(s) sent, ${data.updatedSharesCount} access updated`, {
+            description: !hasSharedAccess ? "Unlock Image Generation" : undefined,
+            duration: 5000,
+            action: !hasSharedAccess ? {
+              label: "Unlock",
+              onClick: () => window.location.reload(),
+            } : undefined,
+          });
+        } else if (data.newSharesCount > 0) {
+          toast.success(`📧 ${data.newSharesCount} email(s) sent successfully!`, {
+            description: !hasSharedAccess ? "Unlock Image Gen" : undefined,
+            duration: 5000,
+            action: !hasSharedAccess ? {
+              label: "Unlock",
+              onClick: () => window.location.reload(),
+            } : undefined,
+          });
+        } else {
+          toast.success(`✅ Access updated for ${data.updatedSharesCount} user(s)`);
+        }
       }
+    } catch (error) {
+      console.error("Failed to share project:", error);
+      toast.error("Failed to share project");
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error("Failed to share project:", error);
-    toast.error("Failed to share project");
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -134,7 +128,7 @@ export default function SubShareProjectDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           Share Project
@@ -153,7 +147,7 @@ export default function SubShareProjectDialog({
             <RadioGroup
               value={accessType}
               onValueChange={(value) => setAccessType(value as AccessType)}
-              className="mt-2 space-y-2 "
+              className="mt-2 grid grid-cols-2 gap-2"
             >
               <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
                 <RadioGroupItem value="viewer" id="viewer" />
@@ -161,7 +155,7 @@ export default function SubShareProjectDialog({
                   <div className="flex items-center gap-2">
                     <Eye className="h-4 w-4 text-blue-500" />
                     <div>
-                      <div className="font-medium">View Only</div>
+                      <div className="font-medium text-sm">View Only</div>
                       <div className="hidden sm:block text-xs text-gray-500">
                         Can view project details but cannot make changes
                       </div>
@@ -176,7 +170,7 @@ export default function SubShareProjectDialog({
                   <div className="flex items-center gap-2">
                     <Edit className="h-4 w-4 text-green-500" />
                     <div>
-                      <div className="font-medium">Full Access</div>
+                      <div className="font-medium text-sm">Full Access</div>
                       <div className="hidden sm:block text-xs text-gray-500">
                         Can view and edit project details
                       </div>

@@ -8,6 +8,8 @@ interface BookingContextType {
   subdomain: SubdomainAccountData;
   isLoading: boolean;
   error: string | null;
+  isShareDialogOpen: boolean;
+  setIsShareDialogOpen: (open: boolean) => void;
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -24,6 +26,7 @@ export function BookingProvider({
   const [booking, setBooking] = useState<BookingData>(initialBooking);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -35,7 +38,6 @@ export function BookingProvider({
         );
 
         if (!res.ok) {
-           // If fetch fails, we stop loading but keep original data to prevent crash
            console.error("Fetch failed");
            if (isMounted) setIsLoading(false);
            return;
@@ -43,7 +45,6 @@ export function BookingProvider({
 
         const { originalImages, mockups } = await res.json();
 
-        // MERGE LOGIC: Match the Dashboard pattern
         const enrichedBooking = {
           ...initialBooking,
           originalImages,
@@ -69,10 +70,17 @@ export function BookingProvider({
     fetchPresignedUrls();
 
     return () => { isMounted = false; };
-  }, [subdomain.slug]); // Only depend on slug, like your Dashboard
+  }, [subdomain.slug]);
 
   return (
-    <BookingContext.Provider value={{ booking, subdomain, isLoading, error }}>
+    <BookingContext.Provider value={{ 
+      booking, 
+      subdomain, 
+      isLoading, 
+      error,
+      isShareDialogOpen,
+      setIsShareDialogOpen
+    }}>
       {children}
     </BookingContext.Provider>
   );
