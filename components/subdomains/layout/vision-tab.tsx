@@ -18,10 +18,12 @@ export default function VisionTab({ selectedMockup }: VisionTabProps) {
               alt="Design Vision"
               width={1200}
               height={800}
-              className="w-full h-auto object-cover"
+              className="w-full object-cover"
               priority
+              style={{ aspectRatio: "4/3" }}   // ← FIXED
             />
-            {/* Subtle Watermark */}
+
+            {/* Watermark */}
             <div
               className="absolute inset-0 pointer-events-none mix-blend-overlay"
               style={{
@@ -36,12 +38,13 @@ export default function VisionTab({ selectedMockup }: VisionTabProps) {
           </>
         </GlareHover>
 
-        {/* Image Meta Data Overlay */}
+        {/* Meta Overlay */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-12 flex justify-between items-end text-white">
           <div>
             <p className="text-xs font-medium uppercase tracking-widest text-white/70 mb-1">
               Color Palette
             </p>
+
             <div className="flex items-center gap-3">
               <div
                 className="w-4 h-4 rounded-full border border-white"
