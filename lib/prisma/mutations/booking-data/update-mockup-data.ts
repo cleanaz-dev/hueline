@@ -32,5 +32,14 @@ export async function updateMockupData(
     },
   });
 
+  const newPaintColor = await prisma.paintColor.create({
+    data: {
+      bookingData: {connect: {id: booking.id }},
+      hex: colorChoice.hex,
+      name: colorChoice.name,
+      ral: colorChoice.ral,
+    }
+  })
+
   return newMockup.id; // 🟢 Returns the specific Mockup ID
 }

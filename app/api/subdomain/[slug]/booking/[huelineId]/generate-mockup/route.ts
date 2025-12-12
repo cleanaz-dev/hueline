@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { updateMockupData } from "@/lib/prisma/mutations/booking-data";
 import { getOriginalImageUrl } from "@/lib/prisma/mutations/s3key";
 import { generateMockup } from "@/lib/replicate";
+import { getColorMatch } from "@/lib/utils/color-match-lambda";
 import { NextResponse } from "next/server";
 
 interface Params {
@@ -43,7 +44,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const color = currentColor[0];
 
-    if (!option || !color || !removeFurniture) {
+    if (!option || !color) {
       return NextResponse.json(
         {
           message: "Missing required fields",
@@ -57,16 +58,26 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
-    const { colorPrompt, colorChoice } = await getNewMockUpColorMoonshot(
-      color,
-      option
-    );
+    const { colorPrompt, colorChoice, extractedNewColor } =
+      await getNewMockUpColorMoonshot(color, option);
 
     // Generate mockup
     const mockupUrl = await generateMockup(
       colorPrompt,
       originalImageUrl,
       removeFurniture
+    );
+
+    const anchorHex = colorChoice.hex;
+
+    const safeMockupUrl = String(mockupUrl);
+
+    console.log("📦 Data for Color Match:", safeMockupUrl, anchorHex, extractedNewColor);
+
+    const { ral, name, hex } = await getColorMatch(
+      safeMockupUrl,
+      anchorHex,
+      extractedNewColor
     );
 
     const s3key = await handleNewS3Key({
@@ -76,10 +87,16 @@ export async function POST(req: Request, { params }: Params) {
       isMockup: true,
     });
 
+    const newColorChoice = {
+      ral,
+      name,
+      hex,
+    };
+
     const newMockupData = await updateMockupData(
       huelineId,
       s3key,
-      colorChoice,
+      newColorChoice,
       roomType
     );
 

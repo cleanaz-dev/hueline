@@ -33,7 +33,7 @@ export default function SubAlternateDesign({
   const [selectedOption, setSelectedOption] = useState("");
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [generateStatus, setGenerateStatus] = useState<"idle" | "generating" | "success" | "error">("idle");
-  const { setIsShareDialogOpen } = useBooking()
+  const { setIsShareDialogOpen, subdomain } = useBooking()
 
   const options = [
     { id: "brighter", icon: RiSunFill, label: "Brighter" },
@@ -57,7 +57,7 @@ export default function SubAlternateDesign({
 
     try {
       const response = await fetch(
-        `/api/booking/${booking.phone}/generate-mockup`,
+        `/api/subdomain/${subdomain.slug}/booking/${booking.huelineId}/generate-mockup`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -37,15 +37,6 @@ export default function SubShareProjectDialog({
   const [accessType, setAccessType] = useState<AccessType>("viewer");
   const [isLoading, setIsLoading] = useState(false);
 
-  const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
-useEffect(() => {
-  if (isShareDialogOpen && inputRef) {
-    // Only auto-focus on desktop (screen width > 768px)
-    if (window.innerWidth >= 768) {
-      inputRef.focus();
-    }
-  }
-}, [isShareDialogOpen, inputRef]);
 
   const addEmail = () => {
     setEmailError("");
@@ -219,7 +210,6 @@ useEffect(() => {
                 type="email"
                 placeholder="Enter email"
                 value={currentEmail}
-                ref={setInputRef}
                 onChange={(e) => {
                   setCurrentEmail(e.target.value);
                   setEmailError("");

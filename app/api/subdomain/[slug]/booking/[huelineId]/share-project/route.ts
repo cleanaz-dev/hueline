@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/config"; // Ensure correct path
-import { generatePin } from "@/lib/utils/id-generator"; // Ensure correct path
+import { authOptions } from "@/lib/auth/config";
+import { generatePin } from "@/lib/utils/id-generator";
 import { z } from "zod";
 import { sendShareProjectEmail } from "@/lib/resend/services";
 import { upsertSharedAccess } from "@/lib/prisma/mutations";
@@ -24,13 +24,21 @@ export async function POST(req: Request, { params }: Params) {
 
   try {
     // 1. 🔒 AUTH CHECK
-    // Only the Account Owner (SaaS User) or Super Admin can share
     const session = await getServerSession(authOptions);
     
-    const isOwner = session?.user?.subdomainSlug === slug;
-    const isSuperAdmin = session?.role === 'SUPER_ADMIN';
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    if (!isOwner && !isSuperAdmin) {
+    // Allow access if any of these conditions are true:
+    const isSuperAdmin = session.role === 'SUPER_ADMIN';
+    const isSubdomainOwner = session.user?.subdomainSlug === slug && session.role !== 'customer';
+    const isBookingOwner = 
+      session.role === 'customer' && 
+      session.user?.huelineId === huelineId && 
+      session.user?.accessLevel === 'owner';
+
+    if (!isSuperAdmin && !isSubdomainOwner && !isBookingOwner) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -55,7 +63,7 @@ export async function POST(req: Request, { params }: Params) {
       // A. Update DB (Upsert)
       const accessRecord = await upsertSharedAccess(huelineId, email, accessType, pin);
       
-      const shareUrl = generateSharedLink(slug,huelineId)
+      const shareUrl = generateSharedLink(slug, huelineId);
 
       // C. Send Email
       await sendShareProjectEmail({

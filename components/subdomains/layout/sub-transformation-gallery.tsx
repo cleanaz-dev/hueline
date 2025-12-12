@@ -1,15 +1,14 @@
 "use client";
-import { Eye, Sparkles, Maximize2, Palette } from "lucide-react";
-import Image from "next/image";
+import { Eye, Sparkles } from "lucide-react";
 import { useState } from "react";
-import GlareHover from "@/components/ui/glare-over/GlareHover";
-import SubComparisonSlider from "./sub-compare-slider";
 import SubAlternateDesign from "./sub-alternate-colors";
 import { BookingData } from "@/types/subdomain-type";
-import { Badge } from "@/components/ui/badge"; // Assuming shadcn, or use standard span
 import VisionTab from "./vision-tab";
 import CompareTab from "./compare-tab";
 import MiniThumbnails from "./mini-thumbnails";
+import ExportOptions from "./export-options";
+import ExportOptionsDialog from "./export-options-dialog";
+import { useBooking } from "@/context/booking-context";
 
 interface SubTransformationGalleryProps {
   booking: BookingData;
@@ -29,6 +28,8 @@ export default function SubTransformationGallery({
 
   // Ensure array format
   const originalImagesArray = [booking.originalImages];
+
+  const { isExportDialogOpen, setIsExportDialogOpen } = useBooking()
 
   return (
     <section className="w-full max-w-6xl mx-auto space-y-8 py-8">
@@ -108,7 +109,7 @@ export default function SubTransformationGallery({
       {/* 3. Thumbnails & Alternates (Below the Stage) */}
       <div className="">
         {/* Thumbnails */}
-        <div className="md:col-span-3">
+        <div className="flex justify-between">
           <MiniThumbnails
             activeTab={activeTab}
             originalImages={originalImagesArray}
@@ -118,10 +119,16 @@ export default function SubTransformationGallery({
             onOriginalSelect={setSelectedOriginalImage}
             onDesignSelect={setSelectedDesignImage}
           />
+          <ExportOptions />
         </div>
 
         {/* Alternate Design Link (Clean Sidebar) */}
         <div className="">
+          <ExportOptionsDialog
+            isOpen={isExportDialogOpen}
+            onClose={() => setIsExportDialogOpen(false)}
+            booking={booking}
+          />
           <SubAlternateDesign
             booking={booking}
             hasGeneratedImage={hasGeneratedImage}

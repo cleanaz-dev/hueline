@@ -10,6 +10,8 @@ interface BookingContextType {
   error: string | null;
   isShareDialogOpen: boolean;
   setIsShareDialogOpen: (open: boolean) => void;
+  isExportDialogOpen: boolean;
+  setIsExportDialogOpen: (open: boolean) => void;
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -27,6 +29,7 @@ export function BookingProvider({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -79,7 +82,9 @@ export function BookingProvider({
       isLoading, 
       error,
       isShareDialogOpen,
-      setIsShareDialogOpen
+      setIsShareDialogOpen,
+      isExportDialogOpen,
+      setIsExportDialogOpen
     }}>
       {children}
     </BookingContext.Provider>

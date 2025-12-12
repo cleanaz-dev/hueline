@@ -6,7 +6,7 @@ import {
   subWeeks, 
   startOfMonth, 
   endOfMonth, 
-  subMonths 
+  subMonths
 } from "date-fns";
 
 export async function mutateDashboardStats(slug: string): Promise<DashboardStats> {
@@ -31,7 +31,6 @@ export async function mutateDashboardStats(slug: string): Promise<DashboardStats
   // --- 1. Weekly Stats & Trend ---
   const thisWeekStart = startOfWeek(now);
   
-  // Previous week window
   const lastWeekStart = startOfWeek(subWeeks(now, 1));
   const lastWeekEnd = endOfWeek(subWeeks(now, 1));
 
@@ -46,7 +45,6 @@ export async function mutateDashboardStats(slug: string): Promise<DashboardStats
   // --- 2. Monthly Stats & Trend ---
   const thisMonthStart = startOfMonth(now);
   
-  // Previous month window
   const lastMonthStart = startOfMonth(subMonths(now, 1));
   const lastMonthEnd = endOfMonth(subMonths(now, 1));
 
@@ -58,29 +56,51 @@ export async function mutateDashboardStats(slug: string): Promise<DashboardStats
     b => b.createdAt >= lastMonthStart && b.createdAt <= lastMonthEnd
   ).length;
 
-  // --- 3. Peak Hour Logic (Unchanged) ---
-  const hours = allBookings.map(b => b.createdAt.getHours());
+  // --- 3. Peak Hour Logic (FIXED) ---
+  // Get bookings from this month to find the busiest hour of day
+  const thisMonthBookings = allBookings.filter(
+    b => b.createdAt >= thisMonthStart
+  );
+
+  // Count calls by hour of day (0-23) across all days this month
   const hourCounts: Record<number, number> = {};
-  hours.forEach(h => {
-    hourCounts[h] = (hourCounts[h] || 0) + 1;
+  
+  thisMonthBookings.forEach(booking => {
+    const hour = booking.createdAt.getHours();
+    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
   });
-  
-  const peakHourNum = Number(Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 0);
-  
-  // Format to 12-hour with AM/PM
-  const period = peakHourNum >= 12 ? 'PM' : 'AM';
-  const displayHour = peakHourNum === 0 ? 12 : peakHourNum > 12 ? peakHourNum - 12 : peakHourNum;
-  const peakHour = `${displayHour}:00 ${period}`;
+
+  // Find the hour with the most calls
+  let peakHourNum = 0;
+  let maxCalls = 0;
+
+  Object.entries(hourCounts).forEach(([hour, count]) => {
+    if (count > maxCalls) {
+      maxCalls = count;
+      peakHourNum = parseInt(hour);
+    }
+  });
+
+  // Format the peak hour as an interval (e.g., "1 PM - 2 PM")
+  let peakHour = "N/A";
+  if (maxCalls > 0) {
+    const startPeriod = peakHourNum >= 12 ? 'PM' : 'AM';
+    const startDisplayHour = peakHourNum === 0 ? 12 : peakHourNum > 12 ? peakHourNum - 12 : peakHourNum;
+    
+    const endHourNum = (peakHourNum + 1) % 24; // Next hour (wraps at midnight)
+    const endPeriod = endHourNum >= 12 ? 'PM' : 'AM';
+    const endDisplayHour = endHourNum === 0 ? 12 : endHourNum > 12 ? endHourNum - 12 : endHourNum;
+    
+    peakHour = `${startDisplayHour} ${startPeriod} - ${endDisplayHour} ${endPeriod}`;
+  }
 
   // --- 4. Helper for Percentage Math ---
   const calculateTrend = (current: number, previous: number) => {
     if (previous === 0) {
-      // If we have current calls but 0 previous, it's a 100% increase (or technically infinite)
       return current > 0 ? 100 : 0;
     }
-    // Calculate percentage difference
     const percent = ((current - previous) / previous) * 100;
-    return Math.round(percent); // Return round number, e.g., 12 not 12.435
+    return Math.round(percent);
   };
 
   return {
@@ -91,7 +111,5 @@ export async function mutateDashboardStats(slug: string): Promise<DashboardStats
     callsThisMonthTrend: calculateTrend(callsThisMonth, callsLastMonth),
     
     peakHour,
-    // Peak hour usually doesn't have a numeric "trend", 
-    // but you could return the total calls during that hour if you wanted.
   };
 }

@@ -17,7 +17,7 @@ export default async function Page({ params }: Params) {
   await verifySubdomainOwner(slug);
 
   const subDomainData = await getSubDomainData(slug);
-    console.log("📦 Domain Data:", subDomainData)
+ 
 
   // ✅ HANDLE NULL CASE
   if (!subDomainData) notFound()

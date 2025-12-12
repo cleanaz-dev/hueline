@@ -14,6 +14,7 @@ export async function getNewMockUpColorMoonshot(
 ) {
   const mainHue = extractMainHue(color.name);
 
+
   let color_map = null;
   // Determine which color map to use
   if (option === "trendy") {
@@ -57,9 +58,11 @@ export async function getNewMockUpColorMoonshot(
       throw new Error();
     }
 
+    const extractedNewColor = colorChoice.name.split(" ").pop();
+
     const colorPrompt = `Apply color: ${colorChoice.hex} to the walls of room`;
 
-    return { colorPrompt, colorChoice };
+    return { colorPrompt, colorChoice, extractedNewColor };
   } catch (error) {
     console.error("Error getting color from Moonshot:", error);
     throw error;

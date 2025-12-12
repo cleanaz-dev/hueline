@@ -14,10 +14,20 @@ export default function SubComparisonSlider({
   watermarkUrl = "https://res.cloudinary.com/dmllgn0t7/image/upload/v1760933379/new-watermark.png",
   autoSlide = true,
 }: ComparisonSlider) {
-  const [position, setPosition] = useState(100); // Start at 100 (right side)
+  const [position, setPosition] = useState(100);
   const [isDragging, setIsDragging] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
+  const [currentTransitionDuration, setCurrentTransitionDuration] = useState(1200);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // ===== CENTRALIZED TIMING CONTROL =====
+  const TIMING = {
+    initialDelay: 1200,           // Delay before animation starts
+    slideToLeftDuration: 2000,    // Duration of slide from right to left
+    pauseAtLeft: 5000,            // How long to pause at left side
+    slideToMiddleDuration: 1200,  // Duration of slide from left to middle
+  };
+  // ======================================
 
   // Auto-slide animation on scroll into view
   useEffect(() => {
@@ -28,12 +38,22 @@ export default function SubComparisonSlider({
         if (entries[0].isIntersecting && !hasAnimated) {
           setHasAnimated(true);
 
+          // Step 1: Wait initial delay
           setTimeout(() => {
+            // Step 2: Slide to left with its own duration
+            setCurrentTransitionDuration(TIMING.slideToLeftDuration);
             setPosition(0);
+            
+            // Step 3: Wait for slide to complete
             setTimeout(() => {
-              setPosition(50);
-            }, 6000); // Increased from 3000 to 5000 (much slower slide)
-          }, 500); // Increased from 500 to 800 (longer pause before starting)
+              // Step 4: Pause at left (no transition during pause)
+              setTimeout(() => {
+                // Step 5: Slide back to middle with its own duration
+                setCurrentTransitionDuration(TIMING.slideToMiddleDuration);
+                setPosition(50);
+              }, TIMING.pauseAtLeft);
+            }, TIMING.slideToLeftDuration);
+          }, TIMING.initialDelay);
         }
       },
       { threshold: 0.3 }
@@ -126,7 +146,7 @@ export default function SubComparisonSlider({
           className="absolute inset-0 transition-all"
           style={{
             clipPath: `inset(0 ${100 - position}% 0 0)`,
-            transitionDuration: isDragging ? "0ms" : "1200ms",
+            transitionDuration: isDragging ? "0ms" : `${currentTransitionDuration}ms`,
             transitionTimingFunction: "ease-in-out",
           }}
         >
@@ -158,7 +178,7 @@ export default function SubComparisonSlider({
           className="absolute top-0 bottom-0 w-1 bg-white shadow-lg transition-all cursor-ew-resize z-10"
           style={{
             left: `${position}%`,
-            transitionDuration: isDragging ? "0ms" : "1200ms",
+            transitionDuration: isDragging ? "0ms" : `${currentTransitionDuration}ms`,
             transitionTimingFunction: "ease-in-out",
           }}
         >
