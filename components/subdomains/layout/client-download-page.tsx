@@ -2,7 +2,6 @@
 "use client";
 
 import { useBooking } from "@/context/booking-context";
-import { getPublicUrl } from "@/lib/aws/cdn";
 import {
   Download,
   CheckCircle,
@@ -10,8 +9,8 @@ import {
   XCircle,
   FileArchive,
 } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
+import { format, formatDistanceToNow } from "date-fns";
 import type { Export } from "@/types/subdomain-type";
 import SubdomainNav from "./subdomain-nav";
 
@@ -30,7 +29,6 @@ export default function ClientDownloadPage() {
     }
   };
 
-  const logoSrc = getPublicUrl(subdomain?.logo) || "/placeholder.png";
   const exports: Export[] = booking?.exports || [];
 
   const getStatusBadge = (status: string) => {
@@ -61,21 +59,11 @@ export default function ClientDownloadPage() {
     }
   };
 
-  const formatSimpleDate = (date?: Date | string | null) => {
+  const formatDate = (date?: Date | string | null) => {
     if (!date) return "N/A";
-
     try {
       const dateObj = date instanceof Date ? date : new Date(date);
-
-      if (isNaN(dateObj.getTime())) {
-        return "Invalid date";
-      }
-
-      return dateObj.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
+      return format(dateObj, "MMM d, yyyy");
     } catch {
       return "Invalid date";
     }
@@ -83,45 +71,21 @@ export default function ClientDownloadPage() {
 
   const formatTime = (date?: Date | string | null) => {
     if (!date) return "";
-
     try {
       const dateObj = date instanceof Date ? date : new Date(date);
-
-      if (isNaN(dateObj.getTime())) {
-        return "";
-      }
-
-      return dateObj.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      });
+      return format(dateObj, "h:mm a");
     } catch {
       return "";
     }
   };
 
-  const formatRelativeTime = (date?: Date | string | null) => {
+  const formatTimeAgo = (date?: Date | string | null) => {
     if (!date) return "N/A";
-
     try {
       const dateObj = date instanceof Date ? date : new Date(date);
-      const now = new Date();
-      const diffMs = now.getTime() - dateObj.getTime();
-      const diffMins = Math.floor(diffMs / (1000 * 60));
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-      if (diffMins < 1) return "Just now";
-      if (diffMins < 60) return `${diffMins} min ago`;
-      if (diffHours < 24)
-        return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
-      if (diffDays < 7)
-        return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
-
-      return formatSimpleDate(dateObj);
-    } catch (error) {
-      return formatSimpleDate(date);
+      return formatDistanceToNow(dateObj, { addSuffix: true });
+    } catch {
+      return "N/A";
     }
   };
 
@@ -199,7 +163,7 @@ export default function ClientDownloadPage() {
                         <span>{exportItem.imageCount || 0} images</span>
                         <span className="text-gray-300">•</span>
                         <span>
-                          {formatSimpleDate(exportItem.createdAt)}
+                          {formatDate(exportItem.createdAt)}
                           {exportItem.createdAt && (
                             <span className="ml-1 text-gray-500">
                               at {formatTime(exportItem.createdAt)}
@@ -209,12 +173,8 @@ export default function ClientDownloadPage() {
                         {exportItem.completedAt && (
                           <>
                             <span className="text-gray-300">•</span>
-                            <span
-                              title="Completion time"
-                              className="text-green-600"
-                            >
-                              Completed:{" "}
-                              {formatRelativeTime(exportItem.completedAt)}
+                            <span className="text-green-600">
+                              {formatTimeAgo(exportItem.completedAt)}
                             </span>
                           </>
                         )}
