@@ -5,31 +5,29 @@ import { authOptions } from "../config";
 export async function verifySubdomainOwner(requestedSlug: string) {
   const session = await getServerSession(authOptions);
 
-  // 1. Not logged in? -> Redirect to Login
+  const appLoginUrl = process.env.NODE_ENV === 'production'
+    ? 'https://hue-line.com/login'
+    : 'http://localhost:3000/login';
+
+  // 1. Not logged in? -> Redirect to main app login
   if (!session || !session.user) {
-    // ✅ FIX: Redirect back to the ROOT of the subdomain, not /slug
-    // This ensures they land on "demo.hueline.com/" after login
-    redirect(`/login?callbackUrl=/`);
+    redirect(appLoginUrl);
   }
 
-  // 2. Is this a Customer (Booking Viewer)?
+  // 2. Super admin can access everything
+  if (session.role === "SUPER_ADMIN") {
+    return session;
+  }
+
+  // 3. Customer? -> Redirect to main app login
   if (session.role === "customer") {
-    notFound(); 
+    redirect(appLoginUrl);
   }
 
-  // 3. Is this a Partner accessing the wrong subdomain?
-  const isSaasUser = session.role !== "customer";
-  const hasAccessToSubdomain = session.user.subdomainSlug === requestedSlug;
-
-  if (!isSaasUser || !hasAccessToSubdomain) {
-    console.warn(`⛔ Access Denied`);
-    
-    // If they have their OWN subdomain, send them there
-    if (session.user.subdomainSlug) {
-       redirect(`/${session.user.subdomainSlug}`); // Redirect to THEIR dashboard
-    }
-
-    notFound(); 
+  // 4. Wrong subdomain? -> Redirect to main app login
+  if (session.user.subdomainSlug !== requestedSlug) {
+    console.warn(`⛔ Access Denied - wrong subdomain`);
+    redirect(appLoginUrl);
   }
 
   return session;
