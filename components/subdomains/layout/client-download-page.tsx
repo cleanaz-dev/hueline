@@ -83,7 +83,7 @@ export default function ClientDownloadPage() {
     if (!date) return "N/A";
     try {
       const dateObj = date instanceof Date ? date : new Date(date);
-      return formatDistanceToNow(dateObj, { addSuffix: true });
+      return formatDistanceToNow(dateObj);
     } catch {
       return "N/A";
     }
@@ -174,7 +174,7 @@ export default function ClientDownloadPage() {
                           <>
                             <span className="text-gray-300">•</span>
                             <span className="text-green-600">
-                              {formatTimeAgo(exportItem.completedAt)}
+                              {formatTimeAgo(exportItem.completedAt)}{""} ago
                             </span>
                           </>
                         )}
