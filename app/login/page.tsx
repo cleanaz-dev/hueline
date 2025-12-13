@@ -167,7 +167,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => { setLoginMethod("client"); setError(""); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${
               loginMethod === "client" 
                 ? "bg-white text-gray-900 shadow-sm ring-1 ring-black/5" 
                 : "text-gray-500 hover:text-gray-700"
@@ -179,7 +179,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => { setLoginMethod("partner"); setError(""); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${
               loginMethod === "partner" 
                 ? "bg-white text-gray-900 shadow-sm ring-1 ring-black/5" 
                 : "text-gray-500 hover:text-gray-700"
@@ -240,7 +240,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 disabled:opacity-70 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2 mt-2 shadow-lg shadow-gray-200"
+                className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 disabled:opacity-70 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2 mt-2 shadow-lg shadow-gray-200 cursor-pointer"
               >
                 {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Sign In"}
               </button>
@@ -282,7 +282,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 disabled:opacity-70 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2 mt-2 shadow-lg shadow-gray-200"
+                className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 disabled:opacity-70 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2 mt-2 shadow-lg shadow-gray-200 cursor-pointer"
               >
                 {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Access Project"}
               </button>
