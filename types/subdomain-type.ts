@@ -52,6 +52,19 @@ export interface BookingData {
   paintColors: PaintColor[];
   alternateColors: AlternateColor[];
   sharedAccess: SharedAccess[];
+  exports: Export[]
+}
+
+export interface Export {
+  id: string;
+  jobId: string;
+  bookingId: string;
+  resolution: string;
+  imageCount: number;
+  status: string;
+  downloadUrl?: string | null;
+  createdAt: Date;
+  completedAt?: Date | null;
 }
 
 export interface Mockup {

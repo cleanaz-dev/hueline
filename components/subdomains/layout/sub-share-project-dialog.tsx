@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { X, Send, Eye, Edit, Info } from "lucide-react";
+import { X, Send, Eye, Edit, Info, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { useBooking } from "@/context/booking-context";
 
@@ -123,7 +123,8 @@ export default function SubShareProjectDialog({
     <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Share Project
+          <span className="hidden md:block">Share Project</span>
+          <span className="block md:hidden"><Share2 /></span>
         </Button>
       </DialogTrigger>
 

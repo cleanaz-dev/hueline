@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { BsBadge8K, BsBadge4K } from "react-icons/bs";
+import { IconType } from "react-icons";
 import Image from "next/image";
 import { BookingData } from "@/types/subdomain-type";
 import { useBooking } from "@/context/booking-context";
@@ -15,13 +16,37 @@ interface ExportOptionsDialogProps {
   booking: BookingData;
 }
 
+type Resolution = "4k" | "8k";
+
+interface ResolutionOption {
+  value: Resolution;
+  label: string;
+  dimensions: string;
+  icon: IconType;
+}
+
+const RESOLUTION_OPTIONS: ResolutionOption[] = [
+  {
+    value: "4k",
+    label: "4K",
+    dimensions: "3840 × 2160",
+    icon: BsBadge4K,
+  },
+  {
+    value: "8k",
+    label: "8K",
+    dimensions: "7680 × 4320",
+    icon: BsBadge8K,
+  },
+];
+
 export default function ExportOptionsDialog({
   isOpen,
   onClose,
   booking,
 }: ExportOptionsDialogProps) {
   const [selectedImages, setSelectedImages] = useState<number[]>([]);
-  const [resolution, setResolution] = useState<"4k" | "8k">("4k");
+  const [resolution, setResolution] = useState<Resolution>("4k");
   const [isExporting, setIsExporting] = useState<boolean>(false);
 
   const mockupUrls = booking.mockups || [];
@@ -82,6 +107,7 @@ export default function ExportOptionsDialog({
       setIsExporting(false);
     }
   };
+
   if (!isOpen) return null;
 
   return (
@@ -110,7 +136,7 @@ export default function ExportOptionsDialog({
               <button
                 key={i}
                 onClick={() => toggleImageSelection(i)}
-                className={`relative aspect-square rounded-xl overflow-hidden transition-all ${
+                className={`relative aspect-square rounded-xl overflow-hidden transition-all cursor-pointer ${
                   selectedImages.includes(i)
                     ? "ring-4 ring-primary ring-offset-2"
                     : "ring-1 ring-gray-200 hover:ring-gray-300"
@@ -142,49 +168,39 @@ export default function ExportOptionsDialog({
             <label className="text-sm font-semibold text-gray-700">
               Resolution
             </label>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setResolution("4k")}
-                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                  resolution === "4k"
-                    ? "border-primary bg-primary/5"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <BsBadge4K className="w-8 h-8 text-gray-600" />
-                <div className="text-left">
-                  <div className="font-bold text-gray-900">4K</div>
-                  <div className="text-xs text-gray-500">3840 × 2160</div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => setResolution("8k")}
-                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                  resolution === "8k"
-                    ? "border-primary bg-primary/5"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <BsBadge8K className="w-8 h-8 text-gray-600" />
-                <div className="text-left">
-                  <div className="font-bold text-gray-900">8K</div>
-                  <div className="text-xs text-gray-500">7680 × 4320</div>
-                </div>
-              </button>
+            <div className="flex gap-3 md:gap-10">
+              {RESOLUTION_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => setResolution(option.value)}
+                    className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      resolution === option.value
+                        ? "border-primary bg-primary/5"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <Icon className="size-8 md:size-12 text-gray-600" />
+                    <div className="text-left">
+                      <div className="font-bold text-gray-900">
+                        {option.label}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {option.dimensions}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="p-6 border-t bg-gray-50 flex justify-end">
-        
           <div className="flex gap-3">
-            <Button
-              onClick={onClose}
-              size="lg"
-              variant="outline"
-            >
+            <Button onClick={onClose} size="lg" variant="outline">
               Cancel
             </Button>
             <Button

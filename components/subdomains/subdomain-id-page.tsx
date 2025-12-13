@@ -27,7 +27,7 @@ export default function SubDomainIdPage({ booking, subdomain }: Props) {
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
         
         {/* Navigation */}
-        <SubdomainNav data={subdomain}/>
+        <SubdomainNav data={subdomain} miniNav={true} />
 
         <main className="max-w-6xl mx-auto px-2 md:px-12 space-y-12 py-4 md:py-8">
           {/* Hero Section */}

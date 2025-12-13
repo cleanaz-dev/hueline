@@ -14,7 +14,7 @@ export async function GET(req: Request, { params }: Params) {
     const { slug } = await params;
     
     const stats = await mutateDashboardStats(slug);
-    console.log("🔢 Stats:", stats)
+    // console.log("🔢 Stats:", stats)
     
     return NextResponse.json(stats, { status: 200 });
   } catch (error) {

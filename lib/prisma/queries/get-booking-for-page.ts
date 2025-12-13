@@ -20,7 +20,9 @@ export async function getBookingForPage(huelineId: string, slug: string) {
         alternateColors: true,
         sharedAccess: true,
         paintColors: true,
+        exports: true
       },
+
     });
 
     // Handle broken relations gracefully

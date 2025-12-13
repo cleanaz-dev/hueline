@@ -11,7 +11,7 @@ export default function DashboardContent() {
   
   return (
     <div className="min-h-screen pb-20">
-      <SubdomainNav data={subdomain} />
+      <SubdomainNav data={subdomain} miniNav={false} />
       <StatCards stats={stats} isLoading={isStatsLoading} />
       <ClientTable />
     </div>

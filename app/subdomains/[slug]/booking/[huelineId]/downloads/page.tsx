@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation"
-import ClientDownloadPage from "./client-download-page"
 import { getExportDataRedis } from "@/lib/redis/services/sub-domain/get-export-data"
+import { UpdateJobIdData } from "@/lib/prisma/mutations/export-data/update-job-id-data"
+import ClientDownloadPage from "@/components/subdomains/layout/client-download-page"
 
-// Fix 1: Correct interface with searchParams as a separate prop
 interface PageProps {
   params: Promise<{
     slug: string
@@ -10,22 +10,33 @@ interface PageProps {
   }>
   searchParams: Promise<{
     jobId?: string
-    // Add other expected search params here
   }>
 }
 
-// Fix 2: Receive both params and searchParams as props (no hooks)
 export default async function Page({ params, searchParams }: PageProps) {
-  // Fix 3: Await both params and searchParams (they're Promises in Next.js 15+)
   const { slug, huelineId } = await params
   const { jobId } = await searchParams
 
-  console.log("dls:", slug, huelineId, jobId)
+  if (!slug || !huelineId) return notFound()
 
-  // Fix 4: Proper validation (use || instead of && for required fields)
-  if (!slug || !huelineId || !jobId) return notFound()
+  // If there's a jobId in the URL (from SMS), check Redis and update DB
+  if (jobId) {
+    const data = await getExportDataRedis(jobId)
 
-  const data = await getExportDataRedis(jobId)
+    if (data && data.status === "complete") {
+      await UpdateJobIdData({
+        jobId,
+        status: data.status,
+        downloadUrl: data.download_url,
+        completedAt: data.completed_at ? new Date(data.completed_at) : new Date(),
+      })
+    }
+  }
 
-  return <ClientDownloadPage data={data} />
+  return (
+    <div>
+      <ClientDownloadPage />
+   
+    </div>
+  )
 }

@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { getPresignedUrl } from "@/lib/aws/s3";
 import { prisma } from "@/lib/prisma";
+import { SaveJobIdData } from "@/lib/prisma/mutations/export-data/save-job-id-data";
 
 interface Params {
   params: Promise<{
@@ -35,17 +36,18 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const subdomain = await prisma.subdomain.findUnique({
-      where: {slug},
+      where: { slug },
       select: {
-        twilioPhoneNumber: true
-      }
-    })
+        twilioPhoneNumber: true,
+        id: true,
+      },
+    });
 
-    if(!subdomain) {
+    if (!subdomain) {
       return NextResponse.json(
-       { error: "Invalid Data Requst" },
+        { error: "Invalid Data Requst" },
         { status: 400 }
-      )
+      );
     }
 
     // 4. Call Lambda
@@ -53,12 +55,13 @@ export async function POST(req: Request, { params }: Params) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        subdomain_id: subdomain.id,
         slug,
         hueline_id: huelineId,
         image_keys: imageKeys,
         resolution,
         phone,
-        twilio_from: subdomain.twilioPhoneNumber
+        twilio_from: subdomain.twilioPhoneNumber,
       }),
     });
     if (!lambdaResponse.ok) {
@@ -66,6 +69,17 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const { job_id } = await lambdaResponse.json();
+    console.log("Job Id:", job_id);
+
+    const jobIdData = {
+      jobId: job_id,
+      huelineId,
+      resolution,
+      imageKeys: imageKeys.length, // Fixed
+      status: "processing",
+    };
+
+    await SaveJobIdData(jobIdData);
 
     return NextResponse.json({
       success: true,

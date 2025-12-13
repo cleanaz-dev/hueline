@@ -1,5 +1,5 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Clock, User2, Calendar, Share2, Sparkles, Timer } from "lucide-react";
+import { Clock, User2, Calendar, Share2, Sparkles, Timer, IdCard, Info, Phone } from "lucide-react";
 import Image from "next/image";
 import PaletteImage from "@/public/images/bucket-no-bg.png";
 import SubShareProjectDialog from "./sub-share-project-dialog";
@@ -63,6 +63,12 @@ export function SubBookingHero({ booking, formatTime, slug }: BookingHeroProps) 
                 value={booking.name} 
               />
               <DetailItem 
+              icon={Phone}
+              label="Phone"
+              value={booking.phone}
+              
+              />
+              <DetailItem 
                 icon={Calendar} 
                 label="Date" 
                 value={booking.dateTime.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric'})} 
@@ -71,6 +77,11 @@ export function SubBookingHero({ booking, formatTime, slug }: BookingHeroProps) 
                 icon={Clock} 
                 label="Duration" 
                 value={formatTime(booking.callDuration)} 
+              />
+              <DetailItem 
+                icon={Info}
+                label="ID"
+                value={booking.huelineId}
               />
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2 text-xs font-medium text-gray-400 uppercase">

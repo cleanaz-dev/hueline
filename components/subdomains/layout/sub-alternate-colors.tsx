@@ -114,7 +114,7 @@ export default function SubAlternateDesign({
   // 2. COMPLETED VIEW (Already Generated)
   if (hasGeneratedImage) {
     return (
-      <div className="h-full min-h-[250px] bg-green-50/50 rounded-xl border border-green-100 flex flex-col items-center justify-center p-6 text-center">
+      <div className="h-full min-h-[200px] bg-card rounded-xl border border-green-100 flex flex-col items-center justify-center p-6 text-center">
         <div className="bg-white p-3 rounded-full shadow-sm mb-3">
           <CheckCircle2 className="w-8 h-8 text-green-600" />
         </div>
@@ -180,7 +180,7 @@ export default function SubAlternateDesign({
           key={option.id}
           onClick={() => handleSelectOption(option.id)}
           className={cn(
-            "relative flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200",
+            "relative flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 cursor-pointer",
             isSelected
               ? "border-primary bg-primary/5 text-primary shadow-sm"
               : "border-gray-100 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
