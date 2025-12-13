@@ -32,6 +32,7 @@ export async function getSubDomainData(slug: string) {
           paintColors: true,
           alternateColors: true,
           sharedAccess: true,
+          exports: true,
         }
       },
       
