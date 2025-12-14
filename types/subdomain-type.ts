@@ -1,3 +1,5 @@
+//types/subdomain-type.ts
+
 import { Call } from "./call-intelligence-types";
 
 export interface SubdomainAccountData {

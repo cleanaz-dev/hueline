@@ -1,13 +1,10 @@
 // call-intelligence-types.ts
 
-export enum CallReason {
-  NEW_PROJECT = 'NEW_PROJECT',
-  STATUS_UPDATE = 'STATUS_UPDATE',
-  COLOR_CHANGE = 'COLOR_CHANGE',
-  PRICING = 'PRICING',
-  FOLLOW_UP = 'FOLLOW_UP',
-  OTHER = 'OTHER'
-}
+import { CallReason } from "@/app/generated/prisma";
+
+
+
+
 
 export interface Call {
   id: string;
@@ -17,15 +14,15 @@ export interface Call {
   audioUrl: string | null;
   duration: string | null;
   status: string | null;
-  intelligence?: CallIntelligence | null; // Add ? here
+  intelligence?: CallIntelligence | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface CallIntelligence {
   id: string;
-  callId: string; // Changed from bookingDataId
-  callReason: CallReason;
+  callId: string;
+  callReason: CallReason; // Now using Prisma's enum
   hiddenNeedsFound: boolean;
   surfacePrepNeeds: boolean;
   structuralNeeds: boolean;
@@ -36,7 +33,7 @@ export interface CallIntelligence {
 }
 
 export interface CallAnalysisResult {
-  callReason: CallReason;
+  callReason: CallReason; // Now using Prisma's enum
   hiddenNeedsFound: boolean;
   surfacePrepNeeds: boolean;
   structuralNeeds: boolean;

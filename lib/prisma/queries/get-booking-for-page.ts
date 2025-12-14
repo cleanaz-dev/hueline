@@ -16,6 +16,11 @@ export async function getBookingForPage(huelineId: string, slug: string) {
             users: true
           }
         },
+        calls: {
+          include: {
+            intelligence: true,
+          }
+        },
         mockups: true,
         alternateColors: true,
         sharedAccess: true,
