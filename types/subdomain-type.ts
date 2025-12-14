@@ -1,7 +1,6 @@
-//types/subdomain-type.ts
+import { Call } from "./call-intelligence-types";
 
 export interface SubdomainAccountData {
-  // --- Identity ---
   id: string;
   slug: string;
   companyName: string | null;
@@ -13,20 +12,16 @@ export interface SubdomainAccountData {
   theme: any | null;
   active: boolean;
 
-  // --- SaaS Infrastructure (New Fields) ---
   twilioPhoneNumber: string | null;
   forwardingNumber: string | null;
   
-  // --- Billing ---
-  stripeCustomerId?: string | null; // Optional: Keep private if possible
-  planStatus: string; // 'active', 'past_due'
-  planName: string;   // 'Professional'
-  currentPeriodEnd: Date | string | null; // String when coming from API JSON
+  stripeCustomerId?: string | null;
+  planStatus: string;
+  planName: string;
+  currentPeriodEnd: Date | string | null;
 
-  // --- Relations ---
   users: SubdomainUser[];
   
-  // --- Timestamps ---
   createdAt: Date | string;
   updatedAt: Date | string | null;
 }
@@ -38,21 +33,20 @@ export interface BookingData {
   huelineId: string;
   roomType: string;
   prompt: string;
-  audioUrl:string | null
   originalImages: string;
   summary: string;
-  callDuration: string | null;
   dimensions: string | null;
   dateTime: Date;
   pin: string;
   expiresAt: number;
   createdAt: Date;
-  updatedAt: Date | null;
+  updatedAt: Date;
   mockups: Mockup[];
   paintColors: PaintColor[];
   alternateColors: AlternateColor[];
   sharedAccess: SharedAccess[];
-  exports: Export[]
+  exports: Export[];
+  calls: Call[]; // NEW
 }
 
 export interface Export {
@@ -107,5 +101,5 @@ export interface SubdomainUser {
   name: string | null;
   email: string;
   role: string;
-  imageUrl?: string | null; // Optional if you have avatars
+  imageUrl?: string | null;
 }

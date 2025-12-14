@@ -15,7 +15,6 @@ export async function getSubDomainData(slug: string) {
       theme: true,
       active: true,
       
-      // Add these missing fields:
       twilioPhoneNumber: true,
       forwardingNumber: true,
       planStatus: true,
@@ -32,11 +31,25 @@ export async function getSubDomainData(slug: string) {
           paintColors: true,
           alternateColors: true,
           sharedAccess: true,
-          exports: true,
+          exports: {
+            orderBy: {
+              createdAt: 'desc'
+            }
+          },
+          calls: {
+            include: {
+              intelligence: true
+            },
+            orderBy: {
+              createdAt: 'desc'
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
         }
       },
       
-      // Add users relation:
       users: {
         select: {
           id: true,

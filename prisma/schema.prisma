@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../app/generated/prisma"
@@ -78,24 +75,14 @@ model Subdomain {
   theme        Json?
   active       Boolean @default(true)
 
-  // 1. Telephony (The numbers displayed in the Settings -> General tab)
-  twilioPhoneNumber String? // The number you bought them (e.g. +1555...)
-  forwardingNumber  String? // Where calls actually go (e.g. +1416...)
+  twilioPhoneNumber String?
+  forwardingNumber  String?
 
-  // 2. Billing (For the Settings -> Billing tab)
-  // We store these to generate Portal Links and show status
   stripeCustomerId     String?
   stripeSubscriptionId String?
-
-  // "active", "past_due", "canceled", "trialing"
-  planStatus String @default("active")
-
-  // "Professional", "Enterprise", "Starter"
-  planName String @default("Professional")
-
-  // To show "Renews on Dec 22"
-  currentPeriodEnd DateTime?
-  // --------------------------------------------------------
+  planStatus           String    @default("active")
+  planName             String    @default("Professional")
+  currentPeriodEnd     DateTime?
 
   createdAt DateTime         @default(now())
   updatedAt DateTime?        @updatedAt
@@ -110,12 +97,8 @@ model SubdomainUser {
   name         String?
   passwordHash String
   imageUrl     String?
+  role         String  @default("MEMBER")
 
-  // ✅ NEW: Role management (OWNER, ADMIN, MEMBER)
-  role String @default("MEMBER")
-
-  // ✅ NEW: Link to the Subdomain via ID (Not Unique!)
-  // This allows multiple users to have the same subdomainId
   subdomainId String    @db.ObjectId
   subdomain   Subdomain @relation(fields: [subdomainId], references: [id])
 
@@ -135,8 +118,6 @@ model SubBookingData {
   prompt         String
   originalImages String
   summary        String
-  audioUrl       String?
-  callDuration   String?
   dimensions     String?
   dateTime       DateTime
   pin            String
@@ -147,9 +128,49 @@ model SubBookingData {
   alternateColors AlternateColor[]
   sharedAccess    SharedAccess[]
   exports         Export[]
+  calls           Call[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Call {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  bookingDataId String         @db.ObjectId
+  bookingData   SubBookingData @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
+
+  callSid      String  @unique
+  recordingSid String?
+  audioUrl     String?
+  duration     String?
+  status       String?
+
+  intelligence CallIntelligence?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([bookingDataId])
+}
+
+model CallIntelligence {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  callId String @unique @db.ObjectId
+  call   Call   @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  callReason               CallReason @default(NEW_PROJECT)
+  hiddenNeedsFound         Boolean    @default(false)
+  surfacePrepNeeds         Boolean    @default(false)
+  structuralNeeds          Boolean    @default(false)
+  technicalNeeds           Boolean    @default(false)
+  estimatedAdditionalValue Float      @default(0)
+  projectScope             String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([callReason])
+  @@index([hiddenNeedsFound])
 }
 
 model Export {
@@ -164,6 +185,8 @@ model Export {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   completedAt DateTime?
+
+  @@index([bookingId])
 }
 
 model Mockup {
@@ -179,6 +202,8 @@ model Mockup {
   colorHex     String
 
   createdAt DateTime @default(now())
+
+  @@index([bookingDataId])
 }
 
 model PaintColor {
@@ -191,6 +216,8 @@ model PaintColor {
   hex  String
 
   createdAt DateTime @default(now())
+
+  @@index([bookingDataId])
 }
 
 model AlternateColor {
@@ -203,6 +230,8 @@ model AlternateColor {
   hex  String
 
   createdAt DateTime @default(now())
+
+  @@index([bookingDataId])
 }
 
 model SharedAccess {
@@ -215,4 +244,15 @@ model SharedAccess {
   pin        String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([bookingDataId])
+}
+
+enum CallReason {
+  NEW_PROJECT
+  STATUS_UPDATE
+  COLOR_CHANGE
+  PRICING
+  FOLLOW_UP
+  OTHER
 }

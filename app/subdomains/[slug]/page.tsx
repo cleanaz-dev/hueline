@@ -3,6 +3,7 @@ import { verifySubdomainOwner } from "@/lib/auth";
 import { checkSubdomainExists } from "@/lib/auth/guard/check-if-subdomain-exists";
 import { getSubDomainData } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
+import type { BookingData } from "@/types/subdomain-type";
 
 interface PageProps {
   params: Promise<{
@@ -13,14 +14,11 @@ interface PageProps {
 export default async function Page({ params }: PageProps) {
   const { slug } = await params;
 
-  // 🚫 Subdomain does not exist → login
   const exists = await checkSubdomainExists(slug);
   if (!exists) {
     redirect(`${process.env.NEXTAUTH_URL}/login`);
-
   }
 
-  // 🔐 Ownership check
   await verifySubdomainOwner(slug);
 
   const subDomainData = await getSubDomainData(slug);
@@ -28,7 +26,7 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <SubdomainDashboardPage
-      bookingData={subDomainData.bookings}
+      bookingData={subDomainData.bookings as BookingData[]}
       accountData={subDomainData}
     />
   );
