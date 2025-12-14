@@ -32,6 +32,7 @@ export async function POST(req: Request) {
     }
 
     console.log(`📞 Processing webhook for Call ${call_sid} (Booking: ${hueline_id})`);
+    console.log("🔥🔥🔥 Intelligence:", intelligence)
 
     // 3. DB WRITE: UPSERT (Create or Update)
     // We use 'upsert' so if the Lambda fires twice by accident, we just update it instead of crashing.

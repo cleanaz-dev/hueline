@@ -189,6 +189,25 @@ export default function ClientTable() {
           );
         },
       }),
+      // Project
+      columnHelper.accessor("calls", {
+        header: "Project Details",
+        cell: (info) => {
+          const latestCall = info.getValue()?.[0];
+          if (!latestCall?.intelligence) return "N/A";
+
+          const intel = latestCall.intelligence;
+          return (
+            <div className="space-y-1 text-sm">
+              <div>Reason: {intel.callReason}</div>
+              <div>Scope: {intel.projectScope}</div>
+              {intel.estimatedAdditionalValue > 0 && (
+                <div>Value: ${intel.estimatedAdditionalValue}</div>
+              )}
+            </div>
+          );
+        },
+      }),
 
       // Recording
       columnHelper.accessor("audioUrl", {
@@ -355,14 +374,10 @@ export default function ClientTable() {
                         {data.phone}
                       </div>
                     </div>
-                    <Button
-                    size="sm"
-                    variant="outline" 
-                    
-                    asChild>
-                    <Link href={`/j/${data.huelineId}`}>
-                     <span className="text-xs"> View </span>
-                    </Link>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href={`/j/${data.huelineId}`}>
+                        <span className="text-xs"> View </span>
+                      </Link>
                     </Button>
                   </div>
                   <Separator />

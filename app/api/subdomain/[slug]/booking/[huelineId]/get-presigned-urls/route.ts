@@ -10,16 +10,11 @@ export async function GET(
 ) {
   try {
     const { slug, huelineId } = await params;
-    
-       const booking = await getBookingForPresignedUrls(huelineId, slug);
-    if (!booking) {
-      return NextResponse.json(
-        { error: "Booking not found" },
-        { status: 404 }
-      );
-    }
 
-    // console.log("API ROUTE Booking get-presigned-urls/route.ts:", booking)
+    const booking = await getBookingForPresignedUrls(huelineId, slug);
+    if (!booking) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
 
     // Generate presigned URL for original image
     const originalImages = await getPresignedUrl(booking.originalImages);

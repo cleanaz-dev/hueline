@@ -2,10 +2,6 @@
 
 import { CallReason } from "@/app/generated/prisma";
 
-
-
-
-
 export interface Call {
   id: string;
   bookingDataId: string;
@@ -22,21 +18,23 @@ export interface Call {
 export interface CallIntelligence {
   id: string;
   callId: string;
-  callReason: CallReason; // Now using Prisma's enum
+  callReason: CallReason;
   hiddenNeedsFound: boolean;
   surfacePrepNeeds: boolean;
   structuralNeeds: boolean;
   technicalNeeds: boolean;
   estimatedAdditionalValue: number;
+  projectScope: string; // ADD THIS LINE
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface CallAnalysisResult {
-  callReason: CallReason; // Now using Prisma's enum
+  callReason: CallReason;
   hiddenNeedsFound: boolean;
   surfacePrepNeeds: boolean;
   structuralNeeds: boolean;
   technicalNeeds: boolean;
   estimatedValue: number;
+  projectScope: string; // ADD THIS LINE TOO
 }
