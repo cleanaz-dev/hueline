@@ -74,11 +74,6 @@ export function SubBookingHero({ booking, formatTime, slug }: BookingHeroProps) 
                 value={booking.dateTime.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric'})} 
               />
               <DetailItem 
-                icon={Clock} 
-                label="Duration" 
-                value={formatTime(booking.callDuration)} 
-              />
-              <DetailItem 
                 icon={Info}
                 label="ID"
                 value={booking.huelineId}
