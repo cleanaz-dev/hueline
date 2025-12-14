@@ -78,17 +78,7 @@ export function SubBookingHero({ booking, formatTime, slug }: BookingHeroProps) 
                 label="ID"
                 value={booking.huelineId}
               />
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 text-xs font-medium text-gray-400 uppercase">
-                  <Timer className="w-3.5 h-3.5" />
-                  <span>Report Expiry</span>
-                </div>
-                <div>
-                   <Badge variant="secondary" className="bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200">
-                     {hoursLeft} hours remaining
-                   </Badge>
-                </div>
-              </div>
+             
             </div>
           </div>
 
