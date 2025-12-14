@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 
     // 2. Parse the Python Payload (snake_case)
     const body = await req.json();
-    console.log("📦 Body:", body)
+    console.log("📦 Ingest Body:", body)
     
     console.log("📥 Ingesting Booking:", body.hueline_id);
 
@@ -48,11 +48,17 @@ export async function POST(req: Request) {
         prompt: body.prompt,
         originalImages: body.original_images,
         summary: body.summary,
-        callDuration: body.call_duration,
         dimensions: body.dimensions,
         dateTime: new Date(body.date_time),
         pin: body.pin,
         expiresAt: Math.floor(Date.now() / 1000) + (72 * 60 * 60), // 72 hours from now
+
+        calls: {
+          create: {
+            callSid: body.call_sid,
+            duration: body.call_duration
+          }
+        },
 
         // Handle Nested Arrays
         mockups: {
