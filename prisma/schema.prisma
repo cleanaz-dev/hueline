@@ -112,16 +112,21 @@ model SubBookingData {
   subdomain   Subdomain @relation(fields: [subdomainId], references: [id], onDelete: Cascade)
   huelineId   String    @unique
 
-  name           String
-  phone          String
-  roomType       String
-  prompt         String
-  originalImages String
-  summary        String
-  dimensions     String?
-  dateTime       DateTime
-  pin            String
-  expiresAt      Int
+  name                String
+  phone               String
+  roomType            String
+  prompt              String
+  originalImages      String
+  summary             String
+  dimensions          String?
+  dateTime            DateTime
+  pin                 String
+  expiresAt           Int
+  initialIntent       CallReason  @default(NEW_PROJECT)
+  currentCallReason   CallReason?
+  currentProjectScope String?
+  lastCallAt          DateTime?
+  lastCallAudioUrl    String?
 
   mockups         Mockup[]
   paintColors     PaintColor[]

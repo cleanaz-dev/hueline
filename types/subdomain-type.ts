@@ -1,5 +1,3 @@
-//types/subdomain-type.ts
-
 import { Call } from "./call-intelligence-types";
 
 export interface SubdomainAccountData {
@@ -43,12 +41,21 @@ export interface BookingData {
   expiresAt: number;
   createdAt: Date;
   updatedAt: Date;
+  
+  // --- NEW PULSE FIELDS (Added these) ---
+  initialIntent?: string | null;      // The Anchor (e.g. "NEW_PROJECT")
+  currentCallReason?: string | null;  // The Pulse (e.g. "PRICING")
+  currentProjectScope?: string | null;// The Scope (e.g. "INTERIOR")
+  lastCallAt?: Date | string | null;  // Sorting
+  lastCallAudioUrl?: string | null;   // Instant Playback
+  // -------------------------------------
+
   mockups: Mockup[];
   paintColors: PaintColor[];
   alternateColors: AlternateColor[];
   sharedAccess: SharedAccess[];
   exports: Export[];
-  calls: Call[]; // NEW
+  calls: Call[];
 }
 
 export interface Export {

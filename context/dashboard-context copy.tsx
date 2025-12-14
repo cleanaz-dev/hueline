@@ -4,7 +4,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import useSWR from "swr";
 import { BookingData, SubdomainAccountData } from "@/types/subdomain-type";
 import { DashboardStats } from "@/types/dashboard-types";
-import IntelligenceDialog from "@/components/subdomains/dashboard/intelligence-dialog";
+
+
 
 interface DashboardContextType {
   bookings: BookingData[];
@@ -13,10 +14,6 @@ interface DashboardContextType {
   isLoading: boolean;
   isStatsLoading: boolean;
   refreshBookings: () => void;
-  
-  // NEW: Global Dialog Actions
-  openIntelligence: (booking: BookingData) => void;
-  closeIntelligence: () => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -37,17 +34,13 @@ export function DashboardProvider({
   const [bookings, setBookings] = useState<BookingData[]>(initialBookings);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- GLOBAL DIALOG STATE ---
-  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
-  const [isIntelOpen, setIsIntelOpen] = useState(false);
-
   // Fetch stats with SWR
   const { data: stats, isLoading: isStatsLoading } = useSWR<DashboardStats>(
     `/api/subdomain/${subdomain.slug}/stats`,
     fetcher
   );
 
-  // Helper to fetch images (Keeping this logic here is fine)
+  // Function to fetch presigned URLs for a specific booking
   const fetchUrlsForBooking = async (booking: BookingData) => {
     try {
       const res = await fetch(
@@ -75,19 +68,12 @@ export function DashboardProvider({
     let isMounted = true;
 
     const enrichAllBookings = async () => {
-      // 1. Fetch Images
       const promises = initialBookings.map((b) => fetchUrlsForBooking(b));
+      
       const enriched = await Promise.all(promises);
 
       if (isMounted) {
-        // 2. Sort by "Last Active" (using our new DB field)
-        const sorted = enriched.sort((a, b) => {
-          const dateA = new Date(a.lastCallAt || a.createdAt).getTime();
-          const dateB = new Date(b.lastCallAt || b.createdAt).getTime();
-          return dateB - dateA; // Newest first
-        });
-
-        setBookings(sorted);
+        setBookings(enriched);
         setIsLoading(false);
       }
     };
@@ -99,18 +85,6 @@ export function DashboardProvider({
     };
   }, [subdomain.slug]);
 
-  // Actions
-  const openIntelligence = (booking: BookingData) => {
-    setSelectedBooking(booking);
-    setIsIntelOpen(true);
-  };
-
-  const closeIntelligence = () => {
-    setIsIntelOpen(false);
-    // Small timeout to clear data after animation creates a smoother close
-    setTimeout(() => setSelectedBooking(null), 300);
-  };
-
   return (
     <DashboardContext.Provider 
       value={{ 
@@ -119,22 +93,10 @@ export function DashboardProvider({
         stats,
         isLoading,
         isStatsLoading,
-        refreshBookings: () => setBookings(initialBookings),
-        openIntelligence,
-        closeIntelligence
+        refreshBookings: () => setBookings(initialBookings)
       }}
     >
       {children}
-
-      {/* RENDER DIALOG GLOBALLY HERE */}
-      {selectedBooking && (
-        <IntelligenceDialog 
-          isOpen={isIntelOpen} 
-          onClose={closeIntelligence} 
-          booking={selectedBooking} 
-        />
-      )}
-
     </DashboardContext.Provider>
   );
 }

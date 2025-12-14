@@ -16,23 +16,25 @@ import {
   ArrowDown,
   Play,
   Pause,
+  FileAudio,
   Loader2,
   Camera,
-  BrainCircuit,
+  Link2,
 } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
+// 1. Import the hook from your provider
 import { useDashboard } from "@/context/dashboard-context";
 import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import {
   formatCallReason,
   formatProjectScope,
   getEstimatedValueRange,
 } from "@/lib/utils/dashboard-utils";
 
-// --- Audio Player ---
+// --- Audio Player (No changes) ---
 const AudioPlayer = ({ url }: { url: string }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -73,38 +75,37 @@ const AudioPlayer = ({ url }: { url: string }) => {
   );
 };
 
-// 1. UPDATE TYPE
-// We only need to add the calculated Total Value. Everything else is on BookingData now.
+// Define type for table rows
 type TableBooking = BookingData & {
-  thumbnailUrl: string;
-  totalHiddenValue: number;
+  thumbnailUrl?: string;
+  audioUrl?: string;
 };
 
 const columnHelper = createColumnHelper<TableBooking>();
 
+// 2. Component no longer needs props!
 export default function ClientTable() {
-  const { bookings, isLoading, openIntelligence } = useDashboard(); 
+  // 3. Destructure values from your DashboardContext
+  const { bookings, subdomain, isLoading } = useDashboard();
+
+  // 4. Extract slug from the subdomain object in context
+  const slug = subdomain.slug;
+
   const [globalFilter, setGlobalFilter] = useState("");
 
-
-  // 2. SIMPLIFIED DATA TRANSFORM
-   const tableData = useMemo(() => {
-    if (!bookings) return [];
+  // 5. Create table data mapping
+  const tableData = useMemo(() => {
     return bookings.map((b) => ({
       ...b,
+      // Priority: Presigned URL -> S3 Key -> Empty
       thumbnailUrl: b.mockups?.[0]?.presignedUrl || b.mockups?.[0]?.s3Key || "",
-      // Sum the value
-      totalHiddenValue: (b.calls || []).reduce(
-        (sum, call) => sum + (call.intelligence?.estimatedAdditionalValue || 0),
-        0
-      ),
+      audioUrl: (b as any).audioUrl || "", // Adjust based on your actual data shape
     }));
   }, [bookings]);
 
-
   const columns = useMemo(
     () => [
-      // Preview
+      // Preview / Thumbnail
       columnHelper.accessor("thumbnailUrl", {
         header: "Preview",
         cell: (info) => (
@@ -113,7 +114,7 @@ export default function ClientTable() {
               <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
             ) : info.getValue() ? (
               <Image
-                src={info.getValue()}
+                src={info.getValue()!}
                 alt="Room"
                 fill
                 className="object-cover"
@@ -123,10 +124,11 @@ export default function ClientTable() {
             )}
           </div>
         ),
+        enableSorting: false,
       }),
 
-      // Date (Now using lastCallAt to sort by activity)
-      columnHelper.accessor("lastCallAt", {
+      // Date
+      columnHelper.accessor("createdAt", {
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -141,9 +143,7 @@ export default function ClientTable() {
           </button>
         ),
         cell: (info) => {
-          // Fallback to createdAt if lastCallAt is missing (for legacy data)
-          const val = info.getValue() || info.row.original.createdAt;
-          const date = new Date(val);
+          const date = new Date(info.getValue());
           return (
             <div className="text-sm font-medium text-gray-900">
               {date.toLocaleDateString("en-US", {
@@ -164,53 +164,59 @@ export default function ClientTable() {
       // Lead Details
       columnHelper.accessor("name", {
         header: "Lead Details",
-        cell: (info) => (
-          <div className="max-w-[200px]">
-            <div className="font-semibold text-gray-900">{info.getValue()}</div>
-            <div className="text-muted-foreground text-sm font-normal">
-              {info.row.original.phone}
-            </div>
-            <div className="text-xs text-gray-500 truncate">
-              {info.row.original.prompt}
-            </div>
-          </div>
-        ),
-      }),
-
-      // Project Details (THE NEW LOGIC)
-      columnHelper.display({
-        id: "projectDetails",
-        header: "Project Details",
         cell: (info) => {
-          const anchor = info.row.original.initialIntent || "NEW_PROJECT";
-          const current = info.row.original.currentCallReason;
-          const scope = info.row.original.currentProjectScope;
-          const showPulse = current && current !== anchor;
+          const prompt = info.row.original.prompt || "Consultation requested";
+          const phone = info.row.original.phone;
+
+          // Simple formatter
+          const formatPhoneNumber = (phone: string) => {
+            if (!phone) return "";
+            const cleaned = phone.replace(/\D/g, "");
+            if (cleaned.length === 11 && cleaned.startsWith("1"))
+              return `+1 ${cleaned.slice(1)}`;
+            return cleaned;
+          };
 
           return (
-            <div className="flex flex-col gap-1 max-w-[180px]">
-              {/* 1. IDENTITY (Reason) */}
-              <div className="flex  gap-2 items-center font-semibold text-gray-900 text-sm">
-                {formatCallReason(anchor)}
-                {/* 2. THE BADGE (Your Snippet) */}
-                {showPulse && (
-                  <div className="flex">
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-muted-foreground border border-blue-100">
-                      Latest: {formatCallReason(current!)}
-                    </span>
-                  </div>
-                )}
+            <div className="max-w-[200px]">
+              <div className="font-semibold text-gray-900">
+                {info.getValue()}
               </div>
+              {phone && (
+                <div className="text-muted-foreground text-sm font-normal">
+                  {formatPhoneNumber(phone)}
+                </div>
+              )}
+              <div className="text-xs text-gray-500" title={prompt}>
+                {prompt}
+              </div>
+            </div>
+          );
+        },
+      }),
+      // Project
+      columnHelper.accessor("calls", {
+        header: "Project Details",
+        cell: (info) => {
+          const latestCall = info.getValue()?.[0];
+          if (!latestCall?.intelligence) {
+            return (
+              <span className="text-xs text-gray-400 italic">No data</span>
+            );
+          }
 
+          const intel = latestCall.intelligence;
+          return (
+            <div className="max-w-[180px]">
+              <div className="font-semibold text-gray-900 text-sm">
+                {formatCallReason(intel.callReason)}
+              </div>
               <div className="text-xs text-muted-foreground">
-                {formatProjectScope(scope || "UNKNOWN")}
+                {formatProjectScope(intel.projectScope)}
               </div>
-
-              {/* 4. VALUE (Green) */}
-              {info.row.original.totalHiddenValue > 0 && (
-                <div className="text-xs text-green-600 font-bold">
-                  +{getEstimatedValueRange(info.row.original.totalHiddenValue)}{" "}
-                  Value
+              {intel.estimatedAdditionalValue > 0 && (
+                <div className="text-xs text-green-500 font-medium mt-1">
+                  {getEstimatedValueRange(intel.estimatedAdditionalValue)}
                 </div>
               )}
             </div>
@@ -218,8 +224,8 @@ export default function ClientTable() {
         },
       }),
 
-      // Recording (Read directly from Parent)
-      columnHelper.accessor("lastCallAudioUrl", {
+      // Recording
+      columnHelper.accessor("audioUrl", {
         header: "Recording",
         cell: (info) =>
           info.getValue() ? (
@@ -227,6 +233,7 @@ export default function ClientTable() {
           ) : (
             <span className="text-xs text-gray-400 italic">No audio</span>
           ),
+        enableSorting: false,
       }),
 
       // Palette
@@ -247,34 +254,28 @@ export default function ClientTable() {
               )) || <span className="text-xs text-gray-400">-</span>}
           </div>
         ),
+        enableSorting: false,
       }),
 
-      // Link
+      // Link (Using the slug from context)
       columnHelper.accessor("huelineId", {
         header: "",
-        cell: (info) => (
-          <div className="flex items-center gap-2">
-            {/* 1. THE BRAIN BUTTON */}
-            <button
-              onClick={() => openIntelligence(info.row.original)} // <--- TRIGGER GLOBAL DIALOG
-              className="inline-flex items-center justify-center p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors group"
-              title="View Call Intelligence"
-            >
-              <BrainCircuit className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            </button>
-
-            {/* 2. THE PAGE LINK */}
+        cell: (info) => {
+          const huelineId = info.row.original.huelineId;
+          return (
             <Link
-              href={`/j/${info.getValue()}`}
+              // 6. Using the slug derived from context
+              href={`/j/${huelineId}`}
               className="inline-flex items-center justify-center p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
             >
               <ExternalLink className="w-4 h-4 group-hover:scale-110 transition-transform" />
             </Link>
-          </div>
-        ),
+          );
+        },
+        enableSorting: false,
       }),
     ],
-    [isLoading, openIntelligence] // Add openIntelligence dependency
+    [slug, isLoading]
   );
 
   const table = useReactTable({
@@ -289,7 +290,7 @@ export default function ClientTable() {
 
   return (
     <div className="container mx-auto max-w-6xl px-4 md:px-10 lg:px-0 my-12">
-      {/* Search Header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <div className="flex items-center gap-3">
@@ -302,6 +303,8 @@ export default function ClientTable() {
             Real-time incoming calls and AI visualizations.
           </p>
         </div>
+
+        {/* Search Bar */}
         <div className="relative w-full md:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -309,7 +312,7 @@ export default function ClientTable() {
             value={globalFilter ?? ""}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder="Search leads..."
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-card"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
           />
         </div>
       </div>
@@ -351,22 +354,19 @@ export default function ClientTable() {
         </table>
       </div>
 
-      {/* Mobile View */}
+      {/* Mobile Cards */}
       <div className="md:hidden space-y-3">
         {table.getRowModel().rows.map((row) => {
           const data = row.original;
-          // Clean Mobile Data Access
-          const anchor = data.initialIntent || "NEW_PROJECT";
-          const current = data.currentCallReason;
-          const showPulse = current && current !== anchor;
-
           return (
             <div
               key={row.id}
               className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex gap-4"
             >
               <div className="w-16 h-16 rounded-lg bg-gray-100 shrink-0 overflow-hidden relative flex items-center justify-center">
-                {data.thumbnailUrl ? (
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                ) : data.thumbnailUrl ? (
                   <Image
                     src={data.thumbnailUrl}
                     alt="Room"
@@ -377,59 +377,63 @@ export default function ClientTable() {
                   <Camera className="w-6 h-6 text-gray-400" />
                 )}
               </div>
+
               <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      {data.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {data.phone}
-                    </div>
-                  </div>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link href={`/j/${data.huelineId}`}>
-                      <span className="text-xs">View</span>
-                    </Link>
-                  </Button>
-                </div>
-                <Separator className="my-2" />
-
-                {/* Project Details Mobile */}
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <div>
-                    <div className="text-[10px] text-gray-400 uppercase">
-                      Reason
-                    </div>
-                    <div className="text-xs font-medium text-gray-700">
-                      {formatCallReason(anchor)}
-                    </div>
-                    {showPulse && (
-                      <div className="text-[10px] text-blue-600 mt-0.5">
-                        Latest: {formatCallReason(current!)}
-                      </div>
-                    )}
-                  </div>
-                  {data.totalHiddenValue > 0 && (
+                <div className="flex-col justify-between items-start">
+                  <div className="flex justify-between">
                     <div>
-                      <div className="text-[10px] text-gray-400 uppercase">
-                        Approx. Value
+                      <div className="font-semibold text-gray-900">
+                        {data.name}
                       </div>
-                      <div className="text-xs font-bold text-green-600">
-                        +{getEstimatedValueRange(data.totalHiddenValue)}
+                      <div className="text-muted-foreground text-xs font-normal">
+                        {data.phone}
                       </div>
                     </div>
-                  )}
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href={`/j/${data.huelineId}`}>
+                        <span className="text-xs"> View </span>
+                      </Link>
+                    </Button>
+                  </div>
+                  <Separator />
+                  <div className="text-muted-foreground text-xs font-normal mt-2">
+                    {data.prompt}
+                  </div>
+                  {data.audioUrl && <AudioPlayer url={data.audioUrl} />}
                 </div>
 
-                {data.lastCallAudioUrl && (
-                  <AudioPlayer url={data.lastCallAudioUrl} />
-                )}
+                <div className="flex items-center justify-between mt-2">
+                  <div className="flex -space-x-1">
+                    {data.paintColors?.slice(0, 3).map((c, i) => (
+                      <div
+                        key={i}
+                        className="w-4 h-4 rounded-full border border-white"
+                        style={{ background: c.hex }}
+                      />
+                    ))}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {new Date(data.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Empty State */}
+      {tableData.length === 0 && !isLoading && (
+        <div className="text-center py-20 bg-white rounded-xl border border-gray-200 border-dashed">
+          <div className="p-3 bg-gray-50 rounded-full w-fit mx-auto mb-3">
+            <FileAudio className="w-6 h-6 text-gray-400" />
+          </div>
+          <h3 className="text-gray-900 font-medium">No leads yet</h3>
+          <p className="text-gray-500 text-sm mt-1">
+            Incoming calls will appear here automatically.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
