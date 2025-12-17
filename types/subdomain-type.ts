@@ -43,7 +43,7 @@ export interface BookingData {
   updatedAt: Date;
   
   // --- NEW PULSE FIELDS (Added these) ---
-  projectType?: "RESIDENTIAL" | "COMMERCIAL" | null; // <--- Match your DB field name
+  projectType?: "RESIDENTIAL" | "COMMERCIAL" | string | null; // <--- Match your DB field name
   initialIntent?: string | null;      // The Anchor (e.g. "NEW_PROJECT")
   currentCallReason?: string | null;  // The Pulse (e.g. "PRICING")
   currentProjectScope?: string | null;// The Scope (e.g. "INTERIOR")
