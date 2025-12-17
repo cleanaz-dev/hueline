@@ -18,7 +18,10 @@ import {
   Pause,
   Loader2,
   Camera,
-  BrainCircuit,
+  Database,
+  Palette,
+  Home,
+  Building2,
 } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
 import { useDashboard } from "@/context/dashboard-context";
@@ -73,6 +76,23 @@ const AudioPlayer = ({ url }: { url: string }) => {
   );
 };
 
+const formatImageUrl = (url: string | null | undefined): string => {
+  if (!url) return "";
+
+  // 1. If it's already an absolute HTTP/HTTPS URL, return it
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+
+  // 2. Clean up the path to prevent "//" or "/subdomains//subdomains"
+  // Remove ALL leading slashes first
+  const cleanPath = url.replace(/^\/+/, "");
+
+  // 3. Remove accidental double slashes inside the path (optional but safe)
+  const sanitizedPath = cleanPath.replace(/\/\//g, "/");
+
+  // 4. Return with exactly one leading slash
+  return `/${sanitizedPath}`;
+};
+
 // 1. UPDATE TYPE
 // We only need to add the calculated Total Value. Everything else is on BookingData now.
 type TableBooking = BookingData & {
@@ -83,46 +103,60 @@ type TableBooking = BookingData & {
 const columnHelper = createColumnHelper<TableBooking>();
 
 export default function ClientTable() {
-  const { bookings, isLoading, openIntelligence } = useDashboard(); 
+  const { bookings, isLoading, openIntelligence } = useDashboard();
   const [globalFilter, setGlobalFilter] = useState("");
 
-
   // 2. SIMPLIFIED DATA TRANSFORM
-   const tableData = useMemo(() => {
+  const tableData = useMemo(() => {
     if (!bookings) return [];
-    return bookings.map((b) => ({
-      ...b,
-      thumbnailUrl: b.mockups?.[0]?.presignedUrl || b.mockups?.[0]?.s3Key || "",
-      // Sum the value
-      totalHiddenValue: (b.calls || []).reduce(
-        (sum, call) => sum + (call.intelligence?.estimatedAdditionalValue || 0),
-        0
-      ),
-    }));
-  }, [bookings]);
+    return bookings.map((b) => {
+      // 1. Try to get the first Mockup URL
+      let thumb = b.mockups?.[0]?.presignedUrl;
 
+      // 2. Fallback: If no mockup, use the first Original Image URL
+      if (!thumb && b.originalImages && b.originalImages.length > 0) {
+        // Check if it's a full URL (presigned) or just a Key
+        const img = b.originalImages[0];
+        if (img.startsWith("http")) thumb = img;
+      }
+
+      return {
+        ...b,
+        thumbnailUrl: thumb || "",
+        totalHiddenValue: (b.calls || []).reduce(
+          (sum, call) =>
+            sum + (call.intelligence?.estimatedAdditionalValue || 0),
+          0
+        ),
+      };
+    });
+  }, [bookings]);
 
   const columns = useMemo(
     () => [
       // Preview
       columnHelper.accessor("thumbnailUrl", {
         header: "Preview",
-        cell: (info) => (
-          <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-100 border border-gray-200 relative flex items-center justify-center">
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-            ) : info.getValue() ? (
-              <Image
-                src={info.getValue()}
-                alt="Room"
-                fill
-                className="object-cover"
-              />
-            ) : (
-              <Camera className="w-6 h-6 text-gray-400" />
-            )}
-          </div>
-        ),
+        cell: (info) => {
+          const rawThumbnailUrl = info.row.original.thumbnailUrl;
+          const thumbnailUrl = formatImageUrl(rawThumbnailUrl);
+          return (
+            <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-100 border border-gray-200 relative flex items-center justify-center">
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+              ) : info.getValue() ? (
+                <Image
+                  src={thumbnailUrl}
+                  alt="Room"
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <Camera className="w-6 h-6 text-gray-400" />
+              )}
+            </div>
+          );
+        },
       }),
 
       // Date (Now using lastCallAt to sort by activity)
@@ -182,33 +216,48 @@ export default function ClientTable() {
         id: "projectDetails",
         header: "Project Details",
         cell: (info) => {
+          // 1. DATA
           const anchor = info.row.original.initialIntent || "NEW_PROJECT";
           const current = info.row.original.currentCallReason;
           const scope = info.row.original.currentProjectScope;
+          // Assuming you named the field 'currentProjectType' or 'projectType'
+          const type =
+            (info.row.original as any).projectType || "RESIDENTIAL";
+
           const showPulse = current && current !== anchor;
+
+          // 2. ICON SELECTION
+          const TypeIcon = type === "COMMERCIAL" ? Building2 : Home;
 
           return (
             <div className="flex flex-col gap-1 max-w-[180px]">
-              {/* 1. IDENTITY (Reason) */}
-              <div className="flex  gap-2 items-center font-semibold text-gray-900 text-sm">
+              {/* LINE 1: Identity (Reason) */}
+              <div className="flex  gap-2 font-semibold text-gray-900 text-sm">
                 {formatCallReason(anchor)}
-                {/* 2. THE BADGE (Your Snippet) */}
-                {showPulse && (
-                  <div className="flex">
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-muted-foreground border border-blue-100">
-                      Latest: {formatCallReason(current!)}
-                    </span>
-                  </div>
-                )}
+                
+              {showPulse && (
+                <div className="flex">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-muted-foreground border border-blue-100">
+                    Latest: {formatCallReason(current!)}
+                  </span>
+                </div>
+              )}
+
               </div>
 
-              <div className="text-xs text-muted-foreground">
-                {formatProjectScope(scope || "UNKNOWN")}
+        
+              {/* LINE 3: Type & Scope (The Visual Story) */}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {/* The Icon (Visual Anchor) */}
+                <TypeIcon className="size-4 text-gray-400" />
+
+                {/* The Scope */}
+                <span>{formatProjectScope(scope || "UNKNOWN")}</span>
               </div>
 
-              {/* 4. VALUE (Green) */}
+              {/* LINE 4: Money */}
               {info.row.original.totalHiddenValue > 0 && (
-                <div className="text-xs text-green-600 font-bold">
+                <div className="text-xs text-green-600 font-bold mt-0.5">
                   +{getEstimatedValueRange(info.row.original.totalHiddenValue)}{" "}
                   Value
                 </div>
@@ -253,22 +302,24 @@ export default function ClientTable() {
       columnHelper.accessor("huelineId", {
         header: "",
         cell: (info) => (
-          <div className="flex items-center gap-2">
-            {/* 1. THE BRAIN BUTTON */}
+          <div className="flex items-center justify-end gap-2">
+            {/* 1. INTELLIGENCE (The Business) - Purple */}
             <button
-              onClick={() => openIntelligence(info.row.original)} // <--- TRIGGER GLOBAL DIALOG
-              className="inline-flex items-center justify-center p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors group"
-              title="View Call Intelligence"
+              onClick={() => openIntelligence(info.row.original)}
+              className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-purple-100 bg-purple-50 text-purple-600 hover:bg-purple-100 transition-all group cursor-pointer"
+              title="View Intelligence & Logs"
             >
-              <BrainCircuit className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <Database className="w-4 h-4 group-hover:scale-110 transition-transform" />
             </button>
 
-            {/* 2. THE PAGE LINK */}
+            {/* 2. VISUALS (The Art) - Blue */}
             <Link
               href={`/j/${info.getValue()}`}
-              className="inline-flex items-center justify-center p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
+              target="_blank" // Opens Client Portal in new tab
+              className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all group"
+              title="Open Client Portal"
             >
-              <ExternalLink className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <Palette className="w-4 h-4 group-hover:scale-110 transition-transform" />
             </Link>
           </div>
         ),
@@ -288,7 +339,7 @@ export default function ClientTable() {
   });
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 md:px-10 lg:px-0 my-12">
+    <div className="container mx-auto max-w-6xl px-4  lg:px-0 my-12">
       {/* Search Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
@@ -355,11 +406,19 @@ export default function ClientTable() {
       <div className="md:hidden space-y-3">
         {table.getRowModel().rows.map((row) => {
           const data = row.original;
+          // console.log("row data:", data)
           // Clean Mobile Data Access
           const anchor = data.initialIntent || "NEW_PROJECT";
           const current = data.currentCallReason;
           const showPulse = current && current !== anchor;
-
+          const rawThumbnailUrl = row.original.thumbnailUrl;
+          const thumbnailUrl = formatImageUrl(rawThumbnailUrl);
+          console.log(
+            "Mobile thumbnailUrl:",
+            thumbnailUrl,
+            "Raw:",
+            rawThumbnailUrl
+          );
           return (
             <div
               key={row.id}
@@ -368,7 +427,7 @@ export default function ClientTable() {
               <div className="w-16 h-16 rounded-lg bg-gray-100 shrink-0 overflow-hidden relative flex items-center justify-center">
                 {data.thumbnailUrl ? (
                   <Image
-                    src={data.thumbnailUrl}
+                    src={thumbnailUrl}
                     alt="Room"
                     fill
                     className="object-cover"
@@ -382,25 +441,43 @@ export default function ClientTable() {
                   <div>
                     <div className="font-semibold text-gray-900">
                       {data.name}
+                      {""}{" "}
+                      <span className="text-[10px] text-gray-400 font-mono mt-0.5">
+                        {data.huelineId}
+                      </span>
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {data.phone}
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link href={`/j/${data.huelineId}`}>
-                      <span className="text-xs">View</span>
+
+                  {/* ACTION BUTTONS */}
+                  <div className="flex gap-2">
+                    {/* 1. INTELLIGENCE (Database) */}
+                    <button
+                      onClick={() => openIntelligence(data)}
+                      className="h-9 w-9 flex items-center justify-center rounded-lg border border-purple-100 bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
+                      title="View Intelligence"
+                    >
+                      <Database className="w-4 h-4" />
+                    </button>
+
+                    {/* 2. VISUALS (Palette) */}
+                    <Link
+                      href={`/j/${data.huelineId}`}
+                      className="h-9 w-9 flex items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                      title="View Mockups & Colors"
+                    >
+                      <Palette className="w-4 h-4" />
                     </Link>
-                  </Button>
+                  </div>
                 </div>
+
                 <Separator className="my-2" />
 
                 {/* Project Details Mobile */}
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <div>
-                    <div className="text-[10px] text-gray-400 uppercase">
-                      Reason
-                    </div>
                     <div className="text-xs font-medium text-gray-700">
                       {formatCallReason(anchor)}
                     </div>

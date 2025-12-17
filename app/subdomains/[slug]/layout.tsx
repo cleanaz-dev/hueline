@@ -3,6 +3,8 @@
 import { Metadata } from 'next';
 import { getSubDomainAccount } from '@/lib/prisma';
 import { cache } from 'react';
+// 👇 1. Import your Session Provider
+import { NextAuthSessionProvider } from "@/providers/session-provider"; 
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -10,7 +12,6 @@ interface Props {
 }
 
 const getSubdomainData = cache(async (slug: string) => {
-  // Directly fetch from database without Redis caching
   return await getSubDomainAccount(slug);
 });
 
@@ -44,10 +45,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function SubDomainLayout({children }: Props) {
-  
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
-      {children}
-    </div>
+    // 👇 2. Wrap the Subdomain Layout in the Provider
+    <NextAuthSessionProvider>
+      <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
+        {children}
+      </div>
+    </NextAuthSessionProvider>
   );
 }

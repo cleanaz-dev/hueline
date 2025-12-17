@@ -7,7 +7,7 @@ import { getBookingForPage } from "@/lib/prisma/queries/get-booking-for-page";
 interface Props {
   params: Promise<{
     slug: string;
-    huelineId: string; 
+    huelineId: string;
   }>;
 }
 
@@ -29,21 +29,20 @@ export default async function BookingPage({ params }: Props) {
 
   // AUTH CONDITIONS
   const isAuthorizedGuest = sessionId === urlId;
-  const isAccountOwner = sessionSlug === urlSlug && session?.role !== 'customer';
-  const isSuperAdmin = session?.role === 'SUPER_ADMIN';
+  const isAccountOwner =
+    sessionSlug === urlSlug && session?.role && session.role !== "customer";
+  const isSuperAdmin = session?.role === "SUPER_ADMIN";
 
   const isAuthorized = isAuthorizedGuest || isAccountOwner || isSuperAdmin;
 
   if (!isAuthorized) {
     // 🛑 CRITICAL FIX 🛑
-    // We use a RELATIVE path. 
-    // If the user is at "demo.hue-line.com/booking/123", 
+    // We use a RELATIVE path.
+    // If the user is at "demo.hue-line.com/booking/123",
     // this sends them to "demo.hue-line.com/login?huelineId=123"
     redirect(`/login?huelineId=${huelineId}`);
   }
 
   // 3. Render Page
-  return (
-      <SubDomainWrapper booking={booking} subdomain={booking.subdomain} />
-  );
+  return <SubDomainWrapper booking={booking} subdomain={booking.subdomain} />;
 }

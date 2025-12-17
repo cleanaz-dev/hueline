@@ -125,6 +125,7 @@ model SubBookingData {
   initialIntent       CallReason  @default(NEW_PROJECT)
   currentCallReason   CallReason?
   currentProjectScope String?
+  projectType         String?
   lastCallAt          DateTime?
   lastCallAudioUrl    String?
 

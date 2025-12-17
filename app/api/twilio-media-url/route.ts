@@ -68,6 +68,7 @@ export async function POST(req: Request) {
           duration: String(duration),
           status: status,
           bookingData: { connect: { huelineId: hueline_id } },
+
           intelligence: {
             create: {
               projectScope: intelligence.projectScope,
@@ -94,8 +95,9 @@ export async function POST(req: Request) {
       await tx.subBookingData.update({
         where: { huelineId: hueline_id },
         data: {
-          // 1. Update Status to the latest call
+          // 1. Update Status to the latest call & Project Type
           currentCallReason: intelligence.callReason,
+          projectType: intelligence.projectType,
           
           // 2. Bump this lead to the top of the list
           lastCallAt: new Date(),

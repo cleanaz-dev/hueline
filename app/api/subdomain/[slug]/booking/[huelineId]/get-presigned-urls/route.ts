@@ -25,7 +25,7 @@ export async function GET(
         presignedUrl: await getPresignedUrl(mockup.s3Key),
       }))
     );
-
+    // console.log("mockups:", mockups)
     return NextResponse.json({
       originalImages,
       mockups,

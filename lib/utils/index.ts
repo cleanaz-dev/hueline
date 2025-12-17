@@ -19,73 +19,63 @@ interface RalColor {
   lrv: string;
 }
 
-
 export const RANDOM_COLOR_MAP = [
-  { ral: "RAL 1000", name: "Green Beige", hex: "#BEBD7F" },
-  { ral: "RAL 1001", name: "Beige", hex: "#C2B078" },
-  { ral: "RAL 1002", name: "Sand Yellow", hex: "#C6A664" },
-  { ral: "RAL 1003", name: "Signal Yellow", hex: "#E5BE01" },
-  { ral: "RAL 1004", name: "Golden Yellow", hex: "#CDA434" },
-  { ral: "RAL 1005", name: "Honey Yellow", hex: "#A98307" },
-  { ral: "RAL 1013", name: "Oyster White", hex: "#EAE6CA" },
-  { ral: "RAL 1015", name: "Light Ivory", hex: "#E6D690" },
-  { ral: "RAL 2000", name: "Yellow Orange", hex: "#ED760E" },
-  { ral: "RAL 2004", name: "Pure Orange", hex: "#F44611" },
-  { ral: "RAL 3000", name: "Flame Red", hex: "#AF2B1E" },
-  { ral: "RAL 3003", name: "Ruby Red", hex: "#8A142B" },
-  { ral: "RAL 4005", name: "Blue Lilac", hex: "#76689A" },
-  { ral: "RAL 5001", name: "Green Blue", hex: "#1F3438" },
-  { ral: "RAL 5002", name: "Ultramarine Blue", hex: "#20214F" },
-  { ral: "RAL 5005", name: "Signal Blue", hex: "#154889" },
-  { ral: "RAL 5012", name: "Light Blue", hex: "#3A75C4" },
-  { ral: "RAL 5024", name: "Pastel Blue", hex: "#6A93B0" },
-  { ral: "RAL 6000", name: "Patina Green", hex: "#327662" },
-  { ral: "RAL 6005", name: "Moss Green", hex: "#0E3A2A" },
-  { ral: "RAL 6019", name: "Pastel Green", hex: "#A5D5A7" },
-  { ral: "RAL 6021", name: "Pale Green", hex: "#89AC76" },
-  { ral: "RAL 7001", name: "Silver Grey", hex: "#8F979D" },
-  { ral  :'RAL 7016', name: "Anthracite Grey", hex: "#383E42" },
-  { ral  :'RAL 7035', name: "Light Grey", hex: "#D7D7D7" },
-  { ral  :'RAL 7040', name: "Window Grey", hex: "#9DA1AA" },
-  { ral  :'RAL 8001', name: "Ochre Brown", hex: "#9A6229" },
-  { ral  :'RAL 9001', name: "Cream", hex: "#FDF4E3" },
-  { ral  :'RAL 9010', name: "Pure White", hex: "#FFFFFF" },
+  { ral: "RAL 1001", hex: "#D0B084", name: "Beige" },
+  { ral: "RAL 1002", hex: "#D2AA6D", name: "Sand Yellow" },
+  { ral: "RAL 1012", hex: "#DDAF28", name: "Lemon Yellow" },
+  { ral: "RAL 1016", hex: "#F1DD39", name: "Sulfur Yellow" },
+  { ral: "RAL 1017", hex: "#F6A951", name: "Saffron Yellow" },
+  { ral: "RAL 1018", hex: "#FACA31", name: "Zinc Yellow" },
+  { ral: "RAL 1024", hex: "#BA8F4C", name: "Ochre Yellow" },
+  { ral: "RAL 1034", hex: "#EB9C52", name: "Pastel Yellow" },
+  { ral: "RAL 1037", hex: "#F09200", name: "Sun Yellow" },
+  { ral: "RAL 2003", hex: "#F67829", name: "Pastel Orange" },
+  { ral: "RAL 2007", hex: "#FFB200", name: "Luminous Bright Orange" },
+  { ral: "RAL 2012", hex: "#D5654E", name: "Salmon Orange" },
+  { ral: "RAL 2011", hex: "#E26E0F", name: "Deep Orange" },
+  { ral: "RAL 3005", hex: "#D8A0A6", name: "Light Pink" },
+  { ral: "RAL 3014", hex: "#CB7375", name: "Antique Pink" },
+  { ral: "RAL 3015", hex: "#D8A0A6", name: "Light Pink" },
+  { ral: "RAL 3022", hex: "#CF6955", name: "Salmon Pink" },
+  { ral: "RAL 4003", hex: "#C4618C", name: "Heather Violet" },
+  { ral: "RAL 4009", hex: "#9D8692", name: "Pastel Violet" },
+  { ral: "RAL 5007", hex: "#376B8C", name: "Brilliant Blue" },
+  { ral: "RAL 5009", hex: "#215F78", name: "Azure Blue" },
+  { ral: "RAL 5012", hex: "#0089B6", name: "Light Blue" },
+  { ral: "RAL 5014", hex: "#637D96", name: "Pigeon Blue" },
+  { ral: "RAL 5024", hex: "#6093AC", name: "Pastel Blue" },
+  { ral: "RAL 5021", hex: "#007577", name: "Water Blue" },
+  { ral: "RAL 5023", hex: "#41698C", name: "Distant Blue" },
+  { ral: "RAL 6003", hex: "#50533C", name: "Olive Green" },
+  { ral: "RAL 6011", hex: "#6B7C59", name: "Reseda Green" },
+  { ral: "RAL 6019", hex: "#B9CEAC", name: "Pastel Green" },
+  { ral: "RAL 6021", hex: "#8A9977", name: "Pale Green" }
 ];
+
 
 // 2025 Trendy Colors - Paint & Fashion Industry
 
 export const TRENDY_COLOR_MAP = [
-  // Warm Browns & Neutrals
-  { name: "Mocha Mousse", hex: "#382C1E", ral: "RAL 8014" },
-  { name: "Cinnamon Slate", hex: "#6C3082", ral: "RAL 4012" },
-  { name: "Hot Cocoa", hex: "#633A34", ral: "RAL 8015" },
-  { name: "Leather Saddle", hex: "#79553D", ral: "RAL 8024" },
-  
-  // Icy Blues
-  { name: "Icy Blue", hex: "#5D9B9B", ral: "RAL 5024" },
-  { name: "Bellbottom Blues", hex: "#606E8C", ral: "RAL 5014" },
-  { name: "Quietude", hex: "#BDECB6", ral: "RAL 6019" },
-  
-  // Vibrant Greens
-  { name: "Frog Green", hex: "#57A639", ral: "RAL 6018" },
-  { name: "Chartreuse", hex: "#FFFF00", ral: "RAL 1026" },
-  { name: "Forest Green", hex: "#2C5545", ral: "RAL 6028" },
-  
-  // Pinks & Roses
-  { name: "Tea Rose", hex: "#EA899A", ral: "RAL 3015" },
-  { name: "Petal Pink", hex: "#D7837F", ral: "RAL 3014" },
-  { name: "Bubblegum", hex: "#E63244", ral: "RAL 3017" },
-  
-  // Lavenders & Purples
-  { name: "Digital Lavender", hex: "#8673A1", ral: "RAL 4003" },
-  { name: "Lilac Mist", hex: "#BC8DBF", ral: "RAL 4009" },
-  { name: "Orchid Bloom", hex: "#923E85", ral: "RAL 4008" },
-  
-  // Warm Tones
-  { name: "Apricot Crush", hex: "#FA6A00", ral: "RAL 2003" },
-  { name: "Terracotta", hex: "#C44536", ral: "RAL 8004" },
-  { name: "Butter Yellow", hex: "#F4A900", ral: "RAL 1003" },
-  
+  { ral: "RAL 1003", hex: "#F9A900", name: "Signal Yellow" },
+  { ral: "RAL 1004", hex: "#E49E00", name: "Golden Yellow" },
+  { ral: "RAL 1023", hex: "#F7B500", name: "Traffic Yellow" },
+  { ral: "RAL 2005", hex: "#FF4D08", name: "Luminous Orange" },
+  { ral: "RAL 2008", hex: "#EC6B22", name: "Bright Red Orange" },
+  { ral: "RAL 2009", hex: "#DE5308", name: "Traffic Orange" },
+  { ral: "RAL 3001", hex: "#9B2423", name: "Signal Red" },
+  { ral: "RAL 3002", hex: "#9B2321", name: "Carmine Red" },
+  { ral: "RAL 3024", hex: "#FF2D21", name: "Luminous Red" },
+  { ral: "RAL 4006", hex: "#903373", name: "Traffic Purple" },
+  { ral: "RAL 5005", hex: "#005387", name: "Signal Blue" },
+  { ral: "RAL 5012", hex: "#0089B6", name: "Light Blue" },
+  { ral: "RAL 5015", hex: "#007CAF", name: "Sky Blue" },
+  { ral: "RAL 5018", hex: "#048B8C", name: "Turquoise Blue" },
+  { ral: "RAL 6001", hex: "#366735", name: "Emerald Green" },
+  { ral: "RAL 6018", hex: "#60993B", name: "Yellow Green" },
+  { ral: "RAL 6027", hex: "#7EBAB5", name: "Light Green" },
+  { ral: "RAL 6032", hex: "#237F52", name: "Signal Green" },
+  { ral: "RAL 6034", hex: "#7AADAC", name: "Pastel Turquoise" },
+  { ral: "RAL 3015", hex: "#D8A0A6", name: "Light Pink" }
 ];
 
 export function getRandomColor(map:ColorItem[]): ColorItem {

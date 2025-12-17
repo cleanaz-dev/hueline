@@ -5,14 +5,13 @@ import {
   Play,
   Pause,
   AlertTriangle,
-  CheckCircle2,
-  FileText,
   Calendar,
   Clock,
+  Home,
+  Building2,
 } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useState, useRef } from "react";
 import {
   formatCallReason,
@@ -84,6 +83,8 @@ export default function IntelligenceDialog({
     0
   );
   const scope = booking.currentProjectScope || "UNKNOWN";
+  const type = (booking as any).projectType || "RESIDENTIAL";
+  const TypeIcon = type === "COMMERCIAL" ? Building2 : Home;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -95,7 +96,8 @@ export default function IntelligenceDialog({
               <h3 className="text-xl font-bold text-gray-900">
                 {booking.name}
               </h3>
-              <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-700">
+              <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 flex items-center gap-1">
+                <TypeIcon className="w-3 h-3 text-gray-500" />
                 {formatProjectScope(scope)}
               </span>
             </div>
@@ -113,7 +115,7 @@ export default function IntelligenceDialog({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500"
+            className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -227,7 +229,7 @@ export default function IntelligenceDialog({
         </div>
 
         {/* FOOTER */}
-        <div className="p-4 border-t bg-gray-50 flex justify-end">
+        <div className="p-4 border-t bg-gray-50 flex justify-end cursor-pointer">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>

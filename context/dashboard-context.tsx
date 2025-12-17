@@ -49,28 +49,46 @@ export function DashboardProvider({
 
   // Helper to fetch images (Keeping this logic here is fine)
   const fetchUrlsForBooking = async (booking: BookingData) => {
-    try {
-      const res = await fetch(
-        `/api/subdomain/${subdomain.slug}/booking/${booking.huelineId}/get-presigned-urls`
-      );
-      if (!res.ok) return booking;
-      
-      const { originalImages, mockups } = await res.json();
-      
-      return {
-        ...booking,
-        originalImages,
-        mockups: mockups.map((mockup: any, index: number) => ({
-          ...(booking.mockups ? booking.mockups[index] : {}),
-          ...mockup,
-        })),
-      };
-    } catch (e) {
-      console.error(`Failed to enrich booking ${booking.huelineId}`, e);
+  try {
+    const res = await fetch(
+      `/api/subdomain/${subdomain.slug}/booking/${booking.huelineId}/get-presigned-urls`
+    );
+    
+    // Safety check: if API errors, return booking as-is without crashing
+    if (!res.ok) {
+      console.warn(`API Error for ${booking.huelineId}: ${res.status}`);
       return booking;
     }
-  };
-
+    
+    const data = await res.json();
+    
+    // Safety check: ensure we actually got the arrays we expect
+    const originalImages = Array.isArray(data.originalImages) ? data.originalImages : [];
+    const newMockups = Array.isArray(data.mockups) ? data.mockups : [];
+    
+    return {
+      ...booking,
+      // If the API returns presigned URLs for original images, update them. 
+      // Note: Depending on your Type definition, this might need to remain S3 keys 
+      // or you might need a new field like 'originalImageUrls'. 
+      // For now, assuming your UI handles URLs in this field:
+      originalImages: originalImages.length > 0 ? originalImages : booking.originalImages,
+      
+      // Merge mockups safer
+      mockups: newMockups.map((mockup: any) => {
+        // Find existing mockup data if needed, or just use the fresh API data
+        const existing = booking.mockups?.find(m => m.id === mockup.id) || {};
+        return {
+          ...existing,
+          ...mockup, 
+        };
+      }),
+    };
+  } catch (e) {
+    console.error(`Failed to enrich booking ${booking.huelineId}`, e);
+    return booking;
+  }
+};
   useEffect(() => {
     let isMounted = true;
 

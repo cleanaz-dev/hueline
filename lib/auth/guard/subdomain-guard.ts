@@ -1,33 +1,28 @@
 import { getServerSession } from "next-auth";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { authOptions } from "../config";
+import { headers } from "next/headers";
 
 export async function verifySubdomainOwner(requestedSlug: string) {
   const session = await getServerSession(authOptions);
+  
+  // 1. Skip check if already on login page (Prevent Loops)
+  const h = await headers();
+  const pathname = h.get('x-invoke-path') || '';
+  if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
+    return session; 
+  }
 
-  const appLoginUrl = process.env.NODE_ENV === 'production'
-    ? 'https://hue-line.com/login'
-    : 'http://localhost:3000/login';
-
-  // 1. Not logged in? -> Redirect to main app login
+  // 2. If no session, go to /login (Relative path)
+  // This keeps the user on "tesla.localhost" so the cookie works.
   if (!session || !session.user) {
-    redirect(appLoginUrl);
+    redirect("/login"); 
   }
 
-  // 2. Super admin can access everything
-  if (session.role === "SUPER_ADMIN") {
-    return session;
-  }
-
-  // 3. Customer? -> Redirect to main app login
-  if (session.role === "customer") {
-    redirect(appLoginUrl);
-  }
-
-  // 4. Wrong subdomain? -> Redirect to main app login
+  // 3. Check ownership
   if (session.user.subdomainSlug !== requestedSlug) {
-    console.warn(`⛔ Access Denied - wrong subdomain`);
-    redirect(appLoginUrl);
+    // Wrong subdomain? Send to login to switch accounts or re-auth
+    redirect("/login");
   }
 
   return session;
