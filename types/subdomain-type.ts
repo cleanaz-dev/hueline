@@ -1,4 +1,5 @@
 import { Call } from "./call-intelligence-types";
+import { Prisma } from "@/app/generated/prisma";
 
 export interface SubdomainAccountData {
   id: string;
@@ -57,6 +58,7 @@ export interface BookingData {
   sharedAccess: SharedAccess[];
   exports: Export[];
   calls: Call[];
+  logs: Log[]
 }
 
 export interface Export {
@@ -112,4 +114,41 @@ export interface SubdomainUser {
   email: string;
   role: string;
   imageUrl?: string | null;
+}
+
+
+export type LogType = 'CALL' | 'MOCKUP' | 'PAYMENT' | 'STATUS_CHANGE' | 'SMS' | 'NOTE';
+export type LogActor = 'AI' | 'SYSTEM' | 'PAINTER' | 'CLIENT';
+
+// 1. Define the Metadata Shape
+export interface LogMetadata {
+  // Common fields we expect (You get autocomplete for these)
+  duration?: number | string;
+  recordingUrl?: string;
+  amount?: number;
+  previousStatus?: string;
+  newStatus?: string;
+  note?: string;
+
+  // The "Catch-All" (Allows any other random JSON data without errors)
+  [key: string]: any;
+}
+
+// 2. The Main Log Interface
+export interface Log {
+  id: string;
+  bookingDataId: string;
+  subdomainId: string;
+  
+  type: LogType;
+  actor: LogActor;
+  
+  title: string;
+  description: string | null;
+
+  // 3. Accept JsonValue from Prisma
+  metadata?: Prisma.JsonValue | null; 
+
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }

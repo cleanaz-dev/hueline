@@ -81,3 +81,4 @@ export async function updateActivity(email: string, action: string) {
 
 
 export * from "./subdomains"
+export * from "./admin"

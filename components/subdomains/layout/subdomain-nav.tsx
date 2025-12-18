@@ -91,7 +91,7 @@ export default function SubdomainNav({
     rawRole === "OWNER";
   const isBusinessOwner = !isCustomer && !isSuperAdmin;
 
-  const logoSrc = getPublicUrl(data.logo) || "/images/placeholder-logo.png";
+  const logoSrc = getPublicUrl(data.logo) || "/placeholder-logo.png";
 
   return (
     <>

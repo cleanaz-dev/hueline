@@ -3,8 +3,11 @@
 import { Metadata } from 'next';
 import { getSubDomainAccount } from '@/lib/prisma';
 import { cache } from 'react';
-// 👇 1. Import your Session Provider
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/config'; // adjust path as needed
 import { NextAuthSessionProvider } from "@/providers/session-provider"; 
+import SuperAdminSidebar from '@/components/admin/super-admin-sidebar';
+import { SuperAdminProvider } from '@/context/super-admin-context';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -44,12 +47,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function SubDomainLayout({children }: Props) {
+export default async function SubDomainLayout({ children }: Props) {
+  const session = await getServerSession(authOptions);
+  const isSuperAdmin = session?.role === 'SUPER_ADMIN';
+
   return (
-    // 👇 2. Wrap the Subdomain Layout in the Provider
     <NextAuthSessionProvider>
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
-        {children}
+        {isSuperAdmin ? (
+          // Sidebar layout for super admin
+          <SuperAdminProvider>
+          <div className="flex">
+            <SuperAdminSidebar />
+            <main className="flex-1 mt-10 lg:mt-0 lg:ml-64">
+              {children}
+            </main>
+          </div>
+          </SuperAdminProvider>
+        ) : (
+          // Regular layout for normal users
+          children
+        )}
       </div>
     </NextAuthSessionProvider>
   );

@@ -83,12 +83,14 @@ model Subdomain {
   planStatus           String    @default("active")
   planName             String    @default("Professional")
   currentPeriodEnd     DateTime?
+  planPrice  String?
 
   createdAt DateTime         @default(now())
   updatedAt DateTime?        @updatedAt
   FormData  FormData?
   bookings  SubBookingData[]
   users     SubdomainUser[]
+  logs      Logs[]
 }
 
 model SubdomainUser {
@@ -138,6 +140,7 @@ model SubBookingData {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  logs      Logs[]
 }
 
 model Call {
@@ -261,4 +264,51 @@ enum CallReason {
   PRICING
   FOLLOW_UP
   OTHER
+}
+
+model Logs {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // Relations
+  bookingDataId String         @db.ObjectId
+  bookingData   SubBookingData @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
+  
+  // Keep SubdomainID for fast filtering at the account level
+  subdomainId   String         @db.ObjectId
+  subdomain     Subdomain      @relation(fields: [subdomainId], references: [id], onDelete: Cascade)
+
+  // Core Data
+  type          LogType
+  actor         LogActor       @default(SYSTEM) // <--- NEW: Who did it?
+  
+  title         String         // e.g. "New Call", "Status Update"
+  description   String?        // e.g. "Client asked about pricing"
+  
+  // THE SECRET WEAPON: Store specific data here without new columns
+  // Call: { "duration": 120, "sentiment": "positive" }
+  // Payment: { "amount": 1500, "stripeId": "..." }
+  // Status: { "old": "NEW_PROJECT", "new": "PRICING" }
+  metadata      Json?          
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([bookingDataId])
+  @@index([subdomainId])
+}
+
+enum LogType {
+  CALL
+  MOCKUP
+  PAYMENT
+  STATUS_CHANGE  // Vital for tracking the pipeline
+  SMS            // If you send texts
+  NOTE           // If the painter wants to write a manual note
+}
+
+enum LogActor {
+  AI             // The Voice Agent / Gemini
+  SYSTEM         // Automated tasks (e.g. scheduled reminders)
+  PAINTER        // The Admin User
+  CLIENT         // The Homeowner
 }

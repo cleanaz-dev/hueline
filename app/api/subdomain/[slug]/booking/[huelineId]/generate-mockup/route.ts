@@ -2,6 +2,7 @@ import { handleNewS3Key } from "@/lib/aws/s3";
 import { getNewMockUpColorMoonshot } from "@/lib/moonshot";
 import { prisma } from "@/lib/prisma";
 import { updateMockupData } from "@/lib/prisma/mutations/booking-data";
+import { createMockupLog } from "@/lib/prisma/mutations/logs/create-mockup-log";
 import { getOriginalImageUrl } from "@/lib/prisma/mutations/s3key";
 import { generateMockup } from "@/lib/replicate";
 import { getColorMatch } from "@/lib/utils/color-match-lambda";
@@ -22,13 +23,28 @@ export async function POST(req: Request, { params }: Params) {
     const body = await req.json();
 
     const subdomain = await prisma.subdomain.findUnique({
-      where: { slug },
+      where: {
+        slug,
+        bookings: {
+          some: {
+            huelineId: huelineId,
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+    const booking = await prisma.subBookingData.findUnique({
+      where: {
+        huelineId,
+      },
       select: {
         id: true,
       },
     });
 
-    if (!subdomain) {
+    if (!subdomain || !booking) {
       return NextResponse.json(
         {
           message: "Missing required data",
@@ -72,7 +88,12 @@ export async function POST(req: Request, { params }: Params) {
 
     const safeMockupUrl = String(mockupUrl);
 
-    console.log("📦 Data for Color Match:", safeMockupUrl, anchorHex, extractedNewColor);
+    console.log(
+      "📦 Data for Color Match:",
+      safeMockupUrl,
+      anchorHex,
+      extractedNewColor
+    );
 
     const { ral, name, hex } = await getColorMatch(
       safeMockupUrl,
@@ -101,6 +122,17 @@ export async function POST(req: Request, { params }: Params) {
     );
 
     console.log("Updated Booking:", newMockupData);
+
+    // CREATE THE MOCKUP LOG
+    await createMockupLog({
+      bookingDataId: booking.id,
+      subdomainId: subdomainId,
+      roomType: roomType,
+      color: newColorChoice,
+      option: option,
+      removeFurniture: removeFurniture || false,
+      s3Key: s3key, // Include the s3Key - good for debugging/tracking
+    });
 
     return NextResponse.json(
       {

@@ -3,8 +3,18 @@ import { prisma } from "@/lib/prisma";
 import { getCallIntelligence } from "@/lib/handlers";
 import { createCallIngestLog } from "@/lib/prisma/mutations/logs/create-call-log";
 
-export async function POST(req: Request) {
+interface Params {
+  params: Promise<{
+    slug: string;
+  }>;
+}
+
+export async function POST(req: Request, { params }: Params) {
   try {
+    const { slug } = await params;
+
+    if (!slug)
+      return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     // 1. Security Check
     const apiKey = req.headers.get("x-api-key");
     if (apiKey !== process.env.INTERNAL_API_KEY) {
@@ -118,7 +128,6 @@ export async function POST(req: Request) {
         },
       },
     });
-
 
     await createCallIngestLog({
       bookingDataId: booking.id,

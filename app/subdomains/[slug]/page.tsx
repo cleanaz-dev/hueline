@@ -4,6 +4,9 @@ import { checkSubdomainExists } from "@/lib/auth/guard/check-if-subdomain-exists
 import { getSubDomainData } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import type { BookingData } from "@/types/subdomain-type";
+import AdminDashboard from "@/components/admin/admin-dashboard";
+import AdminWrapper from "@/components/admin/admin-wrapper";
+
 
 interface PageProps {
   params: Promise<{
@@ -19,7 +22,13 @@ export default async function Page({ params }: PageProps) {
     redirect(`${process.env.NEXTAUTH_URL}/login`);
   }
 
-  await verifySubdomainOwner(slug);
+  const session = await verifySubdomainOwner(slug);
+
+  if(session?.role === "SUPER_ADMIN" && session.user.subdomainSlug === "admin") {
+    return (
+      <AdminWrapper />
+    )
+  }
 
   const subDomainData = await getSubDomainData(slug);
   if (!subDomainData) notFound();

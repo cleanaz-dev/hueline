@@ -24,6 +24,8 @@ export async function getSubDomainData(slug: string) {
       
       createdAt: true,
       updatedAt: true,
+
+      logs: true,
       
       bookings: {
         include: {
@@ -36,6 +38,7 @@ export async function getSubDomainData(slug: string) {
               createdAt: 'desc'
             }
           },
+          logs: true,
           calls: {
             include: {
               intelligence: true
