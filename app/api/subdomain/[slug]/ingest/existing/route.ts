@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const {
-      heuline_id: huelineId,
+      hueline_id: huelineId,
       domain_id: domainId,
       slug: slug,
       call_sid: callSid,
