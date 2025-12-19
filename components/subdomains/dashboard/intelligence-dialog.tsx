@@ -9,6 +9,9 @@ import {
   Clock,
   Home,
   Building2,
+  Smile,
+  Meh,
+  Frown,
 } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
 import { Button } from "@/components/ui/button";
@@ -18,12 +21,38 @@ import {
   formatProjectScope,
   getEstimatedValueRange,
 } from "@/lib/utils/dashboard-utils";
+import { CallOutcome } from "@/types/call-intelligence-types";
 
 interface IntelligenceDialogProps {
   isOpen: boolean;
   onClose: () => void;
   booking: BookingData;
 }
+
+// Outcome Icon Mapping
+const outcomeConfig = {
+  POSITIVE: {
+    icon: Smile,
+    color: "text-green-600",
+    bg: "bg-green-50",
+    border: "border-green-200",
+    label: "Positive",
+  },
+  NEUTRAL: {
+    icon: Meh,
+    color: "text-yellow-600",
+    bg: "bg-yellow-50",
+    border: "border-yellow-200",
+    label: "Neutral",
+  },
+  NEGATIVE: {
+    icon: Frown,
+    color: "text-red-600",
+    bg: "bg-red-50",
+    border: "border-red-200",
+    label: "Negative",
+  },
+};
 
 // Simple internal Audio Player for the dialog
 const DialogPlayer = ({ url }: { url: string }) => {
@@ -127,6 +156,8 @@ export default function IntelligenceDialog({
             {sortedCalls.map((call, index) => {
               const intel = call.intelligence;
               const date = new Date(call.createdAt);
+              const outcome = intel?.callOutcome as CallOutcome | undefined;
+              const outcomeStyle = outcome ? outcomeConfig[outcome] : null;
 
               return (
                 <div
@@ -148,6 +179,18 @@ export default function IntelligenceDialog({
                         <span className="font-semibold text-sm text-gray-900">
                           {formatCallReason(intel?.callReason || "Unknown")}
                         </span>
+                        {outcomeStyle && (
+                          <span
+                            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${outcomeStyle.bg} ${outcomeStyle.border} border`}
+                          >
+                            <outcomeStyle.icon
+                              className={`w-3 h-3 ${outcomeStyle.color}`}
+                            />
+                            <span className={outcomeStyle.color}>
+                              {outcomeStyle.label}
+                            </span>
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-400">
                         <Calendar className="w-3 h-3" />
@@ -162,6 +205,18 @@ export default function IntelligenceDialog({
                     <div className="p-4 space-y-4">
                       {/* Audio Player */}
                       {call.audioUrl && <DialogPlayer url={call.audioUrl} />}
+
+                      {/* Call Summary */}
+                      {intel?.callSummary && (
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                          <h5 className="text-xs font-bold text-blue-900 uppercase mb-1.5">
+                            Summary
+                          </h5>
+                          <p className="text-sm text-blue-800 leading-relaxed">
+                            {intel.callSummary}
+                          </p>
+                        </div>
+                      )}
 
                       {/* Intelligence Block */}
                       {intel && (
@@ -190,7 +245,7 @@ export default function IntelligenceDialog({
                           {/* Right: Value & Summary */}
                           <div className="flex flex-col justify-between">
                             {intel.estimatedAdditionalValue > 0 ? (
-                              <div className="bg-green-50 border border-green-100 rounded-lg p-3 text-center mb-2">
+                              <div className="bg-green-50 border border-green-100 rounded-lg p-3 text-center">
                                 <div className="text-xs text-green-600 font-medium uppercase">
                                   Est. Value Found
                                 </div>
@@ -202,15 +257,12 @@ export default function IntelligenceDialog({
                                 </div>
                               </div>
                             ) : (
-                              <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 text-center mb-2 flex items-center justify-center h-full">
+                              <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 text-center flex items-center justify-center h-full">
                                 <span className="text-xs text-gray-400">
                                   No hidden value detected
                                 </span>
                               </div>
                             )}
-
-                            {/* If you save summary text, put it here */}
-                            {/* <div className="text-xs text-gray-500 italic">"Client mentioned..."</div> */}
                           </div>
                         </div>
                       )}

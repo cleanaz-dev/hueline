@@ -1,5 +1,4 @@
 // call-intelligence-types.ts
-
 import { CallReason } from "@/app/generated/prisma";
 
 export interface Call {
@@ -24,7 +23,9 @@ export interface CallIntelligence {
   structuralNeeds: boolean;
   technicalNeeds: boolean;
   estimatedAdditionalValue: number;
-  projectScope: string; // ADD THIS LINE
+  projectScope: string;
+  callSummary: string | null;        // NEW
+  callOutcome: CallOutcome | null;   // NEW
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,5 +37,13 @@ export interface CallAnalysisResult {
   structuralNeeds: boolean;
   technicalNeeds: boolean;
   estimatedValue: number;
-  projectScope: string; // ADD THIS LINE TOO
+  projectScope: string;
+  callSummary: string;               // NEW
+  callOutcome: CallOutcome;          // NEW
+}
+
+export enum CallOutcome {
+  POSITIVE = "POSITIVE",
+  NEUTRAL = "NEUTRAL",
+  NEGATIVE = "NEGATIVE"
 }

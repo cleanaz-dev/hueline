@@ -1,5 +1,6 @@
 import { getCallIntelligence } from "@/lib/handlers";
 import { prisma } from "@/lib/prisma";
+import { createCallIngestLog } from "@/lib/prisma/mutations/logs/create-call-log";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -31,6 +32,8 @@ export async function POST(req: Request) {
       select: {
         id: true,
         calls: true,
+        phone: true,
+        name: true,
       },
     });
 
@@ -47,6 +50,14 @@ export async function POST(req: Request) {
         status: "IN_PROGRESS",
       },
     });
+
+    await createCallIngestLog({
+      bookingDataId: existingBooking.id,
+      subdomainId: domainId,
+      callSid: callSid,
+      customerPhone: existingBooking.phone,
+      customerName:existingBooking.name
+    })
 
     await getCallIntelligence({
       hueline_id: huelineId,

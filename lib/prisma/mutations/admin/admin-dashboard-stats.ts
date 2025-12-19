@@ -85,7 +85,7 @@ export async function getSuperAdminDashboardStats() {
   }, 0);
 
   return {
-    totalActive: currentMonthActive,
+    totalActive: currentMonthActive - 1,
     activeChange: activeChange >= 0 ? `+${activeChange}` : `${activeChange}`,
     monthlyRevenue,
     revenueChange: `+${revenueChange}%`,

@@ -174,6 +174,9 @@ model CallIntelligence {
   technicalNeeds           Boolean    @default(false)
   estimatedAdditionalValue Float      @default(0)
   projectScope             String
+  callSummary              String?
+  callOutcome              CallOutcome?
+  
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -311,4 +314,10 @@ enum LogActor {
   SYSTEM         // Automated tasks (e.g. scheduled reminders)
   PAINTER        // The Admin User
   CLIENT         // The Homeowner
+}
+
+enum CallOutcome {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
 }

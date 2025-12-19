@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 /**
- * Create a log for an incoming call (initial ingest)
+ * Create a log for an incoming call from an existing customer
  */
 export async function createCallIngestLog(params: {
   bookingDataId: string;
@@ -21,7 +21,7 @@ export async function createCallIngestLog(params: {
     customerPhone,
     roomType,
   } = params;
-
+  
   try {
     const log = await prisma.logs.create({
       data: {
@@ -29,26 +29,22 @@ export async function createCallIngestLog(params: {
         subdomainId,
         type: "CALL",
         actor: "CLIENT",
-        title: "New Call Received",
-        description: `${customerName} called about ${roomType || "their project"}`,
+        title: "Follow-up Call Received",
+        description: `${customerName} called back${roomType ? ` regarding ${roomType}` : ""}`,
         metadata: {
           callSid,
           duration,
           phone: customerPhone,
           roomType,
-          stage: "ingest",
+          stage: "existing",
         },
       },
     });
-
-    console.log(`📝 Call ingest log created: ${callSid}`);
+    
+    console.log(`📝 Follow-up call log created: ${callSid}`);
     return log;
   } catch (error) {
     console.error("❌ Failed to create call ingest log:", error);
     throw error;
   }
 }
-
-/**
- * Create a log for call intelligence analysis
- */
