@@ -30,7 +30,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         lastCallAt: true,
         paintColors: true,
         dimensions: true,
-        summary: true
+        summary: true,
+        name: true,
       },
       orderBy: {
         lastCallAt: 'desc'
@@ -52,6 +53,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         room_type: bookingData.roomType,
         summary: bookingData.summary,
         paint_colors: bookingData.paintColors,
+        caller_name: bookingData.name
       }
     });
   } catch (error) {
