@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     } = body;
     console.log("Body:", body);
 
-    if (!huelineId || !domainId || !slug || callSid)
+    if (!huelineId || !domainId || !slug || !callSid)
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
 
     const existingBooking = await prisma.subBookingData.findUnique({
