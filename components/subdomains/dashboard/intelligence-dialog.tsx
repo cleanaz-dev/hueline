@@ -21,7 +21,7 @@ import {
   formatProjectScope,
   getEstimatedValueRange,
 } from "@/lib/utils/dashboard-utils";
-import { CallOutcome } from "@/types/call-intelligence-types";
+import { CallOutcome } from "@/app/generated/prisma"
 
 interface IntelligenceDialogProps {
   isOpen: boolean;
