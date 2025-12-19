@@ -47,6 +47,7 @@ export async function POST(req: Request) {
       call_sid: callSid,
       domain_id: domainId,
       slug: slug,
+      action: "existing"
     });
 
     return NextResponse.json({ messge: "Success" }, { status: 200 });

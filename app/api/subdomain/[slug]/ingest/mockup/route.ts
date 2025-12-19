@@ -144,6 +144,7 @@ export async function POST(req: Request, { params }: Params) {
       call_sid: body.call_sid,
       domain_id: body.subdomain_id,
       slug: body.slug,
+      action: "mockup"
     });
 
     return NextResponse.json({
