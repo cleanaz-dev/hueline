@@ -1,14 +1,17 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 interface Params {
   params: Promise<{ slug: string }>
 }
 
-export async function GET(req: Request, { params }: Params) {
+export async function GET(req: NextRequest, { params }: Params) {
   const { slug } = await params;
-  const { searchParams } = new URL(req.url);
-  const phone = searchParams.get("phone");
+  
+  // ✅ Use NextRequest's searchParams property directly
+  const phone = req.nextUrl.searchParams.get("phone");
+  
+  console.log("🔍 Request:", { slug, phone });
 
   if (!slug || !phone) {
     return NextResponse.json({ error: "Missing slug or phone" }, { status: 400 });
@@ -18,7 +21,7 @@ export async function GET(req: Request, { params }: Params) {
     const bookingData = await prisma.subBookingData.findFirst({
       where: {
         subdomain: { slug },
-        phone: phone ,
+        phone: phone,
       },
       select: {
         huelineId: true,
@@ -33,6 +36,8 @@ export async function GET(req: Request, { params }: Params) {
         lastCallAt: 'desc'
       }
     });
+
+    console.log("📊 Query result:", bookingData ? "Found booking" : "No booking");
 
     if (!bookingData) {
       return NextResponse.json({ has_booking: false });
@@ -49,9 +54,8 @@ export async function GET(req: Request, { params }: Params) {
         paint_colors: bookingData.paintColors,
       }
     });
-
   } catch (error) {
-    console.error("Error fetching booking:", error);
+    console.error("❌ Error fetching booking:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
