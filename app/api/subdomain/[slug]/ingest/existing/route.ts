@@ -17,6 +17,12 @@ export async function POST(req: Request) {
     if (!huelineId || !domainId || !slug || !callSid)
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
 
+    const apiKey = req.headers.get("x-api-key")
+    if (apiKey !== process.env.INTERNAL_API_KEY) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+
     const existingBooking = await prisma.subBookingData.findUnique({
       where: {
         huelineId,
@@ -50,7 +56,7 @@ export async function POST(req: Request) {
       action: "existing"
     });
 
-    return NextResponse.json({ messge: "Success" }, { status: 200 });
+    return NextResponse.json({ message: "Success" }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
