@@ -1,27 +1,29 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getPaginationRowModel, // 1. Import Pagination Model
   flexRender,
   createColumnHelper,
 } from "@tanstack/react-table";
 import {
   Search,
-  ExternalLink,
   ArrowUp,
   ArrowDown,
-  Play,
-  Pause,
   Loader2,
   Camera,
   Database,
   Palette,
   Home,
   Building2,
+  ChevronRight,
+  ChevronLeft,
+  Calendar,
+  Clock,
 } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
 import { useDashboard } from "@/context/dashboard-context";
@@ -29,6 +31,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   formatCallReason,
   formatProjectScope,
@@ -65,6 +75,10 @@ const columnHelper = createColumnHelper<TableBooking>();
 export default function ClientTable() {
   const { bookings, isLoading, openIntelligence } = useDashboard();
   const [globalFilter, setGlobalFilter] = useState("");
+  const [selectedBooking, setSelectedBooking] = useState<TableBooking | null>(
+    null
+  );
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   // 2. SIMPLIFIED DATA TRANSFORM
   const tableData = useMemo(() => {
@@ -293,10 +307,22 @@ export default function ClientTable() {
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(), // 3. Enable Pagination
+    initialState: {
+      pagination: {
+        pageSize: 10, // Default to 10 items per page
+      },
+    },
   });
 
+  // Mobile Row Click Handler
+  const handleMobileRowClick = (booking: TableBooking) => {
+    setSelectedBooking(booking);
+    setIsSheetOpen(true);
+  };
+
   return (
-    <div className="container mx-auto max-w-6xl px-4  lg:px-0 my-12">
+    <div className="container mx-auto max-w-6xl px-4 lg:px-0 my-8">
       {/* Search Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
@@ -317,13 +343,13 @@ export default function ClientTable() {
             value={globalFilter ?? ""}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder="Search leads..."
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-card"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-white"
           />
         </div>
       </div>
 
-      {/* Desktop Table */}
-      <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* --- DESKTOP VIEW (unchanged structure) --- */}
+      <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4">
         <table className="w-full">
           <thead className="bg-gray-50/50 border-b border-gray-200">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -359,116 +385,267 @@ export default function ClientTable() {
         </table>
       </div>
 
-      {/* Mobile View */}
-      <div className="md:hidden space-y-3">
+      {/* --- MOBILE VIEW: COMPACT LIST --- */}
+      <div className="md:hidden flex flex-col gap-0 border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm mb-4">
         {table.getRowModel().rows.map((row) => {
           const data = row.original;
-          // console.log("row data:", data)
-          // Clean Mobile Data Access
-          const anchor = data.initialIntent || "NEW_PROJECT";
-          const current = data.currentCallReason;
-          const showPulse = current && current !== anchor;
-          const rawThumbnailUrl = row.original.thumbnailUrl;
-          const thumbnailUrl = formatImageUrl(rawThumbnailUrl);
-          console.log(
-            "Mobile thumbnailUrl:",
-            thumbnailUrl,
-            "Raw:",
-            rawThumbnailUrl
-          );
+          const thumbnailUrl = formatImageUrl(data.thumbnailUrl);
+          const date = new Date(data.lastCallAt || data.createdAt);
+
           return (
             <div
               key={row.id}
-              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"
+              onClick={() => handleMobileRowClick(data)}
+              className="flex items-center gap-3 p-3 border-b border-gray-100 last:border-0 active:bg-gray-50 transition-colors cursor-pointer"
             >
-              <div className="flex gap-4">
-                <div className="w-16 h-16 rounded-lg bg-gray-100 shrink-0 overflow-hidden relative flex items-center justify-center">
-                  {data.thumbnailUrl ? (
+              {/* 1. Mini Thumbnail */}
+              <div className="w-12 h-12 rounded-md bg-gray-100 shrink-0 overflow-hidden relative">
+                {data.thumbnailUrl ? (
+                  <Image
+                    src={thumbnailUrl}
+                    alt="Room"
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <Camera className="w-5 h-5 text-gray-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                )}
+              </div>
+
+              {/* 2. Main Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-baseline mb-0.5">
+                  <span className="font-semibold text-sm text-gray-900 truncate pr-2">
+                    {data.name}
+                  </span>
+                  <span className="text-[10px] text-gray-400 shrink-0">
+                    {date.toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-xs text-gray-500 truncate pr-2">
+                    {formatProjectScope(
+                      data.currentProjectScope || "Recent Inquiry"
+                    )}
+                  </div>
+                  {data.totalHiddenValue > 0 && (
+                    <div className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                      +Val
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 3. Chevron Indicator */}
+              <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* --- PAGINATION CONTROLS (Shared) --- */}
+      <div className="flex items-center justify-between px-2">
+        <div className="text-sm text-gray-500">
+          Page {table.getState().pagination.pageIndex + 1} of{" "}
+          {table.getPageCount()}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+      </div>
+
+      {/* --- DETAIL SHEET (Mobile) --- */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent
+          side="bottom"
+          // 1. Added [&>button]:hidden to remove the default Shadcn 'X' icon
+          // 2. Kept the premium rounded top and shadow
+          className="h-[85vh] sm:h-full rounded-t-[2rem] sm:rounded-none outline-none border-t border-gray-100/50 shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.1)] [&>button]:hidden p-0"
+        >
+          {selectedBooking && (
+            <div className="flex flex-col h-full w-full bg-white rounded-t-[2rem]">
+              {/* --- 1. GRAB HANDLE (Replaces Close Button) --- */}
+              {/* This creates a safe zone at the top and signals "Swipe Down" */}
+              <div
+                className="w-full flex justify-center pt-3 pb-2 flex-shrink-0 cursor-grab active:cursor-grabbing"
+                onClick={() => setIsSheetOpen(false)}
+              >
+                <div className="w-10 h-1.5 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors" />
+              </div>
+
+              {/* --- PREMIUM HEADER --- */}
+              <div className="px-6 pb-4 shrink-0">
+                <div className="flex items-start justify-between mb-1">
+                  <div>
+                    <SheetTitle className="text-2xl font-bold tracking-tight text-gray-900">
+                      {selectedBooking.name}
+                    </SheetTitle>
+
+                    {/* Metadata Row */}
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="font-mono text-[10px] uppercase tracking-wider bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md border border-gray-200">
+                        {selectedBooking.huelineId.slice(-6)}
+                      </span>
+                      <span className="text-gray-300 text-[10px]">•</span>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
+                        <Clock className="w-3 h-3 text-gray-400" />
+                        {new Date(
+                          selectedBooking.lastCallAt ||
+                            selectedBooking.createdAt
+                        ).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Action: Call Button (Now unobstructed) */}
+                  <a
+                    href={`tel:${selectedBooking.phone}`}
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-50 text-blue-600 border border-blue-100 shadow-sm active:scale-95 transition-transform"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M1.5 4.5a3 3 0 013-3h1.372c.86 0 1.61.586 1.819 1.42l1.105 4.423a1.875 1.875 0 01-.694 1.955l-1.293.97c-.135.101-.164.249-.126.352a11.285 11.285 0 006.697 6.697c.103.038.25.009.352-.126l.97-1.293a1.875 1.875 0 011.955-.694l4.423 1.105c.834.209 1.42.959 1.42 1.82V19.5a3 3 0 01-3 3h-2.25C8.552 22.5 1.5 15.448 1.5 6.75V4.5z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+
+              {/* --- SCROLLABLE CONTENT --- */}
+              <div className="overflow-y-auto px-6 pb-32 space-y-6 flex-1">
+                {/* Hero Visual */}
+                <div className="aspect-[4/3] w-full relative bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                  {selectedBooking.thumbnailUrl ? (
                     <Image
-                      src={thumbnailUrl}
-                      alt="Room"
+                      src={formatImageUrl(selectedBooking.thumbnailUrl)}
+                      alt="Project"
                       fill
                       className="object-cover"
                     />
                   ) : (
-                    <Camera className="w-6 h-6 text-gray-400" />
+                    <div className="flex flex-col items-center justify-center h-full text-gray-300">
+                      <Camera className="w-8 h-8 mb-2 opacity-50" />
+                      <span className="text-xs font-medium">No Preview</span>
+                    </div>
                   )}
+                  <div className="absolute bottom-3 left-3 px-2 py-1 bg-white/90 backdrop-blur-md rounded-md border border-white/20 text-[10px] font-semibold text-gray-700 shadow-sm">
+                    Room Analysis
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <div className="font-semibold text-gray-900">
-                        {data.name}
-                        {""}{" "}
-                        <span className="text-[10px] text-gray-400 font-mono mt-0.5">
-                          {data.huelineId}
-                        </span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {data.phone}
-                      </div>
+
+                {/* Data Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3.5 rounded-xl border border-gray-100 bg-white shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)]">
+                    <div className="text-[10px] font-medium uppercase tracking-wider text-gray-400 mb-1.5">
+                      Target Intent
                     </div>
-
-                    {/* ACTION BUTTONS */}
-                    <div className="flex gap-2">
-                      {/* 1. INTELLIGENCE (Database) */}
-                      <button
-                        onClick={() => openIntelligence(data)}
-                        className="h-9 w-9 flex items-center justify-center rounded-lg border border-purple-100 bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
-                        title="View Intelligence"
-                      >
-                        <Database className="w-4 h-4" />
-                      </button>
-
-                      {/* 2. VISUALS (Palette) */}
-                      <Link
-                        href={`/j/${data.huelineId}`}
-                        className="h-9 w-9 flex items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                        title="View Mockups & Colors"
-                      >
-                        <Palette className="w-4 h-4" />
-                      </Link>
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      <div className="text-sm font-semibold text-gray-900 leading-none">
+                        {formatCallReason(
+                          selectedBooking.initialIntent || "General"
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <Separator className="my-2" />
-
-                  {/* Project Details Mobile */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <div className="text-xs font-medium text-gray-700">
-                        {formatCallReason(anchor)}
-                      </div>
-                      {showPulse && (
-                        <div className="text-[10px] text-blue-600 mt-0.5">
-                          Latest: {formatCallReason(current!)}
-                        </div>
-                      )}
+                  <div className="p-3.5 rounded-xl border border-gray-100 bg-white shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)]">
+                    <div className="text-[10px] font-medium uppercase tracking-wider text-gray-400 mb-1.5">
+                      Est. Opportunity
                     </div>
-                    {data.totalHiddenValue > 0 && (
-                      <div>
-                        <div className="text-[10px] text-gray-400 uppercase">
-                          Approx. Value
-                        </div>
-                        <div className="text-xs font-bold text-green-600">
-                          +{getEstimatedValueRange(data.totalHiddenValue)}
-                        </div>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          selectedBooking.totalHiddenValue > 0
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                      />
+                      <div className="text-sm font-bold text-gray-900 leading-none">
+                        {selectedBooking.totalHiddenValue > 0
+                          ? `+${getEstimatedValueRange(
+                              selectedBooking.totalHiddenValue
+                            )}`
+                          : "N/A"}
                       </div>
-                    )}
+                    </div>
                   </div>
+                </div>
+
+                {/* Audio */}
+                {selectedBooking.lastCallAudioUrl && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium text-gray-500 ml-1">
+                      Voice Recording
+                    </h4>
+                    <div className="bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
+                      <AudioPlayer url={selectedBooking.lastCallAudioUrl} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* --- FOOTER --- */}
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white to-white/0 pt-10 rounded-b-none">
+                <div className="grid grid-cols-[1fr_2fr] gap-3">
+                  <Button
+                    onClick={() => {
+                      setIsSheetOpen(false);
+                      openIntelligence(selectedBooking);
+                    }}
+                    variant="outline"
+                    className="h-12 rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium"
+                  >
+                    <Database className="w-4 h-4 mr-2 text-purple-500" />
+                    Intel
+                  </Button>
+
+                  <Link
+                    href={`/j/${selectedBooking.huelineId}`}
+                    // target="_blank"
+                    className="w-full"
+                  >
+                    <Button className="w-full h-12 rounded-xl bg-gray-900 hover:bg-gray-800 text-white shadow-lg shadow-gray-200 font-medium">
+                      <Palette className="w-4 h-4 mr-2" />
+                      Open Studio
+                    </Button>
+                  </Link>
                 </div>
               </div>
-            
-              {data.lastCallAudioUrl && (
-                <div className=" border-gray-100">
-                  <AudioPlayer url={data.lastCallAudioUrl} />
-                </div>
-              )}
             </div>
-            
-          );
-        })}
-      </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

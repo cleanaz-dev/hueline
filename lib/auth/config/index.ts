@@ -4,27 +4,29 @@ import { getBooking } from "@/lib/redis";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-// 1. Define Cookie Settings consistently
-const isProduction = process.env.NODE_ENV === "production";
+// --- COOKIE CONFIGURATION ---
+const useSecureCookies = process.env.NODE_ENV === "production";
+const cookiePrefix = useSecureCookies ? "__Secure-" : "";
 
-// Calculate domain: ".hue-line.com" in prod, undefined in localhost
+// Calculate the correct domain. 
+// If VERCEL_URL is set (Preview/Prod), use that host. Otherwise localhost.
 const hostName = process.env.NEXTAUTH_URL 
   ? new URL(process.env.NEXTAUTH_URL).hostname 
   : "localhost";
-const rootDomain = hostName.includes("localhost") ? undefined : ".hue-line.com";
 
 export const authOptions: NextAuthOptions = {
-  // 🔥 FORCE A SPECIFIC COOKIE NAME
-  // This ensures Auth and Proxy always agree, preventing the loop.
+  // 1. COOKIES
   cookies: {
     sessionToken: {
-      name: `hueline.session-token`, 
+      name: `${cookiePrefix}next-auth.session-token`,
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: isProduction,
-        domain: rootDomain,
+        secure: useSecureCookies,
+        // IF we are on localhost, domain must be undefined to work on subdomains (e.g. test.localhost)
+        // IF we are on prod (hue-line.com), domain must be .hue-line.com
+        domain: hostName.includes("localhost") ? undefined : ".hue-line.com",
       },
     },
   },
@@ -67,36 +69,49 @@ export const authOptions: NextAuthOptions = {
         pin: { label: "PIN", type: "text" },
       },
       async authorize(credentials) {
-        // ... (Your existing booking logic is fine)
         try {
           if (!credentials?.huelineId || !credentials?.pin) return null;
+
           let bookingData: any = null;
           let subdomainSlug = "app";
 
-          // Redis Check
+          // A. Redis Check
           const redisData = await getBooking(credentials.huelineId);
           if (redisData) {
-            bookingData = { ...redisData, booking_id: redisData.hueline_id || redisData.booking_id, pin: redisData.pin };
+            bookingData = {
+              ...redisData,
+              booking_id: redisData.hueline_id || redisData.booking_id,
+              pin: redisData.pin 
+            };
+            // Map Redis subdomain_id to slug if needed, or default to app
             if (redisData.subdomain_id) {
                const sub = await prisma.subdomain.findUnique({ where: { id: redisData.subdomain_id }});
                if(sub) subdomainSlug = sub.slug;
             }
           } 
           
-          // DB Fallback
+          // B. DB Fallback (Insensitive Check)
           if (!bookingData) {
             const dbBooking = await prisma.subBookingData.findFirst({
-              where: { huelineId: { equals: credentials.huelineId, mode: "insensitive" } },
+              where: { 
+                huelineId: { equals: credentials.huelineId, mode: "insensitive" }
+              },
               include: { subdomain: true, sharedAccess: true }
             });
+
             if (dbBooking) {
-              bookingData = { ...dbBooking, booking_id: dbBooking.huelineId, pin: dbBooking.pin };
+              bookingData = { 
+                ...dbBooking, 
+                booking_id: dbBooking.huelineId,
+                pin: dbBooking.pin
+              };
               subdomainSlug = dbBooking.subdomain?.slug || "app";
             }
           }
 
           if (!bookingData) return null;
 
+          // C. Verify PIN
           if (String(bookingData.pin).trim() === String(credentials.pin).trim()) {
             return {
               id: bookingData.booking_id,
@@ -107,13 +122,33 @@ export const authOptions: NextAuthOptions = {
               subdomainSlug: subdomainSlug,
             };
           }
+
+          // D. Shared Access
+          if (bookingData.sharedAccess && Array.isArray(bookingData.sharedAccess)) {
+            const sharedUser = bookingData.sharedAccess.find(
+              (u: any) => String(u.pin).trim() === String(credentials.pin).trim()
+            );
+
+            if (sharedUser) {
+              return {
+                id: `${bookingData.booking_id}-${sharedUser.email}`, 
+                name: sharedUser.email.split("@")[0],
+                role: "customer",
+                accessLevel: sharedUser.accessType || "viewer",
+                huelineId: bookingData.booking_id,
+                subdomainSlug: subdomainSlug,
+              };
+            }
+          }
           return null;
         } catch (error) {
+          console.error("Auth Error", error);
           return null; 
         }
       },
     }),
   ],
+
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -136,6 +171,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+
   pages: { signIn: "/login" },
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,

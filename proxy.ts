@@ -1,88 +1,57 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl;
 
   // 1. Skip internals
-  if (
-    url.pathname.startsWith("/_next") ||
-    url.pathname.startsWith("/api") ||
-    url.pathname.includes(".")
-  ) {
+  if (url.pathname.startsWith("/_next") || url.pathname.includes("/api/")) {
     return NextResponse.next();
   }
 
-  // 2. Identify Host
+  // 2. Hostname Logic
   const hostname = request.headers.get("host") || "";
   let currentHost = hostname;
   let isMainDomain = false;
 
   if (process.env.NODE_ENV === "production") {
-    if (hostname === "hue-line.com" || hostname === "www.hue-line.com") {
+    if (hostname === "hue-line.com") {
       isMainDomain = true;
     } else {
-      currentHost = hostname.replace(`.hue-line.com`, "");
+      currentHost = hostname.replace(".hue-line.com", "");
       isMainDomain = false;
     }
   } else {
+    // Localhost
     if (hostname === "localhost:3000") {
       isMainDomain = true;
     } else {
-      currentHost = hostname.split(".")[0];
+      const parts = hostname.split(".");
+      currentHost = parts[0];
       isMainDomain = false;
     }
   }
 
-  // 3. Get User Token
-  // 🔥 CRITICAL FIX: Look for the specific cookie name we set in auth.ts
-  const token = await getToken({ 
-    req: request, 
-    secret: process.env.NEXTAUTH_SECRET,
-    cookieName: "hueline.session-token" 
-  });
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
-  // 4. Redirect logged-in users
+  // 3. Auth Redirect (If logged in, kick away from login page)
   if (token && (url.pathname === "/login" || url.pathname === "/register")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
- // 5. Main Domain Logic
+  // 4. Main Domain - pass through
   if (isMainDomain) {
-    // -------------------------------------------------------------
-    // 🔥 FIX HERE: Allow the Landing Page ("/") to be public
-    // -------------------------------------------------------------
-    if (url.pathname === "/") {
-      return NextResponse.next();
-    }
-    
-    // (Optional) If you have other public pages like pricing/about, add them here:
-    // if (url.pathname === "/pricing" || url.pathname === "/about") return NextResponse.next();
-
-    // If no token and trying to access protected routes, send to login
-    if (!token && url.pathname !== "/login" && url.pathname !== "/register") {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-    
     return NextResponse.next();
   }
 
-  // 6. Subdomain Logic
+  // 🔥 THE FIX: Allow Login on Subdomains
+  // If we are on 'tesla.localhost', and visiting '/login', we rewrite to the 
+  // GLOBAL login page so the user can log in RIGHT HERE (setting the cookie here).
   if (url.pathname === "/login" || url.pathname === "/register") {
-    return NextResponse.rewrite(new URL(`/login`, request.url));
+    return NextResponse.rewrite(new URL(url.pathname, request.url));
   }
 
-  if (url.pathname.startsWith("/intake")) {
-     return NextResponse.rewrite(
-        new URL(`/subdomains/${currentHost}${url.pathname}`, request.url)
-     );
-  }
-
-  if (!token) {
-     return NextResponse.redirect(new URL(`/login`, request.url));
-  }
-
+  // 5. Rewrite everything else to the subdomain folder
   const searchParams = request.nextUrl.searchParams.toString();
   const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ""}`;
 

@@ -24,7 +24,7 @@ export default function SubDomainIdPage({ booking, subdomain }: Props) {
   
   return (
     <ScrollArea>
-      <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
+      <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/25">
         
         {/* Navigation */}
         <SubdomainNav data={subdomain} miniNav={true} />

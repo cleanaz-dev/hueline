@@ -88,10 +88,8 @@ export default function SubDesignSummary({
           <div className="md:w-1/4 p-8 md:p-10 border-b md:border-b-0 md:border-r border-gray-50 bg-gray-50/30">
             <div className="flex flex-col h-full justify-between">
               <div className="flex items-center gap-2 mb-4 md:mb-0">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                  <Sparkles size={18} />
-                </div>
-                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+            
+                        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
                   Visual Summary
                 </h2>
               </div>
