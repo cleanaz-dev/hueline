@@ -48,11 +48,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // 5. Main Domain (Admin)
+ // 5. Main Domain Logic
   if (isMainDomain) {
+    // -------------------------------------------------------------
+    // 🔥 FIX HERE: Allow the Landing Page ("/") to be public
+    // -------------------------------------------------------------
+    if (url.pathname === "/") {
+      return NextResponse.next();
+    }
+    
+    // (Optional) If you have other public pages like pricing/about, add them here:
+    // if (url.pathname === "/pricing" || url.pathname === "/about") return NextResponse.next();
+
+    // If no token and trying to access protected routes, send to login
     if (!token && url.pathname !== "/login" && url.pathname !== "/register") {
       return NextResponse.redirect(new URL("/login", request.url));
     }
+    
     return NextResponse.next();
   }
 
