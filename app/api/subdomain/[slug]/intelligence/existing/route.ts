@@ -57,7 +57,7 @@ export async function POST(req: Request) {
 
     // 3. THE TRANSACTION (Update History + Update Dashboard State)
     const result = await prisma.$transaction(async (tx) => {
-      // --- STEP A: Save the Call History (Your original logic) ---
+      // --- STEP A: Save the Call History ---
       const savedCall = await tx.call.upsert({
         where: { callSid: call_sid },
         update: {
@@ -74,12 +74,16 @@ export async function POST(req: Request) {
                 structuralNeeds: intelligence.structuralNeeds,
                 technicalNeeds: intelligence.technicalNeeds,
                 estimatedAdditionalValue: intelligence.estimatedAdditionalValue,
+                callSummary: intelligence.callSummary || null,
+                callOutcome: intelligence.callOutcome || null,
               },
               update: {
                 projectScope: intelligence.projectScope,
                 callReason: intelligence.callReason,
                 hiddenNeedsFound: intelligence.hiddenNeedsFound,
                 estimatedAdditionalValue: intelligence.estimatedAdditionalValue,
+                callSummary: intelligence.callSummary || null,
+                callOutcome: intelligence.callOutcome || null,
               },
             },
           },
@@ -100,6 +104,8 @@ export async function POST(req: Request) {
               structuralNeeds: intelligence.structuralNeeds,
               technicalNeeds: intelligence.technicalNeeds,
               estimatedAdditionalValue: intelligence.estimatedAdditionalValue,
+              callSummary: intelligence.callSummary || null,
+              callOutcome: intelligence.callOutcome || null,
             },
           },
         },
@@ -120,7 +126,7 @@ export async function POST(req: Request) {
         data: {
           // 1. Update Status to the latest call & Project Type
           currentCallReason: intelligence.callReason,
-          projectType: intelligence.projectType,
+          projectType: intelligence.propertyType,
 
           // 2. Bump this lead to the top of the list
           lastCallAt: new Date(),
@@ -132,7 +138,7 @@ export async function POST(req: Request) {
           ...scopeUpdate,
 
           // 5. Optional: Append summary to notes if you want
-          // summary: intelligence.summary || undefined
+          // summary: intelligence.callSummary || undefined
         },
       });
 
@@ -149,13 +155,15 @@ export async function POST(req: Request) {
         estimatedAdditionalValue: intelligence.estimatedAdditionalValue,
         recordingUrl: recording_url,
         duration: String(duration),
+        callSummary: intelligence.callSummary || null,
+        callOutcome: intelligence.callOutcome || null,
       });
 
       return savedCall;
     });
 
     console.log(
-      `✅ Success! Updated Booking & Call. Scope: ${result.intelligence?.projectScope}`
+      `✅ Success! Updated Booking & Call. Scope: ${result.intelligence?.projectScope}, Outcome: ${result.intelligence?.callOutcome}`
     );
 
     return NextResponse.json({ success: true, id: result.id }, { status: 200 });

@@ -129,23 +129,7 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
-    await createCallIngestLog({
-      bookingDataId: booking.id,
-      subdomainId: subdomainId,
-      callSid: body.call_sid,
-      duration: body.call_duration,
-      customerName: body.name,
-      customerPhone: body.phone || "No Phone",
-      roomType: body.room_type,
-    });
 
-    await getCallIntelligence({
-      hueline_id: body.hueline_id,
-      call_sid: body.call_sid,
-      domain_id: body.subdomain_id,
-      slug: body.slug,
-      action: "mockup"
-    });
 
     return NextResponse.json({
       success: true,

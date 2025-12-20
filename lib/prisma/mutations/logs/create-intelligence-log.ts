@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { CallOutcome } from "@/app/generated/prisma";
 
 export async function createCallIntelligenceLog(params: {
   bookingDataId: string;
@@ -13,6 +14,8 @@ export async function createCallIntelligenceLog(params: {
   estimatedAdditionalValue: number;
   recordingUrl?: string;
   duration?: string;
+  callSummary?: string | null;
+  callOutcome?: CallOutcome | null;
 }) {
   const {
     bookingDataId,
@@ -27,6 +30,8 @@ export async function createCallIntelligenceLog(params: {
     estimatedAdditionalValue,
     recordingUrl,
     duration,
+    callSummary,
+    callOutcome,
   } = params;
 
   // Create a human-readable title based on the call reason
@@ -41,17 +46,25 @@ export async function createCallIntelligenceLog(params: {
 
   const title = titleMap[callReason] || "Call Completed";
 
-  // Build a description highlighting key findings
-  const findings: string[] = [];
-  if (hiddenNeedsFound) findings.push("hidden needs identified");
-  if (surfacePrepNeeds) findings.push("surface prep required");
-  if (structuralNeeds) findings.push("structural work needed");
-  if (technicalNeeds) findings.push("technical requirements");
-
-  const description =
-    findings.length > 0
-      ? `AI Analysis: ${findings.join(", ")}. Scope: ${projectScope}`
-      : `AI Analysis complete. Scope: ${projectScope}`;
+  // Build a description - prioritize callSummary if available
+  let description: string;
+  
+  if (callSummary) {
+    // Use AI-generated summary as the description
+    description = callSummary;
+  } else {
+    // Fallback to the old logic if no summary
+    const findings: string[] = [];
+    if (hiddenNeedsFound) findings.push("hidden needs identified");
+    if (surfacePrepNeeds) findings.push("surface prep required");
+    if (structuralNeeds) findings.push("structural work needed");
+    if (technicalNeeds) findings.push("technical requirements");
+    
+    description =
+      findings.length > 0
+        ? `AI Analysis: ${findings.join(", ")}. Scope: ${projectScope}`
+        : `AI Analysis complete. Scope: ${projectScope}`;
+  }
 
   try {
     const log = await prisma.logs.create({
@@ -74,11 +87,13 @@ export async function createCallIntelligenceLog(params: {
           structuralNeeds,
           technicalNeeds,
           estimatedAdditionalValue,
+          callSummary,
+          callOutcome,
         },
       },
     });
 
-    console.log(`📝 Call intelligence log created: ${callSid}`);
+    console.log(`📝 Call intelligence log created: ${callSid} (Outcome: ${callOutcome || 'N/A'})`);
     return log;
   } catch (error) {
     console.error("❌ Failed to create call intelligence log:", error);
