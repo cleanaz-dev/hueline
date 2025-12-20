@@ -15,8 +15,7 @@ export async function proxy(request: NextRequest) {
   let isMainDomain = false;
 
   if (process.env.NODE_ENV === "production") {
-    if (hostname === "hue-line.com" || hostname === "app.hue-line.com") {
-      currentHost = "app";
+    if (hostname === "hue-line.com") {
       isMainDomain = true;
     } else {
       currentHost = hostname.replace(".hue-line.com", "");
@@ -25,7 +24,6 @@ export async function proxy(request: NextRequest) {
   } else {
     // Localhost
     if (hostname === "localhost:3000") {
-      currentHost = "app";
       isMainDomain = true;
     } else {
       const parts = hostname.split(".");

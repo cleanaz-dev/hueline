@@ -34,47 +34,7 @@ import {
   formatProjectScope,
   getEstimatedValueRange,
 } from "@/lib/utils/dashboard-utils";
-
-// --- Audio Player ---
-const AudioPlayer = ({ url }: { url: string }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  return (
-    <div className="flex items-center gap-2">
-      <audio
-        ref={audioRef}
-        src={url}
-        onEnded={() => setIsPlaying(false)}
-        className="hidden"
-      />
-      <button
-        onClick={togglePlay}
-        className={`p-2 rounded-full transition-all ${
-          isPlaying
-            ? "bg-blue-100 text-blue-600"
-            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-        }`}
-      >
-        {isPlaying ? (
-          <Pause className="w-4 h-4 fill-current" />
-        ) : (
-          <Play className="w-4 h-4 fill-current ml-0.5" />
-        )}
-      </button>
-    </div>
-  );
-};
+import { AudioPlayer } from "./audio-player";
 
 const formatImageUrl = (url: string | null | undefined): string => {
   if (!url) return "";
@@ -221,8 +181,7 @@ export default function ClientTable() {
           const current = info.row.original.currentCallReason;
           const scope = info.row.original.currentProjectScope;
           // Assuming you named the field 'currentProjectType' or 'projectType'
-          const type =
-            (info.row.original as any).projectType || "RESIDENTIAL";
+          const type = (info.row.original as any).projectType || "RESIDENTIAL";
 
           const showPulse = current && current !== anchor;
 
@@ -234,18 +193,16 @@ export default function ClientTable() {
               {/* LINE 1: Identity (Reason) */}
               <div className="flex  gap-2 font-semibold text-gray-900 text-sm">
                 {formatCallReason(anchor)}
-                
-              {showPulse && (
-                <div className="flex">
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-muted-foreground border border-blue-100">
-                    Latest: {formatCallReason(current!)}
-                  </span>
-                </div>
-              )}
 
+                {showPulse && (
+                  <div className="flex">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-muted-foreground border border-blue-100">
+                      Latest: {formatCallReason(current!)}
+                    </span>
+                  </div>
+                )}
               </div>
 
-        
               {/* LINE 3: Type & Scope (The Visual Story) */}
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 {/* The Icon (Visual Anchor) */}
@@ -422,88 +379,93 @@ export default function ClientTable() {
           return (
             <div
               key={row.id}
-              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex gap-4"
+              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"
             >
-              <div className="w-16 h-16 rounded-lg bg-gray-100 shrink-0 overflow-hidden relative flex items-center justify-center">
-                {data.thumbnailUrl ? (
-                  <Image
-                    src={thumbnailUrl}
-                    alt="Room"
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <Camera className="w-6 h-6 text-gray-400" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      {data.name}
-                      {""}{" "}
-                      <span className="text-[10px] text-gray-400 font-mono mt-0.5">
-                        {data.huelineId}
-                      </span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {data.phone}
-                    </div>
-                  </div>
-
-                  {/* ACTION BUTTONS */}
-                  <div className="flex gap-2">
-                    {/* 1. INTELLIGENCE (Database) */}
-                    <button
-                      onClick={() => openIntelligence(data)}
-                      className="h-9 w-9 flex items-center justify-center rounded-lg border border-purple-100 bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
-                      title="View Intelligence"
-                    >
-                      <Database className="w-4 h-4" />
-                    </button>
-
-                    {/* 2. VISUALS (Palette) */}
-                    <Link
-                      href={`/j/${data.huelineId}`}
-                      className="h-9 w-9 flex items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                      title="View Mockups & Colors"
-                    >
-                      <Palette className="w-4 h-4" />
-                    </Link>
-                  </div>
+              <div className="flex gap-4">
+                <div className="w-16 h-16 rounded-lg bg-gray-100 shrink-0 overflow-hidden relative flex items-center justify-center">
+                  {data.thumbnailUrl ? (
+                    <Image
+                      src={thumbnailUrl}
+                      alt="Room"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <Camera className="w-6 h-6 text-gray-400" />
+                  )}
                 </div>
-
-                <Separator className="my-2" />
-
-                {/* Project Details Mobile */}
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <div>
-                    <div className="text-xs font-medium text-gray-700">
-                      {formatCallReason(anchor)}
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        {data.name}
+                        {""}{" "}
+                        <span className="text-[10px] text-gray-400 font-mono mt-0.5">
+                          {data.huelineId}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {data.phone}
+                      </div>
                     </div>
-                    {showPulse && (
-                      <div className="text-[10px] text-blue-600 mt-0.5">
-                        Latest: {formatCallReason(current!)}
+
+                    {/* ACTION BUTTONS */}
+                    <div className="flex gap-2">
+                      {/* 1. INTELLIGENCE (Database) */}
+                      <button
+                        onClick={() => openIntelligence(data)}
+                        className="h-9 w-9 flex items-center justify-center rounded-lg border border-purple-100 bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
+                        title="View Intelligence"
+                      >
+                        <Database className="w-4 h-4" />
+                      </button>
+
+                      {/* 2. VISUALS (Palette) */}
+                      <Link
+                        href={`/j/${data.huelineId}`}
+                        className="h-9 w-9 flex items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                        title="View Mockups & Colors"
+                      >
+                        <Palette className="w-4 h-4" />
+                      </Link>
+                    </div>
+                  </div>
+
+                  <Separator className="my-2" />
+
+                  {/* Project Details Mobile */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <div className="text-xs font-medium text-gray-700">
+                        {formatCallReason(anchor)}
+                      </div>
+                      {showPulse && (
+                        <div className="text-[10px] text-blue-600 mt-0.5">
+                          Latest: {formatCallReason(current!)}
+                        </div>
+                      )}
+                    </div>
+                    {data.totalHiddenValue > 0 && (
+                      <div>
+                        <div className="text-[10px] text-gray-400 uppercase">
+                          Approx. Value
+                        </div>
+                        <div className="text-xs font-bold text-green-600">
+                          +{getEstimatedValueRange(data.totalHiddenValue)}
+                        </div>
                       </div>
                     )}
                   </div>
-                  {data.totalHiddenValue > 0 && (
-                    <div>
-                      <div className="text-[10px] text-gray-400 uppercase">
-                        Approx. Value
-                      </div>
-                      <div className="text-xs font-bold text-green-600">
-                        +{getEstimatedValueRange(data.totalHiddenValue)}
-                      </div>
-                    </div>
-                  )}
                 </div>
-
-                {data.lastCallAudioUrl && (
-                  <AudioPlayer url={data.lastCallAudioUrl} />
-                )}
               </div>
+            
+              {data.lastCallAudioUrl && (
+                <div className=" border-gray-100">
+                  <AudioPlayer url={data.lastCallAudioUrl} />
+                </div>
+              )}
             </div>
+            
           );
         })}
       </div>
