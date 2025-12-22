@@ -13,7 +13,8 @@ import {
   MinusCircle,
   XCircle,
   TrendingUp,
-  FileText
+  FileText,
+  Info
 } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
 import { Button } from "@/components/ui/button";
@@ -192,10 +193,15 @@ export default function IntelligenceDialog({
               const outcome = intel?.callOutcome as CallOutcome | undefined;
               const outcomeStyle = outcome ? outcomeConfig[outcome] : outcomeConfig.NEUTRAL;
 
+              // Parse custom fields safely
+              const customFields = (intel?.customFields as Record<string, any>) || {};
+              const hasCustomFields = Object.keys(customFields).length > 0;
+              const hasValue = (intel?.estimatedAdditionalValue || 0) > 0;
+
               return (
                 <div key={call.id} className="relative pl-4 sm:pl-0">
                   
-                  {/* Timeline Visuals (Desktop only mostly) */}
+                  {/* Timeline Visuals */}
                   <div className="hidden sm:block absolute left-[3px] top-4 bottom-0 w-[2px] bg-slate-100 -z-10" />
                   
                   <div className="flex gap-4">
@@ -244,39 +250,43 @@ export default function IntelligenceDialog({
                         )}
 
                         {/* Intelligence Grid */}
-                        {intel && (intel.surfacePrepNeeds || intel.structuralNeeds || intel.technicalNeeds || intel.estimatedAdditionalValue > 0) && (
+                        {(hasCustomFields || hasValue) && (
                           <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
                             
-                            {/* Technical Needs */}
-                            <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                              <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                                Detected Requirements
-                              </h5>
-                              <div className="space-y-2">
-                                <ScopeItem label="Surface Prep" active={intel.surfacePrepNeeds} />
-                                <ScopeItem label="Structural Repair" active={intel.structuralNeeds} />
-                                <ScopeItem label="Complex Access" active={intel.technicalNeeds} />
+                            {/* DYNAMIC Technical Needs (From Custom Fields) */}
+                            {hasCustomFields && (
+                              <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                                <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                  Detected Details
+                                </h5>
+                                <div className="space-y-2">
+                                  {Object.entries(customFields).map(([key, value]) => (
+                                    <ScopeItem 
+                                      key={key} 
+                                      label={key} 
+                                      value={value} 
+                                    />
+                                  ))}
+                                </div>
                               </div>
-                            </div>
+                            )}
 
                             {/* Value Found */}
-                            <div className="flex flex-col">
-                               <div className={cn(
-                                 "flex-1 rounded-lg p-3 border flex flex-col items-center justify-center text-center",
-                                 intel.estimatedAdditionalValue > 0 
-                                   ? "bg-emerald-50/50 border-emerald-100" 
-                                   : "bg-slate-50 border-slate-100"
-                               )}>
-                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                   Opportunity Value
-                                 </span>
-                                 <div className={cn("text-xl font-bold tracking-tight", intel.estimatedAdditionalValue > 0 ? "text-emerald-600" : "text-slate-400")}>
-                                   {intel.estimatedAdditionalValue > 0 
-                                     ? `+${getEstimatedValueRange(intel.estimatedAdditionalValue)}` 
-                                     : "$0.00"}
+                            {hasValue && (
+                              <div className="flex flex-col">
+                                 <div className={cn(
+                                   "flex-1 rounded-lg p-3 border flex flex-col items-center justify-center text-center",
+                                   "bg-emerald-50/50 border-emerald-100"
+                                 )}>
+                                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                     Opportunity Value
+                                   </span>
+                                   <div className="text-xl font-bold tracking-tight text-emerald-600">
+                                     +{getEstimatedValueRange(intel!.estimatedAdditionalValue)}
+                                   </div>
                                  </div>
-                               </div>
-                            </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -308,16 +318,37 @@ export default function IntelligenceDialog({
   );
 }
 
-// Helper: Scope Check Item
-function ScopeItem({ label, active }: { label: string; active: boolean }) {
+// Helper: Dynamic Scope Check Item
+// Handles Boolean (True/False) and Strings
+function ScopeItem({ label, value }: { label: string; value: any }) {
+  // Determine state based on value type
+  const isBoolean = typeof value === 'boolean';
+  const isActive = isBoolean ? value : !!value;
+  
+  // Format Label: "camelCase" -> "Camel Case"
+  const formattedLabel = label.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase());
+
   return (
-    <div className={cn("flex items-center gap-2 text-xs transition-colors", active ? "text-slate-800" : "text-slate-400")}>
-      {active ? (
-        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 fill-amber-500/10" />
-      ) : (
-        <div className="w-3.5 h-3.5 rounded-full border border-slate-300" />
-      )}
-      <span className={cn(active && "font-medium")}>{label}</span>
+    <div className={cn("flex items-start gap-2 text-xs transition-colors", isActive ? "text-slate-800" : "text-slate-400")}>
+      <div className="mt-0.5 shrink-0">
+        {isBoolean ? (
+          isActive ? (
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 fill-amber-500/10" />
+          ) : (
+            <div className="w-3.5 h-3.5 rounded-full border border-slate-300" />
+          )
+        ) : (
+          <Info className="w-3.5 h-3.5 text-indigo-400" />
+        )}
+      </div>
+      
+      <div className="flex flex-col">
+        <span className={cn(isActive && "font-medium")}>{formattedLabel}</span>
+        {/* If it's not a boolean, render the value text below (e.g. "Color: Blue") */}
+        {!isBoolean && value && (
+          <span className="text-[10px] text-slate-500 font-medium">{String(value)}</span>
+        )}
+      </div>
     </div>
   );
 }
