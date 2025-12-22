@@ -2,9 +2,10 @@ import { NextResponse, NextRequest } from 'next/server';
 
 export function proxy(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
+  const pathname = request.nextUrl.pathname;
   
   console.log('🔍 Hostname:', hostname);
-  console.log('🔍 Pathname:', request.nextUrl.pathname);
+  console.log('🔍 Pathname:', pathname);
 
   // Handle BOTH domains
   let currentHost = hostname;
@@ -19,9 +20,9 @@ export function proxy(request: NextRequest) {
   } else {
     currentHost = hostname.replace('.localhost:3000', '');
   }
-
+  
   console.log('🔍 Current Host:', currentHost);
-
+  
   // Check if it's the main domain (not a subdomain)
   if (
     currentHost === 'hue-line' ||
@@ -32,9 +33,20 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // ✅ EXCLUDE paths that should NOT be rewritten for subdomains
+  const excludedPaths = ['/login', '/signup', '/register', '/auth'];
+  const shouldExclude = excludedPaths.some(path => pathname.startsWith(path));
+  
+  if (shouldExclude) {
+    console.log('🔍 EXCLUDED PATH - Not rewriting:', pathname);
+    return NextResponse.next();
+  }
+
+  // Only rewrite if it's a subdomain AND not an excluded path
   const url = request.nextUrl.clone();
   url.pathname = `/subdomains/${currentHost}${url.pathname}`;
   console.log('🔍 REWRITING TO:', url.pathname);
+  
   return NextResponse.rewrite(url);
 }
 
