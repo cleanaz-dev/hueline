@@ -1,59 +1,43 @@
-import { NextResponse, NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { NextResponse, NextRequest } from 'next/server';
 
-export async function proxy(request: NextRequest) {
-  const url = request.nextUrl;
+export function proxy(request: NextRequest) {
+  const hostname = request.headers.get('host') || '';
+  
+  console.log('🔍 Hostname:', hostname);
+  console.log('🔍 Pathname:', request.nextUrl.pathname);
 
-  // === SKIP INTERNALS & AUTH PAGES ===
+  // Handle BOTH domains
+  let currentHost = hostname;
+  
+  if (process.env.NODE_ENV === 'production') {
+    // Try to remove both possible root domains
+    if (hostname.includes('.hue-line.com')) {
+      currentHost = hostname.replace('.hue-line.com', '');
+    } else if (hostname.includes('.hueline.com')) {
+      currentHost = hostname.replace('.hueline.com', '');
+    }
+  } else {
+    currentHost = hostname.replace('.localhost:3000', '');
+  }
+
+  console.log('🔍 Current Host:', currentHost);
+
+  // Check if it's the main domain (not a subdomain)
   if (
-    url.pathname.startsWith("/_next") || 
-    url.pathname.startsWith("/api") || 
-    url.pathname.startsWith("/static") ||
-    url.pathname.includes(".") ||
-    url.pathname === "/login" ||      // ALLOW login
-    url.pathname === "/register"     // ALLOW register
+    currentHost === 'hue-line' ||
+    currentHost === 'hueline' ||
+    currentHost === 'www' ||
+    currentHost === 'localhost:3000'
   ) {
     return NextResponse.next();
   }
 
-  // === HOSTNAME LOGIC ===
-  const hostname = request.headers.get("host") || "";
-  let currentHost = hostname;
-
-  if (process.env.NODE_ENV === "production") {
-    if (hostname === "hue-line.com" || hostname === "app.hue-line.com") {
-      currentHost = "app";
-    } else {
-      currentHost = hostname.replace(".hue-line.com", "");
-    }
-  } else {
-    if (hostname === "localhost:3000") {
-      currentHost = "app";
-    } else {
-      currentHost = hostname.replace(".localhost:3000", "");
-    }
-  }
-
-  // === MAIN DOMAIN: DON'T REDIRECT ROOT ===
-  if (currentHost === "app") {
-    // Let "/" load the landing page
-    if (url.pathname === "/") {
-      return NextResponse.next();
-    }
-  }
-
-  // === SUBDOMAIN LOGIC ===
-  if (currentHost !== "app") {
-    if (url.pathname === "/login" || url.pathname === "/register") {
-      return NextResponse.rewrite(new URL(url.pathname, request.url));
-    }
-    url.pathname = `/subdomains/${currentHost}${url.pathname}`;
-    return NextResponse.rewrite(url);
-  }
-
-  return NextResponse.next();
+  const url = request.nextUrl.clone();
+  url.pathname = `/subdomains/${currentHost}${url.pathname}`;
+  console.log('🔍 REWRITING TO:', url.pathname);
+  return NextResponse.rewrite(url);
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
