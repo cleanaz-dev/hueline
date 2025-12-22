@@ -13,7 +13,8 @@ export async function getBookingForPage(huelineId: string, slug: string) {
       include: {
         subdomain: {
           include:{
-            users: true
+            users: true,
+            intelligence: true
           }
         },
         calls: {

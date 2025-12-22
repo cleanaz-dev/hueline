@@ -59,9 +59,8 @@ export interface SubdomainAccountData {
   callFlows?: CallFlow[];
   activeFlowId?: string | null;
   
-  // Global Intelligence Config
-  intelligenceId: string; 
-  intelligence?: Intelligence;
+
+  intelligence?: Intelligence | null
   
   createdAt: Date | string;
   updatedAt: Date | string | null;

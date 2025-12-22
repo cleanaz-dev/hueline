@@ -74,7 +74,7 @@ model Subdomain {
   splashScreen String?
   theme        Json?
   active       Boolean @default(true)
-
+  intelligenceId String?          @db.ObjectId
   intelligence Intelligence? @relation(fields: [intelligenceId], references: [id])
 
   twilioPhoneNumber String?
@@ -96,7 +96,7 @@ model Subdomain {
   // Call Flow Relations
   callFlows      CallFlow[] // Contains the history (versions)
   activeFlowId   String?          @db.ObjectId // Points to the specific version currently "Live"
-  intelligenceId String?          @db.ObjectId
+ 
 }
 
 model Intelligence {
