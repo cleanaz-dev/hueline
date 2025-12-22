@@ -1,5 +1,39 @@
-import { Call } from "./call-intelligence-types";
 import { Prisma } from "@/app/generated/prisma";
+import { 
+  CallReason, 
+  CallOutcome, 
+  LogType, 
+  LogActor
+} from "@/app/generated/prisma";
+
+// --- INTELLIGENCE INTERFACES ---
+
+// 1. Global Config (Attached to Subdomain)
+export interface Intelligence {
+  id: string;
+  prompt: string | null;
+  values: Prisma.JsonValue | null;
+  schema: Prisma.JsonValue | null;
+  createdAt: Date | string | null;
+  updatedAt: Date | string | null;
+}
+
+// 2. Call Results (Attached to Call)
+export interface CallIntelligence {
+  id: string;
+  callId: string;
+  callReason: CallReason;
+  projectScope: string | null;
+  callOutcome: CallOutcome | null;
+  estimatedAdditionalValue: number;
+  customFields: Prisma.JsonValue | null;
+  transcriptText: string | null;
+  callSummary: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+// --- SUBDOMAIN INTERFACE ---
 
 export interface SubdomainAccountData {
   id: string;
@@ -12,7 +46,6 @@ export interface SubdomainAccountData {
   splashScreen: string | null;
   theme: any | null;
   active: boolean;
-
   twilioPhoneNumber: string | null;
   forwardingNumber: string | null;
   
@@ -20,37 +53,47 @@ export interface SubdomainAccountData {
   planStatus: string;
   planName: string;
   currentPeriodEnd: Date | string | null;
-
   users: SubdomainUser[];
+  
+  // Call Flow
+  callFlows?: CallFlow[];
+  activeFlowId?: string | null;
+  
+  // Global Intelligence Config
+  intelligenceId: string; 
+  intelligence?: Intelligence;
   
   createdAt: Date | string;
   updatedAt: Date | string | null;
 }
 
+// --- BOOKING DATA INTERFACE ---
+
 export interface BookingData {
   id: string;
+  subdomainId: string; // Added for context
+  huelineId: string;
+
   name: string;
   phone: string;
-  huelineId: string;
   roomType: string;
   prompt: string;
   originalImages: string;
   summary: string;
   dimensions: string | null;
-  dateTime: Date;
+  dateTime: Date | string;
   pin: string;
   expiresAt: number;
-  createdAt: Date;
-  updatedAt: Date;
   
-  // --- NEW PULSE FIELDS (Added these) ---
-  projectType?: "RESIDENTIAL" | "COMMERCIAL" | string | null; // <--- Match your DB field name
-  initialIntent?: string | null;      // The Anchor (e.g. "NEW_PROJECT")
-  currentCallReason?: string | null;  // The Pulse (e.g. "PRICING")
-  currentProjectScope?: string | null;// The Scope (e.g. "INTERIOR")
-  lastCallAt?: Date | string | null;  // Sorting
-  lastCallAudioUrl?: string | null;   // Instant Playback
-  // -------------------------------------
+  // Pulse / Status Fields
+  projectType?: string | null;
+  initialIntent: CallReason;
+  currentCallReason: CallReason | null;
+  currentProjectScope?: string | null;
+  lastCallAt?: Date | string | null;
+  lastCallAudioUrl?: string | null;
+  
+  // REMOVED: intelligenceId (It does not belong here)
 
   mockups: Mockup[];
   paintColors: PaintColor[];
@@ -58,7 +101,39 @@ export interface BookingData {
   sharedAccess: SharedAccess[];
   exports: Export[];
   calls: Call[];
-  logs: Log[]
+  logs: Log[];
+
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+// --- CALL INTERFACE ---
+
+export interface Call {
+  id: string;
+  bookingDataId: string;
+  callSid: string;
+  recordingSid: string | null;
+  audioUrl: string | null;
+  duration: string | null;
+  status: string | null;
+
+  // Specific Call Analytics
+  intelligence?: CallIntelligence | null;
+
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+// --- SUPPORTING INTERFACES ---
+
+export interface CallFlow {
+  id: string;
+  subdomainId: string;
+  version: number;
+  nodes: Prisma.JsonValue;
+  isPublished: boolean;
+  createdAt: Date | string;
 }
 
 export interface Export {
@@ -69,8 +144,8 @@ export interface Export {
   imageCount: number;
   status: string;
   downloadUrl?: string | null;
-  createdAt: Date;
-  completedAt?: Date | null;
+  createdAt: Date | string;
+  completedAt?: Date | string | null;
 }
 
 export interface Mockup {
@@ -81,7 +156,7 @@ export interface Mockup {
   colorRal: string;
   colorName: string;
   colorHex: string;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface PaintColor {
@@ -89,7 +164,7 @@ export interface PaintColor {
   ral: string;
   name: string;
   hex: string;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface AlternateColor {
@@ -97,7 +172,7 @@ export interface AlternateColor {
   ral: string;
   name: string;
   hex: string;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface SharedAccess {
@@ -105,7 +180,7 @@ export interface SharedAccess {
   email: string | null;
   accessType: string | null;
   pin: string | null;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface SubdomainUser {
@@ -116,39 +191,18 @@ export interface SubdomainUser {
   imageUrl?: string | null;
 }
 
-
-export type LogType = 'CALL' | 'MOCKUP' | 'PAYMENT' | 'STATUS_CHANGE' | 'SMS' | 'NOTE';
-export type LogActor = 'AI' | 'SYSTEM' | 'PAINTER' | 'CLIENT';
-
-// 1. Define the Metadata Shape
-export interface LogMetadata {
-  // Common fields we expect (You get autocomplete for these)
-  duration?: number | string;
-  recordingUrl?: string;
-  amount?: number;
-  previousStatus?: string;
-  newStatus?: string;
-  note?: string;
-
-  // The "Catch-All" (Allows any other random JSON data without errors)
-  [key: string]: any;
-}
-
-// 2. The Main Log Interface
 export interface Log {
   id: string;
   bookingDataId: string;
   subdomainId: string;
-  
   type: LogType;
   actor: LogActor;
-  
   title: string;
   description: string | null;
-
-  // 3. Accept JsonValue from Prisma
   metadata?: Prisma.JsonValue | null; 
-
   createdAt: Date | string;
   updatedAt: Date | string;
+  subdomain?: {
+    companyName: string | null;
+  };
 }

@@ -4,8 +4,8 @@ import { Metadata } from 'next';
 import { getSubDomainAccount } from '@/lib/prisma';
 import { cache } from 'react';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config'; // adjust path as needed
-import { NextAuthSessionProvider } from "@/providers/session-provider"; 
+import { authOptions } from '@/lib/auth/config'; 
+
 import SuperAdminSidebar from '@/components/admin/super-admin-sidebar';
 import { SuperAdminProvider } from '@/context/super-admin-context';
 
@@ -51,24 +51,24 @@ export default async function SubDomainLayout({ children }: Props) {
   const session = await getServerSession(authOptions);
   const isSuperAdmin = session?.role === 'SUPER_ADMIN';
 
+  // REMOVED <NextAuthSessionProvider> WRAPPER HERE
   return (
-    <NextAuthSessionProvider>
-      <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
-        {isSuperAdmin ? (
-          // Sidebar layout for super admin
-          <SuperAdminProvider>
-          <div className="flex">
+    <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
+      {isSuperAdmin ? (
+        <SuperAdminProvider>
+          <div className="relative">
             <SuperAdminSidebar />
-            <main className="flex-1 mt-10 lg:mt-0 lg:ml-64">
-              {children}
+            <main className="lg:pl-64 min-w-0 w-full transition-all duration-300 overflow-x-hidden">
+              <div className="p-4 lg:p-6 w-full h-full">
+                {children}
+              </div>
             </main>
           </div>
-          </SuperAdminProvider>
-        ) : (
-          // Regular layout for normal users
-          children
-        )}
-      </div>
-    </NextAuthSessionProvider>
+        </SuperAdminProvider>
+      ) : (
+        // Regular layout for normal users
+        children
+      )}
+    </div>
   );
 }

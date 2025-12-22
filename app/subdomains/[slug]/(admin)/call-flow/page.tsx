@@ -1,5 +1,13 @@
 import CallFlowComponent from "@/components/admin/dashboard/call-flow";
+import { CallFlowProvider } from "@/context/call-flow-context";
+
 
 export default async function page() {
-  return <CallFlowComponent />
+
+  
+  return (
+    <CallFlowProvider>
+      <CallFlowComponent /> 
+    </CallFlowProvider>
+  )
 }

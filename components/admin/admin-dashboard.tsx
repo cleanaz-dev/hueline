@@ -63,6 +63,8 @@ export default function AdminDashboard() {
     clients,
     isClientsLoading,
     refreshClients,
+    logs,
+    isLogsLoading,
   } = useSuperAdmin();
 
   // Build stats array from context data
@@ -103,7 +105,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 mt-4 md:mt-0 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 mt-4 md:mt-0 p-4 md:p-8 rounded-2xl">
       {/* 1. HEADER & ACTIONS */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
@@ -274,9 +276,9 @@ export default function AdminDashboard() {
                           </div>
                         </Link>
                         <Link href={client.projectUrl as string}>
-                        <div className="text-xs text-gray-400">
-                          {client.slug}.hue-line.com
-                        </div>
+                          <div className="text-xs text-gray-400">
+                            {client.slug}.hue-line.com
+                          </div>
                         </Link>
                       </div>
                       <div className="col-span-2">
@@ -320,35 +322,52 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-gray-100">
-                {RECENT_ACTIVITY.map((item) => {
-                  const Icon = item.icon;
-                  return (
+                {isLogsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                    <span className="ml-2 text-sm text-gray-500">
+                      Loading Logs...
+                    </span>
+                  </div>
+                ) : logs && logs.length > 0 ? (
+                  logs.map((log) => (
                     <div
-                      key={item.id}
+                      key={log.id}
                       className="p-4 flex gap-3 hover:bg-gray-50/50 transition-colors"
                     >
                       <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                        <Icon className="w-4 h-4 text-gray-600" />
+                        {/* Add your icon logic based on log.type */}
+                        <Activity className="w-4 h-4 text-gray-600" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start">
-                          <p className="text-sm font-medium text-gray-900">
-                            {item.client}
+                          <p className="text-sm font-medium text-primary">
+                            {log.subdomain?.companyName || "Unknown Client"}
                           </p>
+                         
                           <span className="text-[10px] text-gray-400">
-                            {item.time}
+                            {new Date(log.createdAt).toLocaleTimeString()}
                           </span>
                         </div>
+                         <p className="text-sm font-medium text-gray-900">
+                            {log.title}
+                          </p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          {item.action}
+                          {log.type} • {log.actor}
                         </p>
-                        <p className="text-xs font-medium text-gray-700 mt-1 truncate">
-                          {item.detail}
-                        </p>
+                        {log.description && (
+                          <p className="text-xs font-medium text-gray-700 mt-1 truncate">
+                            {log.description}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-sm text-gray-500">
+                    No logs available
+                  </div>
+                )}
               </div>
               <div className="p-4 border-t border-gray-100 bg-gray-50/50 text-center">
                 <Button

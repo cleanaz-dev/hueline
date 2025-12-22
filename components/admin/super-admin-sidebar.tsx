@@ -20,9 +20,12 @@ import {
   Settings, 
   LogOut,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Route
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSuperAdmin } from "@/context/super-admin-context";
+import { signOut } from "next-auth/react";
 
 const navItems = [
   {
@@ -45,11 +48,17 @@ const navItems = [
     href: "/clients",
     icon: Users2,
   },
+  {
+    title: "Flow",
+    href: "/call-flow",
+    icon: Route
+  }
 ];
 
 export default function SuperAdminSidebar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const { admin } = useSuperAdmin()
 
   const NavLinks = ({ isMobile = false }: { isMobile?: boolean }) => (
     <div className="flex flex-col gap-1">
@@ -159,17 +168,23 @@ export default function SuperAdminSidebar() {
           <div className="p-4 border-t border-slate-800/60 bg-slate-900/30">
             <div className="flex items-center gap-3 rounded-xl bg-slate-900 p-3 shadow-inner ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-800">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700 text-slate-300">
-                <span className="font-semibold">SA</span>
+                <span className="font-semibold">PH</span>
               </div>
               <div className="flex flex-1 flex-col overflow-hidden">
                 <span className="truncate text-sm font-semibold text-white">
-                  Super Admin
+                  {admin?.name}
                 </span>
                 <span className="truncate text-xs text-slate-400">
-                  admin@company.com
+                 {admin?.email}
                 </span>
               </div>
-              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-950/30">
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-950/30"
+                onClick={ async () => signOut({ callbackUrl: process.env.NEXTAUTH_URL })}
+                
+                >
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>

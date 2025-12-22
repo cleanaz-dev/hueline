@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCallIntelligence } from "@/lib/handlers";
-import { createCallIngestLog } from "@/lib/prisma/mutations/logs/create-call-log";
 
 interface Params {
   params: Promise<{
@@ -59,13 +57,13 @@ export async function POST(req: Request, { params }: Params) {
         dimensions: body.dimensions,
         dateTime: new Date(body.date_time),
 
-        // Update nested relations on update
-        calls: {
-          create: {
-            callSid: body.call_sid,
-            duration: body.call_duration,
-          },
-        },
+        // // Update nested relations on update
+        // calls: {
+        //   create: {
+        //     callSid: body.call_sid,
+        //     duration: body.call_duration,
+        //   },
+        // },
 
         mockups: {
           create: body.mockup_urls.map((m: any) => ({
@@ -101,12 +99,12 @@ export async function POST(req: Request, { params }: Params) {
         pin: body.pin,
         expiresAt: Math.floor(Date.now() / 1000) + 72 * 60 * 60,
 
-        calls: {
-          create: {
-            callSid: body.call_sid,
-            duration: body.call_duration,
-          },
-        },
+        // calls: {
+        //   create: {
+        //     callSid: body.call_sid,
+        //     duration: body.call_duration,
+        //   },
+        // },
 
         mockups: {
           create: body.mockup_urls.map((m: any) => ({

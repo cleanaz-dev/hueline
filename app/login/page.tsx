@@ -102,7 +102,7 @@ export default function LoginPage() {
         }
       } else {
         // Fallback: If they are a Super Admin or have no subdomain, go to generic dashboard
-        router.push("/dashboard");
+        router.push("/");
       }
 
     } catch (err) {

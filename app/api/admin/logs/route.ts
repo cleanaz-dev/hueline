@@ -1,5 +1,5 @@
 import { verifyApiSuperAdmin } from "@/lib/auth";
-import { getAllClients } from "@/lib/prisma/queries/admin/get-all-clients";
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 export async function GET(req: Request) {
   try {
@@ -10,9 +10,17 @@ export async function GET(req: Request) {
       return authCheck;
     }
 
-    const clients = await getAllClients();
+    const logs = await prisma.logs.findMany({
+      include: {
+        subdomain: {
+          select: {
+            companyName: true
+          }
+        }
+      }
+    })
 
-    return NextResponse.json({ clients });
+    return NextResponse.json({ logs });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

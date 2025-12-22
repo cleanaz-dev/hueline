@@ -5,61 +5,55 @@ export async function proxy(request: NextRequest) {
   const url = request.nextUrl;
 
   // 1. Skip internals
-  if (url.pathname.startsWith("/_next") || url.pathname.includes("/api/")) {
+  if (
+    url.pathname.startsWith("/_next") || 
+    url.pathname.startsWith("/api") || 
+    url.pathname.startsWith("/static") ||
+    url.pathname.includes(".") // Skip files like favicon.ico, robots.txt
+  ) {
     return NextResponse.next();
   }
 
   // 2. Hostname Logic
   const hostname = request.headers.get("host") || "";
   let currentHost = hostname;
-  let isMainDomain = false;
-
+  
   if (process.env.NODE_ENV === "production") {
-    if (hostname === "hue-line.com") {
-      isMainDomain = true;
+    // Handle hue-line.com and app.hue-line.com as the main app
+    if (hostname === "hue-line.com" || hostname === "app.hue-line.com") {
+      currentHost = "app";
     } else {
+      // tenant.hue-line.com -> tenant
       currentHost = hostname.replace(".hue-line.com", "");
-      isMainDomain = false;
     }
   } else {
-    // Localhost
+    // Localhost logic
     if (hostname === "localhost:3000") {
-      isMainDomain = true;
+      currentHost = "app";
     } else {
-      const parts = hostname.split(".");
-      currentHost = parts[0];
-      isMainDomain = false;
+      // tenant.localhost:3000 -> tenant
+      currentHost = hostname.replace(".localhost:3000", "");
     }
   }
 
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-
-  // 3. Auth Redirect (If logged in, kick away from login page)
-  if (token && (url.pathname === "/login" || url.pathname === "/register")) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  // 4. Main Domain - pass through
-  if (isMainDomain) {
+  // 3. Main Domain Logic
+  if (currentHost === "app") {
+    // Optional: If you want to force app.hue-line.com users to /login if valid, do it here.
+    // But DO NOT do it for subdomains.
     return NextResponse.next();
   }
 
-  // 🔥 THE FIX: Allow Login on Subdomains
-  // If we are on 'tesla.localhost', and visiting '/login', we rewrite to the 
-  // GLOBAL login page so the user can log in RIGHT HERE (setting the cookie here).
+  // 4. Subdomain Logic (The "Platform" part)
+  
+  // Allow Global Login/Register on Subdomains
+  // This rewrites sub.hue-line.com/login -> app/login/page.tsx
   if (url.pathname === "/login" || url.pathname === "/register") {
     return NextResponse.rewrite(new URL(url.pathname, request.url));
   }
 
   // 5. Rewrite everything else to the subdomain folder
-  const searchParams = request.nextUrl.searchParams.toString();
-  const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ""}`;
-
-  return NextResponse.rewrite(
-    new URL(`/subdomains/${currentHost}${path}`, request.url)
-  );
+  // sub.hue-line.com/dashboard -> /subdomains/sub/dashboard
+  url.pathname = `/subdomains/${currentHost}${url.pathname}`;
+  
+  return NextResponse.rewrite(url);
 }
-
-export const config = {
-  matcher: ["/((?!api/|_next/static/|_next/image|favicon.ico).*)"],
-};
