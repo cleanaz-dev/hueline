@@ -1,0 +1,45 @@
+import React from "react";
+import Image from "next/image";
+import { headers } from 'next/headers'
+import { getSubDomainData } from "@/lib/prisma";
+import { AlertCircle } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+export default async function BookingNotFound() {
+    // Extract subdomain from hostname
+  const headersList = await headers();
+  const hostname = headersList.get('host') || '';
+  const subdomain = hostname.split('.')[0];
+  
+  // Fetch subdomain data
+  const subDomainData = await getSubDomainData(subdomain);
+  const logoUrl = subDomainData?.logo || '/images/logo-2--increased-brightness.png';
+  const companyName = subDomainData?.companyName || 'Company';
+  
+  return (
+    <div className="h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30 flex items-center justify-center">
+      <main className="max-w-4xl mx-auto px-6">
+        <div className="text-center space-y-8">
+          <div className="flex justify-center">
+            <div className="flex items-center justify-center h-24 w-24 rounded-full bg-primary/10 border-2 border-primary/20">
+              <AlertCircle className="h-12 w-12 text-primary/60" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+              Booking Not Found
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-lg mx-auto">
+              The <span className="font-bold">{companyName}</span> design report you&apos;re looking for doesn&apos;t exist.
+            </p>
+          </div>
+          <div className="bg-background/60 rounded-xl p-6 max-w-md mx-auto border border-primary/10">
+            <p className="text-sm text-muted-foreground">
+              Please double check the link provided.
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

@@ -20,7 +20,7 @@ export async function verifyApiSuperAdmin() {
       { status: 403 }
     );
   }
-
+  console.log("✅ Auth Check OK!")
   // Return the session if authorized
   return session;
 }

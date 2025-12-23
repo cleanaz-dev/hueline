@@ -64,18 +64,18 @@ model FormActivity {
 }
 
 model Subdomain {
-  id           String  @id @default(auto()) @map("_id") @db.ObjectId
-  slug         String  @unique
-  companyName  String?
-  projectUrl   String?
-  logo         String?
-  logoWidth    Int?    @default(130)
-  logoHeight   Int?    @default(130)
-  splashScreen String?
-  theme        Json?
-  active       Boolean @default(true)
-  intelligenceId String?          @db.ObjectId
-  intelligence Intelligence? @relation(fields: [intelligenceId], references: [id])
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  slug           String        @unique
+  companyName    String?
+  projectUrl     String?
+  logo           String?
+  logoWidth      Int?          @default(130)
+  logoHeight     Int?          @default(130)
+  splashScreen   String?
+  theme          Json?
+  active         Boolean       @default(true)
+  intelligenceId String?       @db.ObjectId
+  intelligence   Intelligence? @relation(fields: [intelligenceId], references: [id])
 
   twilioPhoneNumber String?
   forwardingNumber  String?
@@ -87,16 +87,15 @@ model Subdomain {
   currentPeriodEnd     DateTime?
   planPrice            String?
 
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime?        @updatedAt
-  FormData       FormData?
-  bookings       SubBookingData[]
-  users          SubdomainUser[]
-  logs           Logs[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime?        @updatedAt
+  FormData     FormData?
+  bookings     SubBookingData[]
+  users        SubdomainUser[]
+  logs         Logs[]
   // Call Flow Relations
-  callFlows      CallFlow[] // Contains the history (versions)
-  activeFlowId   String?          @db.ObjectId // Points to the specific version currently "Live"
- 
+  callFlows    CallFlow[] // Contains the history (versions)
+  activeFlowId String?          @db.ObjectId // Points to the specific version currently "Live"
 }
 
 model Intelligence {
@@ -107,7 +106,7 @@ model Intelligence {
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
 
-  Subdomain Subdomain[]
+  subdomain Subdomain[]
 }
 
 model CallFlow {
@@ -177,8 +176,8 @@ model SubBookingData {
 
 model Call {
   id            String         @id @default(auto()) @map("_id") @db.ObjectId
-  bookingDataId String         @db.ObjectId
-  bookingData   SubBookingData @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
+  bookingDataId String?         @db.ObjectId
+  bookingData   SubBookingData? @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
 
   callSid      String  @unique
   recordingSid String?

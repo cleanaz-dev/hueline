@@ -21,7 +21,9 @@ import {
   LogOut,
   ChevronRight,
   ShieldCheck,
-  Route
+  Route,
+  BrainCircuit,
+  Cpu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSuperAdmin } from "@/context/super-admin-context";
@@ -52,6 +54,11 @@ const navItems = [
     title: "Flow",
     href: "/call-flow",
     icon: Route
+  },
+  {
+    title: "Intelligence",
+    href: "/intelligence",
+    icon:Cpu
   }
 ];
 

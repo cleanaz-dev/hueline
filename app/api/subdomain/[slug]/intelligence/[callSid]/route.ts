@@ -1,81 +1,64 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createCallIngestLog } from "@/lib/prisma/mutations/logs/create-call-log";
-import { getCallIntelligence } from "@/lib/handlers";
 
-interface Params {
-  params: Promise<{
-    callSid: string;
-    slug: string;
-  }>
-}
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ slug: string; callsid: string }> }
+) {
+  const { slug, callsid } = await params;
 
-export async function POST(req: Request, { params }: Params) {
-  const { callSid, slug } = await params;
-  
-  if (!callSid || !slug) {
-    return NextResponse.json({ message: "Missing required params" }, { status: 400 });
+  if (!slug || !callsid)
+    return NextResponse.json(
+      { message: "Missing Parameters" },
+      { status: 400 }
+    );
+  // 1. SECURITY CHECK
+  const apiKey = req.headers.get("x-api-key");
+  if (apiKey !== process.env.INTERNAL_API_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    // Check API key
-    const apiKey = req.headers.get("x-api-key");
-    if (apiKey !== process.env.INTERNAL_API_KEY) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const body = await req.json();
+    const { intelligence, transcript_text, recording_url } = body;
 
-    const {
-      call_sid: callSid,
-      slug: slug,
-      hueline_id:huelineId,
-      duration: duration,
-    } = await req.json();
+    console.log(`💾 Saving Intelligence for Call: ${callsid}`);
 
-    // Find the booking with this call
-    const booking = await prisma.subBookingData.findUnique({
-      where: {
-        huelineId: huelineId
+    // 2. SAVE TO DATABASE
+    // We update the specific Call record found by callSid
+    const updatedCall = await prisma.call.update({
+      where: { callSid: callsid },
+      data: {
+        audioUrl: recording_url,
+        // Create or Update the related CallIntelligence record
+        intelligence: {
+          upsert: {
+            create: {
+              transcriptText: transcript_text,
+              callReason: intelligence.callReason || "OTHER",
+              projectScope: intelligence.projectScope,
+              estimatedAdditionalValue:
+                intelligence.estimatedAdditionalValue || 0,
+              // Store all the extra custom fields (cabinet_fee, etc) in JSON
+              customFields: intelligence,
+            },
+            update: {
+              transcriptText: transcript_text,
+              callReason: intelligence.callReason || "OTHER",
+              projectScope: intelligence.projectScope,
+              estimatedAdditionalValue:
+                intelligence.estimatedAdditionalValue || 0,
+              customFields: intelligence,
+            },
+          },
+        },
       },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        roomType: true,
-        subdomainId: true,
-      }
     });
 
-    if (!booking) {
-      return NextResponse.json({ message: "Booking not found" }, { status: 404 });
-    }
-
-    // Create log entry
-    await createCallIngestLog({
-      bookingDataId: booking.id,
-      subdomainId: booking.subdomainId,
-      callSid: callSid,
-      duration: duration,
-      customerName: booking.name,
-      customerPhone: booking.phone,
-      roomType: booking.roomType,
-    });
-
-    // Trigger call intelligence
-    await getCallIntelligence({
-      hueline_id: huelineId,
-      call_sid: callSid,
-      domain_id: booking.subdomainId,
-      slug: slug,
-      action: "mockup"
-    });
-
-    return NextResponse.json({ message: "Success" }, { status: 200 });
-
+    return NextResponse.json({ success: true, id: updatedCall.id });
   } catch (error) {
-    console.error("Error in call ingest:", error);
-    return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 }
-    );
+    console.error("❌ Error saving intelligence:", error);
+    // Even if it fails, return 200 so Lambda doesn't retry infinitely
+    return NextResponse.json({ error: "Failed to save" }, { status: 200 });
   }
 }
