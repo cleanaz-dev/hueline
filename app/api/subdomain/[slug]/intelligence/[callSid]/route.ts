@@ -3,11 +3,11 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ slug: string; callsid: string }> }
+  { params }: { params: Promise<{ slug: string; callSid: string }> }
 ) {
-  const { slug, callsid } = await params;
+  const { slug, callSid } = await params;
 
-  if (!slug || !callsid)
+  if (!slug || !callSid)
     return NextResponse.json(
       { message: "Missing Parameters" },
       { status: 400 }
@@ -22,12 +22,12 @@ export async function POST(
     const body = await req.json();
     const { intelligence, transcript_text, recording_url } = body;
 
-    console.log(`💾 Saving Intelligence for Call: ${callsid}`);
+    console.log(`💾 Saving Intelligence for Call: ${callSid}`);
 
     // 2. SAVE TO DATABASE
     // We update the specific Call record found by callSid
     const updatedCall = await prisma.call.update({
-      where: { callSid: callsid },
+      where: { callSid: callSid },
       data: {
         audioUrl: recording_url,
         // Create or Update the related CallIntelligence record
