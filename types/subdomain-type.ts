@@ -110,7 +110,7 @@ export interface BookingData {
 
 export interface Call {
   id: string;
-  bookingDataId: string;
+  bookingDataId: string | null
   callSid: string;
   recordingSid: string | null;
   audioUrl: string | null;
