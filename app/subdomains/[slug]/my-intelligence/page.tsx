@@ -1,4 +1,4 @@
-export async function page(){
+export default  function page(){
   return (
     <div>
      My Intelligence

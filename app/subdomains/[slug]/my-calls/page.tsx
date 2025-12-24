@@ -1,4 +1,4 @@
-export async function page() {
+export default async function page() {
   return (
     <div>
      My Calls
