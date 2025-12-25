@@ -10,6 +10,7 @@ import { CameraHandler } from './camera-handler';
 export function RoomClient({ roomId }: { roomId: string }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasStarted, setHasStarted] = useState(false)
   const { subdomain } = useOwner();
   
   const currentSlug = subdomain.slug;
@@ -40,6 +41,24 @@ export function RoomClient({ roomId }: { roomId: string }) {
     return (
       <div className="h-screen bg-black flex items-center justify-center text-white">
         Initializing Secure Room...
+      </div>
+    );
+  }
+
+  if (!hasStarted) {
+    return (
+      <div className="h-screen bg-black flex flex-col items-center justify-center p-6">
+        <div className="text-center mb-8">
+          <h1 className="text-white text-2xl font-bold mb-2">Hue-Line Virtual Room</h1>
+          <p className="text-zinc-500">Ready to show the property?</p>
+        </div>
+        
+        <button 
+          onClick={() => setHasStarted(true)} // THIS tap satisfies the mobile browser
+          className="bg-white text-black px-10 py-4 rounded-full font-bold text-lg shadow-xl animate-bounce"
+        >
+          Join Walkthrough
+        </button>
       </div>
     );
   }

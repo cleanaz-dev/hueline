@@ -8,23 +8,23 @@ export const CameraHandler = () => {
   const { room, isPainter } = useRoomContext();
 
   useEffect(() => {
-    if (!room) return;
+  if (!room || isPainter) return;
 
-    // If I am the CLIENT, I should turn my camera on immediately 
-    // so the painter can see the property.
-    if (!isPainter) {
-      const startCamera = async () => {
-        try {
-          await room.localParticipant.setCameraEnabled(true);
-          await room.localParticipant.setMicrophoneEnabled(true);
-          console.log("📸 Client camera started");
-        } catch (e) {
-          console.error("Failed to start camera:", e);
-        }
-      };
-      startCamera();
+  const initMobileMedia = async () => {
+    try {
+      // 1. Force audio playback permission
+      await room.startAudio(); 
+      
+      // 2. Enable Camera
+      await room.localParticipant.setCameraEnabled(true);
+      await room.localParticipant.setMicrophoneEnabled(true);
+    } catch (e) {
+      alert("Please allow camera access to show the property.");
     }
-  }, [room, isPainter]);
+  };
+
+  initMobileMedia();
+}, [room, isPainter]);
 
   return null; // This component just handles side effects
 };
