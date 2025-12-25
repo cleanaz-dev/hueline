@@ -141,7 +141,7 @@ export default function IntelligenceDialog({
     0
   );
   
-  const scope = booking.currentProjectScope || "UNKNOWN";
+  const scope = booking.projectScope || "UNKNOWN";
   const type = (booking as any).projectType || "RESIDENTIAL";
   const TypeIcon = type === "COMMERCIAL" ? Building2 : Home;
 

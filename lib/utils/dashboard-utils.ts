@@ -24,14 +24,17 @@ export function formatCallReason(reason: string): string {
   return reasonMap[reason] || reason;
 }
 
-export function formatProjectScope(scope: string): string {
-  const scopeMap: Record<string, string> = {
-    INTERIOR: "Interior",
-    EXTERIOR: "Exterior",
-    CABINETS: "Cabinets",
-    DECK_FENCE: "Deck/Fence",
-    UNKNOWN: "Unknown"
-  };
+export const formatProjectScope = (scope: string | string[] | undefined | null): string => {
+  if (!scope) return "Unknown";
   
-  return scopeMap[scope] || scope;
-}
+  // Handle array case
+  if (Array.isArray(scope)) {
+    if (scope.length === 0) return "Unknown";
+    if (scope.length === 1) return scope[0];
+    // For multiple scopes, join them
+    return scope.join(", ");
+  }
+  
+  // Handle legacy string case (for backward compatibility)
+  return scope;
+};
