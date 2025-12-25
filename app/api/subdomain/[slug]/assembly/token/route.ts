@@ -5,7 +5,7 @@ interface Params {
   }>;
 }
 
-export async function POST({ params }: Params) {
+export async function POST(req: Request, { params }: Params) {
   const { slug } = await params;
 
   if (!slug)
