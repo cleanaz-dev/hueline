@@ -18,24 +18,28 @@ export function RoomClient({ roomId }: { roomId: string }) {
   const searchParams = useSearchParams();
   const isClient = searchParams.get('role') === 'client';
 
-  useEffect(() => {
-    const fetchToken = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          `/api/subdomain/${currentSlug}/livekit/token?room=${roomId}&username=Painter`
-        );
-        const data = await response.json();
-        setToken(data.token);
-      } catch (error) {
-        console.error('Failed to fetch token:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+useEffect(() => {
+  const fetchToken = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Determine identity based on the role
+      const identity = isClient ? `Homeowner-${Math.floor(Math.random() * 1000)}` : 'Painter';
+      
+      const response = await fetch(
+        `/api/subdomain/${currentSlug}/livekit/token?room=${roomId}&username=${identity}`
+      );
+      const data = await response.json();
+      setToken(data.token);
+    } catch (error) {
+      console.error('Failed to fetch token:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchToken();
-  }, [roomId, currentSlug]);
+  fetchToken();
+}, [roomId, currentSlug, isClient]);
 
   if (isLoading || !token) {
     return (
