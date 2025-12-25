@@ -1,11 +1,15 @@
 // call-intelligence-types.ts
 import { CallReason, CallOutcome } from "@/app/generated/prisma"; // Import both from Prisma
+import { BookingData } from "@/types/subdomain-type"
+
 
 export interface Call {
   id: string;
   bookingDataId: string;
   callSid: string;
   recordingSid: string | null;
+  bookingData?: BookingData | null; 
+
   audioUrl: string | null;
   duration: string | null;
   status: string | null;

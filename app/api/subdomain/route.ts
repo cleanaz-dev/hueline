@@ -1,4 +1,4 @@
-// app/api/subdomains/route.ts
+// app/api/subdomain/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 

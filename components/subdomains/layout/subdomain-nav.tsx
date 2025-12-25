@@ -13,6 +13,10 @@ import {
   Settings,
   ShieldAlert,
   Search,
+  PhoneCall,
+  CircleUserRound,
+  Cpu,
+  Warehouse,
 } from "lucide-react";
 import { getPublicUrl } from "@/lib/aws/cdn";
 
@@ -96,7 +100,7 @@ export default function SubdomainNav({
   return (
     <>
       {/* Main Nav */}
-      <nav className="bg-white border-b border-gray-200 h-16 md:h-24 sticky top-0 z-40">
+      <nav className="bg-white border-b border-gray-200 h-16 md:h-20 sticky top-0 z-40">
         <div className="px-4 md:px-8 h-full flex items-center justify-between max-w-7xl mx-auto">
           {/* Left Spacer */}
           <div className="w-20"></div>
@@ -120,7 +124,7 @@ export default function SubdomainNav({
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsOpen(!isOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-full hover:bg-gray-50 transition-all border border-transparent hover:border-gray-200"
+                  className="flex items-center gap-2 p-1.5 rounded-full hover:bg-gray-50 transition-all border border-transparent hover:border-gray-200 cursor-pointer"
                 >
                   <div
                     className={`h-9 w-9 rounded-full text-white flex items-center justify-center shadow-sm ${
@@ -169,12 +173,37 @@ export default function SubdomainNav({
                     </Link>
 
                     <Link
-                      href="/my-account"
+                      href="/my/account"
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
-                      <User className="w-4 h-4" />
-                      My Account
+                      <CircleUserRound className="w-4 h-4" />
+                      Account
+                    </Link>
+
+                    <Link
+                      href="/my/calls"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
+                    >
+                      <PhoneCall className="size-4" />
+                      Calls
+                    </Link>
+
+                    <Link
+                      href="/my/intelligence"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
+                    >
+                    <Cpu className="size-4" />
+                    Intelligence
+                    </Link>
+
+
+                    <Link
+                      href="/my/rooms"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
+                    >
+                    <Warehouse className="size-4" />
+                    Rooms
                     </Link>
 
                     <div className="my-1 border-t border-gray-50" />

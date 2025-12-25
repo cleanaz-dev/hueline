@@ -24,6 +24,10 @@ import {
   ChevronLeft,
   Calendar,
   Clock,
+  Logs,
+  Info,
+  Bot,
+  Target,
 } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
 import { useDashboard } from "@/context/dashboard-context";
@@ -186,53 +190,72 @@ export default function ClientTable() {
       }),
 
       // Project Details (THE NEW LOGIC)
+      // Project Details (THE NEW LOGIC)
       columnHelper.display({
         id: "projectDetails",
         header: "Project Details",
         cell: (info) => {
-          // 1. DATA
-          const anchor = info.row.original.initialIntent || "NEW_PROJECT";
-          const current = info.row.original.currentCallReason;
-          const scope = info.row.original.currentProjectScope;
-          // Assuming you named the field 'currentProjectType' or 'projectType'
-          const type = (info.row.original as any).projectType || "RESIDENTIAL";
+          const row = info.row.original;
 
-          const showPulse = current && current !== anchor;
+          // 1. ANCHOR: The Identity (Never Replaced)
+          const anchor = formatCallReason(row.initialIntent || "NEW_PROJECT");
 
-          // 2. ICON SELECTION
-          const TypeIcon = type === "COMMERCIAL" ? Building2 : Home;
+          // 2. TYPE: Explicit Text
+          const rawType = row.projectType || "RESIDENTIAL";
+          const typeLabel =
+            rawType === "COMMERCIAL" ? "Commercial" : "Residential";
+          const TypeIcon = rawType === "COMMERCIAL" ? Building2 : Home;
+          const lastInteraction = row.lastInteraction;
+
+          // 3. SCOPE: The Array (Join with comma)
+          const scopeList =
+            row.projectScope && row.projectScope.length > 0
+              ? row.projectScope.join(", ")
+              : "General Scope";
 
           return (
-            <div className="flex flex-col gap-1 max-w-[180px]">
-              {/* LINE 1: Identity (Reason) */}
-              <div className="flex  gap-2 font-semibold text-gray-900 text-sm">
-                {formatCallReason(anchor)}
+            <div className="flex flex-col py-1 max-w-[220px]">
+              {/* LINE 1: Identity (New Project / Pricing / etc) */}
+              <div className="font-bold text-gray-900 text-sm">{anchor}</div>
 
-                {showPulse && (
-                  <div className="flex">
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-muted-foreground border border-blue-100">
-                      Latest: {formatCallReason(current!)}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* LINE 3: Type & Scope (The Visual Story) */}
+              {/* LINE 2: Type (Icon + Text) */}
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                {/* The Icon (Visual Anchor) */}
-                <TypeIcon className="size-4 text-gray-400" />
-
-                {/* The Scope */}
-                <span>{formatProjectScope(scope || "UNKNOWN")}</span>
+                <TypeIcon className="size-3.5 text-gray-400 shrink-0" />
+                <span className="font-medium text-gray-700">{typeLabel}</span>
+              </div>
+                {/* LINE 4: Scope (Icon + Text aligned) */}
+              <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-gray-500 leading-snug break-words tracking-wide">
+                <Target className="size-3.5 text-gray-400 shrink-0" />
+                <span>{scopeList}</span>
               </div>
 
-              {/* LINE 4: Money */}
-              {info.row.original.totalHiddenValue > 0 && (
-                <div className="text-xs text-green-600 font-bold mt-0.5">
-                  +{getEstimatedValueRange(info.row.original.totalHiddenValue)}{" "}
-                  Value
-                </div>
-              )}
+              {/* LINE 3: Last Interaction */}
+              <div className="flex items-center gap-1.5">
+                <Bot className="size-3.5 text-purple-400 shrink-0" />
+                <p className="text-xs text-purple-400">
+                  {lastInteraction}
+                </p>
+              </div>
+
+            
+            </div>
+          );
+        },
+      }),
+
+      // 2. ESTIMATED VALUE (Own Column)
+      columnHelper.accessor("estimatedValue", {
+        header: "Est. Value",
+        cell: (info) => {
+          const value = info.getValue() || 0;
+
+          if (value === 0) {
+            return <span className="text-gray-300 text-xs">-</span>;
+          }
+
+          return (
+            <div className="font-bold text-emerald-500 text-sm">
+              +{getEstimatedValueRange(value)}
             </div>
           );
         },
@@ -286,7 +309,6 @@ export default function ClientTable() {
             {/* 2. VISUALS (The Art) - Blue */}
             <Link
               href={`/j/${info.getValue()}`}
-              target="_blank" // Opens Client Portal in new tab
               className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all group"
               title="Open Client Portal"
             >
@@ -427,9 +449,9 @@ export default function ClientTable() {
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="text-xs text-gray-500 truncate pr-2">
-                    {formatProjectScope(
-                      data.currentProjectScope || "Recent Inquiry"
-                    )}
+                    {/* {formatProjectScope(
+                      data.projectScope[0] || "Recent Inquiry"
+                    )} */}
                   </div>
                   {data.totalHiddenValue > 0 && (
                     <div className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
@@ -586,15 +608,21 @@ export default function ClientTable() {
                     <div className="flex items-center gap-2">
                       <div
                         className={`w-1.5 h-1.5 rounded-full ${
-                          selectedBooking.totalHiddenValue > 0
+                          (selectedBooking.estimatedValue ?? 0) > 0
                             ? "bg-green-500"
                             : "bg-gray-300"
                         }`}
                       />
-                      <div className="text-sm font-bold text-gray-900 leading-none">
-                        {selectedBooking.totalHiddenValue > 0
+                      <div
+                        className={`text-sm font-bold leading-none ${
+                          (selectedBooking.estimatedValue ?? 0) > 0
+                            ? "text-green-600"
+                            : "text-gray-900"
+                        }`}
+                      >
+                        {(selectedBooking.estimatedValue ?? 0) > 0
                           ? `+${getEstimatedValueRange(
-                              selectedBooking.totalHiddenValue
+                              selectedBooking.estimatedValue!
                             )}`
                           : "N/A"}
                       </div>

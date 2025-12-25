@@ -93,6 +93,7 @@ model Subdomain {
   bookings     SubBookingData[]
   users        SubdomainUser[]
   logs         Logs[]
+  calls        Call[]
   // Call Flow Relations
   callFlows    CallFlow[] // Contains the history (versions)
   activeFlowId String?          @db.ObjectId // Points to the specific version currently "Live"
@@ -145,6 +146,7 @@ model SubBookingData {
   subdomain   Subdomain @relation(fields: [subdomainId], references: [id], onDelete: Cascade)
   huelineId   String    @unique
 
+  // ... Client Details ...
   name                String
   phone               String
   roomType            String
@@ -155,27 +157,38 @@ model SubBookingData {
   dateTime            DateTime
   pin                 String
   expiresAt           Int
+
+  // ... The "Perfect Sauce" Logic ...
+  
+  // 1. GENESIS (Immutable)
   initialIntent       CallReason  @default(NEW_PROJECT)
-  currentCallReason   CallReason?
-  currentProjectScope String?
-  projectType         String?
+
+  // 2. SNAPSHOT (Overwritten every call)
+  lastCallReason      CallReason? 
   lastCallAt          DateTime?
   lastCallAudioUrl    String?
+  lastInteraction     String?     // The new "Pulse" headline
 
+  // 3. STICKY / ACCUMULATIVE (Builds up over time)
+  projectType         String?     // e.g. "Residential"
+  projectScope        String[]    // ✅ Renamed & Array (e.g. ["Interior", "Cabinets"])
+  estimatedValue      Float?      // Cumulative math
+
+  // ... Relations ...
   mockups         Mockup[]
   paintColors     PaintColor[]
   alternateColors AlternateColor[]
   sharedAccess    SharedAccess[]
   exports         Export[]
   calls           Call[]
+  logs            Logs[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  logs      Logs[]
 }
 
 model Call {
-  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
   bookingDataId String?         @db.ObjectId
   bookingData   SubBookingData? @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
 
@@ -187,8 +200,10 @@ model Call {
 
   intelligence CallIntelligence?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  Subdomain   Subdomain? @relation(fields: [subdomainId], references: [id])
+  subdomainId String?    @db.ObjectId
 
   @@index([bookingDataId])
 }

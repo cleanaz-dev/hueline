@@ -24,7 +24,7 @@ export default function SettingsPage() {
   return (
     <div className="h-screen bg-gray-50">
       {/* 1. Pass the settings to your Nav */}
-      <SubdomainNav data={settings}/>
+     
       
       {/* 2. RENDER THE CONTENT HERE (Do not render <SettingsPage /> again!) */}
       <SettingsContent />

@@ -26,13 +26,27 @@ export async function POST(
       transcript_text, 
       recording_url,
       duration,
-      huelineId,  // This may or may not exist
-      domain_id 
+      huelineId,
+      // domain_id // Unused?
     } = body;
 
     console.log(`💾 Saving Intelligence for Call: ${callSid}`);
 
-    // 2. GET SUBDOMAIN (for validation)
+    // ---------------------------------------------------------
+    // ✅ PRE-PROCESSING: Extract & Filter
+    // ---------------------------------------------------------
+    const {
+      callReason,
+      projectScope,
+      estimatedAdditionalValue,
+      callSummary,
+      callOutcome,
+      // We extract the new "Pulse" field here (assuming AI sends it)
+      short_headline, 
+      ...filteredCustomFields 
+    } = intelligence || {};
+
+    // 2. GET SUBDOMAIN (Validation)
     const subdomain = await prisma.subdomain.findUnique({
       where: { slug }
     });
@@ -44,49 +58,30 @@ export async function POST(
       );
     }
 
-    // 3. ATTEMPT TO FIND BOOKING (Two strategies)
+    // 3. FIND BOOKING (Strategy A: huelineId, Strategy B: Existing Link)
     let bookingDataId: string | null = null;
 
-    // Strategy A: Direct match by huelineId (if provided)
     if (huelineId) {
-      console.log(`🔍 Looking for booking with huelineId: ${huelineId}`);
       const booking = await prisma.subBookingData.findUnique({
         where: { huelineId }
       });
-
-      if (booking) {
-        bookingDataId = booking.id;
-        console.log(`✅ Found booking via huelineId: ${bookingDataId}`);
-      } else {
-        console.log(`⚠️ No booking found for huelineId: ${huelineId}`);
-      }
+      if (booking) bookingDataId = booking.id;
     }
 
-    // Strategy B: Fallback to phone number match (if no huelineId or not found)
     if (!bookingDataId) {
-      console.log(`🔍 Attempting to find booking via call record...`);
-      
-      // First check if call exists and has phone number
       const existingCall = await prisma.call.findUnique({
         where: { callSid },
-        select: { 
-          bookingDataId: true,
-          // If you store phone number on Call model, include it here
-          // phoneNumber: true 
-        }
+        select: { bookingDataId: true }
       });
-
-      // If call already has a booking linked, use it
       if (existingCall?.bookingDataId) {
         bookingDataId = existingCall.bookingDataId;
-        console.log(`✅ Call already linked to booking: ${bookingDataId}`);
       }
     }
 
-    // 4. UPSERT CALL WITH INTELLIGENCE
-   const updatedCall = await prisma.call.upsert({
+    // 4. UPSERT CALL
+    // We strictly log what happened in THIS specific call here
+    const updatedCall = await prisma.call.upsert({
       where: { callSid },
-      
       update: {
         audioUrl: recording_url,
         duration: duration ? String(duration) : undefined,
@@ -97,71 +92,114 @@ export async function POST(
           upsert: {
             create: {
               transcriptText: transcript_text,
-              callReason: intelligence.callReason || "OTHER",
-              projectScope: intelligence.projectScope,
-              estimatedAdditionalValue: intelligence.estimatedAdditionalValue || 0,
-              
-              // ✅ ADD THESE LINES
-              callSummary: intelligence.callSummary || null, 
-              callOutcome: intelligence.callOutcome || null, 
-              
-              customFields: intelligence,
+              callReason: callReason || "OTHER",
+              projectScope: projectScope,
+              estimatedAdditionalValue: estimatedAdditionalValue || 0,
+              callSummary: callSummary || null,
+              callOutcome: callOutcome || null,
+              customFields: filteredCustomFields,
             },
             update: {
               transcriptText: transcript_text,
-              callReason: intelligence.callReason || "OTHER",
-              projectScope: intelligence.projectScope,
-              estimatedAdditionalValue: intelligence.estimatedAdditionalValue || 0,
-              
-              // ✅ ADD THESE LINES
-              callSummary: intelligence.callSummary || null,
-              callOutcome: intelligence.callOutcome || null,
-              
-              customFields: intelligence,
+              callReason: callReason || "OTHER",
+              projectScope: projectScope,
+              estimatedAdditionalValue: estimatedAdditionalValue || 0,
+              callSummary: callSummary || null,
+              callOutcome: callOutcome || null,
+              customFields: filteredCustomFields,
             },
           },
         },
       },
-      
       create: {
         callSid,
         audioUrl: recording_url || "",
         duration: duration ? String(duration) : "0",
         status: "completed",
         bookingDataId: bookingDataId,
-        
         intelligence: {
           create: {
             transcriptText: transcript_text,
-            callReason: intelligence.callReason || "OTHER",
-            projectScope: intelligence.projectScope,
-            estimatedAdditionalValue: intelligence.estimatedAdditionalValue || 0,
-            
-            // ✅ ADD THESE LINES
-            callSummary: intelligence.callSummary || null,
-            callOutcome: intelligence.callOutcome || null,
-            
-            customFields: intelligence,
+            callReason: callReason || "OTHER",
+            projectScope: projectScope,
+            estimatedAdditionalValue: estimatedAdditionalValue || 0,
+            callSummary: callSummary || null,
+            callOutcome: callOutcome || null,
+            customFields: filteredCustomFields,
           },
         },
       },
-      
       include: {
-        bookingData: {
-          select: {
-            id: true,
-            huelineId: true,
-            name: true,
-          }
-        }
+        bookingData: { select: { huelineId: true } }
       }
     });
 
-    // 5. LOG RESULT
-    if (updatedCall.bookingData) {
-      console.log(`✅ Call linked to booking: ${updatedCall.bookingData.huelineId}`);
-    } else {
-      console.log(`⚠️ Call saved without booking link (unidentified caller)`);
+    // 5. UPDATE SUBBOOKING DATA (The Perfect Sauce)
+    if (bookingDataId) {
+      console.log(`🔄 Updating SubBookingData for ID: ${bookingDataId}`);
+      
+      const additionalValue = Number(estimatedAdditionalValue) || 0;
+
+      // A. FETCH CURRENT STATE (Required for Accumulation Logic)
+      const existingBooking = await prisma.subBookingData.findUnique({
+        where: { id: bookingDataId },
+        select: { 
+          estimatedValue: true, 
+          projectType: true,
+          projectScope: true // Now an Array
+        }
+      });
+
+      // B. CALCULATE UPDATES
+
+      // 1. Math (Cumulative)
+      const currentTotal = Number(existingBooking?.estimatedValue) || 0;
+      const newTotal = currentTotal + additionalValue;
+
+      // 2. Project Type (Sticky - Don't overwrite known with unknown)
+      let newProjectType = existingBooking?.projectType;
+      if (intelligence.propertyType && intelligence.propertyType !== "UNKNOWN") {
+        newProjectType = intelligence.propertyType;
+      }
+
+      // 3. Project Scope (Accumulative Array)
+      const incomingScope = projectScope; 
+      // Ensure we have an array to start with
+      const currentScopes = existingBooking?.projectScope || [];
+      const newScopes = [...currentScopes];
+
+      // Only add if it's valid, not unknown, and not already in the list
+      if (incomingScope && incomingScope !== "UNKNOWN" && !newScopes.includes(incomingScope)) {
+        newScopes.push(incomingScope);
+      }
+
+      // 4. Last Interaction (The "Pulse" Headline)
+      let pulseString = "Interaction Logged";
+      
+      if (short_headline) {
+        pulseString = short_headline;
+      } else if (callReason && callReason !== "UNKNOWN") {
+        // Fallback: Formats "NEW_PROJECT" -> "New Project"
+        pulseString = callReason.replace(/_/g, " ").toLowerCase();
+        pulseString = pulseString.charAt(0).toUpperCase() + pulseString.slice(1);
+      }
+
+      // C. PERFORM UPDATE
+      await prisma.subBookingData.update({
+        where: { id: bookingDataId },
+        data: {
+          // --- SNAPSHOT FIELDS (Latest Info) ---
+          lastCallAt: new Date(),
+          lastCallAudioUrl: recording_url,
+          lastInteraction: pulseString, // The readable dashboard headline
+          lastCallReason: (callReason && callReason !== "UNKNOWN") ? callReason : undefined,
+
+          // --- STICKY / ACCUMULATIVE FIELDS ---
+          estimatedValue: newTotal,
+          projectType: newProjectType,
+          projectScope: newScopes, // Saves the accumulated array
+        }
+      });
     }
 
     return NextResponse.json({ 
@@ -173,14 +211,8 @@ export async function POST(
 
   } catch (error) {
     console.error("❌ Error saving intelligence:", error);
-    
-    // Return 200 to prevent Lambda infinite retry
-    // But log the actual error for debugging
     return NextResponse.json(
-      { 
-        error: "Failed to save",
-        details: error instanceof Error ? error.message : "Unknown error"
-      },
+      { error: "Failed to save", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 200 }
     );
   }

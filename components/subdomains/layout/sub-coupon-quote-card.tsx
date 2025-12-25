@@ -116,10 +116,7 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
 
         {/* --- RIGHT: THE QUOTE (Invoice Style) --- */}
         <Card className="relative overflow-hidden border-0 bg-white shadow-xl shadow-blue-900/10 rounded-3xl flex flex-col h-full transform transition-all hover:translate-y-[-2px]">
-          {/* Subtle Watermark */}
-          <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-            <Sparkles className="w-40 h-40" />
-          </div>
+       
 
           <div className="p-6 md:p-8 flex-1 flex flex-col">
             <div className="flex items-center gap-4 mb-6">
@@ -142,7 +139,7 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
                         className="w-12 h-12 rounded-full border-4 border-white shadow-md ring-1 ring-gray-100 transition-transform group-hover:scale-110" 
                         style={{ backgroundColor: color.hex }}
                       />
-                      <span className="text-[10px] font-semibold text-gray-600 max-w-[60px] text-center truncate px-1 py-0.5 bg-gray-50 rounded-md">
+                      <span className="text-[10px] font-semibold text-gray-600 max-w-[60px] text-center  px-1 py-0.5 bg-gray-50 rounded-md">
                         {color.name}
                       </span>
                     </div>
@@ -181,11 +178,6 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
                   <div className="flex justify-between items-baseline">
                      <span className="text-base font-bold text-gray-900">Estimated Total</span>
                      <span className="font-mono text-2xl font-bold text-gray-900">$1,425.00</span>
-                  </div>
-                  <div className="text-right mt-2">
-                     <span className="inline-flex items-center gap-1.5 text-[10px] text-blue-700 font-bold bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
-                       <Sparkles className="w-3 h-3" /> AI Generated
-                     </span>
                   </div>
                </div>
             </div>

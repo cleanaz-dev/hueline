@@ -70,9 +70,8 @@ export interface SubdomainAccountData {
 
 export interface BookingData {
   id: string;
-  subdomainId: string; // Added for context
+  subdomainId: string;
   huelineId: string;
-
   name: string;
   phone: string;
   roomType: string;
@@ -84,23 +83,34 @@ export interface BookingData {
   pin: string;
   expiresAt: number;
   
-  // Pulse / Status Fields
-  projectType?: string | null;
+  // --- PULSE / STATUS FIELDS ---
+  
+  // 1. Genesis
   initialIntent: CallReason;
-  currentCallReason: CallReason | null;
-  currentProjectScope?: string | null;
+
+  // 2. Snapshot (Latest Info)
+  lastCallReason?: CallReason | null;
   lastCallAt?: Date | string | null;
   lastCallAudioUrl?: string | null;
-  
-  // REMOVED: intelligenceId (It does not belong here)
+  lastInteraction?: string | null; // ✅ The new headline field
 
-  mockups: Mockup[];
-  paintColors: PaintColor[];
-  alternateColors: AlternateColor[];
-  sharedAccess: SharedAccess[];
-  exports: Export[];
-  calls: Call[];
-  logs: Log[];
+  // 3. Cumulative / Sticky (Profile Info)
+  projectType?: string | null;
+  estimatedValue?: number | null;
+  
+  // ✅ FIXED: Renamed & Changed to Array
+  // Was: currentProjectScope?: string | null;
+  projectScope?: string[]; 
+
+  // --- RELATIONS ---
+  // These are optional because Prisma doesn't fetch them by default
+  mockups?: Mockup[];
+  paintColors?: PaintColor[];
+  alternateColors?: AlternateColor[];
+  sharedAccess?: SharedAccess[];
+  exports?: Export[];
+  calls?: Call[];
+  logs?: Log[];
 
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -111,6 +121,7 @@ export interface BookingData {
 export interface Call {
   id: string;
   bookingDataId: string | null
+  bookingData?: BookingData | null; 
   callSid: string;
   recordingSid: string | null;
   audioUrl: string | null;

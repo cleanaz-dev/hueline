@@ -222,7 +222,7 @@ export default function SubShareProjectDialog({
                   <button
                     type="button"
                     onClick={() => setAccessType("viewer")}
-                    className={`relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                    className={`relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left cursor-pointer ${
                       accessType === "viewer"
                         ? "border-blue-500 bg-blue-50/50"
                         : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
@@ -237,16 +237,14 @@ export default function SubShareProjectDialog({
                         <div className="font-bold text-sm text-gray-900 flex items-center gap-2">
                             View Only <Eye className="w-3 h-3 text-blue-500" />
                         </div>
-                        <div className="text-[10px] text-gray-500 leading-tight mt-0.5">
-                            Read-only access to project details.
-                        </div>
+                      
                     </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setAccessType("customer")}
-                    className={`relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                    className={`relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left cursor-pointer ${
                       accessType === "customer"
                         ? "border-green-500 bg-green-50/50"
                         : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
@@ -261,9 +259,7 @@ export default function SubShareProjectDialog({
                         <div className="font-bold text-sm text-gray-900 flex items-center gap-2">
                             Full Access <Edit className="w-3 h-3 text-green-500" />
                         </div>
-                        <div className="text-[10px] text-gray-500 leading-tight mt-0.5">
-                            Can edit mockups & colors.
-                        </div>
+                        
                     </div>
                   </button>
                 </div>

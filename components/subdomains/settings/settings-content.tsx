@@ -29,7 +29,7 @@ export default function SettingsContent() {
 
   return (
     // TWEAK: Reduced vertical margin on mobile (my-6 vs my-12)
-    <div className="container mx-auto max-w-5xl px-4 md:px-10 lg:px-0 my-6 md:my-12 pb-20">
+    <div className="container mx-auto max-w-5xl px-4 md:px-10 lg:px-0 pt-6  pb-20">
       
       {/* TWEAK: Smaller header text on mobile */}
       <div className="mb-6 md:mb-8">
