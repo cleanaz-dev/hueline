@@ -15,26 +15,27 @@ export const CameraHandler = () => {
       hasAttempted.current = true;
       
       try {
-        console.log("📱 Mobile: Attempting to unlock audio and camera...");
+       
         
-        // 1. Unlock Audio (Crucial for mobile)
-        // This must happen to allow the client to hear the painter
-        await room.startAudio();
+        // This method does EVERYTHING: creates, enables, and publishes
+        await room.localParticipant.enableCameraAndMicrophone();
         
-        // 2. Enable Camera & Mic
-        // This triggers the native "Allow Camera?" popup
-        await room.localParticipant.setCameraEnabled(true);
-        await room.localParticipant.setMicrophoneEnabled(true);
+        // Verify publication
+        setTimeout(() => {
+          const videoPubs = Array.from(room.localParticipant.videoTrackPublications.values());
+          const audioPubs = Array.from(room.localParticipant.audioTrackPublications.values());
+          
+          videoPubs.forEach(pub => {
+            console.log("  Video:", pub.trackSid, "isSubscribed:", pub.isSubscribed);
+          });
+        }, 1500);
         
-        console.log("✅ Mobile: Media successfully started");
       } catch (e) {
         console.error("❌ Mobile Media Error:", e);
-        // If it fails, it might be because the user hasn't clicked anything yet
-        // or they denied permissions.
+        alert("Camera access failed. Please check permissions and try again.");
       }
     };
 
-    // Small delay to ensure the WebSocket is stable
     const timeout = setTimeout(startMedia, 1000);
     return () => clearTimeout(timeout);
   }, [room, isPainter]);
