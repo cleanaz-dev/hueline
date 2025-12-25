@@ -4,7 +4,8 @@ import { createContext, useContext, ReactNode } from "react";
 import { 
   SubdomainAccountData, 
   Call, 
-  Log 
+  Log,
+  BookingData 
 } from "@/types/subdomain-type"; // Adjust path to where you saved your interfaces
 
 // 1. Extend the base interface to include what you are fetching in layout.tsx
@@ -13,6 +14,7 @@ interface OwnerContextValue {
   subdomain: SubdomainAccountData & {
     calls: Call[];
     logs: Log[];
+    bookings: BookingData[]
   };
 }
 

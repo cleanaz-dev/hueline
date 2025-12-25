@@ -97,6 +97,7 @@ model Subdomain {
   // Call Flow Relations
   callFlows    CallFlow[] // Contains the history (versions)
   activeFlowId String?          @db.ObjectId // Points to the specific version currently "Live"
+  rooms         Room[]
 }
 
 model Intelligence {
@@ -135,6 +136,7 @@ model SubdomainUser {
 
   subdomainId String    @db.ObjectId
   subdomain   Subdomain @relation(fields: [subdomainId], references: [id])
+  rooms       Room[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -147,32 +149,32 @@ model SubBookingData {
   huelineId   String    @unique
 
   // ... Client Details ...
-  name                String
-  phone               String
-  roomType            String
-  prompt              String
-  originalImages      String
-  summary             String
-  dimensions          String?
-  dateTime            DateTime
-  pin                 String
-  expiresAt           Int
+  name           String
+  phone          String
+  roomType       String
+  prompt         String
+  originalImages String
+  summary        String
+  dimensions     String?
+  dateTime       DateTime
+  pin            String
+  expiresAt      Int
 
   // ... The "Perfect Sauce" Logic ...
-  
+
   // 1. GENESIS (Immutable)
-  initialIntent       CallReason  @default(NEW_PROJECT)
+  initialIntent CallReason @default(NEW_PROJECT)
 
   // 2. SNAPSHOT (Overwritten every call)
-  lastCallReason      CallReason? 
-  lastCallAt          DateTime?
-  lastCallAudioUrl    String?
-  lastInteraction     String?     // The new "Pulse" headline
+  lastCallReason   CallReason?
+  lastCallAt       DateTime?
+  lastCallAudioUrl String?
+  lastInteraction  String? // The new "Pulse" headline
 
   // 3. STICKY / ACCUMULATIVE (Builds up over time)
-  projectType         String?     // e.g. "Residential"
-  projectScope        String[]    // ✅ Renamed & Array (e.g. ["Interior", "Cabinets"])
-  estimatedValue      Float?      // Cumulative math
+  projectType    String? // e.g. "Residential"
+  projectScope   String[] // ✅ Renamed & Array (e.g. ["Interior", "Cabinets"])
+  estimatedValue Float? // Cumulative math
 
   // ... Relations ...
   mockups         Mockup[]
@@ -182,9 +184,38 @@ model SubBookingData {
   exports         Export[]
   calls           Call[]
   logs            Logs[]
+  rooms           Room[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Room {
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  roomKey     String         @unique
+  clientName  String?
+  clientPhone String?
+  status      RoomStatus     @default(ACTIVE)
+  creatorId   String?        @db.ObjectId
+  creator     SubdomainUser? @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  booking   SubBookingData? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId String?         @db.ObjectId
+
+  domainId String    @db.ObjectId
+  domain   Subdomain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  recordingUrl String?
+  transcript   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum RoomStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
 }
 
 model Call {

@@ -23,27 +23,44 @@ export default async function OwnerRootLayout({
 
   // B. Fetch Data (Single DB Query for everything)
   const subdomain = await prisma.subdomain.findUnique({
-    where: { slug },
-    include: {
-      callFlows: true,
-      intelligence: true,
-      logs: true,
-      users: true,
-      calls: {
-        include: {
-          intelligence: true,
-          bookingData: {
-            include: {
-              mockups: true,
-            },
+  where: { slug },
+  include: {
+    callFlows: true,
+    intelligence: true,
+    logs: true,
+    users: true,
+    rooms: true,
+    bookings: {
+      include: {
+        mockups: true,
+        paintColors: true,
+        alternateColors: true,
+        sharedAccess: true,
+        exports: true,
+        calls: {
+          include: {
+            intelligence: true,
           },
         },
-        orderBy: {
-          createdAt: "desc", // Most recent calls first
-        },
+        logs: true,
+        rooms: true,
       },
     },
-  });
+    calls: {
+      include: {
+        intelligence: true,
+        bookingData: {
+          include: {
+            mockups: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    },
+  },
+});
 
   if (!subdomain) return <div>Subdomain not found</div>;
 

@@ -3,7 +3,8 @@ import {
   CallReason, 
   CallOutcome, 
   LogType, 
-  LogActor
+  LogActor,
+  RoomStatus
 } from "@/app/generated/prisma";
 
 // --- INTELLIGENCE INTERFACES ---
@@ -29,6 +30,26 @@ export interface CallIntelligence {
   customFields: Prisma.JsonValue | null;
   transcriptText: string | null;
   callSummary: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+// --- ROOM INTERFACE ---
+
+export interface Room {
+  id: string;
+  roomKey: string;
+  clientName: string | null;
+  clientPhone: string | null;
+  status: RoomStatus;
+  creatorId: string | null;
+  creator?: SubdomainUser | null;
+  bookingId: string | null;
+  booking?: BookingData | null;
+  domainId: string;
+  domain?: SubdomainAccountData | null;
+  recordingUrl: string | null;
+  transcript: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -59,11 +80,11 @@ export interface SubdomainAccountData {
   callFlows?: CallFlow[];
   activeFlowId?: string | null;
   
-
-  intelligence?: Intelligence | null
+  intelligence?: Intelligence | null;
   
   createdAt: Date | string;
   updatedAt: Date | string | null;
+  rooms: Room[];
 }
 
 // --- BOOKING DATA INTERFACE ---
@@ -111,6 +132,7 @@ export interface BookingData {
   exports?: Export[];
   calls?: Call[];
   logs?: Log[];
+  rooms?: Room[];
 
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -120,7 +142,7 @@ export interface BookingData {
 
 export interface Call {
   id: string;
-  bookingDataId: string | null
+  bookingDataId: string | null;
   bookingData?: BookingData | null; 
   callSid: string;
   recordingSid: string | null;

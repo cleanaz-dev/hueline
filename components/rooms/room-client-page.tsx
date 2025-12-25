@@ -8,38 +8,39 @@ import { useSearchParams } from 'next/navigation';
 import { CameraHandler } from './camera-handler';
 
 export function RoomClient({ roomId }: { roomId: string }) {
+  const searchParams = useSearchParams();
+  // We determine the role immediately
+  const isClient = searchParams.get('role') === 'client';
+
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasStarted, setHasStarted] = useState(false)
+  const [hasStarted, setHasStarted] = useState(false);
   const { subdomain } = useOwner();
   
   const currentSlug = subdomain.slug;
 
-  const searchParams = useSearchParams();
-  const isClient = searchParams.get('role') === 'client';
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Determine identity based on the role
+        const identity = isClient ? `Homeowner-${Math.floor(Math.random() * 1000)}` : 'Painter';
+        
+        const response = await fetch(
+          `/api/subdomain/${currentSlug}/livekit/token?room=${roomId}&username=${identity}`
+        );
+        const data = await response.json();
+        setToken(data.token);
+      } catch (error) {
+        console.error('Failed to fetch token:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-useEffect(() => {
-  const fetchToken = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Determine identity based on the role
-      const identity = isClient ? `Homeowner-${Math.floor(Math.random() * 1000)}` : 'Painter';
-      
-      const response = await fetch(
-        `/api/subdomain/${currentSlug}/livekit/token?room=${roomId}&username=${identity}`
-      );
-      const data = await response.json();
-      setToken(data.token);
-    } catch (error) {
-      console.error('Failed to fetch token:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  fetchToken();
-}, [roomId, currentSlug, isClient]);
+    fetchToken();
+  }, [roomId, currentSlug, isClient]);
 
   if (isLoading || !token) {
     return (
@@ -49,7 +50,9 @@ useEffect(() => {
     );
   }
 
-  if (!hasStarted) {
+  // UPDATE: Only show the "Join" screen if the user is a Client.
+  // The Painter bypasses this and goes straight to the RoomProvider.
+  if (!hasStarted && isClient) {
     return (
       <div className="h-screen bg-black flex flex-col items-center justify-center p-6">
         <div className="text-center mb-8">
@@ -58,7 +61,7 @@ useEffect(() => {
         </div>
         
         <button 
-          onClick={() => setHasStarted(true)} // THIS tap satisfies the mobile browser
+          onClick={() => setHasStarted(true)} 
           className="bg-white text-black px-10 py-4 rounded-full font-bold text-lg shadow-xl animate-bounce"
         >
           Join Walkthrough

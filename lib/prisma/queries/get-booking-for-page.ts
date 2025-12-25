@@ -14,7 +14,8 @@ export async function getBookingForPage(huelineId: string, slug: string) {
         subdomain: {
           include:{
             users: true,
-            intelligence: true
+            intelligence: true,
+            rooms: true
           }
         },
         calls: {
@@ -27,7 +28,8 @@ export async function getBookingForPage(huelineId: string, slug: string) {
         sharedAccess: true,
         paintColors: true,
         exports: true,
-        logs: true
+        logs: true,
+        rooms: true
       },
 
     });
