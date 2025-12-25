@@ -7,8 +7,8 @@ import SubdomainNav from "@/components/subdomains/layout/subdomain-nav";
 
 interface Params {
   params: Promise<{
-    slug: string
-  }>
+    slug: string;
+  }>;
 }
 
 export default async function OwnerRootLayout({
@@ -24,7 +24,7 @@ export default async function OwnerRootLayout({
   // B. Fetch Data (Single DB Query for everything)
   const subdomain = await prisma.subdomain.findUnique({
     where: { slug },
-    include: { 
+    include: {
       callFlows: true,
       intelligence: true,
       logs: true,
@@ -32,13 +32,17 @@ export default async function OwnerRootLayout({
       calls: {
         include: {
           intelligence: true,
-          bookingData: true
+          bookingData: {
+            include: {
+              mockups: true,
+            },
+          },
         },
         orderBy: {
-          createdAt: 'desc' // Most recent calls first
-        }
+          createdAt: "desc", // Most recent calls first
+        },
       },
-    }
+    },
   });
 
   if (!subdomain) return <div>Subdomain not found</div>;
@@ -50,10 +54,8 @@ export default async function OwnerRootLayout({
   // D. Pass Data to Client Context
   return (
     <OwnerProvider value={{ subdomain }}>
-   <SubdomainNav data={subdomain} miniNav={false}/>
-      <div className="min-h-screen bg-blue-100">
-        {children}
-      </div>
+      <SubdomainNav data={subdomain} miniNav={false} />
+      <div className="min-h-screen bg-blue-100">{children}</div>
     </OwnerProvider>
   );
 }

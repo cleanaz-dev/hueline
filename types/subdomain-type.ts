@@ -104,7 +104,7 @@ export interface BookingData {
 
   // --- RELATIONS ---
   // These are optional because Prisma doesn't fetch them by default
-  mockups?: Mockup[];
+  mockups: Mockup[];
   paintColors?: PaintColor[];
   alternateColors?: AlternateColor[];
   sharedAccess?: SharedAccess[];
