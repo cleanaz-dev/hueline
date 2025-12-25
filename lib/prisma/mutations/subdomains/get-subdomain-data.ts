@@ -24,6 +24,7 @@ export async function getSubDomainData(slug: string) {
       
       createdAt: true,
       updatedAt: true,
+      rooms: true,
 
       logs: true,
       
