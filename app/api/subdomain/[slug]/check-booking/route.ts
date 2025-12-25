@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       },
       select: {
         huelineId: true,
-        currentProjectScope: true,
+        projectScope: true, // ✅ Changed from currentProjectScope
         roomType: true,
         lastCallAt: true,
         paintColors: true,
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       booking: {
         hueline_id: bookingData.huelineId,
         previous_call_date: bookingData.lastCallAt,
-        projectType: bookingData.currentProjectScope,
+        projectType: bookingData.projectScope, // ✅ Changed from currentProjectScope
         room_type: bookingData.roomType,
         summary: bookingData.summary,
         paint_colors: bookingData.paintColors,
