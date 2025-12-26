@@ -11,6 +11,8 @@ export async function POST(req: Request) {
   try {
     const { text } = await req.json();
 
+    console.log("🧠 AI Endpoint received text:", text);
+
     if (!text || text.length < 10) return NextResponse.json({});
 
     const completion = await client.chat.completions.create({
