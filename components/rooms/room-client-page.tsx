@@ -6,6 +6,7 @@ import { ClientStage } from './client-stage';
 import { RoomData } from '@/types/room-types';
 import { Copy, Check } from 'lucide-react';
 import { PainterStage } from './painter-stage';
+import { CameraHandler } from './camera-handler';
 
 interface RoomClientProps {
   roomId: string;
@@ -70,6 +71,7 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
       isPainter={!isClient} 
       slug={slug}
     >
+      <CameraHandler />
       <div className="flex flex-col h-screen w-full bg-black">
         {!isClient && (
           <header className="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-950 z-50">
