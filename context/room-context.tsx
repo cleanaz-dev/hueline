@@ -206,10 +206,10 @@ export const RoomProvider = ({
       // 2. Init Deepgram
       const deepgram = createClient(data.key);
       const connection = deepgram.listen.live({
-        model: "nova-2", // Fast, cost-effective
+        model: "nova-3",
         language: "en-US",
         smart_format: true,
-        encoding: "linear16", // Raw PCM
+        encoding: "linear16", 
         sample_rate: 16000,
         interim_results: true,
       });

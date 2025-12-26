@@ -19,7 +19,8 @@ export const CameraHandler = () => {
         
         // If homeowner, start camera. If Painter, we just want to listen.
         if (!isPainter) {
-          await room.localParticipant.enableCameraAndMicrophone();
+          await room.localParticipant.setCameraEnabled(true);
+          await room.localParticipant.setMicrophoneEnabled(true)
           console.log("✅ Homeowner camera published");
         } else {
           console.log("✅ Painter joined and audio unlocked");
