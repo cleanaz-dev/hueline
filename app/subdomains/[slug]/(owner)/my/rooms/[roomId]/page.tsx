@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 interface Params {
   params: Promise<{
     roomId: string;
+    slug: string;
   }>
 }
 
