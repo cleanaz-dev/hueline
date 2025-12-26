@@ -1,4 +1,5 @@
 import { setRoomKey } from "@/lib/redis/services/room";
+import { RoomData } from "@/types/room-types";
 import { NextResponse } from "next/server";
 
 interface Params {
@@ -8,12 +9,6 @@ interface Params {
   }>;
 }
 
-interface RoomData {
-  bookingId: string;
-  roomName: string;
-  clientName: string;
-  clientPhone: string;
-}
 
 export async function POST(req: Request, { params }: Params) {
   const { slug, roomId } = await params;

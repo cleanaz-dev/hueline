@@ -6,8 +6,12 @@ import { LiveStage } from './live-stage';
 import { useOwner } from '@/context/owner-context';
 import { useSearchParams } from 'next/navigation';
 import { CameraHandler } from './camera-handler';
+import { RoomData } from '@/types/room-types';
 
-export function RoomClient({ roomId }: { roomId: string }) {
+
+
+
+export function RoomClient({ roomId, roomData }: { roomId: string; roomData: RoomData }) {
   const searchParams = useSearchParams();
   // We determine the role immediately
   const isClient = searchParams.get('role') === 'client';
@@ -56,7 +60,8 @@ export function RoomClient({ roomId }: { roomId: string }) {
     return (
       <div className="h-screen bg-black flex flex-col items-center justify-center p-6">
         <div className="text-center mb-8">
-          <h1 className="text-white text-2xl font-bold mb-2">Hue-Line Virtual Room</h1>
+          <h1 className="text-white text-2xl font-bold mb-2">{subdomain.companyName} Site Survey</h1>
+          <p>Hi {roomData.clientName}!</p>
           <p className="text-zinc-500">Ready to show the property?</p>
         </div>
         
@@ -87,7 +92,7 @@ export function RoomClient({ roomId }: { roomId: string }) {
           
           <button 
             onClick={() => {
-              const url = `${window.location.origin}/my/rooms/${roomId}?role=client&username=John`;
+              const url = `${window.location.origin}/my/rooms/${roomId}?role=client`;
               navigator.clipboard.writeText(url);
               alert('Invite link copied! Send this to your client.');
             }}
