@@ -5,7 +5,7 @@ import { useRoomContext } from '@/context/room-context';
 import { 
   VideoTrack, 
   useTracks,
-  AudioConference, 
+  RoomAudioRenderer,
   isTrackReference, 
   type TrackReference 
 } from '@livekit/components-react';
@@ -51,6 +51,8 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
 
   return (
     <div className="relative h-full w-full flex flex-col items-center justify-center p-4">
+
+       <RoomAudioRenderer />
       
       {/* --- MAIN VIDEO VIEWPORT --- */}
       <div 
@@ -58,6 +60,8 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
         onClick={handlePointer} 
         className="relative w-full max-w-5xl aspect-video bg-zinc-950 rounded-3xl overflow-hidden cursor-crosshair border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
       >
+
+
         {/* VIEW LOGIC: 
             Painter sees the Remote (Client) camera as the main feed.
             Client sees their Local camera as the main feed.
@@ -161,7 +165,7 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
           <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-md px-2 py-1 rounded text-[10px] text-white font-bold uppercase tracking-tighter">
             You
           </div>
-            <AudioConference />
+            
         </div>
       )}
 
@@ -172,7 +176,6 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
           <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-md px-2 py-1 rounded text-[10px] text-white font-bold uppercase tracking-tighter">
             Painter
           </div>
-            <AudioConference />
         </div>
       )}
 
