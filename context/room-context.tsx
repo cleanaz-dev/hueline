@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { Room, RoomEvent, ConnectionState, DataPacket_Kind } from "livekit-client";
-import { LiveKitRoom } from "@livekit/components-react";
+import { LiveKitRoom, useRoomContext as useLiveKitRoomContext } from "@livekit/components-react";
 import { createClient, LiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 
 // --- AudioWorklet Processor ---
@@ -58,6 +58,19 @@ interface RoomProviderProps {
   slug: string;
 }
 
+// --- Wrapper to get LiveKit room ---
+const RoomWrapper = ({ children, onRoomReady }: { children: React.ReactNode; onRoomReady: (room: Room) => void }) => {
+  const lkRoom = useLiveKitRoomContext();
+  
+  useEffect(() => {
+    if (lkRoom) {
+      onRoomReady(lkRoom);
+    }
+  }, [lkRoom, onRoomReady]);
+  
+  return <>{children}</>;
+};
+
 export const RoomProvider = ({
   children,
   token,
@@ -99,43 +112,13 @@ export const RoomProvider = ({
     [room]
   );
 
-  // --- Setup Room (DO NOT manually connect) ---
+  // --- Setup Data Listeners when room is ready ---
   useEffect(() => {
-    if (room) return; // Prevent duplicate
+    if (!room) return;
 
-    console.log("🎬 Setting up LiveKit room...");
-    const lkRoom = new Room({ 
-      adaptiveStream: true, 
-      dynacast: true 
-    });
+    console.log("🎬 Setting up data listeners...");
 
-    // --- Connection Events ---
-    lkRoom.on(RoomEvent.Connected, () => {
-      console.log("✅ Room Connected!", {
-        roomName: lkRoom.name,
-        participants: lkRoom.remoteParticipants.size
-      });
-      setIsConnecting(false);
-    });
-
-    lkRoom.on(RoomEvent.Disconnected, () => {
-      console.log("❌ Room Disconnected");
-    });
-
-    lkRoom.on(RoomEvent.Reconnecting, () => {
-      console.log("🔄 Reconnecting...");
-    });
-
-    lkRoom.on(RoomEvent.ParticipantConnected, (participant) => {
-      console.log("👤 Participant joined:", participant.identity);
-    });
-
-    lkRoom.on(RoomEvent.ParticipantDisconnected, (participant) => {
-      console.log("👋 Participant left:", participant.identity);
-    });
-
-    // --- DATA RECEIVER (This is how they communicate) ---
-    lkRoom.on(RoomEvent.DataReceived, (payload: Uint8Array, participant) => {
+    const handleData = (payload: Uint8Array, participant: any) => {
       try {
         const strData = new TextDecoder().decode(payload);
         const data = JSON.parse(strData);
@@ -167,15 +150,26 @@ export const RoomProvider = ({
       } catch (err) {
         console.error("❌ Failed to parse data message", err);
       }
-    });
+    };
 
-    setRoom(lkRoom);
+    const handleParticipantConnected = (participant: any) => {
+      console.log("👤 Participant joined:", participant.identity);
+    };
+
+    const handleParticipantDisconnected = (participant: any) => {
+      console.log("👋 Participant left:", participant.identity);
+    };
+
+    room.on(RoomEvent.DataReceived, handleData);
+    room.on(RoomEvent.ParticipantConnected, handleParticipantConnected);
+    room.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
 
     return () => {
-      console.log("🧹 Cleaning up room");
-      lkRoom.disconnect();
+      room.off(RoomEvent.DataReceived, handleData);
+      room.off(RoomEvent.ParticipantConnected, handleParticipantConnected);
+      room.off(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
     };
-  }, []); // Only run once
+  }, [room]);
 
   // --- Deepgram Transcription ---
   const handleChunkAnalysis = async (text: string) => {
@@ -297,6 +291,12 @@ export const RoomProvider = ({
     }
   };
 
+  const handleRoomReady = useCallback((lkRoom: Room) => {
+    console.log("🎉 ROOM READY", lkRoom.name, "Participants:", lkRoom.remoteParticipants.size);
+    setRoom(lkRoom);
+    setIsConnecting(false);
+  }, []);
+
   return (
     <RoomContext.Provider value={{ 
       room, 
@@ -313,17 +313,16 @@ export const RoomProvider = ({
       sendData, 
       triggerAI 
     }}>
-      {room && (
-        <LiveKitRoom 
-          room={room} 
-          token={token} 
-          serverUrl={serverUrl} 
-          connect={true}  // ← CRITICAL: Must be true
-          connectOptions={{ autoSubscribe: true }}
-        >
+      <LiveKitRoom 
+        token={token} 
+        serverUrl={serverUrl} 
+        connect={true}
+        connectOptions={{ autoSubscribe: true }}
+      >
+        <RoomWrapper onRoomReady={handleRoomReady}>
           {children}
-        </LiveKitRoom>
-      )}
+        </RoomWrapper>
+      </LiveKitRoom>
     </RoomContext.Provider>
   );
 };
