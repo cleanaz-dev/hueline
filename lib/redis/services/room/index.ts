@@ -20,7 +20,7 @@ export async function getRoomKey(roomId: string) {
   const key = keys.room(roomId);
   const data = await client.get(key);
 
-  if (!data) throw new Error("Room not found");
+  if (!data) return null
 
   // Parse the JSON back into room data
   return JSON.parse(data) as RoomData;
