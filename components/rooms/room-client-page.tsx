@@ -61,7 +61,7 @@ export function RoomClient({ roomId, roomData }: { roomId: string; roomData: Roo
       <div className="h-screen bg-black flex flex-col items-center justify-center p-6">
         <div className="text-center mb-8">
           <h1 className="text-white text-2xl font-bold mb-2">{subdomain.companyName} Site Survey</h1>
-          <p>Hi {roomData.clientName}!</p>
+          <p className="text-muted-foreground">Hi {roomData.clientName}!</p>
           <p className="text-zinc-500">Ready to show the property?</p>
         </div>
         

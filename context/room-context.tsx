@@ -17,7 +17,6 @@ import {
 } from "@deepgram/sdk";
 import { useOwner } from "@/context/owner-context";
 
-// --- AudioWorklet Processor ---
 const PCM_WORKLET_CODE = `
 class PCMProcessor extends AudioWorkletProcessor {
   process(inputs) {
@@ -70,7 +69,7 @@ interface RoomProviderProps {
   token: string;
   serverUrl: string;
   isPainter: boolean;
-  subdomain?: string; // Optional since we use useOwner
+  subdomain?: string;
 }
 
 export const RoomProvider = ({
@@ -110,7 +109,7 @@ export const RoomProvider = ({
     [room]
   );
 
-  // --- 1. CONNECT TO LIVEKIT & PUBLISH MEDIA ---
+  // --- 1. CONNECT TO LIVEKIT & PUBLISH MEDIA (FIXED) ---
   useEffect(() => {
     if (
       connectingRef.current ||
@@ -124,11 +123,17 @@ export const RoomProvider = ({
       if (connectingRef.current) return;
       connectingRef.current = true;
       try {
+        // IMPORTANT: Connect first, THEN enable media
         await lkRoom.connect(serverUrl, token);
+        console.log("✅ Connected to room:", lkRoom.name);
 
-        // FIX: Explicitly publish Camera & Microphone to the room
-        console.log("🎙️ Publishing Media Tracks...");
+        // CRITICAL FIX: Wait for connection to be fully established
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Now enable camera and microphone
+        console.log("🎙️ Enabling Camera & Microphone...");
         await lkRoom.localParticipant.enableCameraAndMicrophone();
+        console.log("✅ Media tracks published successfully");
 
         lkRoom.on(RoomEvent.DataReceived, (payload: Uint8Array) => {
           try {
@@ -155,9 +160,23 @@ export const RoomProvider = ({
           }
         });
 
+        // Add error logging for track publishing
+        lkRoom.on(RoomEvent.LocalTrackPublished, (publication) => {
+          console.log("✅ Track published:", publication.kind, publication.source);
+        });
+
+        lkRoom.on(RoomEvent.TrackPublished, (publication, participant) => {
+          console.log("✅ Remote track published:", publication.kind, "from", participant.identity);
+        });
+
+        lkRoom.on(RoomEvent.MediaDevicesError, (error) => {
+          console.error("❌ Media Device Error:", error);
+        });
+
         setRoom(lkRoom);
         setIsConnecting(false);
       } catch (e) {
+        console.error("❌ Connection Error:", e);
         setIsConnecting(false);
         setError(e instanceof Error ? e.message : "Failed to connect");
       } finally {
@@ -247,29 +266,25 @@ export const RoomProvider = ({
       await connection.keepAlive();
       deepgramLiveRef.current = connection;
 
-      // C. GET AUDIO FROM LIVEKIT (FIXED)
-      // Instead of getUserMedia(), we grab the track LiveKit is already using
+      // C. GET AUDIO FROM LIVEKIT
       const micPublication = room.localParticipant.getTrackPublication(Track.Source.Microphone);
       
       if (!micPublication || !micPublication.track) {
-         console.error("No microphone track found on LocalParticipant");
-         alert("Please make sure your microphone is on (click the Mic button).");
+         console.error("❌ No microphone track found on LocalParticipant");
+         alert("Please make sure your microphone is enabled. Click the Mic button in your browser if prompted.");
          setIsTranscribing(false);
          return;
       }
 
       const localAudioTrack = micPublication.track;
 
-
-      // Extract the raw MediaStream from the LiveKit track
-      // @ts-ignore - LiveKit types can be strict, but the mediaStreamTrack exists on the track object
+      // @ts-ignore - LiveKit types can be strict
       const mediaStreamTrack = localAudioTrack.mediaStreamTrack;
       const stream = new MediaStream([mediaStreamTrack]);
 
       // D. Process Audio
       const audioContext = new window.AudioContext({ sampleRate: 16000 });
       audioContextRef.current = audioContext;
-
 
       const blob = new Blob([PCM_WORKLET_CODE], {
         type: "application/javascript",
@@ -286,7 +301,7 @@ export const RoomProvider = ({
       source.connect(worklet);
       worklet.connect(audioContext.destination);
     } catch (err) {
-      console.error("Deepgram Start Error:", err);
+      console.error("❌ Deepgram Start Error:", err);
       setIsTranscribing(false);
     }
   }, [isTranscribing, sendData, subdomain, isPainter, room]);
@@ -298,7 +313,7 @@ export const RoomProvider = ({
     };
   }, []);
 
-  // --- 4. Replicate Image Gen (Existing) ---
+  // --- 4. Replicate Image Gen ---
   const triggerAI = async (slug: string) => {
     const videoElement =
       (document.querySelector(
