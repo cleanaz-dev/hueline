@@ -33,7 +33,7 @@ export function ClientRoomWrapper({ roomId, slug, roomData, companyName }: Props
     <RoomProvider 
       token={token} 
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL!} 
-      isPainter={false} // Client is NOT the painter
+      isPainter={false} 
       slug={slug}
     >
       <ClientStage />

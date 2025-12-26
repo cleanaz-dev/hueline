@@ -10,16 +10,16 @@ interface Params {
 
 export default async function page({params}: Params) {
 
-  const { roomId } = await params
+  const { roomId, slug } = await params
 
   const roomData = await getRoomKey(roomId)
   console.log("Room Data", roomData)
 
-  if(!roomData) return notFound()
+  if(!roomData || !slug) return notFound()
 
   return (
     <div>
-      <RoomClient roomId={roomId} roomData={roomData}/>
+      <RoomClient roomId={roomId} roomData={roomData} slug={slug} />
     </div>
   )
 }

@@ -3,110 +3,86 @@
 import { useEffect, useState } from 'react';
 import { RoomProvider } from '@/context/room-context';
 import { LiveStage } from './live-stage';
-import { useOwner } from '@/context/owner-context';
+import { ClientStage } from './client-stage';
 import { useSearchParams } from 'next/navigation';
-import { CameraHandler } from './camera-handler';
 import { RoomData } from '@/types/room-types';
 
+interface RoomClientProps {
+  roomId: string;
+  roomData: RoomData;
+  slug: string; // Passed from the server page
+}
 
-
-
-export function RoomClient({ roomId, roomData }: { roomId: string; roomData: RoomData }) {
+export function RoomClient({ roomId, roomData, slug }: RoomClientProps) {
   const searchParams = useSearchParams();
-  // We determine the role immediately
-  const isClient = searchParams.get('role') === 'client';
-
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasStarted, setHasStarted] = useState(false);
-  const { subdomain } = useOwner();
   
-  const currentSlug = subdomain.slug;
+  // 1. Determine Role based on URL (?role=client)
+  const isClient = searchParams.get('role') === 'client';
+  
+  // 2. Client "Join" screen state
+  const [hasJoined, setHasJoined] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        setIsLoading(true);
-        
-        // Determine identity based on the role
-        const identity = isClient ? `Homeowner-${Math.floor(Math.random() * 1000)}` : 'Painter';
-        
+        // FIXED: Reverted to your original identity logic
+        const identity = isClient 
+          ? `Homeowner-${Math.floor(Math.random() * 10000)}` 
+          : 'Painter'; 
+
         const response = await fetch(
-          `/api/subdomain/${currentSlug}/livekit/token?room=${roomId}&username=${identity}`
+          `/api/subdomain/${slug}/livekit/token?room=${roomId}&username=${identity}`
         );
         const data = await response.json();
         setToken(data.token);
       } catch (error) {
-        console.error('Failed to fetch token:', error);
-      } finally {
-        setIsLoading(false);
+        console.error('Token fetch error:', error);
       }
     };
 
     fetchToken();
-  }, [roomId, currentSlug, isClient]);
+  }, [roomId, slug, isClient]);
 
-  if (isLoading || !token) {
+  if (!token) {
     return (
       <div className="h-screen bg-black flex items-center justify-center text-white">
-        Initializing Secure Room...
+        Loading Session...
       </div>
     );
   }
 
-  // UPDATE: Only show the "Join" screen if the user is a Client.
-  // The Painter bypasses this and goes straight to the RoomProvider.
-  if (!hasStarted && isClient) {
+  // 3. Client Landing Screen (Requires interaction to start audio context)
+  if (isClient && !hasJoined) {
     return (
-      <div className="h-screen bg-black flex flex-col items-center justify-center p-6">
-        <div className="text-center mb-8">
-          <h1 className="text-white text-2xl font-bold mb-2">{subdomain.companyName} Site Survey</h1>
-          <p className="text-muted-foreground">Hi {roomData.clientName}!</p>
-          <p className="text-zinc-500">Ready to show the property?</p>
-        </div>
-        
+      <div className="h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
+        <h1 className="text-2xl text-white font-bold mb-4">Ready for your Walkthrough?</h1>
+        <p className="text-zinc-500 mb-8">Click below to join the Painter.</p>
         <button 
-          onClick={() => setHasStarted(true)} 
-          className="bg-white text-black px-10 py-4 rounded-full font-bold text-lg shadow-xl animate-bounce"
+          onClick={() => setHasJoined(true)}
+          className="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-zinc-200 transition"
         >
-          Join Walkthrough
+          Join Room
         </button>
       </div>
     );
   }
 
+  // 4. Shared Room Provider
+  // Both users connect here. "isPainter" determines permissions in your Context.
   return (
     <RoomProvider 
       token={token} 
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL!} 
-      isPainter={!isClient}
-      slug={currentSlug}
+      isPainter={!isClient} 
+      slug={slug}
     >
-      <div className="h-screen bg-black flex flex-col">
-        {/* Header with Share Link */}
-        <header className="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-950">
-          <div>
-            <h2 className="text-white font-bold">{roomId.replace(/-/g, ' ')}</h2>
-            <p className="text-xs text-zinc-500 uppercase tracking-widest">Live Virtual Estimate</p>
-          </div>
-          
-          <button 
-            onClick={() => {
-              const url = `${window.location.origin}/meet/${roomId}?role=client`;
-              navigator.clipboard.writeText(url);
-              alert('Invite link copied! Send this to your client.');
-            }}
-            className="bg-zinc-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-zinc-700 transition"
-          >
-            Invite Client
-          </button>
-        </header>
-        <CameraHandler />
-
-        {/* The Magic Stage */}
-        <div className="flex-1 p-4">
-          <LiveStage slug={currentSlug} />
-        </div>
+      <div className="h-screen w-full bg-black">
+        {isClient ? (
+          <ClientStage />
+        ) : (
+          <LiveStage slug={slug} />
+        )}
       </div>
     </RoomProvider>
   );
