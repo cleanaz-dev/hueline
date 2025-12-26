@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { Room, RoomEvent, ConnectionState } from "livekit-client";
+import { Room, RoomEvent, ConnectionState, DataPacket_Kind } from "livekit-client";
 import { LiveKitRoom } from "@livekit/components-react";
 import { createClient, LiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 
@@ -33,17 +33,20 @@ interface RoomContextProps {
   room: Room | null;
   isConnecting: boolean;
   error: string | null;
-  isPainter: boolean;
+  isPainter: boolean; // Determines if you are the Host or Client
+  
+  // Shared State
   laserPosition: LaserPosition | null;
   activeMockupUrl: string | null;
-  isGenerating: boolean;
   
-  // Transcription & Intelligence
+  // Painter Only State
+  isGenerating: boolean;
   isTranscribing: boolean;
   transcripts: TranscriptItem[];
-  liveScopeItems: string[]; // NEW: The extracted tasks
+  liveScopeItems: string[];
+
+  // Actions
   toggleTranscription: () => void;
-  
   sendData: (type: string, payload: any) => void;
   triggerAI: (slug: string) => Promise<void>;
 }
@@ -55,7 +58,7 @@ interface RoomProviderProps {
   token: string;
   serverUrl: string;
   isPainter: boolean;
-  slug: string 
+  slug: string;
 }
 
 export const RoomProvider = ({
@@ -65,12 +68,11 @@ export const RoomProvider = ({
   isPainter,
   slug
 }: RoomProviderProps) => {
-  // --- State ---
   const [room, setRoom] = useState<Room | null>(null);
   const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Tools State
+  // Shared State
   const [laserPosition, setLaserPosition] = useState<LaserPosition | null>(null);
   const [activeMockupUrl, setActiveMockupUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -80,57 +82,65 @@ export const RoomProvider = ({
   const [transcripts, setTranscripts] = useState<TranscriptItem[]>([]);
   const [liveScopeItems, setLiveScopeItems] = useState<string[]>([]);
 
-  // --- Refs ---
-  const connectingRef = useRef(false);
+  // Refs
   const deepgramLiveRef = useRef<LiveClient | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // --- Hooks ---
-  
-  // --- Helper: Send Data to other user ---
+  // --- Helper: Send Data ---
   const sendData = useCallback(
     (type: string, payload: any) => {
       if (!room || !room.localParticipant) return;
-      const data = new TextEncoder().encode(JSON.stringify({ type, ...payload }));
-      room.localParticipant.publishData(data, { reliable: true });
+      const strData = JSON.stringify({ type, ...payload });
+      const data = new TextEncoder().encode(strData);
+      
+      // Use RELIABLE for images/transcripts, LOSSY for pointer
+      const kind = type === "POINTER" ? DataPacket_Kind.LOSSY : DataPacket_Kind.RELIABLE;
+      
+      room.localParticipant.publishData(data, { reliable: kind === DataPacket_Kind.RELIABLE });
     },
     [room]
   );
 
-  // --- 1. LiveKit Connection & Data Listeners ---
+  // --- 1. Connect & Listen ---
   useEffect(() => {
-    if (connectingRef.current || (room && room.state !== ConnectionState.Disconnected)) return;
+    // Prevent multiple connections
+    if (room) return;
 
     const lkRoom = new Room({ adaptiveStream: true, dynacast: true });
 
-    async function connect() {
-      if (connectingRef.current) return;
-      connectingRef.current = true;
+    const connect = async () => {
       try {
         await lkRoom.connect(serverUrl, token);
         
-        // Listen for data from the other person
-        lkRoom.on(RoomEvent.DataReceived, (payload: Uint8Array) => {
+        // --- DATA LISTENER (This is how they communicate) ---
+        lkRoom.on(RoomEvent.DataReceived, (payload: Uint8Array, participant) => {
           try {
-            const data = JSON.parse(new TextDecoder().decode(payload));
+            const strData = new TextDecoder().decode(payload);
+            const data = JSON.parse(strData);
             
+            // 1. Pointer Updates
             if (data.type === "POINTER") {
               setLaserPosition({ x: data.x, y: data.y });
+              // Clear pointer after 2 seconds of inactivity
               setTimeout(() => setLaserPosition(null), 2000);
             }
+            // 2. Mockup Ready (Client sees this when Painter generates)
             if (data.type === "MOCKUP_READY") {
               setActiveMockupUrl(data.url);
               setIsGenerating(false);
             }
+            // 3. Transcript
             if (data.type === "TRANSCRIPT") {
               setTranscripts(prev => [...prev, { sender: 'remote', text: data.text, timestamp: Date.now() }]);
             }
-            // Sync the Live Scope list from the painter
+            // 4. Scope Updates
             if (data.type === "SCOPE_UPDATE") {
               setLiveScopeItems(prev => [...prev, data.item]);
             }
-          } catch (err) { console.error("Data error", err); }
+          } catch (err) {
+            console.error("Failed to parse data message", err);
+          }
         });
 
         setRoom(lkRoom);
@@ -138,203 +148,136 @@ export const RoomProvider = ({
       } catch (e) {
         setIsConnecting(false);
         setError(e instanceof Error ? e.message : "Failed to connect");
-      } finally {
-        connectingRef.current = false;
       }
-    }
+    };
+
     connect();
-    return () => { if (lkRoom.state !== ConnectionState.Disconnected) lkRoom.disconnect(); };
-  }, [token, serverUrl]);
 
-  // --- 2. THE BRAIN: Chunk Analysis Logic ---
+    return () => {
+      lkRoom.disconnect();
+    };
+  }, [token, serverUrl]); // Only re-run if token changes
+
+  // --- 2. Transcription & AI Logic (Painter Only) ---
   const handleChunkAnalysis = async (text: string) => {
-    // Only the Painter runs the logic to prevent double-charging the API
     if (!isPainter) return; 
-
     try {
-      const currentSlug = slug;
-      if (!currentSlug) return;
-
-      // Fire to Moonshot/Groq (Non-blocking)
-      fetch(`/api/subdomain/${currentSlug}/analyze-chunk`, {
+      fetch(`/api/subdomain/${slug}/analyze-chunk`, {
         method: 'POST',
         body: JSON.stringify({ text })
       }).then(async (res) => {
         const data = await res.json();
-        
-        // If the AI found a task (e.g., "Paint kitchen blue")
         if (data.item) {
-          // 1. Update my screen
           setLiveScopeItems(prev => [...prev, data.item]);
-          // 2. Send to the Client's screen
           sendData('SCOPE_UPDATE', { item: data.item });
         }
       });
-    } catch (err) {
-      console.error("Analysis Error", err);
-    }
+    } catch (err) { console.error("AI Error", err); }
   };
 
-  // --- 3. THE EARS: Deepgram Toggle Logic ---
   const toggleTranscription = useCallback(async () => {
-    // A. STOPPING
     if (isTranscribing) {
       deepgramLiveRef.current?.requestClose();
       audioContextRef.current?.close();
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      
-      deepgramLiveRef.current = null;
-      audioContextRef.current = null;
-      streamRef.current = null;
-      
       setIsTranscribing(false);
       return;
     }
 
-    // B. STARTING
     try {
       setIsTranscribing(true);
-      const currentSlug = slug;
-      if (!currentSlug) throw new Error("No subdomain found");
-
-      // 1. Get Deepgram Key
-      const response = await fetch(`/api/subdomain/${currentSlug}/deepgram/token`);
-      const data = await response.json();
-      if (!data.key) throw new Error("Failed to get Deepgram key");
-
-      // 2. Init Deepgram
+      const res = await fetch(`/api/subdomain/${slug}/deepgram/token`);
+      const data = await res.json();
+      
       const deepgram = createClient(data.key);
       const connection = deepgram.listen.live({
-        model: "nova-3",
-        language: "en-US",
-        smart_format: true,
-        encoding: "linear16", 
-        sample_rate: 16000,
-        interim_results: true,
+        model: "nova-2", language: "en-US", smart_format: true,
+        encoding: "linear16", sample_rate: 16000, interim_results: true,
       });
 
-      // 3. Handle Events
       connection.on(LiveTranscriptionEvents.Transcript, (data) => {
         const transcript = data.channel.alternatives[0].transcript;
-        if (!transcript) return;
-
-        // "is_final" means Deepgram is confident the sentence is over
-        if (data.is_final && transcript.length > 5) {
-          // Show subtitle
+        if (data.is_final && transcript?.length > 0) {
           setTranscripts(prev => [...prev, { sender: 'local', text: transcript, timestamp: Date.now() }]);
-          // Send subtitle to peer
           sendData("TRANSCRIPT", { text: transcript });
-          // Trigger the AI Brain
           handleChunkAnalysis(transcript);
         }
       });
 
-      connection.on(LiveTranscriptionEvents.Close, () => {
-        setIsTranscribing(false);
-      });
-
-      // 4. Setup Audio Pipeline (Mic -> Worklet -> Deepgram)
       await connection.keepAlive();
       deepgramLiveRef.current = connection;
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-
       const audioContext = new window.AudioContext({ sampleRate: 16000 });
       audioContextRef.current = audioContext;
 
-      // Load Worklet
-      const blob = new Blob([PCM_WORKLET_CODE], { type: "application/javascript" });
-      await audioContext.audioWorklet.addModule(URL.createObjectURL(blob));
-
+      await audioContext.audioWorklet.addModule(URL.createObjectURL(new Blob([PCM_WORKLET_CODE], { type: "application/javascript" })));
       const source = audioContext.createMediaStreamSource(stream);
       const worklet = new AudioWorkletNode(audioContext, 'pcm-processor');
-
-      // Send raw audio to Deepgram
-      worklet.port.onmessage = (e) => {
-        if (deepgramLiveRef.current) {
-          deepgramLiveRef.current.send(e.data);
-        }
-      };
-
+      
+      worklet.port.onmessage = (e) => deepgramLiveRef.current?.send(e.data);
       source.connect(worklet);
       worklet.connect(audioContext.destination);
 
     } catch (err) {
-      console.error("Deepgram Start Error:", err);
+      console.error("Deepgram Error", err);
       setIsTranscribing(false);
     }
-  }, [isTranscribing, sendData,slug, isPainter]);
+  }, [isTranscribing, sendData, slug, isPainter]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      deepgramLiveRef.current?.requestClose();
-      audioContextRef.current?.close();
-      streamRef.current?.getTracks().forEach(t => t.stop());
-    };
-  }, []);
-
-  // --- 4. Replicate Image Gen (Existing) ---
+  // --- 3. Replicate Image Gen ---
   const triggerAI = async (slug: string) => {
-    const videoElement = (document.querySelector('video:not([data-lk-local="true"])') as HTMLVideoElement) || document.querySelector("video");
-    if (!videoElement || isGenerating) return;
-
+    if (isGenerating) return;
     setIsGenerating(true);
+    
+    // Grab video frame
+    const videoElement = document.querySelector('video') as HTMLVideoElement;
+    if (!videoElement) { setIsGenerating(false); return; }
+
     const canvas = document.createElement("canvas");
     canvas.width = videoElement.videoWidth;
     canvas.height = videoElement.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx?.drawImage(videoElement, 0, 0);
-    const imageBase64 = canvas.toDataURL("image/jpeg", 0.8);
+    canvas.getContext("2d")?.drawImage(videoElement, 0, 0);
+    const imageBase64 = canvas.toDataURL("image/jpeg", 0.7);
 
     try {
       const response = await fetch(`/api/subdomain/${slug}/replicate/rooms-mockup`, {
         method: "POST",
-        body: JSON.stringify({ image: imageBase64, prompt: "freshly painted walls, sage green, highly detailed, professional photography" }),
+        body: JSON.stringify({ image: imageBase64, prompt: "modern interior design renovation" }),
       });
       const result = await response.json();
+      
       if (result.url) {
-        sendData("MOCKUP_READY", { url: result.url });
+        // Update Local
         setActiveMockupUrl(result.url);
+        // Update Remote (Client)
+        sendData("MOCKUP_READY", { url: result.url });
       }
     } catch (err) {
-      console.error("AI Generation Error:", err);
+      console.error("Gen Error", err);
+    } finally {
       setIsGenerating(false);
     }
   };
 
-  if (error) return <div className="text-white">Error: {error}</div>;
-
   return (
     <RoomContext.Provider value={{ 
-      room, 
-      isConnecting, 
-      error, 
-      isPainter, 
-      laserPosition, 
-      activeMockupUrl, 
-      isGenerating, 
-      isTranscribing, 
-      transcripts, 
-      liveScopeItems, // Exported to UI
-      toggleTranscription, 
-      sendData, 
-      triggerAI 
+      room, isConnecting, error, isPainter, 
+      laserPosition, activeMockupUrl, isGenerating, 
+      isTranscribing, transcripts, liveScopeItems,
+      toggleTranscription, sendData, triggerAI 
     }}>
-      {room ? (
-        <LiveKitRoom room={room} token={token} serverUrl={serverUrl}>
+      {room && (
+        <LiveKitRoom room={room} token={token} serverUrl={serverUrl} connect={false}>
           {children}
         </LiveKitRoom>
-      ) : (
-        <div className="h-screen bg-black text-white flex items-center justify-center">Loading Room...</div>
       )}
     </RoomContext.Provider>
   );
 };
 
 export const useRoomContext = () => {
-  const context = useContext(RoomContext);
-  if (!context) throw new Error("useRoomContext must be used within a RoomProvider");
-  return context;
+  const ctx = useContext(RoomContext);
+  if (!ctx) throw new Error("useRoomContext must be used within RoomProvider");
+  return ctx;
 };

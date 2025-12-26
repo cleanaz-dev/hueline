@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getRoomKey } from "@/lib/redis/services/room";
 import { notFound } from "next/navigation";
-import { ClientRoomWrapper } from "@/components/rooms/client-room-wrapper";
+import { RoomClient } from "@/components/rooms/room-client-page";
 
 interface Params {
   params: Promise<{ roomId: string; slug: string; }>;
@@ -20,12 +20,5 @@ export default async function Page({ params }: Params) {
   if (!roomData) return notFound();
   
   // Pass all that server data into the Client Wrapper
-  return (
-    <ClientRoomWrapper 
-      roomId={roomId} 
-      slug={slug} 
-      roomData={roomData} 
-      companyName={subdomain.companyName} 
-    />
-  );
+  return <RoomClient roomId={roomId} roomData={roomData} slug={slug} />;
 }
