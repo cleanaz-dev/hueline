@@ -4,7 +4,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Room, RoomEvent, ConnectionState } from "livekit-client";
 import { LiveKitRoom } from "@livekit/components-react";
 import { createClient, LiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
-import { useOwner } from "@/context/owner-context"; // Ensure path is correct
 
 // --- 1. AudioWorklet Processor (Converts Mic Stream to Int16 for Deepgram) ---
 const PCM_WORKLET_CODE = `
@@ -56,7 +55,7 @@ interface RoomProviderProps {
   token: string;
   serverUrl: string;
   isPainter: boolean;
-  subdomain: string; // Kept for prop drilling fallback, but we use useOwner primarily
+  slug: string 
 }
 
 export const RoomProvider = ({
@@ -64,6 +63,7 @@ export const RoomProvider = ({
   token,
   serverUrl,
   isPainter,
+  slug
 }: RoomProviderProps) => {
   // --- State ---
   const [room, setRoom] = useState<Room | null>(null);
@@ -87,8 +87,7 @@ export const RoomProvider = ({
   const streamRef = useRef<MediaStream | null>(null);
 
   // --- Hooks ---
-  const { subdomain } = useOwner(); // <--- Using the hook as requested
-
+  
   // --- Helper: Send Data to other user ---
   const sendData = useCallback(
     (type: string, payload: any) => {
@@ -153,7 +152,7 @@ export const RoomProvider = ({
     if (!isPainter) return; 
 
     try {
-      const currentSlug = subdomain?.slug;
+      const currentSlug = slug;
       if (!currentSlug) return;
 
       // Fire to Moonshot/Groq (Non-blocking)
@@ -195,7 +194,7 @@ export const RoomProvider = ({
     // B. STARTING
     try {
       setIsTranscribing(true);
-      const currentSlug = subdomain?.slug;
+      const currentSlug = slug;
       if (!currentSlug) throw new Error("No subdomain found");
 
       // 1. Get Deepgram Key
@@ -265,7 +264,7 @@ export const RoomProvider = ({
       console.error("Deepgram Start Error:", err);
       setIsTranscribing(false);
     }
-  }, [isTranscribing, sendData, subdomain, isPainter]);
+  }, [isTranscribing, sendData,slug, isPainter]);
 
   // Cleanup on unmount
   useEffect(() => {

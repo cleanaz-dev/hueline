@@ -80,7 +80,7 @@ export function RoomClient({ roomId, roomData }: { roomId: string; roomData: Roo
       token={token} 
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL!} 
       isPainter={!isClient}
-      subdomain={currentSlug}
+      slug={currentSlug}
     >
       <div className="h-screen bg-black flex flex-col">
         {/* Header with Share Link */}
