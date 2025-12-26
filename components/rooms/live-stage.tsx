@@ -1,15 +1,10 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react'; // 1. Import useState
 import { useRoomContext } from '@/context/room-context';
-import { 
-  VideoTrack, 
-  RoomAudioRenderer, // <-- THIS IS THE KEY COMPONENT YOU'RE MISSING
-  useTracks, 
-  isTrackReference, 
-  type TrackReference 
-} from '@livekit/components-react';
+import { VideoTrack, useTracks, isTrackReference, type TrackReference } from '@livekit/components-react';
 import { Track } from 'livekit-client';
+// 2. Import Icons
 import { Maximize2, Camera, Sparkles, X, Mic, FileText, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface LiveStageProps {
@@ -24,18 +19,19 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
     triggerAI, 
     isGenerating, 
     activeMockupUrl,
+    // 3. Destructure new context values
     transcripts,
     isTranscribing,
     toggleTranscription 
   } = useRoomContext();
   
+  // --- NEW STATE FOR SCOPE GENERATION ---
   const [scopeItems, setScopeItems] = useState<string[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showScope, setShowScope] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Get video tracks as before
   const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: false }]);
   const localTrack = tracks.find(t => t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
   const remoteTrack = tracks.find(t => !t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
@@ -48,8 +44,9 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
     sendData('POINTER', { x, y });
   };
 
+  // --- NEW FUNCTION: TRIGGER THE BRAIN ---
   const handleGenerateScope = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent laser pointer trigger
     
     if (transcripts.length === 0) {
       alert("No conversation detected yet. Turn on 'Listen' and talk first!");
@@ -80,15 +77,12 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
   return (
     <div className="relative h-full w-full flex flex-col items-center justify-center p-4">
       
-      {/* 🎯 CRITICAL FIX: Add RoomAudioRenderer - this makes ALL audio audible */}
-      <RoomAudioRenderer />
-      
       <div 
         ref={containerRef} 
         onClick={handlePointer} 
         className="relative w-full max-w-5xl aspect-video bg-zinc-950 rounded-3xl overflow-hidden cursor-crosshair border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
       >
-        {/* VIDEO RENDERING (unchanged) */}
+        {/* --- VIDEO RENDERING (unchanged) --- */}
         {isPainter ? (
           remoteTrack ? <VideoTrack trackRef={remoteTrack} className="w-full h-full object-cover" /> : 
           <div className="flex flex-col items-center justify-center h-full text-zinc-600"><div className="w-12 h-12 border-2 border-zinc-800 border-t-cyan-500 rounded-full animate-spin mb-4" /><p>Waiting for Client...</p></div>
@@ -97,6 +91,7 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
           <div className="flex flex-col items-center justify-center h-full text-zinc-600"><Camera className="w-12 h-12 mb-4 opacity-20" /><p>Initializing camera...</p></div>
         )}
 
+        {/* --- EXISTING OVERLAYS (Laser, Mockup) --- */}
         {laserPosition && (
           <div className="absolute w-8 h-8 -ml-4 -mt-4 border-2 border-cyan-400 rounded-full animate-ping shadow-[0_0_20px_cyan] z-30" style={{ left: `${laserPosition.x * 100}%`, top: `${laserPosition.y * 100}%` }} />
         )}
@@ -113,6 +108,7 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
           </div>
         )}
 
+        {/* --- NEW OVERLAY: LIVE CAPTIONS --- */}
         {isTranscribing && transcripts.length > 0 && (
           <div className="absolute bottom-28 left-0 w-full flex justify-center pointer-events-none z-20">
             <div className="bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 max-w-xl text-center">
@@ -126,6 +122,7 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
           </div>
         )}
 
+        {/* --- NEW OVERLAY: SCOPE OF WORK LIST --- */}
         {showScope && (
           <div className="absolute top-4 right-4 w-80 bg-zinc-950/90 backdrop-blur-xl border border-white/10 rounded-2xl p-5 z-40 shadow-2xl animate-in slide-in-from-right-10">
             <div className="flex justify-between items-center mb-4 pb-4 border-b border-white/10">
@@ -165,9 +162,11 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
           </div>
         )}
 
+        {/* --- PAINTER HUD (UPDATED CONTROLS) --- */}
         {isPainter && (
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4">
             
+            {/* 1. VISUALIZE */}
             <button 
               disabled={isGenerating || !remoteTrack}
               onClick={(e) => { e.stopPropagation(); triggerAI(slug); }}
@@ -177,6 +176,7 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
               {isGenerating ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Sparkles className="w-5 h-5 text-cyan-400" />}
             </button>
 
+            {/* 2. TRANSCRIBE (EARS) */}
             <button 
               onClick={(e) => { e.stopPropagation(); toggleTranscription(); }}
               className={`w-12 h-12 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg border ${
@@ -189,6 +189,7 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
               <Mic className={`w-5 h-5 ${isTranscribing ? 'animate-pulse' : ''}`} />
             </button>
 
+            {/* 3. GENERATE SCOPE (BRAIN) */}
             <button 
               onClick={handleGenerateScope}
               className="h-12 px-6 bg-white text-black rounded-full font-bold text-sm flex items-center gap-2 hover:bg-zinc-200 active:scale-95 transition-all shadow-xl"
