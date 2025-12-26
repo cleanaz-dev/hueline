@@ -2,57 +2,34 @@
 
 import { useEffect, useState } from 'react';
 import { RoomProvider } from '@/context/room-context';
+import { LiveStage } from './live-stage';
 import { useOwner } from '@/context/owner-context';
 import { useSearchParams } from 'next/navigation';
 import { CameraHandler } from './camera-handler';
 import { RoomData } from '@/types/room-types';
-import { VideoPresets, RoomOptions } from 'livekit-client';
 
-// The two stage components we created
-import { PainterStage } from './painter-stage';
-import { ClientStage } from './client-stage';
+
+
 
 export function RoomClient({ roomId, roomData }: { roomId: string; roomData: RoomData }) {
   const searchParams = useSearchParams();
-  
-  // 1. Determine Role
+  // We determine the role immediately
   const isClient = searchParams.get('role') === 'client';
-  const roleTitle = isClient ? 'Homeowner' : 'Painter';
 
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const [hasStarted, setHasStarted] = useState(false);
   const { subdomain } = useOwner();
+  
   const currentSlug = subdomain.slug;
 
-  // 2. HD Room Configuration
-  // This tells LiveKit to prioritize 720p HD for the site survey
-  const roomOptions: RoomOptions = {
-    adaptiveStream: true,
-    dynacast: true,
-    publishDefaults: {
-      simulcast: true,
-      videoSimulcastLayers: [
-        VideoPresets.h720, // HD Layer
-        VideoPresets.h360, // Fallback Layer
-      ],
-      videoCodec: 'vp8',
-    },
-    videoCaptureDefaults: {
-      resolution: VideoPresets.h720.resolution,
-    },
-  };
-
-  // 3. Fetch Access Token
   useEffect(() => {
     const fetchToken = async () => {
       try {
         setIsLoading(true);
         
-        // Identity: Random for Homeowner, Fixed for Painter
-        const identity = isClient 
-          ? `Homeowner-${Math.floor(Math.random() * 1000)}` 
-          : 'Painter';
+        // Determine identity based on the role
+        const identity = isClient ? `Homeowner-${Math.floor(Math.random() * 1000)}` : 'Painter';
         
         const response = await fetch(
           `/api/subdomain/${currentSlug}/livekit/token?room=${roomId}&username=${identity}`
@@ -69,75 +46,67 @@ export function RoomClient({ roomId, roomData }: { roomId: string; roomData: Roo
     fetchToken();
   }, [roomId, currentSlug, isClient]);
 
-  // Loading Screen
   if (isLoading || !token) {
     return (
-      <div className="h-screen bg-black flex flex-col items-center justify-center text-white space-y-4">
-        <div className="w-8 h-8 border-2 border-t-cyan-500 border-white/10 rounded-full animate-spin" />
-        <p className="text-[10px] uppercase font-black tracking-[0.3em] opacity-50">
-          Entering Secure Room...
-        </p>
+      <div className="h-screen bg-black flex items-center justify-center text-white">
+        Initializing Secure Room...
       </div>
     );
   }
 
-  // 4. THE LIVE ROOM (No Join Button Version)
+  // UPDATE: Only show the "Join" screen if the user is a Client.
+  // The Painter bypasses this and goes straight to the RoomProvider.
+  if (!hasStarted && isClient) {
+    return (
+      <div className="h-screen bg-black flex flex-col items-center justify-center p-6">
+        <div className="text-center mb-8">
+          <h1 className="text-white text-2xl font-bold mb-2">{subdomain.companyName} Site Survey</h1>
+          <p className="text-muted-foreground">Hi {roomData.clientName}!</p>
+          <p className="text-zinc-500">Ready to show the property?</p>
+        </div>
+        
+        <button 
+          onClick={() => setHasStarted(true)} 
+          className="bg-white text-black px-10 py-4 rounded-full font-bold text-lg shadow-xl animate-bounce"
+        >
+          Join Walkthrough
+        </button>
+      </div>
+    );
+  }
+
   return (
     <RoomProvider 
       token={token} 
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL!} 
       isPainter={!isClient}
       subdomain={currentSlug}
-      options={roomOptions} // Pass the HD settings into the context/LiveKit provider
     >
-      <div className="h-screen bg-black flex flex-col overflow-hidden">
-        
-        {/* --- GLOBAL HEADER --- */}
-        <header className="p-4 border-b border-white/10 flex justify-between items-center bg-[#050505] z-50">
-          <div className="flex flex-col">
-              <h2 className="text-white font-bold text-xs uppercase tracking-tight">
-                {roomId.replace(/-/g, ' ')}
-              </h2>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">
-                  Site Survey Live
-                </p>
-              </div>
+      <div className="h-screen bg-black flex flex-col">
+        {/* Header with Share Link */}
+        <header className="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-950">
+          <div>
+            <h2 className="text-white font-bold">{roomId.replace(/-/g, ' ')}</h2>
+            <p className="text-xs text-zinc-500 uppercase tracking-widest">Live Virtual Estimate</p>
           </div>
           
-          <div className="flex items-center gap-3">
-            {!isClient && (
-              <button 
-                onClick={() => {
-                  const url = `${window.location.origin}/my/rooms/${roomId}?role=client`;
-                  navigator.clipboard.writeText(url);
-                  alert('Invite link copied!');
-                }}
-                className="bg-zinc-900 border border-white/5 text-zinc-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-white transition"
-              >
-                Copy Client Link
-              </button>
-            )}
-            <div className="hidden md:block px-3 py-1.5 rounded-lg bg-zinc-900 border border-white/5 text-[9px] text-zinc-500 font-bold uppercase tracking-widest">
-                User: <span className="text-white">{roleTitle}</span>
-            </div>
-          </div>
+          <button 
+            onClick={() => {
+              const url = `${window.location.origin}/my/rooms/${roomId}?role=client`;
+              navigator.clipboard.writeText(url);
+              alert('Invite link copied! Send this to your client.');
+            }}
+            className="bg-zinc-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-zinc-700 transition"
+          >
+            Invite Client
+          </button>
         </header>
-
-        {/* --- MEDIA HANDLER --- */}
-        {/* This triggers the Mic/Camera as soon as the room is ready */}
         <CameraHandler />
 
-        {/* --- VIEWPORT: Switch based on role --- */}
-        <main className="flex-1 relative overflow-hidden">
-          {isClient ? (
-            <ClientStage slug={currentSlug} />
-          ) : (
-            <PainterStage slug={currentSlug} />
-          )}
-        </main>
-        
+        {/* The Magic Stage */}
+        <div className="flex-1 p-4">
+          <LiveStage slug={currentSlug} />
+        </div>
       </div>
     </RoomProvider>
   );
