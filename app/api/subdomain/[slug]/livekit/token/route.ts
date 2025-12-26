@@ -42,7 +42,8 @@ export async function GET(req: NextRequest, { params }: Params) {
       roomJoin: true, 
       room: scopedRoomName, 
       canPublish: true, 
-      canSubscribe: true 
+      canSubscribe: true, 
+      canPublishData: true,
     });
 
     return NextResponse.json({ token: await at.toJwt() });

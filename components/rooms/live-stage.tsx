@@ -4,7 +4,8 @@ import React, { useRef } from 'react';
 import { useRoomContext } from '@/context/room-context';
 import { 
   VideoTrack, 
-  useTracks, 
+  useTracks,
+  AudioConference, 
   isTrackReference, 
   type TrackReference 
 } from '@livekit/components-react';
@@ -156,9 +157,11 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
       {isPainter && localTrack && (
         <div className="absolute bottom-8 right-8 w-40 h-56 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 group transition-all hover:w-48 hover:h-64">
           <VideoTrack trackRef={localTrack} className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all" />
+
           <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-md px-2 py-1 rounded text-[10px] text-white font-bold uppercase tracking-tighter">
             You
           </div>
+            <AudioConference />
         </div>
       )}
 
@@ -169,6 +172,7 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
           <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-md px-2 py-1 rounded text-[10px] text-white font-bold uppercase tracking-tighter">
             Painter
           </div>
+            <AudioConference />
         </div>
       )}
 

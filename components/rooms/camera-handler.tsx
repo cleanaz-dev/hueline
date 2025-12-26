@@ -16,11 +16,12 @@ export const CameraHandler = () => {
       try {
         // 🔥 CRITICAL FOR MOBILE: Unlock audio first
         await room.startAudio(); 
+
+         await room.localParticipant.setMicrophoneEnabled(true);
         
         // If homeowner, start camera. If Painter, we just want to listen.
         if (!isPainter) {
           await room.localParticipant.setCameraEnabled(true);
-          await room.localParticipant.setMicrophoneEnabled(true)
           console.log("✅ Homeowner camera published");
         } else {
           console.log("✅ Painter joined and audio unlocked");
