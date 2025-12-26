@@ -5,10 +5,15 @@ import { RoomClient } from "@/components/rooms/room-client-page";
 
 interface Params {
   params: Promise<{ roomId: string; slug: string; }>;
+  searchParams: Promise<{ role?: string }>; // Just define what you actually need
 }
 
-export default async function Page({ params }: Params) {
+export default async function Page({ params, searchParams }: Params) {
   const { roomId, slug } = await params;
+  const search = await searchParams;
+  
+  // Check if role=client exists
+  const role = search.role || 'painter';
 
   const subdomain = await prisma.subdomain.findUnique({
     where: { slug }
@@ -16,9 +21,8 @@ export default async function Page({ params }: Params) {
 
   if (!subdomain) return notFound();
   
-  const roomData = await getRoomKey(roomId); // Redis data
+  const roomData = await getRoomKey(roomId);
   if (!roomData) return notFound();
   
-  // Pass all that server data into the Client Wrapper
-  return <RoomClient roomId={roomId} roomData={roomData} slug={slug} />;
+  return <RoomClient roomId={roomId} roomData={roomData} slug={slug} role={role} />;
 }

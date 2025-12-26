@@ -5,7 +5,7 @@ import { Room, RoomEvent, ConnectionState, DataPacket_Kind } from "livekit-clien
 import { LiveKitRoom } from "@livekit/components-react";
 import { createClient, LiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 
-// --- 1. AudioWorklet Processor (Converts Mic Stream to Int16 for Deepgram) ---
+// --- AudioWorklet Processor ---
 const PCM_WORKLET_CODE = `
 class PCMProcessor extends AudioWorkletProcessor {
   process(inputs) {
@@ -33,19 +33,16 @@ interface RoomContextProps {
   room: Room | null;
   isConnecting: boolean;
   error: string | null;
-  isPainter: boolean; // Determines if you are the Host or Client
+  isPainter: boolean;
   
-  // Shared State
   laserPosition: LaserPosition | null;
   activeMockupUrl: string | null;
   
-  // Painter Only State
   isGenerating: boolean;
   isTranscribing: boolean;
   transcripts: TranscriptItem[];
   liveScopeItems: string[];
 
-  // Actions
   toggleTranscription: () => void;
   sendData: (type: string, payload: any) => void;
   triggerAI: (slug: string) => Promise<void>;
@@ -72,17 +69,14 @@ export const RoomProvider = ({
   const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Shared State
   const [laserPosition, setLaserPosition] = useState<LaserPosition | null>(null);
   const [activeMockupUrl, setActiveMockupUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   
-  // Audio/AI State
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptItem[]>([]);
   const [liveScopeItems, setLiveScopeItems] = useState<string[]>([]);
 
-  // Refs
   const deepgramLiveRef = useRef<LiveClient | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -90,95 +84,123 @@ export const RoomProvider = ({
   // --- Helper: Send Data ---
   const sendData = useCallback(
     (type: string, payload: any) => {
-      if (!room || !room.localParticipant) return;
+      if (!room || !room.localParticipant) {
+        console.warn("⚠️ Cannot send data - room not ready");
+        return;
+      }
+      
       const strData = JSON.stringify({ type, ...payload });
       const data = new TextEncoder().encode(strData);
-      
-      // Use RELIABLE for images/transcripts, LOSSY for pointer
       const kind = type === "POINTER" ? DataPacket_Kind.LOSSY : DataPacket_Kind.RELIABLE;
       
       room.localParticipant.publishData(data, { reliable: kind === DataPacket_Kind.RELIABLE });
+      console.log("📤 Sent data:", type);
     },
     [room]
   );
 
-  // --- 1. Connect & Listen ---
+  // --- Setup Room (DO NOT manually connect) ---
   useEffect(() => {
-    // Prevent multiple connections
-    if (room) return;
+    if (room) return; // Prevent duplicate
 
-    const lkRoom = new Room({ adaptiveStream: true, dynacast: true });
+    console.log("🎬 Setting up LiveKit room...");
+    const lkRoom = new Room({ 
+      adaptiveStream: true, 
+      dynacast: true 
+    });
 
-    const connect = async () => {
+    // --- Connection Events ---
+    lkRoom.on(RoomEvent.Connected, () => {
+      console.log("✅ Room Connected!", {
+        roomName: lkRoom.name,
+        participants: lkRoom.remoteParticipants.size
+      });
+      setIsConnecting(false);
+    });
+
+    lkRoom.on(RoomEvent.Disconnected, () => {
+      console.log("❌ Room Disconnected");
+    });
+
+    lkRoom.on(RoomEvent.Reconnecting, () => {
+      console.log("🔄 Reconnecting...");
+    });
+
+    lkRoom.on(RoomEvent.ParticipantConnected, (participant) => {
+      console.log("👤 Participant joined:", participant.identity);
+    });
+
+    lkRoom.on(RoomEvent.ParticipantDisconnected, (participant) => {
+      console.log("👋 Participant left:", participant.identity);
+    });
+
+    // --- DATA RECEIVER (This is how they communicate) ---
+    lkRoom.on(RoomEvent.DataReceived, (payload: Uint8Array, participant) => {
       try {
-        await lkRoom.connect(serverUrl, token);
+        const strData = new TextDecoder().decode(payload);
+        const data = JSON.parse(strData);
         
-        // --- DATA LISTENER (This is how they communicate) ---
-        lkRoom.on(RoomEvent.DataReceived, (payload: Uint8Array, participant) => {
-          try {
-            const strData = new TextDecoder().decode(payload);
-            const data = JSON.parse(strData);
-            
-            // 1. Pointer Updates
-            if (data.type === "POINTER") {
-              setLaserPosition({ x: data.x, y: data.y });
-              // Clear pointer after 2 seconds of inactivity
-              setTimeout(() => setLaserPosition(null), 2000);
-            }
-            // 2. Mockup Ready (Client sees this when Painter generates)
-            if (data.type === "MOCKUP_READY") {
-              setActiveMockupUrl(data.url);
-              setIsGenerating(false);
-            }
-            // 3. Transcript
-            if (data.type === "TRANSCRIPT") {
-              setTranscripts(prev => [...prev, { sender: 'remote', text: data.text, timestamp: Date.now() }]);
-            }
-            // 4. Scope Updates
-            if (data.type === "SCOPE_UPDATE") {
-              setLiveScopeItems(prev => [...prev, data.item]);
-            }
-          } catch (err) {
-            console.error("Failed to parse data message", err);
-          }
-        });
+        console.log("📥 Received data:", data.type, "from", participant?.identity);
 
-        setRoom(lkRoom);
-        setIsConnecting(false);
-      } catch (e) {
-        setIsConnecting(false);
-        setError(e instanceof Error ? e.message : "Failed to connect");
+        if (data.type === "POINTER") {
+          setLaserPosition({ x: data.x, y: data.y });
+          setTimeout(() => setLaserPosition(null), 2000);
+        }
+        
+        if (data.type === "MOCKUP_READY") {
+          console.log("🎨 Mockup ready:", data.url);
+          setActiveMockupUrl(data.url);
+          setIsGenerating(false);
+        }
+        
+        if (data.type === "TRANSCRIPT") {
+          setTranscripts(prev => [...prev, { 
+            sender: 'remote', 
+            text: data.text, 
+            timestamp: Date.now() 
+          }]);
+        }
+        
+        if (data.type === "SCOPE_UPDATE") {
+          setLiveScopeItems(prev => [...prev, data.item]);
+        }
+      } catch (err) {
+        console.error("❌ Failed to parse data message", err);
       }
-    };
+    });
 
-    connect();
+    setRoom(lkRoom);
 
     return () => {
+      console.log("🧹 Cleaning up room");
       lkRoom.disconnect();
     };
-  }, [token, serverUrl]); // Only re-run if token changes
+  }, []); // Only run once
 
-  // --- 2. Transcription & AI Logic (Painter Only) ---
+  // --- Deepgram Transcription ---
   const handleChunkAnalysis = async (text: string) => {
-    if (!isPainter) return; 
+    if (!isPainter) return;
     try {
-      fetch(`/api/subdomain/${slug}/analyze-chunk`, {
+      const res = await fetch(`/api/subdomain/${slug}/analyze-chunk`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
-      }).then(async (res) => {
-        const data = await res.json();
-        if (data.item) {
-          setLiveScopeItems(prev => [...prev, data.item]);
-          sendData('SCOPE_UPDATE', { item: data.item });
-        }
       });
-    } catch (err) { console.error("AI Error", err); }
+      const data = await res.json();
+      if (data.item) {
+        setLiveScopeItems(prev => [...prev, data.item]);
+        sendData('SCOPE_UPDATE', { item: data.item });
+      }
+    } catch (err) {
+      console.error("AI Error", err);
+    }
   };
 
   const toggleTranscription = useCallback(async () => {
     if (isTranscribing) {
       deepgramLiveRef.current?.requestClose();
       audioContextRef.current?.close();
+      streamRef.current?.getTracks().forEach(track => track.stop());
       setIsTranscribing(false);
       return;
     }
@@ -190,14 +212,22 @@ export const RoomProvider = ({
       
       const deepgram = createClient(data.key);
       const connection = deepgram.listen.live({
-        model: "nova-2", language: "en-US", smart_format: true,
-        encoding: "linear16", sample_rate: 16000, interim_results: true,
+        model: "nova-2",
+        language: "en-US",
+        smart_format: true,
+        encoding: "linear16",
+        sample_rate: 16000,
+        interim_results: true,
       });
 
       connection.on(LiveTranscriptionEvents.Transcript, (data) => {
         const transcript = data.channel.alternatives[0].transcript;
         if (data.is_final && transcript?.length > 0) {
-          setTranscripts(prev => [...prev, { sender: 'local', text: transcript, timestamp: Date.now() }]);
+          setTranscripts(prev => [...prev, { 
+            sender: 'local', 
+            text: transcript, 
+            timestamp: Date.now() 
+          }]);
           sendData("TRANSCRIPT", { text: transcript });
           handleChunkAnalysis(transcript);
         }
@@ -211,7 +241,10 @@ export const RoomProvider = ({
       const audioContext = new window.AudioContext({ sampleRate: 16000 });
       audioContextRef.current = audioContext;
 
-      await audioContext.audioWorklet.addModule(URL.createObjectURL(new Blob([PCM_WORKLET_CODE], { type: "application/javascript" })));
+      await audioContext.audioWorklet.addModule(
+        URL.createObjectURL(new Blob([PCM_WORKLET_CODE], { type: "application/javascript" }))
+      );
+      
       const source = audioContext.createMediaStreamSource(stream);
       const worklet = new AudioWorkletNode(audioContext, 'pcm-processor');
       
@@ -225,14 +258,16 @@ export const RoomProvider = ({
     }
   }, [isTranscribing, sendData, slug, isPainter]);
 
-  // --- 3. Replicate Image Gen ---
+  // --- AI Image Generation ---
   const triggerAI = async (slug: string) => {
     if (isGenerating) return;
     setIsGenerating(true);
     
-    // Grab video frame
     const videoElement = document.querySelector('video') as HTMLVideoElement;
-    if (!videoElement) { setIsGenerating(false); return; }
+    if (!videoElement) {
+      setIsGenerating(false);
+      return;
+    }
 
     const canvas = document.createElement("canvas");
     canvas.width = videoElement.videoWidth;
@@ -243,14 +278,16 @@ export const RoomProvider = ({
     try {
       const response = await fetch(`/api/subdomain/${slug}/replicate/rooms-mockup`, {
         method: "POST",
-        body: JSON.stringify({ image: imageBase64, prompt: "modern interior design renovation" }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          image: imageBase64, 
+          prompt: "modern interior design renovation" 
+        }),
       });
       const result = await response.json();
       
       if (result.url) {
-        // Update Local
         setActiveMockupUrl(result.url);
-        // Update Remote (Client)
         sendData("MOCKUP_READY", { url: result.url });
       }
     } catch (err) {
@@ -262,13 +299,28 @@ export const RoomProvider = ({
 
   return (
     <RoomContext.Provider value={{ 
-      room, isConnecting, error, isPainter, 
-      laserPosition, activeMockupUrl, isGenerating, 
-      isTranscribing, transcripts, liveScopeItems,
-      toggleTranscription, sendData, triggerAI 
+      room, 
+      isConnecting, 
+      error, 
+      isPainter, 
+      laserPosition, 
+      activeMockupUrl, 
+      isGenerating, 
+      isTranscribing, 
+      transcripts, 
+      liveScopeItems,
+      toggleTranscription, 
+      sendData, 
+      triggerAI 
     }}>
       {room && (
-        <LiveKitRoom room={room} token={token} serverUrl={serverUrl} connect={false}>
+        <LiveKitRoom 
+          room={room} 
+          token={token} 
+          serverUrl={serverUrl} 
+          connect={true}  // ← CRITICAL: Must be true
+          connectOptions={{ autoSubscribe: true }}
+        >
           {children}
         </LiveKitRoom>
       )}

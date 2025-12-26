@@ -2,26 +2,27 @@
 
 import { useEffect, useState } from 'react';
 import { RoomProvider } from '@/context/room-context';
-import { LiveStage } from './live-stage';
 import { ClientStage } from './client-stage';
 import { useSearchParams } from 'next/navigation';
 import { RoomData } from '@/types/room-types';
 import { Copy, Check } from 'lucide-react';
+import { PainterStage } from './painter-stage';
 
 interface RoomClientProps {
   roomId: string;
   roomData: RoomData;
   slug: string;
+  role?: string
 }
 
-export function RoomClient({ roomId, roomData, slug }: RoomClientProps) {
-  const searchParams = useSearchParams();
-  // Role Detection: If ?role=client exists, you are the client. Otherwise, you are the painter.
-  const isClient = searchParams.get('role') === 'client';
-  
+export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
+
+
   const [token, setToken] = useState<string | null>(null);
   const [hasJoined, setHasJoined] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const isClient = role === "client";
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -75,7 +76,7 @@ export function RoomClient({ roomId, roomData, slug }: RoomClientProps) {
       isPainter={!isClient} 
       slug={slug}
     >
-      <div className="flex flex-col h-screen w-full bg-black">
+      <div className="flex flex-col  h-screen w-full bg-black">
         {/* Painter Header */}
         {!isClient && (
           <header className="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-950 z-50">
@@ -88,7 +89,7 @@ export function RoomClient({ roomId, roomData, slug }: RoomClientProps) {
 
         {/* Render Stage based on Role */}
         <div className="flex-1 relative overflow-hidden">
-          {isClient ? <ClientStage /> : <LiveStage slug={slug} />}
+          {isClient ? <ClientStage /> : <PainterStage slug={slug} />}
         </div>
       </div>
     </RoomProvider>
