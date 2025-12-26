@@ -1,8 +1,22 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { Room, RoomEvent, ConnectionState, DataPacket_Kind } from "livekit-client";
-import { LiveKitRoom, useRoomContext as useLiveKitRoomContext } from "@livekit/components-react";
+import React, { 
+  createContext, 
+  useContext, 
+  useState, 
+  useEffect, 
+  useCallback, 
+  useRef, 
+  useMemo 
+} from "react";
+import { 
+  Room, 
+  RoomEvent, 
+  DataPacket_Kind, 
+  RemoteParticipant, 
+  Participant
+} from "livekit-client";
+import { LiveKitRoom } from "@livekit/components-react";
 import { createClient, LiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 
 // --- AudioWorklet Processor ---
@@ -30,19 +44,16 @@ interface LaserPosition { x: number; y: number; }
 interface TranscriptItem { sender: 'local' | 'remote'; text: string; timestamp: number; }
 
 interface RoomContextProps {
-  room: Room | null;
+  room: Room;
   isConnecting: boolean;
   error: string | null;
   isPainter: boolean;
-  
   laserPosition: LaserPosition | null;
   activeMockupUrl: string | null;
-  
   isGenerating: boolean;
   isTranscribing: boolean;
   transcripts: TranscriptItem[];
   liveScopeItems: string[];
-
   toggleTranscription: () => void;
   sendData: (type: string, payload: any) => void;
   triggerAI: (slug: string) => Promise<void>;
@@ -58,19 +69,6 @@ interface RoomProviderProps {
   slug: string;
 }
 
-// --- Wrapper to get LiveKit room ---
-const RoomWrapper = ({ children, onRoomReady }: { children: React.ReactNode; onRoomReady: (room: Room) => void }) => {
-  const lkRoom = useLiveKitRoomContext();
-  
-  useEffect(() => {
-    if (lkRoom) {
-      onRoomReady(lkRoom);
-    }
-  }, [lkRoom, onRoomReady]);
-  
-  return <>{children}</>;
-};
-
 export const RoomProvider = ({
   children,
   token,
@@ -78,7 +76,16 @@ export const RoomProvider = ({
   isPainter,
   slug
 }: RoomProviderProps) => {
-  const [room, setRoom] = useState<Room | null>(null);
+  
+  // 1. Initialize Room (Singleton)
+  const room = useMemo(() => {
+    return new Room({ 
+      adaptiveStream: true, 
+      dynacast: true,
+      publishDefaults: { simulcast: true }
+    });
+  }, []);
+
   const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -94,48 +101,59 @@ export const RoomProvider = ({
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // --- Helper: Send Data ---
+  // --- Send Data Helper ---
   const sendData = useCallback(
     (type: string, payload: any) => {
-      if (!room || !room.localParticipant) {
+      if (room.state !== 'connected' || !room.localParticipant) {
         console.warn("⚠️ Cannot send data - room not ready");
         return;
       }
-      
       const strData = JSON.stringify({ type, ...payload });
       const data = new TextEncoder().encode(strData);
       const kind = type === "POINTER" ? DataPacket_Kind.LOSSY : DataPacket_Kind.RELIABLE;
-      
       room.localParticipant.publishData(data, { reliable: kind === DataPacket_Kind.RELIABLE });
-      console.log("📤 Sent data:", type);
     },
     [room]
   );
 
-  // --- Setup Data Listeners when room is ready ---
+  // --- Event Listeners (Logs Restored) ---
   useEffect(() => {
-    if (!room) return;
+    const handleConnected = () => {
+      console.log("✅ Room Connected!", {
+        name: room.name,
+        participants: room.remoteParticipants.size
+      });
+      setIsConnecting(false);
+    };
 
-    console.log("🎬 Setting up data listeners...");
+    const handleDisconnected = () => {
+      console.log("❌ Room Disconnected");
+      setIsConnecting(false);
+    };
 
-    const handleData = (payload: Uint8Array, participant: any) => {
+    // 👇 RESTORED: Participant Logs
+    const handleParticipantConnected = (participant: RemoteParticipant) => {
+      console.log("👤 Participant Joined:", participant.identity);
+    };
+
+    const handleParticipantDisconnected = (participant: RemoteParticipant) => {
+      console.log("👋 Participant Left:", participant.identity);
+    };
+
+    const handleDataReceived = (payload: Uint8Array, participant?: RemoteParticipant) => {
       try {
         const strData = new TextDecoder().decode(payload);
         const data = JSON.parse(strData);
-        
-        console.log("📥 Received data:", data.type, "from", participant?.identity);
+        // console.log("📥 Data:", data.type); // Uncomment to debug data flow
 
         if (data.type === "POINTER") {
           setLaserPosition({ x: data.x, y: data.y });
           setTimeout(() => setLaserPosition(null), 2000);
         }
-        
         if (data.type === "MOCKUP_READY") {
-          console.log("🎨 Mockup ready:", data.url);
           setActiveMockupUrl(data.url);
           setIsGenerating(false);
         }
-        
         if (data.type === "TRANSCRIPT") {
           setTranscripts(prev => [...prev, { 
             sender: 'remote', 
@@ -143,7 +161,6 @@ export const RoomProvider = ({
             timestamp: Date.now() 
           }]);
         }
-        
         if (data.type === "SCOPE_UPDATE") {
           setLiveScopeItems(prev => [...prev, data.item]);
         }
@@ -152,26 +169,24 @@ export const RoomProvider = ({
       }
     };
 
-    const handleParticipantConnected = (participant: any) => {
-      console.log("👤 Participant joined:", participant.identity);
-    };
+    // Attach Listeners
+    room.on(RoomEvent.Connected, handleConnected);
+    room.on(RoomEvent.Disconnected, handleDisconnected);
+    room.on(RoomEvent.ParticipantConnected, handleParticipantConnected);       // <-- Added back
+    room.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected); // <-- Added back
+    room.on(RoomEvent.DataReceived, handleDataReceived);
 
-    const handleParticipantDisconnected = (participant: any) => {
-      console.log("👋 Participant left:", participant.identity);
-    };
-
-    room.on(RoomEvent.DataReceived, handleData);
-    room.on(RoomEvent.ParticipantConnected, handleParticipantConnected);
-    room.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
-
+    // Cleanup
     return () => {
-      room.off(RoomEvent.DataReceived, handleData);
+      room.off(RoomEvent.Connected, handleConnected);
+      room.off(RoomEvent.Disconnected, handleDisconnected);
       room.off(RoomEvent.ParticipantConnected, handleParticipantConnected);
       room.off(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
+      room.off(RoomEvent.DataReceived, handleDataReceived);
     };
   }, [room]);
 
-  // --- Deepgram Transcription ---
+  // --- Deepgram Logic ---
   const handleChunkAnalysis = async (text: string) => {
     if (!isPainter) return;
     try {
@@ -193,8 +208,14 @@ export const RoomProvider = ({
   const toggleTranscription = useCallback(async () => {
     if (isTranscribing) {
       deepgramLiveRef.current?.requestClose();
-      audioContextRef.current?.close();
-      streamRef.current?.getTracks().forEach(track => track.stop());
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
       setIsTranscribing(false);
       return;
     }
@@ -206,22 +227,18 @@ export const RoomProvider = ({
       
       const deepgram = createClient(data.key);
       const connection = deepgram.listen.live({
-        model: "nova-2",
-        language: "en-US",
-        smart_format: true,
-        encoding: "linear16",
-        sample_rate: 16000,
-        interim_results: true,
+        model: "nova-2", 
+        language: "en-US", 
+        smart_format: true, 
+        encoding: "linear16", 
+        sample_rate: 16000, 
+        interim_results: true
       });
 
       connection.on(LiveTranscriptionEvents.Transcript, (data) => {
         const transcript = data.channel.alternatives[0].transcript;
         if (data.is_final && transcript?.length > 0) {
-          setTranscripts(prev => [...prev, { 
-            sender: 'local', 
-            text: transcript, 
-            timestamp: Date.now() 
-          }]);
+          setTranscripts(prev => [...prev, { sender: 'local', text: transcript, timestamp: Date.now() }]);
           sendData("TRANSCRIPT", { text: transcript });
           handleChunkAnalysis(transcript);
         }
@@ -232,12 +249,15 @@ export const RoomProvider = ({
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      const audioContext = new window.AudioContext({ sampleRate: 16000 });
+      
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const audioContext = new AudioContextClass({ sampleRate: 16000 });
       audioContextRef.current = audioContext;
 
-      await audioContext.audioWorklet.addModule(
-        URL.createObjectURL(new Blob([PCM_WORKLET_CODE], { type: "application/javascript" }))
-      );
+      const blob = new Blob([PCM_WORKLET_CODE], { type: "application/javascript" });
+      const blobUrl = URL.createObjectURL(blob);
+      
+      await audioContext.audioWorklet.addModule(blobUrl);
       
       const source = audioContext.createMediaStreamSource(stream);
       const worklet = new AudioWorkletNode(audioContext, 'pcm-processor');
@@ -248,17 +268,19 @@ export const RoomProvider = ({
 
     } catch (err) {
       console.error("Deepgram Error", err);
+      if (audioContextRef.current) audioContextRef.current.close();
       setIsTranscribing(false);
     }
   }, [isTranscribing, sendData, slug, isPainter]);
 
-  // --- AI Image Generation ---
+  // --- AI Gen Logic ---
   const triggerAI = async (slug: string) => {
     if (isGenerating) return;
     setIsGenerating(true);
     
     const videoElement = document.querySelector('video') as HTMLVideoElement;
     if (!videoElement) {
+      console.warn("⚠️ No video element found");
       setIsGenerating(false);
       return;
     }
@@ -273,13 +295,9 @@ export const RoomProvider = ({
       const response = await fetch(`/api/subdomain/${slug}/replicate/rooms-mockup`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          image: imageBase64, 
-          prompt: "modern interior design renovation" 
-        }),
+        body: JSON.stringify({ image: imageBase64, prompt: "modern interior design renovation" }),
       });
       const result = await response.json();
-      
       if (result.url) {
         setActiveMockupUrl(result.url);
         sendData("MOCKUP_READY", { url: result.url });
@@ -291,37 +309,22 @@ export const RoomProvider = ({
     }
   };
 
-  const handleRoomReady = useCallback((lkRoom: Room) => {
-    console.log("🎉 ROOM READY", lkRoom.name, "Participants:", lkRoom.remoteParticipants.size);
-    setRoom(lkRoom);
-    setIsConnecting(false);
-  }, []);
-
   return (
     <RoomContext.Provider value={{ 
-      room, 
-      isConnecting, 
-      error, 
-      isPainter, 
-      laserPosition, 
-      activeMockupUrl, 
-      isGenerating, 
-      isTranscribing, 
-      transcripts, 
-      liveScopeItems,
-      toggleTranscription, 
-      sendData, 
-      triggerAI 
+      room, isConnecting, error, isPainter, laserPosition, activeMockupUrl, 
+      isGenerating, isTranscribing, transcripts, liveScopeItems,
+      toggleTranscription, sendData, triggerAI 
     }}>
       <LiveKitRoom 
+        room={room} 
         token={token} 
         serverUrl={serverUrl} 
-        connect={true}
+        connect={true}  
+        video={true}  
+        audio={true}
         connectOptions={{ autoSubscribe: true }}
       >
-        <RoomWrapper onRoomReady={handleRoomReady}>
-          {children}
-        </RoomWrapper>
+        {children}
       </LiveKitRoom>
     </RoomContext.Provider>
   );

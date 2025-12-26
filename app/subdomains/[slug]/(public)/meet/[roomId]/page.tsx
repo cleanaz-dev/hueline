@@ -13,7 +13,7 @@ export default async function Page({ params, searchParams }: Params) {
   const search = await searchParams;
   
   // Check if role=client exists
-  const role = search.role || 'painter';
+  const role = search.role
 
   const subdomain = await prisma.subdomain.findUnique({
     where: { slug }
