@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { useRoomContext } from '@/context/room-context';
 import { 
   VideoTrack, 
-  AudioTrack, // CRITICAL: Import AudioTrack
+  RoomAudioRenderer, // <-- THIS IS THE KEY COMPONENT YOU'RE MISSING
   useTracks, 
   isTrackReference, 
   type TrackReference 
@@ -35,15 +35,10 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // FIX: Get both video AND audio tracks
-  const videoTracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: false }]);
-  const audioTracks = useTracks([{ source: Track.Source.Microphone, withPlaceholder: false }]);
-  
-  const localVideoTrack = videoTracks.find(t => t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
-  const remoteVideoTrack = videoTracks.find(t => !t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
-  
-  const localAudioTrack = audioTracks.find(t => t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
-  const remoteAudioTrack = audioTracks.find(t => !t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
+  // Get video tracks as before
+  const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: false }]);
+  const localTrack = tracks.find(t => t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
+  const remoteTrack = tracks.find(t => !t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
 
   const handlePointer = (e: React.MouseEvent) => {
     if (!isPainter || !containerRef.current || activeMockupUrl) return;
@@ -85,27 +80,21 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
   return (
     <div className="relative h-full w-full flex flex-col items-center justify-center p-4">
       
+      {/* 🎯 CRITICAL FIX: Add RoomAudioRenderer - this makes ALL audio audible */}
+      <RoomAudioRenderer />
+      
       <div 
         ref={containerRef} 
         onClick={handlePointer} 
         className="relative w-full max-w-5xl aspect-video bg-zinc-950 rounded-3xl overflow-hidden cursor-crosshair border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
       >
-        {/* VIDEO RENDERING */}
+        {/* VIDEO RENDERING (unchanged) */}
         {isPainter ? (
-          remoteVideoTrack ? <VideoTrack trackRef={remoteVideoTrack} className="w-full h-full object-cover" /> : 
+          remoteTrack ? <VideoTrack trackRef={remoteTrack} className="w-full h-full object-cover" /> : 
           <div className="flex flex-col items-center justify-center h-full text-zinc-600"><div className="w-12 h-12 border-2 border-zinc-800 border-t-cyan-500 rounded-full animate-spin mb-4" /><p>Waiting for Client...</p></div>
         ) : (
-          localVideoTrack ? <VideoTrack trackRef={localVideoTrack} className="w-full h-full object-cover" /> : 
+          localTrack ? <VideoTrack trackRef={localTrack} className="w-full h-full object-cover" /> : 
           <div className="flex flex-col items-center justify-center h-full text-zinc-600"><Camera className="w-12 h-12 mb-4 opacity-20" /><p>Initializing camera...</p></div>
-        )}
-
-        {/* CRITICAL FIX: RENDER AUDIO TRACKS */}
-        {/* Render remote audio for Painter, local audio for Client */}
-        {isPainter && remoteAudioTrack && (
-          <AudioTrack trackRef={remoteAudioTrack} />
-        )}
-        {!isPainter && localAudioTrack && (
-          <AudioTrack trackRef={localAudioTrack} />
         )}
 
         {laserPosition && (
@@ -180,7 +169,7 @@ export const LiveStage = ({ slug }: LiveStageProps) => {
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4">
             
             <button 
-              disabled={isGenerating || !remoteVideoTrack}
+              disabled={isGenerating || !remoteTrack}
               onClick={(e) => { e.stopPropagation(); triggerAI(slug); }}
               className="w-12 h-12 bg-zinc-900 border border-white/10 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg hover:border-cyan-500/50"
               title="Generate Mockup"
