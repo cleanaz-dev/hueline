@@ -11,7 +11,7 @@ export default function StatCards({
 }) {
   if (isLoading) {
     return (
-      <section className="container mx-auto max-w-6xl px-4 md:px-10 lg:px-0 my-12">
+      <section className="container mx-auto max-w-6xl px-4 md:px-10 lg:px-0 my-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm animate-pulse">
@@ -80,7 +80,7 @@ export default function StatCards({
   };
 
   return (
-    <section className="container mx-auto max-w-6xl px-4 md:px-10 lg:px-0 my-12">
+    <section className="container mx-auto max-w-6xl px-4 md:px-10 lg:px-0 py-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {cardData.map((item, index) => {
           const colors = getColorClasses(item.color);

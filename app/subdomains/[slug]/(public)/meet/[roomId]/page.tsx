@@ -1,0 +1,31 @@
+import { prisma } from "@/lib/prisma";
+import { getRoomKey } from "@/lib/redis/services/room";
+import { notFound } from "next/navigation";
+import { ClientRoomWrapper } from "@/components/rooms/client-room-wrapper";
+
+interface Params {
+  params: Promise<{ roomId: string; slug: string; }>;
+}
+
+export default async function Page({ params }: Params) {
+  const { roomId, slug } = await params;
+
+  const subdomain = await prisma.subdomain.findUnique({
+    where: { slug }
+  });
+
+  if (!subdomain) return notFound();
+  
+  const roomData = await getRoomKey(roomId); // Redis data
+  if (!roomData) return notFound();
+  
+  // Pass all that server data into the Client Wrapper
+  return (
+    <ClientRoomWrapper 
+      roomId={roomId} 
+      slug={slug} 
+      roomData={roomData} 
+      companyName={subdomain.companyName} 
+    />
+  );
+}

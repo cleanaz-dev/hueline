@@ -92,7 +92,7 @@ export function RoomClient({ roomId, roomData }: { roomId: string; roomData: Roo
           
           <button 
             onClick={() => {
-              const url = `${window.location.origin}/my/rooms/${roomId}?role=client`;
+              const url = `${window.location.origin}/meet/${roomId}?role=client`;
               navigator.clipboard.writeText(url);
               alert('Invite link copied! Send this to your client.');
             }}

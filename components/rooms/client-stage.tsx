@@ -10,90 +10,93 @@ import {
   type TrackReference 
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
+import { Maximize2, Download } from 'lucide-react';
 
-export const ClientStage = ({ slug }: { slug: string }) => {
+export function ClientStage() {
   const { 
     laserPosition, 
-    activeMockupUrl,
-    liveScopeItems,
-    transcripts 
+    activeMockupUrl 
   } = useRoomContext();
   
-  const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: false }]);
+  // 1. Fetch Tracks
+  // We need to distinguish between the "Painter" (Remote) and "You" (Local)
+  const tracks = useTracks([
+    { source: Track.Source.Camera, withPlaceholder: false }
+  ]);
+  
   const localTrack = tracks.find(t => t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
   const remoteTrack = tracks.find(t => !t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
 
   return (
-    <div className="relative h-full w-full bg-black overflow-hidden">
+    <div className="relative h-full w-full bg-black flex flex-col items-center justify-center overflow-hidden">
+      {/* 🔊 Handles Audio (You hear the painter) */}
       <RoomAudioRenderer />
 
-      {/* 1. MAIN CAMERA (Client's Property) */}
-      {localTrack ? (
-        <VideoTrack trackRef={localTrack} className="absolute inset-0 w-full h-full object-cover" />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-zinc-500">
-          Initializing Camera...
-        </div>
-      )}
-
-      {/* 2. PAINTER PiP (Small floating window) */}
-      {remoteTrack && (
-        <div className="absolute top-4 right-4 w-28 h-40 rounded-2xl overflow-hidden border border-white/20 shadow-2xl z-40 bg-zinc-900">
-          <VideoTrack trackRef={remoteTrack} className="w-full h-full object-cover" />
-          <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 text-[8px] font-black uppercase text-white">
-            Pro Painter
+      {/* 🟢 MAIN STAGE: The Painter's Video (Or the AI Mockup) */}
+      <div className="relative w-full h-full max-w-[1600px] aspect-video flex items-center justify-center">
+        
+        {/* CASE A: Active Mockup (Overrides Video) */}
+        {activeMockupUrl ? (
+          <div className="relative w-full h-full flex items-center justify-center bg-zinc-950 animate-in fade-in duration-500">
+             <img 
+               src={activeMockupUrl} 
+               className="max-h-full max-w-full object-contain rounded-lg shadow-2xl" 
+               alt="Design Proposal" 
+             />
+             
+             {/* Client specific: Download Button */}
+             <div className="absolute bottom-8 flex gap-4">
+               <button 
+                 onClick={() => window.open(activeMockupUrl, '_blank')}
+                 className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-full font-semibold flex items-center gap-2 hover:bg-white/20 transition"
+               >
+                 <Download className="w-4 h-4" /> Download Design
+               </button>
+             </div>
           </div>
-        </div>
-      )}
-
-      {/* 3. LASER POINTER (Sync'd from Painter's clicks) */}
-      {laserPosition && (
-        <div 
-          className="absolute w-12 h-12 -ml-6 -mt-6 border-4 border-cyan-400 rounded-full animate-ping z-50 pointer-events-none"
-          style={{ left: `${laserPosition.x * 100}%`, top: `${laserPosition.y * 100}%` }}
-        />
-      )}
-
-      {/* 4. LIVE SCOPE NOTIFICATIONS (Toasts) */}
-      <div className="absolute bottom-24 left-4 right-4 z-50 pointer-events-none">
-        <div className="flex flex-col-reverse gap-2">
-          {liveScopeItems.slice(-2).map((item, i) => (
-            <div key={i} className="bg-cyan-500 text-black px-4 py-3 rounded-2xl font-black text-xs shadow-xl animate-in slide-in-from-bottom duration-500 flex items-center gap-3">
-               <div className="w-1.5 h-1.5 bg-black rounded-full animate-pulse" />
-               NEW TASK: {item}
+        ) : (
+          /* CASE B: Painter's Live Video Feed */
+          remoteTrack ? (
+            <div className="relative w-full h-full">
+              <VideoTrack 
+                trackRef={remoteTrack} 
+                className="w-full h-full object-contain" 
+              />
+              
+              {/* LASER POINTER (Only render if looking at video) */}
+              {laserPosition && (
+                <div 
+                  className="absolute w-8 h-8 -ml-4 -mt-4 border-2 border-red-500 bg-red-500/30 rounded-full animate-ping z-50 pointer-events-none shadow-[0_0_15px_rgba(239,68,68,0.8)]"
+                  style={{ 
+                    left: `${laserPosition.x * 100}%`, 
+                    top: `${laserPosition.y * 100}%` 
+                  }}
+                />
+              )}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 5. AI MOCKUP (Full screen reveal) */}
-      {activeMockupUrl && (
-        <div className="absolute inset-0 z-[100] bg-black animate-in fade-in zoom-in duration-500 p-4 flex flex-col items-center justify-center">
-          <img src={activeMockupUrl} className="max-h-[80%] rounded-2xl shadow-2xl" alt="AI Preview" />
-          <p className="mt-6 text-white font-black uppercase tracking-widest text-sm">New Vision Generated</p>
-          <button 
-            onClick={() => {/* Close logic in context */}}
-            className="mt-6 bg-white text-black px-8 py-3 rounded-full font-bold uppercase text-xs"
-          >
-            Back to Camera
-          </button>
-        </div>
-      )}
-
-      {/* 6. CAPTIONS / TRANSCRIPT */}
-      <div className="absolute bottom-10 left-0 right-0 px-8 text-center z-40 pointer-events-none">
-        {transcripts.length > 0 && (
-          <p className="inline-block px-4 py-2 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 text-white text-sm font-medium animate-in fade-in duration-300">
-            {transcripts[transcripts.length - 1].text}
-          </p>
+          ) : (
+            /* CASE C: Waiting for Painter */
+            <div className="flex flex-col items-center justify-center space-y-4 text-zinc-500">
+              <div className="w-12 h-12 border-2 border-t-cyan-500 border-zinc-800 rounded-full animate-spin" />
+              <p className="text-sm uppercase tracking-widest font-medium">Waiting for Estimator...</p>
+            </div>
+          )
         )}
       </div>
 
-      {/* Visual Indicator: Status */}
-      <div className="absolute top-6 left-6 flex items-center gap-2 pointer-events-none">
-        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">Live Survey</span>
+      {/* 🔵 PICTURE IN PICTURE: Client's Own Face (Bottom Right) */}
+      <div className="absolute bottom-4 right-4 w-28 h-40 md:w-48 md:h-72 bg-zinc-900 rounded-xl overflow-hidden border border-white/10 shadow-2xl z-40">
+        {localTrack ? (
+           <VideoTrack trackRef={localTrack} className="w-full h-full object-cover" />
+        ) : (
+           <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-zinc-500 text-xs">
+             No Camera
+           </div>
+        )}
+        <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur rounded text-[10px] font-bold text-white uppercase tracking-wider">
+          You
+        </div>
       </div>
     </div>
   );
-};
+}

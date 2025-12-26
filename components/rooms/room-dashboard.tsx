@@ -94,12 +94,12 @@ export default function RoomsDashboard() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4 md:px-6 space-y-8">
+    <div className="container mx-auto max-w-6xl py-10 px-4 md:px-6 space-y-8">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight flex items-center gap-3">
-            <Video className="w-8 h-8 text-primary" />
+            
             Live Rooms
           </h1>
           <p className="text-zinc-500 mt-2">
@@ -253,7 +253,7 @@ export default function RoomsDashboard() {
               </CardContent>
             </Card>
           ) : (
-            <div className="h-full border-2 border-dashed border-zinc-200 rounded-3xl flex flex-col items-center justify-center p-8 text-center text-zinc-400">
+            <div className="h-full border-2 bg-muted border-dashed border-zinc-200 rounded-3xl flex flex-col items-center justify-center p-8 text-center text-zinc-400">
               <User className="w-12 h-12 mb-4 opacity-20" />
               <p className="text-sm">
                 Select a project to view the client briefing here.

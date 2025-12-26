@@ -1,9 +1,11 @@
 // app/(owner)/layout.tsx
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { OwnerProvider } from "@/context/owner-context";
 import SubdomainNav from "@/components/subdomains/layout/subdomain-nav";
+import { getOwnerData } from "@/lib/prisma/queries/owner/get-owner-data";
+import OwnerSidebar from "@/components/owner/owner-sidebar";
 
 interface Params {
   params: Promise<{
@@ -22,47 +24,10 @@ export default async function OwnerRootLayout({
   const slug = host.split(".")[0]; // e.g., "demo" from "demo.hue-line.com"
 
   // B. Fetch Data (Single DB Query for everything)
-  const subdomain = await prisma.subdomain.findUnique({
-  where: { slug },
-  include: {
-    callFlows: true,
-    intelligence: true,
-    logs: true,
-    users: true,
-    rooms: true,
-    bookings: {
-      include: {
-        mockups: true,
-        paintColors: true,
-        alternateColors: true,
-        sharedAccess: true,
-        exports: true,
-        calls: {
-          include: {
-            intelligence: true,
-          },
-        },
-        logs: true,
-        rooms: true,
-      },
-    },
-    calls: {
-      include: {
-        intelligence: true,
-        bookingData: {
-          include: {
-            mockups: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    },
-  },
-});
 
-  if (!subdomain) return <div>Subdomain not found</div>;
+  const subdomain = await getOwnerData(slug);
+
+  if (!subdomain) return notFound();
 
   // C. Auth Check (Optional: ensure user owns this subdomain)
   // const session = await getSession();
@@ -71,8 +36,7 @@ export default async function OwnerRootLayout({
   // D. Pass Data to Client Context
   return (
     <OwnerProvider value={{ subdomain }}>
-      <SubdomainNav data={subdomain} miniNav={false} />
-      <div className="min-h-screen bg-blue-100">{children}</div>
+      <OwnerSidebar>{children}</OwnerSidebar>
     </OwnerProvider>
   );
 }
