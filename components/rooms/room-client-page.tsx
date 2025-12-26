@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { RoomProvider } from '@/context/room-context';
 import { ClientStage } from './client-stage';
-import { useSearchParams } from 'next/navigation';
 import { RoomData } from '@/types/room-types';
 import { Copy, Check } from 'lucide-react';
 import { PainterStage } from './painter-stage';
@@ -16,8 +15,6 @@ interface RoomClientProps {
 }
 
 export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
-
-
   const [token, setToken] = useState<string | null>(null);
   const [hasJoined, setHasJoined] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -27,12 +24,10 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        // Identity MUST be unique for every user, or they will kick each other out.
         const identity = isClient 
           ? `Client-${Math.floor(Math.random() * 10000)}` 
-          : 'Painter-Host'; 
+          : `Painter-${Math.floor(Math.random() * 10000)}`; // FIXED - WAS 'Painter-Host'
 
-        // Important: roomId determines the "Meeting Room". It must be identical for both.
         const res = await fetch(
           `/api/subdomain/${slug}/livekit/token?room=${roomId}&username=${identity}`
         );
@@ -54,7 +49,6 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
 
   if (!token) return <div className="h-screen bg-black text-white flex items-center justify-center">Loading...</div>;
 
-  // Simple "Lobby" for Client
   if (isClient && !hasJoined) {
     return (
       <div className="h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
@@ -76,8 +70,7 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
       isPainter={!isClient} 
       slug={slug}
     >
-      <div className="flex flex-col  h-screen w-full bg-black">
-        {/* Painter Header */}
+      <div className="flex flex-col h-screen w-full bg-black">
         {!isClient && (
           <header className="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-950 z-50">
             <h2 className="text-white font-bold">{roomId}</h2>
@@ -87,7 +80,6 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
           </header>
         )}
 
-        {/* Render Stage based on Role */}
         <div className="flex-1 relative overflow-hidden">
           {isClient ? <ClientStage /> : <PainterStage slug={slug} />}
         </div>
