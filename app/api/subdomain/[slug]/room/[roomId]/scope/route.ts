@@ -1,3 +1,4 @@
+//api/subdomain/[slug]/room/[roomId]/scope/route.ts
 import { getRoomScope } from "@/lib/redis";
 import { NextResponse } from "next/server";
 
@@ -18,17 +19,11 @@ export async function GET(req: Request, { params }: Params) {
         { status: 400 }
       );
 
-    const scopeData = await getRoomScope(roomId);
+    const items = await getRoomScope(roomId); 
 
-    if (!scopeData)
-      return NextResponse.json({ message: "No Scope Data" }, { status: 404 });
-
-    return NextResponse.json({ scopeData });
+    return NextResponse.json({ items: items || [] }); 
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { message: "Error Retrieving Scope" },
-      { status: 500 }
-    );
+   return NextResponse.json({ items: [] }, { status: 500 });
   }
 }
