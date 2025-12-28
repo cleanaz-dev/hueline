@@ -19,6 +19,9 @@ import {
 } from "livekit-client";
 import { LiveKitRoom } from "@livekit/components-react";
 import { createClient, LiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
+import { v4 as uuidv4 } from 'uuid';
+
+
 
 // --- AudioWorklet Processor ---
 const PCM_WORKLET_CODE = `
@@ -60,15 +63,35 @@ interface RoomContextProps {
   isConnecting: boolean;
   error: string | null;
   isPainter: boolean;
+  
   laserPosition: LaserPosition | null;
   activeMockupUrl: string | null;
+  
   isGenerating: boolean;
   isTranscribing: boolean;
   transcripts: TranscriptItem[];
-  liveScopeItems: string[];
+  
+  // 🔴 WAS: liveScopeItems: string[];
+  // 🟢 CHANGE TO:
+  liveScopeItems: ScopeItem[]; 
+
   toggleTranscription: () => void;
   sendData: (type: string, payload: any) => void;
   triggerAI: (slug: string) => Promise<void>;
+  
+  // New handlers
+  addManualItem: (category: string, item: string, action: string) => void;
+  removeScopeItem: (id: string) => void;
+  saveAndEndSession: () => Promise<void>;
+  remoteParticipantsCount?: number; // Optional if you added this earlier
+}
+
+interface ScopeItem {
+  id: string;
+  category: 'PREP' | 'PAINT' | 'REPAIR' | 'NOTE'; 
+  item: string;
+  action: string;
+  timestamp: string;
 }
 
 const RoomContext = createContext<RoomContextProps | undefined>(undefined);
@@ -79,6 +102,7 @@ interface RoomProviderProps {
   serverUrl: string;
   isPainter: boolean;
   slug: string;
+  liveScopeItems: ScopeItem[];
 }
 
 export const RoomProvider = ({
@@ -107,7 +131,7 @@ export const RoomProvider = ({
   
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptItem[]>([]);
-  const [liveScopeItems, setLiveScopeItems] = useState<string[]>([]);
+const [liveScopeItems, setLiveScopeItems] = useState<ScopeItem[]>([]);
 
   const deepgramLiveRef = useRef<LiveClient | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -373,11 +397,72 @@ export const RoomProvider = ({
     }
   };
 
+  const addManualItem = useCallback((category: string, item: string, action: string) => {
+    // A. Create Object
+    const newItem: ScopeItem = {
+      id: uuidv4(),
+      category: category as any, 
+      item,
+      action,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    // B. Instant UI Update
+    setLiveScopeItems(prev => [newItem, ...prev]);
+
+    // C. Background Sync to Redis (so if they refresh, it's saved)
+    // We don't await this to keep UI snappy
+    if (room?.name) {
+       fetch(`/api/subdomain/${slug}/room/${room.name}/scope/add`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(newItem)
+       }).catch(err => console.error("Redis Sync Error", err));
+    }
+  }, [slug, room]);
+
+   const removeScopeItem = useCallback((id: string) => {
+    // A. Instant UI Update
+    setLiveScopeItems(prev => prev.filter(i => i.id !== id));
+
+    // B. Background Sync to Redis
+    if (room?.name) {
+       fetch(`/api/subdomain/${slug}/room/${room.name}/scope/remove`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ id })
+       }).catch(err => console.error("Redis Remove Error", err));
+    }
+  }, [slug, room]);
+
+
+  const saveAndEndSession = useCallback(async () => {
+    try {
+      if (!room?.name) return;
+
+      console.log("💾 Saving Session...");
+      
+      // A. Commit Redis Data to MongoDB
+      await fetch(`/api/subdomain/${slug}/room/${room.name}/end`, {
+        method: 'POST',
+      });
+
+      // B. Kill Room
+      room.disconnect();
+      
+      // C. Redirect (You can handle this in the UI or here)
+      window.location.href = `/my/rooms`; 
+
+    } catch (err) {
+      console.error("Failed to end session", err);
+    }
+  }, [slug, room]);
+
   return (
     <RoomContext.Provider value={{ 
       room, isConnecting, error, isPainter, laserPosition, activeMockupUrl, 
       isGenerating, isTranscribing, transcripts, liveScopeItems,
-      toggleTranscription, sendData, triggerAI 
+      toggleTranscription, sendData, triggerAI, addManualItem, removeScopeItem, saveAndEndSession
     }}>
       <LiveKitRoom 
         room={room} 
