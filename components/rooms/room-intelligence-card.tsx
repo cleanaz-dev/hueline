@@ -85,7 +85,7 @@ export default function RoomIntelligenceCard({ subdomain }: { subdomain: any }) 
                   Detection Logic
                 </h4>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   {intel?.categories && Object.entries(intel.categories).map(([key, desc]: [string, any]) => {
                     const style = getCategoryStyle(key);
                     const Icon = style.icon;
