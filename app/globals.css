@@ -176,3 +176,7 @@
   --sidebar-border: hsl(240 3.7% 15.9%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
+
+.my-room-container {
+  @apply container mx-auto max-w-6xl py-4 md:py-0 px-4 md:px-6 space-y-8  min-h-[calc(100vh-4rem)]  md:min-h-[calc(100vh-7rem)] 
+}

@@ -1,6 +1,9 @@
 import { RoomClient } from "@/components/rooms/room-client-page";
+import { RoomDetailsView } from "@/components/rooms/room-details-view";
 import { getRoomKey } from "@/lib/redis/services/room";
+import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+
 
 interface Params {
   params: Promise<{
@@ -13,14 +16,32 @@ export default async function page({params}: Params) {
 
   const { roomId, slug } = await params
 
+  // 1. Try Hot Storage (Redis)
   const roomData = await getRoomKey(roomId)
-  console.log("Room Data", roomData)
 
-  if(!roomData || !slug) return notFound()
+  if (roomData) {
+    return (
+      <div>
+        <RoomClient roomId={roomId} roomData={roomData} slug={slug} />
+      </div>
+    )
+  }
 
-  return (
-    <div>
-      <RoomClient roomId={roomId} roomData={roomData} slug={slug} />
-    </div>
-  )
+  // 2. Try Cold Storage (DB)
+  const dbRoom = await prisma.room.findFirst({
+    where: { 
+      roomKey: roomId,
+      domain: { slug: slug }
+    },
+    include: { booking: true }
+  })
+
+  if (dbRoom) {
+    // 👇 FIX: Cast to 'any' or 'unknown as Room' to bypass the strict relation check
+    // We only need the scalar fields (name, phone) for the view anyway.
+    return <RoomDetailsView room={dbRoom as any} />
+  }
+
+  // 3. 404
+  return notFound()
 }

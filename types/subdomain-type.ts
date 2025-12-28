@@ -5,6 +5,7 @@ import {
   LogType, 
   LogActor,
   RoomStatus,
+  Subdomain,
   RoomIntelligence
 } from "@/app/generated/prisma";
 
@@ -40,19 +41,27 @@ export interface CallIntelligence {
 export interface Room {
   id: string;
   roomKey: string;
-  clientName: string | null;
-  clientPhone: string | null;
+  
+  clientName?: string | null;
+  clientPhone?: string | null;
   status: RoomStatus;
+  
+  // Relations (Keep these as-is)
   creatorId: string | null;
   creator?: SubdomainUser | null;
-  bookingId: string | null;
+  bookingId?: string | null;
   booking?: BookingData | null;
   domainId: string;
-  domain?: SubdomainAccountData | null;
-  recordingUrl: string | null;
-  transcript: string | null;
-  endedAt?: Date | string | null
-  scopeData?: Prisma.JsonValue | null; 
+  domain?: Subdomain | null;
+
+  // 👇 THE FIX: Define the specific shape, don't use Prisma.JsonValue
+  scopeData?: Prisma.JsonValue
+
+  recordingUrl?: string | null;
+  transcript?: string | null;
+  endedAt?: Date | string | null;
+  
+  // Allow string for serialization (Next.js passes dates as strings to client)
   createdAt: Date | string;
   updatedAt: Date | string;
 }

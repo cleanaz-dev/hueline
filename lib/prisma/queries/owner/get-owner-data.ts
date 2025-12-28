@@ -8,7 +8,17 @@ export async function getOwnerData(slug: string) {
       intelligence: true,
       logs: true,
       users: true,
-      rooms: true,
+      rooms: {
+        include: {
+          domain: true,
+          creator: true,
+          booking: {
+            include: {
+              mockups: true,
+            },
+          },
+        },
+      },
       roomIntelligence: true,
       bookings: {
         include: {

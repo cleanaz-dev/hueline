@@ -56,7 +56,7 @@ export default function RoomIntelligenceCard({ subdomain }: { subdomain: any }) 
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <BrainCircuit className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+               
                 Scope Intelligence
               </CardTitle>
               <CardDescription className="mt-1">
@@ -85,7 +85,7 @@ export default function RoomIntelligenceCard({ subdomain }: { subdomain: any }) 
                   Detection Logic
                 </h4>
                 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {intel?.categories && Object.entries(intel.categories).map(([key, desc]: [string, any]) => {
                     const style = getCategoryStyle(key);
                     const Icon = style.icon;

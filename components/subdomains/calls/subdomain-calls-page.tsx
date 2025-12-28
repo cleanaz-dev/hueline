@@ -192,7 +192,7 @@ export default function SubdomainCallsPage() {
   });
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 lg:px-0 py-6 md:py-10">
+   <div className="my-room-container">
       
       {/* --- HEADER SECTION --- */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">

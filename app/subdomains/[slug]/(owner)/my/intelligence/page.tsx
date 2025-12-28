@@ -2,7 +2,7 @@
 
 export default  function page(){
   return (
-    <div>
+     <div className="my-room-container">
      My Intelligence
     </div>
   )

@@ -5,8 +5,10 @@ import {
   SubdomainAccountData, 
   Call, 
   Log,
-  BookingData 
+  BookingData,
+  Room 
 } from "@/types/subdomain-type"; // Adjust path to where you saved your interfaces
+
 
 // 1. Extend the base interface to include what you are fetching in layout.tsx
 // Your layout.tsx includes: callFlows, intelligence, logs, users, calls
@@ -14,7 +16,8 @@ interface OwnerContextValue {
   subdomain: SubdomainAccountData & {
     calls: Call[];
     logs: Log[];
-    bookings: BookingData[]
+    bookings: BookingData[];
+    rooms: Room[];
   };
 }
 

@@ -91,12 +91,12 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
       disabled={isDisabled}
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center justify-center w-full p-2.5 rounded-xl transition-all duration-200 group bg-muted/50",
+        "flex flex-col items-center justify-center w-full p-2.5 rounded-xl transition-all duration-200 group bg-muted",
         isDisabled
           ? "opacity-40 cursor-not-allowed"
           : "cursor-pointer hover:bg-zinc-100/80",
-        !isActive && variant !== "primary" && (colorClass || "text-zinc-600"),
-        isActive && "bg-cyan-50 text-cyan-700",
+        !isActive && variant !== "primary" && (colorClass || "text-muted-foreground"),
+        isActive && "bg-cyan-50 text-primary",
         variant === "primary" &&
           !isDisabled &&
           "bg-zinc-900 text-white hover:bg-zinc-800 shadow-lg shadow-zinc-900/20"
@@ -132,11 +132,11 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   );
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] w-full overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] md:h-[calc(100vh-9rem)] lg:h-[calc(100vh-8rem)] w-full overflow-hidden gap-4">
       <RoomAudioRenderer />
 
       {/* --- LEFT: MAIN CANVAS --- */}
-      <div className="flex-1 relative flex flex-col p-2 lg:p-4 overflow-hidden">
+      <div className="flex-1 relative flex flex-col overflow-hidden">
         
         {/* Status Bar */}
         <div className="absolute top-6 left-6 z-20 flex items-center gap-3 pointer-events-none">
@@ -159,7 +159,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
         <div
           ref={containerRef}
           onClick={handlePointer}
-          className="relative flex-1 w-full h-full bg-zinc-950 rounded-2xl overflow-hidden border border-white/10 shadow-md cursor-crosshair group"
+          className="relative flex-1 w-full h-full bg-zinc-950 md:rounded-2xl overflow-hidden border border-white/10 shadow-md cursor-crosshair group "
         >
           {remoteTrack ? (
             <VideoTrack
@@ -245,8 +245,8 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
       </div>
 
       {/* --- RIGHT: TOOLBAR SIDEBAR --- */}
-      <div className="w-full lg:w-48 border-t lg:border-t-0 border-white/10 flex lg:flex-col items-center lg:items-stretch gap-2 p-2 lg:p-2 mt-0 md:mt-3 z-40 shrink-0">
-        <div className="text-xs font-semibold text-white/60 mb- hidden md:flex">
+      <div className="w-full lg:w-48  lg:border-t-0 border-muted-foreground flex lg:flex-col items-center lg:items-stretch gap-2 p-2  mt-0 z-40 shrink-0 ">
+        <div className="text-xs font-semibold text-muted-foreground mb- hidden md:flex">
           TOOLS
         </div>
         
@@ -282,7 +282,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
         {/* --- INTEL LIST (Real Data) --- */}
         <div className="hidden lg:flex lg:flex-col lg:flex-1 gap-2 overflow-y-auto mt-4">
           <div className="flex justify-between items-end mb-1">
-             <div className="text-xs font-semibold text-white/60">INTEL</div>
+             <div className="text-xs font-semibold text-muted-foreground">INTEL</div>
              <div className="text-[10px] text-white/30">{liveScopeItems.length} items</div>
           </div>
           
@@ -305,9 +305,9 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
           ) : (
             // EMPTY STATE
             <div className="flex-1 flex flex-col items-center justify-center opacity-40 text-center space-y-2">
-               <MicOffIcon className="size-8 text-white/50" />
-               <p className="text-xs text-white/60">No items captured.</p>
-               <p className="text-[10px] text-white/40">Turn on 'Record' to start capturing scope.</p>
+               <MicOffIcon className="size-8 text-muted-foreground" />
+               <p className="text-xs ">No items captured.</p>
+               <p className="text-[10px] ">Turn on 'Record' to start capturing scope.</p>
             </div>
           )}
         </div>
