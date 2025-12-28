@@ -224,7 +224,7 @@ export default function OwnerSidebar({
         
         <div className="flex flex-1 flex-col gap-4 pt-0">
           {/* Preserving your blue background style */}
-          <div className="flex-1 bg-blue-200 md:min-h-min">
+          <div className="flex-1   md:min-h-min bg-blue-200">
             {children}
           </div>
         </div>

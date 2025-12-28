@@ -4,7 +4,8 @@ import {
   CallOutcome, 
   LogType, 
   LogActor,
-  RoomStatus
+  RoomStatus,
+  RoomIntelligence
 } from "@/app/generated/prisma";
 
 // --- INTELLIGENCE INTERFACES ---
@@ -50,6 +51,8 @@ export interface Room {
   domain?: SubdomainAccountData | null;
   recordingUrl: string | null;
   transcript: string | null;
+  endedAt?: Date | string;
+  scopeData?: Prisma.JsonValue | null; 
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -81,6 +84,7 @@ export interface SubdomainAccountData {
   activeFlowId?: string | null;
   
   intelligence?: Intelligence | null;
+  roomIntelligence?: RoomIntelligence | null
   
   createdAt: Date | string;
   updatedAt: Date | string | null;

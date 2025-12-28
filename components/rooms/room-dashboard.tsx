@@ -23,13 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Video,
-  User,
-  Phone,
-  Target,
-  ArrowRight,
-} from "lucide-react";
+import { Video, User, Phone, Target, ArrowRight } from "lucide-react";
 
 export default function RoomsDashboard() {
   const [projectName, setProjectName] = useState("");
@@ -49,7 +43,9 @@ export default function RoomsDashboard() {
       const dateStr = `${String(today.getMonth() + 1).padStart(2, "0")}${String(
         today.getDate()
       ).padStart(2, "0")}${today.getFullYear()}`;
-      const clientNameLower = selectedBooking.name.toLowerCase().replace(/\s+/g, "");
+      const clientNameLower = selectedBooking.name
+        .toLowerCase()
+        .replace(/\s+/g, "");
       setProjectName(`${clientNameLower}-${dateStr}`);
     }
   }, [selectedBookingId, selectedBooking]);
@@ -65,12 +61,12 @@ export default function RoomsDashboard() {
       const clientNameSlug = selectedBooking?.name
         .toLowerCase()
         .replace(/\s+/g, "");
-      
+
       const today = new Date();
       const dateStr = `${String(today.getMonth() + 1).padStart(2, "0")}${String(
         today.getDate()
       ).padStart(2, "0")}${today.getFullYear()}`;
-      
+
       const roomId = `${clientNameSlug}-${dateStr}-${uuidv4().slice(0, 4)}`;
 
       const response = await axios.post(
@@ -94,12 +90,11 @@ export default function RoomsDashboard() {
   };
 
   return (
-    <div className="container mx-auto max-w-6xl py-10 px-4 md:px-6 space-y-8">
+    <div className="container mx-auto max-w-6xl py-10 px-4 md:px-6 space-y-8  ">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight flex items-center gap-3">
-            
             Live Rooms
           </h1>
           <p className="text-zinc-500 mt-2">
@@ -221,16 +216,17 @@ export default function RoomsDashboard() {
                   </div>
                 )}
 
-                {selectedBooking.estimatedValue && (
-                  <div className="p-4 rounded-2xl bg-gray-50 border ">
-                    <p className="text-xs text-primary uppercase font-bold tracking-widest">
-                      Potential Value
-                    </p>
-                    <p className="text-3xl ">
-                      ${selectedBooking.estimatedValue.toLocaleString()}
-                    </p>
-                  </div>
-                )}
+                {selectedBooking.estimatedValue !== undefined &&
+                  selectedBooking.estimatedValue !== null && (
+                    <div className="p-4 rounded-2xl bg-gray-50 border">
+                      <p className="text-xs text-primary uppercase font-bold tracking-widest">
+                        Potential Value
+                      </p>
+                      <p className="text-3xl">
+                        ${selectedBooking.estimatedValue.toLocaleString()}
+                      </p>
+                    </div>
+                  )}
 
                 {selectedBooking.projectScope &&
                   selectedBooking.projectScope.length > 0 && (

@@ -38,5 +38,6 @@ export const keys = {
   subBooking: (subdomain: string, phoneNumber: string): string => `booking:${subdomain}:${phoneNumber}`,
   slug: (slug: string): string => `slug:${slug}`,
   export: (jobId: string): string => `export:${jobId}`,
-  room: (roomId: string): string => `room:${roomId}`
+  room: (roomId: string): string => `room:${roomId}`,
+  roomScope: (roomId: string): string => `room:${roomId}:scope`
 }

@@ -14,7 +14,8 @@ import {
   RoomEvent, 
   DataPacket_Kind, 
   RemoteParticipant, 
-  Participant
+  Participant,
+  Track
 } from "livekit-client";
 import { LiveKitRoom } from "@livekit/components-react";
 import { createClient, LiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
@@ -22,16 +23,27 @@ import { createClient, LiveClient, LiveTranscriptionEvents } from "@deepgram/sdk
 // --- AudioWorklet Processor ---
 const PCM_WORKLET_CODE = `
 class PCMProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    // Buffer ~100ms of audio (at 16kHz) to stop main thread choking
+    this.buffer = new Int16Array(2048); 
+    this.offset = 0;
+  }
   process(inputs) {
     const input = inputs[0];
-    if (input.length > 0) {
-      const float32 = input[0];
-      const int16 = new Int16Array(float32.length);
-      for (let i = 0; i < float32.length; i++) {
-        const s = Math.max(-1, Math.min(1, float32[i]));
-        int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    if (!input || input.length === 0) return true;
+    
+    const float32 = input[0];
+    for (let i = 0; i < float32.length; i++) {
+      // Convert Float32 to Int16
+      const s = Math.max(-1, Math.min(1, float32[i]));
+      this.buffer[this.offset++] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      
+      // Send only when buffer is full
+      if (this.offset >= this.buffer.length) {
+        this.port.postMessage(this.buffer.slice());
+        this.offset = 0;
       }
-      this.port.postMessage(int16);
     }
     return true;
   }
@@ -205,26 +217,36 @@ export const RoomProvider = ({
     }
   };
 
+// ... inside RoomProvider ...
+
   const toggleTranscription = useCallback(async () => {
+    // A. STOP LOGIC
     if (isTranscribing) {
+      console.log("🛑 Stopping Transcription...");
       deepgramLiveRef.current?.requestClose();
+      deepgramLiveRef.current = null;
+
       if (audioContextRef.current) {
         audioContextRef.current.close();
         audioContextRef.current = null;
       }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
+      // Note: We DO NOT stop the streamRef here because that is the LiveKit Mic stream
+      // and we want to keep talking to the room.
+      streamRef.current = null;
+      
       setIsTranscribing(false);
       return;
     }
 
+    // B. START LOGIC
     try {
-      setIsTranscribing(true);
+      console.log("🎙️ Starting Deepgram...");
+      
+      // 1. Get Deepgram Key
       const res = await fetch(`/api/subdomain/${slug}/deepgram/token`);
       const data = await res.json();
       
+      // 2. Setup Deepgram Socket
       const deepgram = createClient(data.key);
       const connection = deepgram.listen.live({
         model: "nova-2", 
@@ -235,21 +257,54 @@ export const RoomProvider = ({
         interim_results: true
       });
 
-      connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+       connection.on(LiveTranscriptionEvents.Transcript, (data) => {
         const transcript = data.channel.alternatives[0].transcript;
+        
+        // ⚡ CASE 1: Instant "Ghost" Text (Interim)
+        if (transcript && !data.is_final) {
+           console.log("⚡ Interim:", transcript); 
+           // You can store this in a separate "currentUtterance" state if you want to show it in UI
+        }
+
+        // ✅ CASE 2: Finalized Sentence
         if (data.is_final && transcript?.length > 0) {
-          setTranscripts(prev => [...prev, { sender: 'local', text: transcript, timestamp: Date.now() }]);
+          console.log("✅ Final:", transcript);
+          
+          setTranscripts(prev => [...prev, { 
+            sender: 'local', 
+            text: transcript, 
+            timestamp: Date.now() 
+          }]);
+          
           sendData("TRANSCRIPT", { text: transcript });
           handleChunkAnalysis(transcript);
         }
       });
-
       await connection.keepAlive();
       deepgramLiveRef.current = connection;
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // 3. CAPTURE LOCAL LIVEKIT AUDIO
+      // Instead of getUserMedia, we look for the existing microphone track
+      let mediaStreamTrack = room.localParticipant
+        .getTrackPublication(Track.Source.Microphone)?.track?.mediaStreamTrack;
+
+      // Fallback: If mic isn't on, turn it on
+      if (!mediaStreamTrack) {
+        console.log("⚠️ Mic not detected, enabling...");
+        await room.localParticipant.setMicrophoneEnabled(true);
+        mediaStreamTrack = room.localParticipant
+          .getTrackPublication(Track.Source.Microphone)?.track?.mediaStreamTrack;
+      }
+
+      if (!mediaStreamTrack) {
+        throw new Error("Could not acquire microphone track from LiveKit");
+      }
+
+      // Create a new stream just for processing (wraps the existing track)
+      const stream = new MediaStream([mediaStreamTrack]);
       streamRef.current = stream;
-      
+
+      // 4. Audio Processing Pipeline
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       const audioContext = new AudioContextClass({ sampleRate: 16000 });
       audioContextRef.current = audioContext;
@@ -262,16 +317,25 @@ export const RoomProvider = ({
       const source = audioContext.createMediaStreamSource(stream);
       const worklet = new AudioWorkletNode(audioContext, 'pcm-processor');
       
-      worklet.port.onmessage = (e) => deepgramLiveRef.current?.send(e.data);
+      worklet.port.onmessage = (e) => {
+        // Send raw PCM to Deepgram
+        if (deepgramLiveRef.current?.getReadyState() === 1) {
+          deepgramLiveRef.current.send(e.data);
+        }
+      };
+      
       source.connect(worklet);
       worklet.connect(audioContext.destination);
+      
+      setIsTranscribing(true);
+      console.log("✅ Deepgram Connected & Listening");
 
     } catch (err) {
       console.error("Deepgram Error", err);
       if (audioContextRef.current) audioContextRef.current.close();
       setIsTranscribing(false);
     }
-  }, [isTranscribing, sendData, slug, isPainter]);
+  }, [isTranscribing, sendData, slug, room]); // Added 'room' dependency
 
   // --- AI Gen Logic ---
   const triggerAI = async (slug: string) => {

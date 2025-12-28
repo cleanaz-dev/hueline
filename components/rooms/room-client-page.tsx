@@ -3,10 +3,9 @@
 import { useEffect, useState } from 'react';
 import { RoomProvider } from '@/context/room-context';
 import { ClientStage } from './client-stage';
-import { RoomData } from '@/types/room-types';
-import { Copy, Check } from 'lucide-react';
 import { PainterStage } from './painter-stage';
 import { CameraHandler } from './camera-handler';
+import { RoomData } from '@/types/room-types';
 
 interface RoomClientProps {
   roomId: string;
@@ -18,8 +17,7 @@ interface RoomClientProps {
 export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
   const [token, setToken] = useState<string | null>(null);
   const [hasJoined, setHasJoined] = useState(false);
-  const [copied, setCopied] = useState(false);
-
+  
   const isClient = role === "client";
 
   useEffect(() => {
@@ -27,7 +25,7 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
       try {
         const identity = isClient 
           ? `Client-${Math.floor(Math.random() * 10000)}` 
-          : `Painter-${Math.floor(Math.random() * 10000)}`; // FIXED - WAS 'Painter-Host'
+          : `Painter-${Math.floor(Math.random() * 10000)}`;
 
         const res = await fetch(
           `/api/subdomain/${slug}/livekit/token?room=${roomId}&username=${identity}`
@@ -40,13 +38,6 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
     };
     fetchToken();
   }, [roomId, slug, isClient]);
-
-  const copyInvite = () => {
-    const url = `${window.location.origin}/meet/${roomId}?role=client`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   if (!token) return <div className="h-screen bg-black text-white flex items-center justify-center">Loading...</div>;
 
@@ -71,19 +62,12 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
       isPainter={!isClient} 
       slug={slug}
     >
-      <CameraHandler />
-      <div className="flex flex-col h-screen w-full bg-black">
-        {!isClient && (
-          <header className="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-950 z-50">
-            <h2 className="text-white font-bold">{roomId}</h2>
-            <button onClick={copyInvite} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">
-              {copied ? <Check size={16}/> : <Copy size={16}/>} {copied ? 'Copied' : 'Invite Client'}
-            </button>
-          </header>
-        )}
+      <CameraHandler /> 
 
-        <div className="flex-1 relative overflow-hidden">
-          {isClient ? <ClientStage /> : <PainterStage slug={slug} />}
+      {/* 👇 FIXED: Changed h-screen to h-full */}
+      <div className="flex flex-col w-full ">
+        <div className="flex-1 relative overflow-hidden h-full">
+          {isClient ? <ClientStage /> : <PainterStage slug={slug} roomId={roomId} />}
         </div>
       </div>
     </RoomProvider>

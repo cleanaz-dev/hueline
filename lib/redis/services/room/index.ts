@@ -7,6 +7,13 @@ interface RoomData {
   clientPhone: string;
 }
 
+interface ScopeData {
+  caterory: string;
+  item: string;
+  action: string
+  estimatedValue?: number 
+}
+
 export async function setRoomKey(roomId: string, roomData: RoomData) {
   const client = await getRedisClient();
   const key = keys.room(roomId);
@@ -24,4 +31,24 @@ export async function getRoomKey(roomId: string) {
 
   // Parse the JSON back into room data
   return JSON.parse(data) as RoomData;
+}
+
+export async function setRoomScope(roomId: string, data: ScopeData) {
+  const client = await getRedisClient()
+  const key = keys.roomScope(roomId)
+
+  await client.rPush(key, JSON.stringify(data))
+
+  return true
+
+}
+
+export async function getRoomScope(roomId: string) {
+  const client = await getRedisClient()
+  const key = keys.roomScope(roomId)
+  const data = await client.get(key)
+
+  if(!data) return null
+
+  return JSON.parse(data) as ScopeData
 }

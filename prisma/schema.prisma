@@ -64,18 +64,20 @@ model FormActivity {
 }
 
 model Subdomain {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
-  slug           String        @unique
-  companyName    String?
-  projectUrl     String?
-  logo           String?
-  logoWidth      Int?          @default(130)
-  logoHeight     Int?          @default(130)
-  splashScreen   String?
-  theme          Json?
-  active         Boolean       @default(true)
-  intelligenceId String?       @db.ObjectId
-  intelligence   Intelligence? @relation(fields: [intelligenceId], references: [id])
+  id                 String            @id @default(auto()) @map("_id") @db.ObjectId
+  slug               String            @unique
+  companyName        String?
+  projectUrl         String?
+  logo               String?
+  logoWidth          Int?              @default(130)
+  logoHeight         Int?              @default(130)
+  splashScreen       String?
+  theme              Json?
+  active             Boolean           @default(true)
+  intelligenceId     String?           @db.ObjectId
+  intelligence       Intelligence?     @relation(fields: [intelligenceId], references: [id])
+  roomIntelligenceId String?           @db.ObjectId
+  roomIntelligence   RoomIntelligence? @relation(fields: [roomIntelligenceId], references: [id])
 
   twilioPhoneNumber String?
   forwardingNumber  String?
@@ -97,7 +99,16 @@ model Subdomain {
   // Call Flow Relations
   callFlows    CallFlow[] // Contains the history (versions)
   activeFlowId String?          @db.ObjectId // Points to the specific version currently "Live"
-  rooms         Room[]
+  rooms        Room[]
+}
+
+model RoomIntelligence {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  intelligence Json?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  Subdomain    Subdomain[]
 }
 
 model Intelligence {
@@ -201,10 +212,11 @@ model Room {
 
   booking   SubBookingData? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   bookingId String?         @db.ObjectId
+  domainId  String          @db.ObjectId
+  domain    Subdomain       @relation(fields: [domainId], references: [id], onDelete: Cascade)
 
-  domainId String    @db.ObjectId
-  domain   Subdomain @relation(fields: [domainId], references: [id], onDelete: Cascade)
-
+  scopeData    Json?
+  endedAt      DateTime?
   recordingUrl String?
   transcript   String?
 
