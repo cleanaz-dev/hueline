@@ -14,6 +14,14 @@ interface ScopeData {
   estimatedValue?: number 
 }
 
+interface CachedRoomIntelligence {
+  prompt: string;      // "You are a painting estimator..."
+  intelligence: {
+    categories: Record<string, string>; // { "PREP": "Sanding...", "PAINT": "Rolling..." }
+    examples?: any[]; // Optional, if you use them
+  }
+}
+
 export async function setRoomKey(roomId: string, roomData: RoomData) {
   const client = await getRedisClient();
   const key = keys.room(roomId);
@@ -51,4 +59,21 @@ export async function getRoomScope(roomId: string) {
   if(!data) return null
 
   return JSON.parse(data) as ScopeData
+}
+
+export async function setRoomIntelligence(slug: string, data: CachedRoomIntelligence ) {
+  const client = await getRedisClient()
+  const key = keys.roomIntelligence(slug)
+  await client.setEx(key, 3600, JSON.stringify(data))
+  return true
+}
+
+export async function getRoomIntelligence(slug:string) {
+  const client = await getRedisClient()
+  const key = keys.roomIntelligence(slug)
+  const data = await client.get(key)
+
+  if(!data) return null
+
+  return JSON.parse(data) as CachedRoomIntelligence
 }

@@ -131,7 +131,7 @@ export const RoomProvider = ({
   
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcripts, setTranscripts] = useState<TranscriptItem[]>([]);
-const [liveScopeItems, setLiveScopeItems] = useState<ScopeItem[]>([]);
+  const [liveScopeItems, setLiveScopeItems] = useState<ScopeItem[]>([]);
 
   const deepgramLiveRef = useRef<LiveClient | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);

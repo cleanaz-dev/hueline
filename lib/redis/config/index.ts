@@ -39,5 +39,6 @@ export const keys = {
   slug: (slug: string): string => `slug:${slug}`,
   export: (jobId: string): string => `export:${jobId}`,
   room: (roomId: string): string => `room:${roomId}`,
-  roomScope: (roomId: string): string => `room:${roomId}:scope`
+  roomScope: (roomId: string): string => `room:${roomId}:scope`,
+  roomIntelligence: (slug: string): string => `slug:${slug}:roomIntelligence`
 }

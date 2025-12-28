@@ -105,6 +105,7 @@ model Subdomain {
 model RoomIntelligence {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
+  prompt       String?
   intelligence Json?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt

@@ -23,7 +23,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Video, User, Phone, Target, ArrowRight } from "lucide-react";
+import { Video, User, Phone, Target, ArrowRight, Check, AlertCircle, Brain } from "lucide-react";
+import RoomIntelligenceCard from "./room-intelligence-card";
 
 export default function RoomsDashboard() {
   const [projectName, setProjectName] = useState("");
@@ -109,7 +110,7 @@ export default function RoomsDashboard() {
         <form onSubmit={handleCreateRoom} className="lg:col-span-3 space-y-6">
           <Card className="border-zinc-200 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-xl">1. Select Project</CardTitle>
+              <CardTitle className="text-xl">Select Project</CardTitle>
               <CardDescription>
                 Which client are we meeting today?
               </CardDescription>
@@ -117,7 +118,7 @@ export default function RoomsDashboard() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="booking-select" className="text-zinc-700">
-                  Active Bookings
+                  Active Project
                 </Label>
                 <Select
                   value={selectedBookingId}
@@ -127,7 +128,7 @@ export default function RoomsDashboard() {
                     id="booking-select"
                     className="h-12 border-zinc-300"
                   >
-                    <SelectValue placeholder="Search bookings..." />
+                    <SelectValue placeholder="Search projects..." />
                   </SelectTrigger>
                   <SelectContent>
                     {subdomain.bookings?.map((booking) => (
@@ -258,6 +259,7 @@ export default function RoomsDashboard() {
           )}
         </div>
       </div>
+     <RoomIntelligenceCard subdomain={subdomain} />
     </div>
   );
 }

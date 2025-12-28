@@ -51,7 +51,7 @@ export interface Room {
   domain?: SubdomainAccountData | null;
   recordingUrl: string | null;
   transcript: string | null;
-  endedAt?: Date | string;
+  endedAt?: Date | string | null
   scopeData?: Prisma.JsonValue | null; 
   createdAt: Date | string;
   updatedAt: Date | string;

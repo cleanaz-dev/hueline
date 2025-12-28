@@ -9,6 +9,7 @@ export async function getOwnerData(slug: string) {
       logs: true,
       users: true,
       rooms: true,
+      roomIntelligence: true,
       bookings: {
         include: {
           mockups: true,
