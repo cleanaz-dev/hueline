@@ -140,10 +140,13 @@ export default function RoomsDashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight flex items-center gap-3">
-            Live Rooms
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            Live Rooms{" "}
+            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs font-semibold border border-gray-200">
+              {subdomain.rooms.length}
+            </span>
           </h1>
-          <p className="text-zinc-500 mt-2">
+          <p className="text-zinc-500 ">
             Bridge the gap between a lead and a contract with a virtual
             walkthrough.
           </p>

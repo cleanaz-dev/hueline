@@ -181,6 +181,8 @@ model SubBookingData {
   lastCallReason   CallReason?
   lastCallAt       DateTime?
   lastCallAudioUrl String?
+  lastVideoUrl     String?
+  lastVideoAt      String?
   lastInteraction  String? // The new "Pulse" headline
 
   // 3. STICKY / ACCUMULATIVE (Builds up over time)
@@ -246,7 +248,7 @@ model Call {
 
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  Subdomain   Subdomain? @relation(fields: [subdomainId], references: [id])
+  subdomain   Subdomain? @relation(fields: [subdomainId], references: [id])
   subdomainId String?    @db.ObjectId
 
   @@index([bookingDataId])

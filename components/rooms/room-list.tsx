@@ -163,11 +163,11 @@ export default function RoomList() {
 
       <div className="hidden md:block rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-zinc-50/50">
+          <TableHeader className="bg-zinc-50">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                  <TableHead key={header.id} className="text-xs font-bold uppercase tracking-wider text-zinc-500 px-4">
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
@@ -179,7 +179,7 @@ export default function RoomList() {
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} className="hover:bg-zinc-50/50 transition-colors">
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3">
+                    <TableCell key={cell.id} className="py-3 px-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

@@ -127,6 +127,8 @@ export interface BookingData {
   lastCallAt?: Date | string | null;
   lastCallAudioUrl?: string | null;
   lastInteraction?: string | null; // ✅ The new headline field
+  lastVideoUrl?:     string | null;
+  lastVideoAt? :     string | null;
 
   // 3. Cumulative / Sticky (Profile Info)
   projectType?: string | null;

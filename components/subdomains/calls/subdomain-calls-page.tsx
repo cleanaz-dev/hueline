@@ -198,7 +198,7 @@ export default function SubdomainCallsPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
         <div>
           <div className="flex items-center gap-3">
-             <h2 className="text-2xl font-bold text-gray-900">Call Intelligence</h2>
+             <h2 className="text-2xl font-bold text-gray-900">Calls</h2>
              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs font-semibold border border-gray-200">
                 {subdomain.calls.length}
              </span>
@@ -329,7 +329,7 @@ export default function SubdomainCallsPage() {
       {/* --- PAGINATION (Shared) --- */}
       <div className="flex items-center justify-between px-2">
         <div className="text-sm text-gray-500">
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() +1}
         </div>
         <div className="flex items-center gap-2">
           <Button

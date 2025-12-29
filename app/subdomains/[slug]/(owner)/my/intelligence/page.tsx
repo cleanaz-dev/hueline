@@ -1,9 +1,10 @@
-"use client"
+import CallIntelligenceOverview from "@/components/intelligence/intelligence-dashboard";
 
-export default  function page(){
+
+export default async function page(){
   return (
      <div className="my-room-container">
-     My Intelligence
+     <CallIntelligenceOverview />
     </div>
   )
 }
