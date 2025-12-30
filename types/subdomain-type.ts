@@ -240,7 +240,7 @@ export interface SubdomainUser {
 
 export interface Log {
   id: string;
-  bookingDataId: string;
+  bookingDataId?: string | null;
   subdomainId: string;
   type: LogType;
   actor: LogActor;
