@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useOwner } from "@/context/owner-context";
+import { useSession, signOut } from "next-auth/react";
 
 // Menu Configuration
 const navMain = [
@@ -56,29 +57,38 @@ const navMain = [
   { title: "Intelligence", url: "/my/intelligence", icon: Cpu },
 ];
 
-const user = {
-  name: "Owner Account",
-  email: "owner@example.com",
-  avatar: "/avatars/shadcn.jpg",
-};
-
 function AppSidebar() {
   const pathname = usePathname();
   const { subdomain } = useOwner();
   const { setOpenMobile } = useSidebar();
+
+  const { data: session } = useSession();
+  const user = session?.user;
+
+  const userInitials = user?.name
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+    : "U";
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground transition-all">
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground transition-all"
+            >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md">
                 <BrainCircuit className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold tracking-tight">{subdomain.companyName}</span>
-                
+                <span className="truncate font-semibold tracking-tight">
+                  {subdomain.companyName}
+                </span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -94,10 +104,30 @@ function AppSidebar() {
                 const isActive = pathname.startsWith(item.url);
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title} isActive={isActive} className="transition-all duration-200 ">
-                      <Link href={item.url} onClick={() => setOpenMobile(false)}>
-                        <item.icon className={isActive ? "text-white" : "text-muted-foreground"} />
-                        <span className={isActive ? "font-medium text-white" : "text-muted-foreground"}>{item.title}</span>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={item.title}
+                      isActive={isActive}
+                      className="transition-all duration-200 "
+                    >
+                      <Link
+                        href={item.url}
+                        onClick={() => setOpenMobile(false)}
+                      >
+                        <item.icon
+                          className={
+                            isActive ? "text-white" : "text-muted-foreground"
+                          }
+                        />
+                        <span
+                          className={
+                            isActive
+                              ? "font-medium text-white"
+                              : "text-muted-foreground"
+                          }
+                        >
+                          {item.title}
+                        </span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -106,7 +136,7 @@ function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
+
         <SidebarGroup className="mt-auto">
           <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -122,19 +152,23 @@ function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+     <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
                   <Avatar className="h-8 w-8 rounded-lg border border-border/50">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className="rounded-lg bg-zinc-100 font-medium text-zinc-600">CN</AvatarFallback>
+                    {/* 3. Use actual user image */}
+                    <AvatarImage src={user?.image || ""} alt={user?.name || "User"} />
+                    <AvatarFallback className="rounded-lg bg-zinc-100 font-medium text-zinc-600">
+                      {userInitials}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user.name}</span>
-                    <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                    {/* 4. Use actual user name and email */}
+                    <span className="truncate font-semibold">{user?.name || "User"}</span>
+                    <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
                   </div>
                   <ChevronsUpDown className="ml-auto size-4" />
                 </SidebarMenuButton>
@@ -143,12 +177,12 @@ function AppSidebar() {
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                      <AvatarImage src={user?.image || ""} alt={user?.name || ""} />
+                      <AvatarFallback className="rounded-lg">{userInitials}</AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">{user.name}</span>
-                      <span className="truncate text-xs">{user.email}</span>
+                      <span className="truncate font-semibold">{user?.name}</span>
+                      <span className="truncate text-xs">{user?.email}</span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
@@ -162,14 +196,20 @@ function AppSidebar() {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuItem asChild>
-                    <Link href="/my/account" onClick={() => setOpenMobile(false)}>
+                    <Link
+                      href="/my/account"
+                      onClick={() => setOpenMobile(false)}
+                    >
                       <Settings className="mr-2 size-4" />
                       Account
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                 <DropdownMenuItem 
+                  className="cursor-pointer text-destructive focus:text-destructive" 
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                >
                   <LogOut className="mr-2 size-4" />
                   Log out
                 </DropdownMenuItem>
@@ -183,30 +223,39 @@ function AppSidebar() {
   );
 }
 
-export default function OwnerSidebar({ children }: { children: React.ReactNode }) {
+export default function OwnerSidebar({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { subdomain } = useOwner();
   const pathname = usePathname();
 
   // ✅ LOGIC: Get the last part of the URL for the Breadcrumb
-  const pageTitle = pathname.split('/').pop()?.replace(/-/g, ' ') || "Dashboard";
+  const pageTitle =
+    pathname.split("/").pop()?.replace(/-/g, " ") || "Dashboard";
   const formattedTitle = pageTitle.charAt(0).toUpperCase() + pageTitle.slice(1);
 
   return (
     <SidebarProvider>
       <AppSidebar />
-      
+
       <SidebarInset className="bg-background flex flex-col h-full">
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border/40 px-4 md:px-6 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 sticky top-0 z-10 bg-background/80 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
             <SidebarSeparator orientation="vertical" className="mr-2 h-4" />
-            
+
             {/* ✅ DYNAMIC BREADCRUMB */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground hidden sm:block">{subdomain.companyName}</span>
+              <span className="font-medium text-foreground hidden sm:block">
+                {subdomain.companyName}
+              </span>
               <span className="text-border hidden sm:block">/</span>
-              <span className="font-semibold text-foreground">{formattedTitle}</span>
+              <span className="font-semibold text-foreground">
+                {formattedTitle}
+              </span>
             </div>
           </div>
 
@@ -218,7 +267,9 @@ export default function OwnerSidebar({ children }: { children: React.ReactNode }
                 className="h-9 w-48 md:w-64 rounded-md border border-input bg-muted/30 pl-9 text-sm outline-none focus:ring-1 focus:ring-ring transition-all hover:bg-muted/50"
               />
               <div className="absolute right-2 top-2 hidden items-center gap-1 opacity-50 md:flex">
-                <span className="text-[10px] font-medium border rounded px-1.5 bg-background">⌘K</span>
+                <span className="text-[10px] font-medium border rounded px-1.5 bg-background">
+                  ⌘K
+                </span>
               </div>
             </div>
 
@@ -228,7 +279,7 @@ export default function OwnerSidebar({ children }: { children: React.ReactNode }
             </button>
           </div>
         </header>
-  {/* ✅ CONTENT AREA - FIXED FOR MOBILE */}
+        {/* ✅ CONTENT AREA - FIXED FOR MOBILE */}
         {/* Mobile: p-0 (Full Bleed). Desktop: p-6 (Card Style). */}
         <div className="flex flex-1 flex-col p-0 md:p-4 overflow-hidden">
           <div className="flex-1 bg-muted/10 md:rounded-xl md:border md:border-border/40 p-0 md:p-4 overflow-auto">

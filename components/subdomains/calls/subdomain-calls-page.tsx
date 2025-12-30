@@ -17,7 +17,9 @@ import {
 import { 
   Search, Play, Pause, ChevronLeft, ChevronRight, 
   ArrowUp, ArrowDown, Phone, X, 
-  AlertTriangle, DollarSign, ListFilter, ChevronDown, ChevronUp
+  AlertTriangle, DollarSign, ListFilter, ChevronDown, ChevronUp,
+  IdCard,
+  Hash
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clsx, type ClassValue } from "clsx";
@@ -51,12 +53,16 @@ export default function SubdomainCallsPage() {
         accessorFn: (row) => row.bookingData?.name,
         cell: ({ row }) => (
           <div className="max-w-[200px]">
-            <div className="font-semibold text-gray-900 truncate">
+            <div className="font-semibold text-gray-900 truncate flex gap-2 items-center text-sm">
+                <IdCard className="size-4 opacity-70 text-gray-500" />
               {row.original.bookingData?.name || "Unknown Caller"}
             </div>
             <div className="text-xs text-gray-500 font-normal flex items-center mt-0.5">
               <Phone className="w-3 h-3 mr-1 opacity-70" />
               {row.original.bookingData?.phone || "-"}
+            </div>
+            <div className="text-xs text-gray-500 flex items-center gap-1 italic">
+            <Hash className="size-3 opacity-70 text-gray-500" />{row.original.intelligence.callId.slice(0,8)}
             </div>
           </div>
         ),

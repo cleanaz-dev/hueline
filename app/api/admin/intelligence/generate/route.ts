@@ -4,7 +4,7 @@ export async function POST(req: Request) {
   try {
     const { description } = await req.json();
 
-    console.log("Desc:", description);
+    console.log("Input Text:", description?.slice(0, 100) + "...");
 
     if (!description) {
       return NextResponse.json({ error: "Description required" }, { status: 400 });
@@ -17,26 +17,49 @@ export async function POST(req: Request) {
     }
 
     const architectPrompt = `
-    You are a System Architect. Convert raw business text into a structured JSON config.
-    
-    OUTPUT JSON STRUCTURE:
+    You are a Pricing Engine Architect. 
+    Your goal is to parse raw business text (price sheets, rules, conversations) into a structured JSON configuration for a pricing engine.
+
+    --- OUTPUT JSON STRUCTURE ---
     {
-      "summary": "Short explanation of the detected logic.",
-      "prompt": "The system prompt for the AI. Use {{variable_name}} for numbers.",
-      "values": { "variable_name": number }, 
+      "summary": "Short explanation of the extracted pricing model.",
+      "prompt": "The calculation logic instructions for the AI. Reference variables using {{key}}.",
+      "values": { 
+        "variable_key": { 
+           "value": number, 
+           "type": "FEE" | "MULTIPLIER",
+           "label": "Human Readable Label" 
+        } 
+      }, 
       "schema": { "field_name": "type" }
     }
 
-    MANDATORY SCHEMA FIELDS (You MUST include these exactly):
+    --- CRITICAL RULES FOR 'values' OBJECT ---
+    You must convert every number you find into a rich object.
+    
+    1. FEES ($): Costs, flat rates, hourly rates, or base prices.
+       - TYPE: "FEE"
+       - KEY NAMING: Must end in '_fee' or '_rate'. (e.g., 'travel_fee', 'hourly_rate')
+       - VALUE: The raw number (e.g., 50).
+    
+    2. MULTIPLIERS (x): Percentages, markups, factors, or tax rates.
+       - TYPE: "MULTIPLIER"
+       - KEY NAMING: Must end in '_multiplier' or '_factor'. (e.g., 'high_end_multiplier', 'tax_factor')
+       - VALUE: The mathematical factor (e.g., 20% becomes 0.2, "add 10%" becomes 0.1, "1.5x" becomes 1.5).
+    
+    3. LABEL: Create a clean, Title Case label for the UI (e.g., "Wood Rot Repair", "High Ceiling Markup").
+
+    --- MANDATORY SCHEMA FIELDS ---
+    Include these exactly in the 'schema' object:
     - "projectScope": "INTERIOR | EXTERIOR | CABINETS | DECK_FENCE | UNKNOWN"
     - "propertyType": "RESIDENTIAL | COMMERCIAL | UNKNOWN"
     - "callReason": "NEW_PROJECT | STATUS_UPDATE | COLOR_CHANGE | PRICING | FOLLOW_UP | OTHER"
 
-    RULES:
-    1. Start the 'schema' with the MANDATORY FIELDS above.
-    2. Add NEW schema fields based on the specific business text (e.g. if they mention 'cabinets', add 'include_cabinets': 'boolean').
-    3. Extract ALL prices/numbers into 'values'.
-    4. Use {{key}} in the 'prompt' instead of hardcoded numbers.
+    --- INSTRUCTIONS ---
+    1. Parse the input text to find every cost, rate, or logic flag.
+    2. If the text mentions a condition (e.g., "If older than 1978..."), add a boolean flag to 'schema' (e.g., "is_pre_1978": "boolean").
+    3. Extract all numbers into the 'values' object using the rich structure defined above.
+    4. Write a 'prompt' that explains step-by-step how to use these {{keys}} to calculate a final price.
     `;
 
     console.log("Calling LLM Gateway...");
@@ -48,20 +71,17 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gemini-3-pro-preview", 
+        model: "gemini-2.5-flash", // Use a smart model to handle the JSON structure reliably
         messages: [
           { role: "system", content: architectPrompt },
-          { role: "user", content: `Business Description: ${description}` }
+          { role: "user", content: `Here is the pricing document / business description:\n\n${description}` }
         ],
         temperature: 0.1,
-        max_tokens: 2000
+        max_tokens: 3500
       }),
     });
 
-    console.log("LLM Response Status:", response.status);
-
     const data = await response.json();
-    console.log("LLM Response Data:", JSON.stringify(data, null, 2));
 
     if (!response.ok || data.error) {
       console.error("LLM Gateway Failed:", JSON.stringify(data, null, 2));
@@ -74,17 +94,13 @@ export async function POST(req: Request) {
     let content = data.choices?.[0]?.message?.content;
     
     if (!content) {
-      console.error("No content in response:", data);
       return NextResponse.json({ error: "Invalid AI response" }, { status: 500 });
     }
 
-    console.log("Raw Content:", content);
-
-    content = content.replace(/```json/g, "").replace(/```/g, "").trim();
+    // Clean Markdown wrappers if present
+    content = content.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
     
     const parsed = JSON.parse(content);
-    console.log("Parsed Result:", parsed);
-    
     return NextResponse.json(parsed);
 
   } catch (error) {
