@@ -72,7 +72,6 @@ export async function POST(req: Request, { params }: Params) {
         duration: duration ? String(duration) : undefined,
         audioUrl: recordingUrl,
         status: "completed",
-        subdomainId: subdomain.id,
         ...(booking?.id && { bookingDataId: booking.id }),
       },
       create: {
@@ -80,27 +79,32 @@ export async function POST(req: Request, { params }: Params) {
         duration: duration ? String(duration) : "0",
         audioUrl: recordingUrl || "",
         status: "completed",
-        subdomainId: subdomain.id,
-        bookingDataId: booking?.id || null, // Allowed by schema now
+        subdomain: {
+          connect: { id: subdomain.id }
+        },
+        ...(booking?.id && {
+          bookingData: {
+            connect: { id: booking.id }
+          }
+        }),
       },
     });
 
     // 4. Trigger Intelligence
     await triggerIntelligenceLambda({
       call_sid: callSid,
-      hueline_id: booking?.huelineId, // Undefined/null if no match
+      hueline_id: booking?.huelineId,
       slug,
       domain_id: subdomain.id,
     });
 
-
     await createCallIngestLog({
       bookingDataId: booking?.id,
       subdomainId: subdomain.id,
-      callSid:callSid,
+      callSid: callSid,
       from: from,
-      duration: duration ? String(duration) : "0"
-    })
+      duration: duration ? String(duration) : "0",
+    });
 
     return NextResponse.json({ success: true, callId: call.id });
   } catch (error) {
