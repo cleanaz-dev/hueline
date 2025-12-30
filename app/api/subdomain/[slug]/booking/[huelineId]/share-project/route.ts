@@ -6,6 +6,7 @@ import { z } from "zod";
 import { sendShareProjectEmail } from "@/lib/resend/services";
 import { upsertSharedAccess } from "@/lib/prisma/mutations";
 import { generateSharedLink } from "@/lib/utils/shared-link-generator";
+import { createSharedProjectLog } from "@/lib/prisma/mutations/logs/create-share-project-log";
 
 interface Params {
   params: Promise<{
@@ -75,6 +76,13 @@ export async function POST(req: Request, { params }: Params) {
 
       results.push(accessRecord);
     }
+
+     await createSharedProjectLog({
+      huelineId,
+      slug,
+      recipients: emails,
+      accessType,
+    });
 
     console.log(`✅ Shared ${huelineId} with ${emails.length} people.`);
 

@@ -70,6 +70,10 @@ export default function StatCards({
     },
   ];
 
+  
+
+  
+
   const getColorClasses = (color: string) => {
     switch (color) {
       case "blue": return { text: "text-blue-600", bg: "bg-blue-50", border: "border-blue-500" };

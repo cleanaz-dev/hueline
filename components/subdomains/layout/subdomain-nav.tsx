@@ -17,6 +17,7 @@ import {
   CircleUserRound,
   Cpu,
   Warehouse,
+  DoorOpen,
 } from "lucide-react";
 import { getPublicUrl } from "@/lib/aws/cdn";
 
@@ -164,7 +165,7 @@ export default function SubdomainNav({
 
                     {/* BUSINESS OWNER LINKS */}
                     <Link
-                      href="/"
+                      href="/my/dashboard"
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
                       onClick={() => setIsOpen(false)}
                     >
@@ -202,7 +203,7 @@ export default function SubdomainNav({
                       href="/my/rooms"
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
                     >
-                    <Warehouse className="size-4" />
+                    <DoorOpen className="size-4" />
                     Rooms
                     </Link>
 

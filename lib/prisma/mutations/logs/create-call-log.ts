@@ -4,47 +4,36 @@ import { prisma } from "@/lib/prisma";
  * Create a log for an incoming call from an existing customer
  */
 export async function createCallIngestLog(params: {
-  bookingDataId: string;
+  bookingDataId?: string | null;
   subdomainId: string;
   callSid: string;
+  from?: string;
   duration?: string;
-  customerName: string;
-  customerPhone: string;
-  roomType?: string;
 }) {
-  const {
-    bookingDataId,
-    subdomainId,
-    callSid,
-    duration,
-    customerName,
-    customerPhone,
-    roomType,
-  } = params;
-  
+  const { bookingDataId, subdomainId, callSid, from, duration } = params;
+
   try {
     const log = await prisma.logs.create({
       data: {
-        bookingDataId,
+        bookingDataId: bookingDataId || undefined, // Handle null gracefully
         subdomainId,
         type: "CALL",
-        actor: "CLIENT",
-        title: "Follow-up Call Received",
-        description: `${customerName} called back${roomType ? ` regarding ${roomType}` : ""}`,
+        actor: "SYSTEM", // System is recording the call
+        title: "Call Received",
+        description: `Incoming call${from ? ` from ${from}` : ""}. Duration: ${
+          duration || "0"
+        }s. Sending to AI for analysis...`,
         metadata: {
           callSid,
+          stage: "ingestion",
           duration,
-          phone: customerPhone,
-          roomType,
-          stage: "existing",
+          from,
         },
       },
     });
-    
-    console.log(`📝 Follow-up call log created: ${callSid}`);
+    console.log(`📝 Call ingestion log created: ${callSid}`);
     return log;
   } catch (error) {
-    console.error("❌ Failed to create call ingest log:", error);
-    throw error;
+    console.error("❌ Failed to create ingestion log:", error);
   }
 }

@@ -48,6 +48,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useOwner } from "@/context/owner-context";
 import { useSession, signOut } from "next-auth/react";
+import { Button } from "../ui/button";
 
 // Menu Configuration
 const navMain = [
@@ -74,7 +75,7 @@ function AppSidebar() {
     : "U";
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/50">
+    <Sidebar collapsible="icon" className="">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -82,8 +83,8 @@ function AppSidebar() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground transition-all"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md">
-                <BrainCircuit className="size-4" />
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-accent text-white shadow-md">
+                {subdomain.companyName?.slice(0,1)}
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold tracking-tight">
@@ -108,26 +109,13 @@ function AppSidebar() {
                       asChild
                       tooltip={item.title}
                       isActive={isActive}
-                      className="transition-all duration-200 "
                     >
                       <Link
                         href={item.url}
                         onClick={() => setOpenMobile(false)}
                       >
-                        <item.icon
-                          className={
-                            isActive ? "text-white" : "text-muted-foreground"
-                          }
-                        />
-                        <span
-                          className={
-                            isActive
-                              ? "font-medium text-white"
-                              : "text-muted-foreground"
-                          }
-                        >
-                          {item.title}
-                        </span>
+                        <item.icon />
+                        <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -137,80 +125,95 @@ function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
+        {/* <SidebarGroup className="mt-auto">
+          <SidebarGroupLabel>Settings</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton className="text-muted-foreground hover:text-foreground">
+                <SidebarMenuButton className="">
                   <Plus className="size-4" />
                   <span>New Estimate</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> */}
       </SidebarContent>
 
-     <SidebarFooter>
+      <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                >
                   <Avatar className="h-8 w-8 rounded-lg border border-border/50">
-                    {/* 3. Use actual user image */}
-                    <AvatarImage src={user?.image || ""} alt={user?.name || "User"} />
+                    <AvatarImage
+                      src={user?.image || ""}
+                      alt={user?.name || "User"}
+                    />
                     <AvatarFallback className="rounded-lg bg-zinc-100 font-medium text-zinc-600">
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    {/* 4. Use actual user name and email */}
-                    <span className="truncate font-semibold">{user?.name || "User"}</span>
-                    <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+                    <span className="truncate font-semibold">
+                      {user?.name || "User"}
+                    </span>
+                    <span className="truncate text-xs data-[state=open]:text-muted-foreground">
+                      {user?.email}
+                    </span>
                   </div>
                   <ChevronsUpDown className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg" side="bottom" align="end" sideOffset={4}>
+              <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                side="bottom"
+                align="end"
+                sideOffset={4}
+              >
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src={user?.image || ""} alt={user?.name || ""} />
-                      <AvatarFallback className="rounded-lg">{userInitials}</AvatarFallback>
+                      <AvatarImage
+                        src={user?.image || ""}
+                        alt={user?.name || ""}
+                      />
+                      <AvatarFallback className="rounded-lg">
+                        {userInitials}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">{user?.name}</span>
+                      <span className="truncate font-semibold">
+                        {user?.name}
+                      </span>
                       <span className="truncate text-xs">{user?.email}</span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem>
-                    <Sparkles className="mr-2 size-4" />
-                    Upgrade to Pro
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
+
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuItem asChild>
                     <Link
+                      className="cursor-pointer"
                       href="/my/account"
                       onClick={() => setOpenMobile(false)}
                     >
-                      <Settings className="mr-2 size-4" />
+                      <Settings className="mr-2 size-4 hover:text-white" />
                       Account
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                 <DropdownMenuItem 
-                  className="cursor-pointer text-destructive focus:text-destructive" 
+                <DropdownMenuItem
+                  className="cursor-pointer text-destructive focus:bg-red-500 focus:text-white data-[highlighted]:bg-red-500 data-[highlighted]:text-white"
                   onClick={() => signOut({ callbackUrl: "/login" })}
                 >
-                  <LogOut className="mr-2 size-4" />
+                  <LogOut className="mr-2 size-4 hover:text-white" />
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>

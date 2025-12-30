@@ -98,7 +98,7 @@ export default function LoginPage() {
              : host;
              
            // Force redirect to: https://tesla.hue-line.com/
-           window.location.href = `${protocol}//${slug}.${rootDomain}/`;
+           window.location.href = `${protocol}//${slug}.${rootDomain}/my/dashboard`;
         }
       } else {
         // Fallback: If they are a Super Admin or have no subdomain, go to generic dashboard

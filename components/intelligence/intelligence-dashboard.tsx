@@ -144,10 +144,10 @@ export default function IntelligenceDashboardPage() {
   const roomExamples = roomJson.examples || [];
 
   return (
-    <div className="max-w-5xl mx-auto  md:px-6 font-sans text-zinc-900">
+    <div className="">
       {/* --- ADDED HEADER SECTION --- */}
-      <div className="flex items-center gap-5 mb-10">
-        <div className="w-14 h-14 bg-zinc-100 rounded-2xl flex items-center justify-center border border-zinc-200 shadow-sm">
+      <div className="flex items-center gap-4 mb-10">
+        <div className="w-14 h-14 bg-zinc-100 rounded-2xl  items-center justify-center border border-zinc-200 shadow-sm hidden md:flex">
           <Cpu className="w-7 h-7 text-zinc-700" />
         </div>
         <div>
@@ -162,7 +162,7 @@ export default function IntelligenceDashboardPage() {
       </div>
       {/* --------------------------- */}
 
-      <Tabs defaultValue="pricing" className="w-full">
+      <Tabs defaultValue="pricing" className="w-full ">
         <TabsList className="bg-transparent p-0 border-b border-zinc-200 w-full justify-start h-auto rounded-none gap-6 mb-8">
           <TabsTrigger
             value="pricing"

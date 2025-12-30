@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createCallIntelligenceLog } from "@/lib/prisma/mutations/logs/create-intelligence-log";
 
 export async function POST(
   req: Request,
@@ -21,9 +22,9 @@ export async function POST(
 
   try {
     const body = await req.json();
-    const { 
-      intelligence, 
-      transcript_text, 
+    const {
+      intelligence,
+      transcript_text,
       recording_url,
       duration,
       huelineId,
@@ -41,14 +42,17 @@ export async function POST(
       estimatedAdditionalValue,
       callSummary,
       callOutcome,
-      // We extract the new "Pulse" field here (assuming AI sends it)
-      short_headline, 
-      ...filteredCustomFields 
+      lastInteraction,
+      short_headline,
+      ...filteredCustomFields
     } = intelligence || {};
 
     // 2. GET SUBDOMAIN (Validation)
     const subdomain = await prisma.subdomain.findUnique({
-      where: { slug }
+      where: { slug },
+      select: {
+        id: true,
+      },
     });
 
     if (!subdomain) {
@@ -63,7 +67,7 @@ export async function POST(
 
     if (huelineId) {
       const booking = await prisma.subBookingData.findUnique({
-        where: { huelineId }
+        where: { huelineId },
       });
       if (booking) bookingDataId = booking.id;
     }
@@ -71,7 +75,7 @@ export async function POST(
     if (!bookingDataId) {
       const existingCall = await prisma.call.findUnique({
         where: { callSid },
-        select: { bookingDataId: true }
+        select: { bookingDataId: true },
       });
       if (existingCall?.bookingDataId) {
         bookingDataId = existingCall.bookingDataId;
@@ -87,7 +91,7 @@ export async function POST(
         duration: duration ? String(duration) : undefined,
         status: "completed",
         ...(bookingDataId && { bookingDataId }),
-        
+
         intelligence: {
           upsert: {
             create: {
@@ -130,24 +134,24 @@ export async function POST(
         },
       },
       include: {
-        bookingData: { select: { huelineId: true } }
-      }
+        bookingData: { select: { huelineId: true } },
+      },
     });
 
     // 5. UPDATE SUBBOOKING DATA (The Perfect Sauce)
     if (bookingDataId) {
       console.log(`🔄 Updating SubBookingData for ID: ${bookingDataId}`);
-      
+
       const additionalValue = Number(estimatedAdditionalValue) || 0;
 
       // A. FETCH CURRENT STATE (Required for Accumulation Logic)
       const existingBooking = await prisma.subBookingData.findUnique({
         where: { id: bookingDataId },
-        select: { 
-          estimatedValue: true, 
+        select: {
+          estimatedValue: true,
           projectType: true,
-          projectScope: true // Now an Array
-        }
+          projectScope: true, // Now an Array
+        },
       });
 
       // B. CALCULATE UPDATES
@@ -158,30 +162,39 @@ export async function POST(
 
       // 2. Project Type (Sticky - Don't overwrite known with unknown)
       let newProjectType = existingBooking?.projectType;
-      if (intelligence.propertyType && intelligence.propertyType !== "UNKNOWN") {
+      if (
+        intelligence.propertyType &&
+        intelligence.propertyType !== "UNKNOWN"
+      ) {
         newProjectType = intelligence.propertyType;
       }
 
       // 3. Project Scope (Accumulative Array)
-      const incomingScope = projectScope; 
+      const incomingScope = projectScope;
       // Ensure we have an array to start with
       const currentScopes = existingBooking?.projectScope || [];
       const newScopes = [...currentScopes];
 
       // Only add if it's valid, not unknown, and not already in the list
-      if (incomingScope && incomingScope !== "UNKNOWN" && !newScopes.includes(incomingScope)) {
+      if (
+        incomingScope &&
+        incomingScope !== "UNKNOWN" &&
+        !newScopes.includes(incomingScope)
+      ) {
         newScopes.push(incomingScope);
       }
 
       // 4. Last Interaction (The "Pulse" Headline)
       let pulseString = "Interaction Logged";
-      
-      if (short_headline) {
+
+      if (lastInteraction) {
+        pulseString = lastInteraction;
+      } else if (short_headline) {
         pulseString = short_headline;
       } else if (callReason && callReason !== "UNKNOWN") {
-        // Fallback: Formats "NEW_PROJECT" -> "New Project"
         pulseString = callReason.replace(/_/g, " ").toLowerCase();
-        pulseString = pulseString.charAt(0).toUpperCase() + pulseString.slice(1);
+        pulseString =
+          pulseString.charAt(0).toUpperCase() + pulseString.slice(1);
       }
 
       // C. PERFORM UPDATE
@@ -192,27 +205,45 @@ export async function POST(
           lastCallAt: new Date(),
           lastCallAudioUrl: recording_url,
           lastInteraction: pulseString, // The readable dashboard headline
-          lastCallReason: (callReason && callReason !== "UNKNOWN") ? callReason : undefined,
+          lastCallReason:
+            callReason && callReason !== "UNKNOWN" ? callReason : undefined,
 
           // --- STICKY / ACCUMULATIVE FIELDS ---
           estimatedValue: newTotal,
           projectType: newProjectType,
           projectScope: newScopes, // Saves the accumulated array
-        }
+        },
+      });
+
+      await createCallIntelligenceLog({
+        bookingDataId,
+        subdomainId: subdomain.id,
+        callSid,
+        callReason: callReason || "OTHER",
+        projectScope: projectScope || "UNKNOWN",
+        estimatedAdditionalValue: additionalValue,
+        recordingUrl: recording_url,
+        duration: duration ? String(duration) : undefined,
+        callSummary: callSummary,
+        callOutcome: callOutcome,
+        // PASS WHATEVER WE HAVE IN CUSTOM FIELDS
+        customFields: filteredCustomFields,
       });
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       callId: updatedCall.id,
       linked: !!updatedCall.bookingData,
-      bookingId: updatedCall.bookingData?.huelineId || null
+      bookingId: updatedCall.bookingData?.huelineId || null,
     });
-
   } catch (error) {
     console.error("❌ Error saving intelligence:", error);
     return NextResponse.json(
-      { error: "Failed to save", details: error instanceof Error ? error.message : "Unknown error" },
+      {
+        error: "Failed to save",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 200 }
     );
   }

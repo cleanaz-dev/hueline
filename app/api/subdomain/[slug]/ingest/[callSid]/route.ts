@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { triggerIntelligenceLambda } from "@/lib/lambda";
+import { createCallIngestLog } from "@/lib/prisma/mutations/logs/create-call-log";
 
 interface Params {
   params: Promise<{
@@ -91,6 +92,15 @@ export async function POST(req: Request, { params }: Params) {
       slug,
       domain_id: subdomain.id,
     });
+
+
+    await createCallIngestLog({
+      bookingDataId: booking?.id,
+      subdomainId: subdomain.id,
+      callSid:callSid,
+      from: from,
+      duration: duration ? String(duration) : "0"
+    })
 
     return NextResponse.json({ success: true, callId: call.id });
   } catch (error) {

@@ -32,7 +32,7 @@ export async function createMockupLog(params: {
         bookingDataId,
         subdomainId,
         type: "MOCKUP",
-        actor: "AI",
+        actor: "CLIENT",
         title: `New Mockup Generated`,
         description: `Created ${option} mockup for ${roomType} - ${color.name} (${color.ral})`,
         metadata: {

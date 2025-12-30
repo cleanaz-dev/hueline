@@ -1,6 +1,5 @@
 "use client";
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -77,12 +76,50 @@ type TableBooking = BookingData & {
 const columnHelper = createColumnHelper<TableBooking>();
 
 export default function ClientTable() {
-  const { bookings, isLoading, openIntelligence } = useDashboard();
+  const { bookings, isLoading, openIntelligence, subdomain } = useDashboard();
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedBooking, setSelectedBooking] = useState<TableBooking | null>(
     null
   );
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  // Audio player state
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [isLoadingAudio, setIsLoadingAudio] = useState<string | null>(null);
+  const [presignedUrls, setPresignedUrls] = useState<Record<string, string>>(
+    {}
+  );
+
+  const handlePlayPause = useCallback(async (huelineId: string) => {
+  // If already playing this one, just stop
+  if (playingId === huelineId) {
+    setPlayingId(null);
+    return;
+  }
+
+  // If we already have a valid presigned URL, use it
+  if (presignedUrls[huelineId]) {
+    setPlayingId(huelineId);
+    return;
+  }
+
+  // Fetch a new presigned URL
+  try {
+    setIsLoadingAudio(huelineId);
+    const response = await fetch(
+      `/api/subdomain/${subdomain.slug}/call/last?huelineId=${huelineId}`
+    );
+    const data = await response.json();
+
+    if (data.url) {
+      setPresignedUrls((prev) => ({ ...prev, [huelineId]: data.url }));
+      setPlayingId(huelineId);
+    }
+  } catch (error) {
+    console.error("Failed to fetch audio link", error);
+  } finally {
+    setIsLoadingAudio(null);
+  }
+}, [playingId, presignedUrls, subdomain.slug]);
 
   // 2. SIMPLIFIED DATA TRANSFORM
   const tableData = useMemo(() => {
@@ -220,24 +257,20 @@ export default function ClientTable() {
 
               {/* LINE 2: Type (Icon + Text) */}
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <TypeIcon className="size-3.5 text-gray-400 shrink-0" />
-                <span className="font-medium text-gray-700">{typeLabel}</span>
+                <TypeIcon className="size-3.5  shrink-0" />
+                <span className="font-medium ">{typeLabel}</span>
               </div>
-                {/* LINE 4: Scope (Icon + Text aligned) */}
-              <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-gray-500 leading-snug break-words tracking-wide">
-                <Target className="size-3.5 text-gray-400 shrink-0" />
+              {/* LINE 4: Scope (Icon + Text aligned) */}
+              <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-accent leading-snug break-words tracking-wide">
+                <Target className="size-3.5  shrink-0" />
                 <span>{scopeList}</span>
               </div>
 
               {/* LINE 3: Last Interaction */}
               <div className="flex items-center gap-1.5">
                 <Bot className="size-3.5 text-purple-400 shrink-0" />
-                <p className="text-xs text-purple-400">
-                  {lastInteraction}
-                </p>
+                <p className="text-xs text-purple-400">{lastInteraction}</p>
               </div>
-
-            
             </div>
           );
         },
@@ -261,16 +294,32 @@ export default function ClientTable() {
         },
       }),
 
-      // Recording (Read directly from Parent)
-      columnHelper.accessor("lastCallAudioUrl", {
-        header: "Recording",
-        cell: (info) =>
-          info.getValue() ? (
-            <AudioPlayer url={info.getValue()!} />
-          ) : (
+       columnHelper.accessor("lastCallAudioUrl", {
+      header: "Recording",
+      cell: (info) => {
+        const row = info.row.original;
+        const huelineId = row.huelineId;
+
+        // Early return if no audio URL
+        if (!row.lastCallAudioUrl) {
+          return (
             <span className="text-xs text-gray-400 italic">No audio</span>
-          ),
-      }),
+          );
+        }
+
+        // Pass null if we don't have a presigned URL yet
+        const audioUrl = presignedUrls[huelineId] || null;
+
+        return (
+          <AudioPlayer
+            url={audioUrl}
+            isPlaying={playingId === huelineId}
+            isLoading={isLoadingAudio === huelineId}
+            onPlayPause={() => handlePlayPause(huelineId)}
+          />
+        );
+      },
+    }),
 
       // Palette
       columnHelper.accessor("paintColors", {
@@ -318,7 +367,14 @@ export default function ClientTable() {
         ),
       }),
     ],
-    [isLoading, openIntelligence] // Add openIntelligence dependency
+    [
+    isLoading, 
+    openIntelligence, 
+    playingId, 
+    isLoadingAudio, 
+    presignedUrls,
+    handlePlayPause // Add this too
+  ]
   );
 
   const table = useReactTable({
@@ -440,22 +496,20 @@ export default function ClientTable() {
                   <span className="font-semibold text-sm text-gray-900 truncate pr-2">
                     {data.name}
                   </span>
-                  <span className="text-[10px] text-gray-400 shrink-0">
+                  <span className="text-[10px] text-gray-400 shrink-0 bg-muted px-1 rounded-sm">
                     {date.toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
                     })}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex items-center">
                   <div className="text-xs text-gray-500 truncate pr-2">
-                    {/* {formatProjectScope(
-                      data.projectScope[0] || "Recent Inquiry"
-                    )} */}
+                    {data.projectType}
                   </div>
-                  {data.totalHiddenValue > 0 && (
+                  {data.estimatedValue && data.estimatedValue > 0 && (
                     <div className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
-                      +Val
+                      ${data.estimatedValue}
                     </div>
                   )}
                 </div>
@@ -566,7 +620,7 @@ export default function ClientTable() {
               {/* --- SCROLLABLE CONTENT --- */}
               <div className="overflow-y-auto px-6 pb-32 space-y-6 flex-1">
                 {/* Hero Visual */}
-                <div className="aspect-[4/3] w-full relative bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                <div className="aspect-[16/10] w-full relative bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
                   {selectedBooking.thumbnailUrl ? (
                     <Image
                       src={formatImageUrl(selectedBooking.thumbnailUrl)}
@@ -637,7 +691,14 @@ export default function ClientTable() {
                       Voice Recording
                     </h4>
                     <div className="bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
-                      <AudioPlayer url={selectedBooking.lastCallAudioUrl} />
+                      <AudioPlayer
+                        url={presignedUrls[selectedBooking.huelineId] || null}
+                        isPlaying={playingId === selectedBooking.huelineId}
+                        isLoading={isLoadingAudio === selectedBooking.huelineId}
+                        onPlayPause={() =>
+                          handlePlayPause(selectedBooking.huelineId)
+                        }
+                      />
                     </div>
                   </div>
                 )}

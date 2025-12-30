@@ -363,8 +363,8 @@ model Logs {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
   // Relations
-  bookingDataId String         @db.ObjectId
-  bookingData   SubBookingData @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
+  bookingDataId String?         @db.ObjectId
+  bookingData   SubBookingData? @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
 
   // Keep SubdomainID for fast filtering at the account level
   subdomainId String    @db.ObjectId
@@ -389,9 +389,11 @@ enum LogType {
   CALL
   MOCKUP
   PAYMENT
-  STATUS_CHANGE // Vital for tracking the pipeline
-  SMS // If you send texts
-  NOTE // If the painter wants to write a manual note
+  STATUS_CHANGE
+  SMS
+  NOTE
+  SHARE
+  ROOM
 }
 
 enum LogActor {

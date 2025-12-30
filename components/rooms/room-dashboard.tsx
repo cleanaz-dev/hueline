@@ -32,6 +32,7 @@ import {
   Zap,
   FolderOpen,
   Calendar,
+  DoorOpen,
 } from "lucide-react";
 import RoomIntelligenceCard from "./room-intelligence-card";
 import { cn } from "@/lib/utils";
@@ -139,17 +140,19 @@ export default function RoomsDashboard() {
     <div className="my-room-container">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            Live Rooms{" "}
-            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs font-semibold border border-gray-200">
-              {subdomain.rooms.length}
-            </span>
-          </h1>
-          <p className="text-zinc-500 ">
-            Bridge the gap between a lead and a contract with a virtual
-            walkthrough.
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 bg-zinc-100 rounded-2xl  items-center justify-center border border-zinc-200 shadow-sm hidden md:flex">
+            <DoorOpen className="w-7 h-7 text-zinc-700" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              Live Rooms{" "}
+            </h1>
+            <p className="text-zinc-500 ">
+              Bridge the gap between a lead and a contract with a virtual
+              walkthrough.
+            </p>
+          </div>
         </div>
       </div>
 
