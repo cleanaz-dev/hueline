@@ -11,24 +11,23 @@ const s3Client = new S3Client({
   },
 });
 
+interface Params {
+  params: Promise<{
+    slug: string;
+    callSid: string;
+  }>
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: Params
 ) {
   try {
-    const { searchParams } = new URL(request.url);
-    const huelineId = searchParams.get("huelineId");
-
-    if (!huelineId) {
-      return NextResponse.json(
-        { error: "huelineId is required" },
-        { status: 400 }
-      );
-    }
+    const { slug, callSid } = await params;
 
     // Get the subdomain
     const subdomain = await prisma.subdomain.findUnique({
-      where: { slug: params.slug },
+      where: { slug },
     });
 
     if (!subdomain) {
@@ -38,13 +37,17 @@ export async function GET(
       );
     }
 
-    // Get the booking with the lastCallAudioUrl (S3 key)
-    const booking = await prisma.subBookingData.findUnique({
-      where: { huelineId },
-      select: { lastCallAudioUrl: true },
+    const call = await prisma.call.findFirst({
+      where: {
+        subdomainId: subdomain.id,
+        callSid: callSid,
+      },
+      select: {
+        audioUrl: true
+      }
     });
 
-    if (!booking || !booking.lastCallAudioUrl) {
+    if (!call || !call.audioUrl) {
       return NextResponse.json(
         { error: "No audio recording found" },
         { status: 404 }
@@ -54,11 +57,11 @@ export async function GET(
     // Generate a presigned URL from the S3 key
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET_NAME!,
-      Key: booking.lastCallAudioUrl, // This should always be an S3 key like "subdomains/xyz/audio/123.mp3"
+      Key: call.audioUrl,
     });
 
     const presignedUrl = await getSignedUrl(s3Client, command, {
-      expiresIn: 120, // 1 hour
+      expiresIn: 3600,
     });
 
     return NextResponse.json({ url: presignedUrl });
