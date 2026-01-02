@@ -1,5 +1,7 @@
-export const deepgram = {
-  apiKey: process.env.DEEPGRAM_API_KEY!,
-  apiUrl: "https://api.deepgram.com/v1/speak",
-  defaultModel: "aura-2-draco-en",
-};
+import { createClient } from "@deepgram/sdk";
+
+if (!process.env.DEEPGRAM_API_KEY) {
+  throw new Error("DEEPGRAM_API_KEY environment variable is required");
+}
+
+export const deepgram = createClient(process.env.DEEPGRAM_API_KEY);

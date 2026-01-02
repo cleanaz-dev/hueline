@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { RoomProvider } from '@/context/room-context';
 import { ClientStage } from './client-stage';
 import { PainterStage } from './painter-stage';
+import { QuickSessionStage } from './quick-session-stage'; // 👈 Import new stage
 import { CameraHandler } from './camera-handler';
 import { RoomData } from '@/types/room-types';
 
@@ -11,10 +12,18 @@ interface RoomClientProps {
   roomId: string;
   roomData: RoomData;
   slug: string;
-  role?: string
+  role?: string;
+  mode?: 'project' | 'quick'; // 👈 New Prop
 }
 
-export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
+export function RoomClient({ 
+  roomId, 
+  roomData, 
+  slug, 
+  role, 
+  mode = 'project' // Default to project
+}: RoomClientProps) {
+  
   const [token, setToken] = useState<string | null>(null);
   const [hasJoined, setHasJoined] = useState(false);
   
@@ -25,10 +34,10 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
       try {
         const identity = isClient 
           ? `Client-${Math.floor(Math.random() * 10000)}` 
-          : `Painter-${Math.floor(Math.random() * 10000)}`;
+          : `${mode === 'quick' ? 'Quick' : 'Painter'}-${Math.floor(Math.random() * 10000)}`;
 
         const res = await fetch(
-          `/api/subdomain/${slug}/livekit/token?room=${roomId}&username=${identity}`
+          `/api/subdomain/${slug}/room/${roomId}/token?username=${identity}`
         );
         const data = await res.json();
         setToken(data.token);
@@ -37,10 +46,18 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
       }
     };
     fetchToken();
-  }, [roomId, slug, isClient]);
+  }, [roomId, slug, isClient, mode]);
 
-  if (!token) return <div className="h-screen bg-black text-white flex items-center justify-center">Loading...</div>;
+  // Loading State
+  if (!token) {
+    return (
+      <div className="h-screen bg-black text-white flex items-center justify-center">
+        <div className="animate-pulse">Initializing Secure Room...</div>
+      </div>
+    );
+  }
 
+  // Client Interstitial
   if (isClient && !hasJoined) {
     return (
       <div className="h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
@@ -55,6 +72,13 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
     );
   }
 
+  // --- RENDER LOGIC ---
+  const renderStage = () => {
+    if (isClient) return <ClientStage />;
+    if (mode === 'quick') return <QuickSessionStage />;
+    return <PainterStage slug={slug} roomId={roomId} />;
+  };
+
   return (
     <RoomProvider 
       token={token} 
@@ -64,10 +88,9 @@ export function RoomClient({ roomId, roomData, slug, role }: RoomClientProps) {
     >
       <CameraHandler /> 
 
-      {/* 👇 FIXED: Changed h-screen to h-full */}
-      <div className="flex flex-col w-full ">
+      <div className="flex flex-col w-full h-full bg-background">
         <div className="flex-1 relative overflow-hidden h-full">
-          {isClient ? <ClientStage /> : <PainterStage slug={slug} roomId={roomId} />}
+          {renderStage()}
         </div>
       </div>
     </RoomProvider>

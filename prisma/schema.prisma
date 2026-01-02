@@ -223,8 +223,15 @@ model Room {
   recordingUrl String?
   transcript   String?
 
+  sessionType RoomType?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum RoomType {
+  QUICK
+  PROJECT
 }
 
 enum RoomStatus {
@@ -263,6 +270,7 @@ model CallIntelligence {
   callOutcome              CallOutcome? // POSITIVE, NEUTRAL, NEGATIVE
   estimatedAdditionalValue Float        @default(0)
   customFields             Json?
+  costBreakdown            String?
 
   // METADATA
   transcriptText String?

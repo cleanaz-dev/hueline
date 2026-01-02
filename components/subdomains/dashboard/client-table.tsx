@@ -400,7 +400,7 @@ export default function ClientTable() {
   };
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 lg:px-0 my-8">
+    <div className="container mx-auto max-w-7xl px-4 lg:px-0 my-8">
       {/* Search Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>

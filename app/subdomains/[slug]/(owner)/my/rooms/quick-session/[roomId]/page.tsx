@@ -1,7 +1,7 @@
 import { RoomClient } from "@/components/rooms/room-client-page";
 import { RoomDetailsView } from "@/components/rooms/room-details-view";
-import { getRoomKey } from "@/lib/redis/services/room";
 import { prisma } from "@/lib/prisma";
+import { getRoomKey } from "@/lib/redis";
 import { notFound } from "next/navigation";
 
 interface Params {
@@ -14,7 +14,6 @@ interface Params {
 export default async function page({ params }: Params) {
   const { roomId, slug } = await params;
 
-  // 1. Try Hot Storage (Redis)
   const roomData = await getRoomKey(roomId);
 
   if (roomData) {
@@ -24,7 +23,7 @@ export default async function page({ params }: Params) {
           roomId={roomId}
           roomData={roomData}
           slug={slug}
-          mode="project"
+          mode="quick"
         />
       </div>
     );

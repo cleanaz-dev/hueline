@@ -29,6 +29,7 @@ export interface CallIntelligence {
   projectScope: string | null;
   callOutcome: CallOutcome | null;
   estimatedAdditionalValue: number;
+  costBreakdown?: string | null;
   customFields: Prisma.JsonValue | null;
   transcriptText: string | null;
   callSummary: string | null;

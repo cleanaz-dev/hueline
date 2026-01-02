@@ -109,6 +109,7 @@ export default function RoomsDashboard() {
           roomName: projectName,
           clientName: selectedBooking?.name,
           clientPhone: selectedBooking?.phone,
+          type: "PROJECT", // Optional: Good to track in DB
         };
       } else {
         const slug =
@@ -117,7 +118,7 @@ export default function RoomsDashboard() {
         payload = {
           roomName: quickRoomName,
           clientName: quickClientName,
-          // clientPhone: optional, can be added to form if needed
+          type: "QUICK", // Optional: Good to track in DB
         };
       }
 
@@ -127,7 +128,12 @@ export default function RoomsDashboard() {
       );
 
       if (response.data) {
-        router.push(`/my/rooms/${roomId}`);
+        // ✅ ROUTING LOGIC UPDATE
+        if (mode === "quick") {
+          router.push(`/my/rooms/quick-session/${roomId}`);
+        } else {
+          router.push(`/my/rooms/${roomId}`);
+        }
       }
     } catch (error) {
       console.error("Error creating room:", error);

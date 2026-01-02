@@ -84,7 +84,7 @@ export default function StatCards({
   };
 
   return (
-    <section className="container mx-auto max-w-6xl px-4 md:px-10 lg:px-0 py-6">
+    <section className="container mx-auto max-w-7xl px-4 md:px-10 lg:px-0 py-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {cardData.map((item, index) => {
           const colors = getColorClasses(item.color);
