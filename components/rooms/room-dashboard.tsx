@@ -176,10 +176,10 @@ export default function RoomsDashboard() {
                   type="button"
                   onClick={() => setMode("project")}
                   className={cn(
-                    "flex items-center justify-center gap-2 py-2 text-sm font-bold rounded-md transition-all",
+                    "flex items-center justify-center gap-2 py-2 text-sm font-bold rounded-md transition-all cursor-pointer hover:text-primary",
                     mode === "project"
                       ? "bg-white text-zinc-900 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-700"
+                      : "text-zinc-500 hover:text-accent"
                   )}
                 >
                   <FolderOpen className="w-4 h-4" />
@@ -189,10 +189,10 @@ export default function RoomsDashboard() {
                   type="button"
                   onClick={() => setMode("quick")}
                   className={cn(
-                    "flex items-center justify-center gap-2 py-2 text-sm font-bold rounded-md transition-all",
+                    "flex items-center justify-center gap-2 py-2 text-sm font-bold rounded-md transition-all cursor-pointer hover:text-primary",
                     mode === "quick"
                       ? "bg-white text-blue-600 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-700"
+                      : "text-zinc-500 hover:text-accent"
                   )}
                 >
                   <Zap className="w-4 h-4" />

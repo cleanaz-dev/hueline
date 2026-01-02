@@ -82,7 +82,7 @@ export function RoomClient({
   return (
     <RoomProvider 
       token={token} 
-      serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL!} 
+      serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_VIDEO_URL!} 
       isPainter={!isClient} 
       slug={slug}
     >
