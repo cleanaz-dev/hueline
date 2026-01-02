@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { useRoomContext, ScopeItem } from "@/context/room-context"; // 👈 Import Type
+import { useRoomContext } from "@/context/room-context";
 import {
   VideoTrack,
   useTracks,
@@ -24,12 +24,10 @@ import {
   MicOff as MicOffIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import axios from "axios";
-import { toast } from "sonner";
 
 interface LiveStageProps {
   slug: string;
-  roomId: string;
+  roomId: string; // This is the source of truth
 }
 
 export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
@@ -37,13 +35,11 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
     laserPosition,
     sendData,
     isPainter,
-    triggerAI, // Keep if you re-enable the button later
-    isGenerating,
-    toggleTranscription,
-    isTranscribing,
     activeMockupUrl,
-    room,
-    liveScopeItems, // 👈 GET REAL DATA
+    room, // We still use this for status, but not for the invite link
+    liveScopeItems,
+    isTranscribing,
+    toggleTranscription,
   } = useRoomContext();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,10 +56,15 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
     (t) => !t.participant.isLocal && isTrackReference(t)
   ) as TrackReference | undefined;
 
-  // Actions
+  // --- FIX: ROBUST INVITE ACTION ---
   const copyInvite = () => {
-    if (!room) return;
-    const url = `${window.location.origin}/meet/${room.name}?role=client`;
+    // 1. Use the 'roomId' prop, not 'room.name'. 
+    //    This guarantees the ID matches the route param.
+    // 2. Remove the 'if (!room) return' check so you can invite before connecting.
+    
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${origin}/meet/${roomId}?role=client`;
+    
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -144,13 +145,14 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
             <div
               className={cn(
                 "w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentColor]",
-                remoteTrack
+                room?.state === "connected"
                   ? "bg-green-500 text-green-500 animate-pulse"
-                  : "bg-red-500 text-red-500"
+                  : "bg-yellow-500 text-yellow-500"
               )}
             />
             <span className="text-[9px] md:text-xs font-bold text-white tracking-widest uppercase">
-              {room?.name || "Initializing..."}
+               {/* Display Room ID if Name isn't available yet */}
+              {room?.name || roomId || "Initializing..."}
             </span>
           </div>
         </div>
@@ -179,14 +181,20 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
                 <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">
                   Waiting for Camera
                 </p>
-                <p className="text-xs text-zinc-700 mt-2">
-                  Client is connecting...
-                </p>
+                <div className="mt-4">
+                    {/* Added a button here for easy testing if track fails */}
+                    <button 
+                        onClick={copyInvite}
+                        className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded-full transition"
+                    >
+                        {copied ? "Link Copied!" : "Copy Invite Link"}
+                    </button>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Overlays */}
+          {/* Overlays (Laser, Mockups, PIP) */}
           {laserPosition && (
             <div
               className="absolute w-12 h-12 -ml-6 -mt-6 border-4 border-cyan-400 rounded-full animate-ping z-50 pointer-events-none shadow-[0_0_30px_rgba(34,211,238,0.8)]"
@@ -223,7 +231,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
             </div>
           )}
 
-          {/* PIP */}
+          {/* PIP (Local User) */}
           <div className="absolute bottom-4 left-4 w-32 h-44 rounded-xl overflow-hidden border border-white/20 shadow-2xl z-30 bg-black/50 backdrop-blur-sm transition-transform hover:scale-105">
             {localTrack ? (
               <VideoTrack
@@ -245,8 +253,8 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
       </div>
 
       {/* --- RIGHT: TOOLBAR SIDEBAR --- */}
-      <div className="w-full lg:w-48  lg:border-t-0 border-muted-foreground flex lg:flex-col items-center lg:items-stretch gap-2 p-2  mt-0 z-40 shrink-0 ">
-        <div className="text-xs font-semibold text-muted-foreground mb- hidden md:flex">
+      <div className="w-full lg:w-48 lg:border-t-0 border-muted-foreground flex lg:flex-col items-center lg:items-stretch gap-2 p-2 mt-0 z-40 shrink-0">
+        <div className="text-xs font-semibold text-muted-foreground mb-1 hidden md:flex">
           TOOLS
         </div>
         
@@ -279,11 +287,11 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
           />
         </div>
 
-        {/* --- INTEL LIST (Real Data) --- */}
+        {/* --- INTEL LIST --- */}
         <div className="hidden lg:flex lg:flex-col lg:flex-1 gap-2 overflow-y-auto mt-4">
           <div className="flex justify-between items-end mb-1">
              <div className="text-xs font-semibold text-muted-foreground">INTEL</div>
-             <div className="text-[10px] text-white/30">{liveScopeItems.length} items</div>
+             <div className="text-[10px] text-white/30">{liveScopeItems?.length || 0} items</div>
           </div>
           
           {liveScopeItems && liveScopeItems.length > 0 ? (
@@ -303,7 +311,6 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
               </div>
             ))
           ) : (
-            // EMPTY STATE
             <div className="flex-1 flex flex-col items-center justify-center opacity-40 text-center space-y-2">
                <MicOffIcon className="size-8 text-muted-foreground" />
                <p className="text-xs ">No items captured.</p>
