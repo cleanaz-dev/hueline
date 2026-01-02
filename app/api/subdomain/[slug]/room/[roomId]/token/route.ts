@@ -12,10 +12,8 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   try {
-    // 1. Await params (Next.js 15+)
     const { slug, roomId } = await params;
     
-    // 2. Get username from Query String
     const { searchParams } = new URL(req.url);
     const username = searchParams.get("username");
 
@@ -26,20 +24,19 @@ export async function GET(req: Request, { params }: Params) {
       );
     }
 
-    // 3. Database Query
-    // We search for the Room directly, but ensure it belongs to the Subdomain via 'slug'
+    // 1. DB Query: Match "roomKey" (string) instead of "id" (ObjectId)
     const roomData = await prisma.room.findFirst({
       where: {
-        id: roomId,
+        roomKey: roomId, // Matches 'test-01022026-1972'
         domain: {
-          slug: slug, // This ensures the room belongs to the correct subdomain
+          slug: slug,
         },
       },
       select: {
-        id: true,
+        id: true,       // Internal Mongo ID
+        roomKey: true,  // The string ID used for the Room Name
         clientName: true,
         sessionType: true,
-        status: true,
       },
     });
 
@@ -50,41 +47,37 @@ export async function GET(req: Request, { params }: Params) {
       );
     }
 
-    // 4. Validate Env Vars
-    const apiKey = process.env.LIVEKIT_API_KEY;
-    const apiSecret = process.env.LIVEKIT_API_SECRET;
-    const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+    // 2. Validate Env Vars (Using your LIVEKIT_VIDEO prefix)
+    const apiKey = process.env.LIVEKIT_VIDEO_API_KEY;
+    const apiSecret = process.env.LIVEKIT_VIDEO_API_SECRET;
+    const wsUrl = process.env.LIVEKIT_VIDEO_URL;
 
     if (!apiKey || !apiSecret || !wsUrl) {
+      console.error("Missing LiveKit Environment Variables");
       return NextResponse.json(
         { error: "Server misconfigured" },
         { status: 500 }
       );
     }
 
-    // 5. Create Access Token
-    // NOTE: This token is for the USER joining the room. 
-    // The metadata here allows the AI Agent (listening in the room) to know who this is.
+    // 3. Create Access Token
     const at = new AccessToken(apiKey, apiSecret, {
       identity: username,
-      // Metadata visible to other participants (including the Agent)
       metadata: JSON.stringify({
-        isAgent: false, // This user is NOT the agent
+        isAgent: false,
         clientName: roomData.clientName,
         type: roomData.sessionType,
-        roomId: roomData.id
+        dbId: roomData.id 
       }),
     });
 
-    // 6. Set Permissions
     at.addGrant({
       roomJoin: true,
-      room: roomId, // Must match the Room ID exactly
+      room: roomData.roomKey, // Use the roomKey as the LiveKit Room Name
       canPublish: true,
       canSubscribe: true,
     });
 
-    // 7. Return Token
     return NextResponse.json({
       token: await at.toJwt(),
       serverUrl: wsUrl,
