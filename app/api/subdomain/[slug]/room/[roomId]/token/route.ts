@@ -1,5 +1,5 @@
-// app/api/token/[slug]/[roomId]/route.ts
-import { AccessToken } from "livekit-server-sdk";
+// app/api/token/[slug]/room/[roomId]/route.ts
+import { AccessToken, AgentDispatchClient } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -77,6 +77,31 @@ export async function GET(req: Request, { params }: Params) {
       canPublish: true,
       canSubscribe: true,
     });
+
+    // 🤖 DISPATCH AGENT TO ROOM
+    try {
+      const agentDispatchClient = new AgentDispatchClient(
+        wsUrl,
+        apiKey,
+        apiSecret
+      );
+
+      await agentDispatchClient.createDispatch(
+        roomData.roomKey,
+        "agent", // Your agent_name from LiveKit Cloud
+        {
+          metadata: JSON.stringify({
+            clientName: roomData.clientName,
+            sessionType: roomData.sessionType,
+            dbId: roomData.id
+          })
+        }
+      );
+      
+      console.log(`✅ Agent dispatched to room: ${roomData.roomKey}`);
+    } catch (dispatchError) {
+      console.error("❌ Agent dispatch failed:", dispatchError);
+    }
 
     return NextResponse.json({
       token: await at.toJwt(),
