@@ -16,7 +16,7 @@ import {
   RemoteParticipant,
   Track,
 } from "livekit-client";
-import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
+import { LiveKitRoom, RoomAudioRenderer, StartAudio } from "@livekit/components-react";
 import {
   createClient,
   LiveClient,
@@ -618,10 +618,11 @@ export const RoomProvider = ({
         serverUrl={serverUrl}
         connect={true}
         // // 👇 CRITICAL: False allows CameraHandler to manage devices
-        // video={false}
-        // audio={false}
+        video={false}
+        audio={false}
         connectOptions={{ autoSubscribe: true }}
       >
+        <StartAudio label="Click to Enable Audio" />
          <RoomAudioRenderer />
         {children}
 
