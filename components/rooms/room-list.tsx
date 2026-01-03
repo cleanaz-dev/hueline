@@ -236,6 +236,25 @@ export default function RoomList() {
       ),
     },
     {
+      accessorKey: "status",
+      header: ({ column }) => (
+        <div className="text-right">
+          <Button
+            variant="ghost"
+            className="h-8 p-0"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Status <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-center">
+          {row.original.status}
+        </div>
+      )
+    },
+    {
       id: "actions",
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
