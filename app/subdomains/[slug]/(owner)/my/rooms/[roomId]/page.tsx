@@ -14,7 +14,20 @@ interface Params {
 export default async function page({ params }: Params) {
   const { roomId, slug } = await params;
 
-  // 1. Try Hot Storage (Redis)
+  const dbRoom = await prisma.room.findFirst({
+    where: {
+      roomKey: roomId,
+      status: "COMPLETED",
+      domain: { slug: slug },
+    },
+    include: { booking: true },
+  });
+
+  if (dbRoom) {
+   
+    return <RoomDetailsView room={dbRoom as any} />;
+  }
+
   const roomData = await getRoomKey(roomId);
 
   if (roomData) {
@@ -30,21 +43,5 @@ export default async function page({ params }: Params) {
     );
   }
 
-  // 2. Try Cold Storage (DB)
-  const dbRoom = await prisma.room.findFirst({
-    where: {
-      roomKey: roomId,
-      domain: { slug: slug },
-    },
-    include: { booking: true },
-  });
-
-  if (dbRoom) {
-    // 👇 FIX: Cast to 'any' or 'unknown as Room' to bypass the strict relation check
-    // We only need the scalar fields (name, phone) for the view anyway.
-    return <RoomDetailsView room={dbRoom as any} />;
-  }
-
-  // 3. 404
   return notFound();
 }

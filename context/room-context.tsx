@@ -16,7 +16,7 @@ import {
   RemoteParticipant,
   Track,
 } from "livekit-client";
-import { LiveKitRoom, RoomAudioRenderer, StartAudio } from "@livekit/components-react";
+import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
 import {
   createClient,
   LiveClient,
@@ -24,6 +24,7 @@ import {
 } from "@deepgram/sdk";
 import { v4 as uuidv4 } from "uuid";
 import useSWR from "swr";
+import { DeleteRoomDialog } from "@/components/rooms/delete-room-dialog";
 
 // --- 1. SHARED INTERFACES ---
 export interface ScopeItem {
@@ -612,21 +613,18 @@ export const RoomProvider = ({
         isSpotting,
       }}
     >
-      <LiveKitRoom
-        room={room}
-        token={token}
-        serverUrl={serverUrl}
-        connect={true}
-        // // 👇 CRITICAL: False allows CameraHandler to manage devices
-        video={false}
-        audio={false}
-        connectOptions={{ autoSubscribe: true }}
-      >
-        <StartAudio label="Click to Enable Audio" />
-         <RoomAudioRenderer />
-        {children}
-
-      </LiveKitRoom>
+     <LiveKitRoom
+      room={room}
+      token={token}
+      serverUrl={serverUrl}
+      connect={true}
+      video={false}
+      audio={true}  // 👈 CHANGE THIS TO TRUE
+      connectOptions={{ autoSubscribe: true }}
+    >
+      <RoomAudioRenderer />
+      {children}
+    </LiveKitRoom>
     </RoomContext.Provider>
   );
 };

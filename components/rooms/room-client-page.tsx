@@ -1,10 +1,9 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { RoomProvider } from '@/context/room-context';
 import { ClientStage } from './client-stage';
 import { PainterStage } from './painter-stage';
-import { QuickSessionStage } from './quick-session-stage'; // 👈 Import new stage
+import { QuickSessionStage } from './quick-session-stage';
 import { CameraHandler } from './camera-handler';
 import { RoomData } from '@/types/room-types';
 
@@ -13,7 +12,7 @@ interface RoomClientProps {
   roomData: RoomData;
   slug: string;
   role?: string;
-  mode?: 'project' | 'quick'; // 👈 New Prop
+  mode?: 'project' | 'quick';
 }
 
 export function RoomClient({ 
@@ -21,23 +20,24 @@ export function RoomClient({
   roomData, 
   slug, 
   role, 
-  mode = 'project' // Default to project
+  mode = 'project'
 }: RoomClientProps) {
   
   const [token, setToken] = useState<string | null>(null);
   const [hasJoined, setHasJoined] = useState(false);
   
   const isClient = role === "client";
+  const isHost = !isClient; // Painter or Quick session creator = host
 
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        const identity = isClient 
-          ? `Client-${Math.floor(Math.random() * 10000)}` 
-          : `${mode === 'quick' ? 'Quick' : 'Painter'}-${Math.floor(Math.random() * 10000)}`;
-
+        const identity = isHost
+          ? `host-${mode === 'quick' ? 'quick' : 'painter'}-${Math.floor(Math.random() * 10000)}` 
+          : `client-${Math.floor(Math.random() * 10000)}`;
+        
         const res = await fetch(
-          `/api/subdomain/${slug}/room/${roomId}/token?username=${identity}`
+          `/api/subdomain/${slug}/room/${roomId}/token?identity=${identity}`
         );
         const data = await res.json();
         setToken(data.token);
@@ -46,7 +46,7 @@ export function RoomClient({
       }
     };
     fetchToken();
-  }, [roomId, slug, isClient, mode]);
+  }, [roomId, slug, isHost, mode]);
 
   // Loading State
   if (!token) {
@@ -83,11 +83,10 @@ export function RoomClient({
     <RoomProvider 
       token={token} 
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_VIDEO_URL!} 
-      isPainter={!isClient} 
+      isPainter={isHost} 
       slug={slug}
     >
       <CameraHandler /> 
-
       <div className="flex flex-col w-full h-full bg-background">
         <div className="flex-1 relative overflow-hidden h-full">
           {renderStage()}

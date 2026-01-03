@@ -223,7 +223,8 @@ model Room {
   recordingUrl String?
   transcript   String?
 
-  sessionType RoomType?
+  sessionType     RoomType?  @default(QUICK)
+  agentDispatched Boolean?   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
