@@ -17,13 +17,13 @@ export async function handleParticipantJoined(event: WebhookEvent) {
     // Get room data from DB
     const roomData = await prisma.room.findUnique({
       where: { roomKey: room.name },
-      select: { 
+      select: {
         id: true,
         domainId: true,
         clientName: true,
         sessionType: true,
-        agentDispatched: true
-      }
+        agentDispatched: true,
+      },
     });
 
     if (!roomData) {
@@ -34,30 +34,35 @@ export async function handleParticipantJoined(event: WebhookEvent) {
     // Dispatch agent if not already dispatched
     if (!roomData.agentDispatched) {
       console.log(`🤖 Host joined, dispatching agent for ${room.name}`);
-      
+
       const apiKey = process.env.LIVEKIT_VIDEO_API_KEY!;
       const apiSecret = process.env.LIVEKIT_VIDEO_API_SECRET!;
       const wsUrl = process.env.LIVEKIT_VIDEO_URL!;
 
       try {
-        const agentDispatchClient = new AgentDispatchClient(wsUrl, apiKey, apiSecret);
-        
+        const agentDispatchClient = new AgentDispatchClient(
+          wsUrl,
+          apiKey,
+          apiSecret
+        );
+
         await agentDispatchClient.createDispatch(
-          room.name,
+          room.name, // ✅ This is the room identifier
           "agent",
           {
             metadata: JSON.stringify({
               clientName: roomData.clientName,
               sessionType: roomData.sessionType,
-              dbId: roomData.id
-            })
+              dbId: roomData.id,
+              roomKey: room.name, // ⬅️ ADD THIS so the agent knows the room identifier
+            }),
           }
         );
 
         // Mark as dispatched
         await prisma.room.update({
           where: { id: roomData.id },
-          data: { agentDispatched: true }
+          data: { agentDispatched: true },
         });
 
         console.log(`✅ Agent dispatched for room: ${room.name}`);
@@ -65,7 +70,7 @@ export async function handleParticipantJoined(event: WebhookEvent) {
         console.error(`❌ Agent dispatch failed for ${room.name}:`, error);
       }
     } else {
-      console.log(`ℹ️ Agent already dispatched for ${room.name}`);
+      console.log(`🆔 Agent already dispatched for ${room.name}`);
     }
 
     // Start recording

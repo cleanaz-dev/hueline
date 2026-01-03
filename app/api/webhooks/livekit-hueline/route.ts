@@ -1,8 +1,9 @@
 // api/webhooks/livekit-hueline/route.ts
 import { WebhookReceiver } from "livekit-server-sdk";
 import { handleParticipantJoined } from "@/lib/livekit";
-import { handleParticipantLeft } from "@/lib/livekit"
+import { handleParticipantLeft } from "@/lib/livekit";
 import { handleEgressEnded } from "@/lib/livekit";
+import { handleRoomFinished } from "@/lib/livekit";
 
 const receiver = new WebhookReceiver(
   process.env.LIVEKIT_VIDEO_API_KEY!,
@@ -42,10 +43,11 @@ export async function POST(req: Request) {
 
       case "room_finished":
         console.log(`🏁 Room finished: ${event.room?.name}`);
+        await handleRoomFinished(event);
         break;
 
       default:
-        console.log(`ℹ️ Unhandled event: ${event.event}`);
+        console.log(`⚠️ Unhandled event: ${event.event}`);
     }
 
     return new Response("ok", { status: 200 });

@@ -24,7 +24,6 @@ import {
 } from "@deepgram/sdk";
 import { v4 as uuidv4 } from "uuid";
 import useSWR from "swr";
-import { DeleteRoomDialog } from "@/components/rooms/delete-room-dialog";
 
 // --- 1. SHARED INTERFACES ---
 export interface ScopeItem {
@@ -84,6 +83,7 @@ class PCMProcessor extends AudioWorkletProcessor {
     super();
     this.buffer = new Int16Array(2048); 
     this.offset = 0;
+    console.log("🔊 WORKLET: Processor Initialized"); 
   }
   process(inputs) {
     const input = inputs[0];
@@ -144,6 +144,8 @@ export const RoomProvider = ({
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioPlaybackContext = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const workletRef = useRef<AudioWorkletNode | null>(null);
 
   // --- C. SCOPE DATA (SWR + HYBRID SYNC) ---
   const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -399,95 +401,148 @@ export const RoomProvider = ({
   }, [slug, room]);
 
   // --- G. TRANSCRIPTION LOGIC (Deepgram) ---
-  const toggleTranscription = useCallback(async () => {
-    if (isTranscribing) {
-      // STOP
-      deepgramLiveRef.current?.requestClose();
+// --- G. TRANSCRIPTION LOGIC (Fixed & Persisted) ---
+const toggleTranscription = useCallback(async () => {
+  // --- STOPPING LOGIC ---
+  if (isTranscribing) {
+    console.log("🛑 Stopping Transcription...");
+    
+    // 1. Close Deepgram
+    if (deepgramLiveRef.current) {
+      deepgramLiveRef.current.requestClose();
       deepgramLiveRef.current = null;
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
-      streamRef.current = null;
-      setIsTranscribing(false);
-      return;
     }
 
-    try {
-      // START
-      setIsTranscribing(true);
-      const res = await fetch(`/api/subdomain/${slug}/deepgram/token`);
-      const data = await res.json();
+    // 2. Disconnect & Clean Audio Nodes (Crucial)
+    if (workletRef.current) {
+      workletRef.current.disconnect();
+      workletRef.current = null;
+    }
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
 
-      const deepgram = createClient(data.key);
-      const connection = deepgram.listen.live({
-        model: "nova-2",
-        language: "en-US",
-        smart_format: true,
-        encoding: "linear16",
-        sample_rate: 16000,
-        interim_results: true,
-      });
+    // 3. Close Context
+    if (audioContextRef.current) {
+      await audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    
+    streamRef.current = null;
+    setIsTranscribing(false);
+    return;
+  }
 
-      connection.on(LiveTranscriptionEvents.Transcript, (data) => {
-        const transcript = data.channel.alternatives[0].transcript;
-        if (data.is_final && transcript?.length > 0) {
-          setTranscripts((prev) => [
-            ...prev,
-            { sender: "local", text: transcript, timestamp: Date.now() },
-          ]);
-          sendData("TRANSCRIPT", { text: transcript });
-          handleChunkAnalysis(transcript); // 👈 Triggers AI
-        }
-      });
+  // --- STARTING LOGIC ---
+  try {
+    console.log("🚀 Starting Transcription...");
+    setIsTranscribing(true);
 
-      await connection.keepAlive();
-      deepgramLiveRef.current = connection;
+    const res = await fetch(`/api/subdomain/${slug}/deepgram/token`);
+    const data = await res.json();
+    console.log("🔑 Token Received");
 
-      // Capture Audio from LiveKit Track (Reliable method)
-      let mediaStreamTrack = room.localParticipant.getTrackPublication(
+    const deepgram = createClient(data.key);
+
+    // 1. Get LiveKit Track
+    let mediaStreamTrack = room.localParticipant.getTrackPublication(
+      Track.Source.Microphone
+    )?.track?.mediaStreamTrack;
+
+    if (!mediaStreamTrack) {
+      console.log("🎤 Enabling Mic...");
+      await room.localParticipant.setMicrophoneEnabled(true);
+      mediaStreamTrack = room.localParticipant.getTrackPublication(
         Track.Source.Microphone
       )?.track?.mediaStreamTrack;
-
-      if (!mediaStreamTrack) {
-        await room.localParticipant.setMicrophoneEnabled(true);
-        mediaStreamTrack = room.localParticipant.getTrackPublication(
-          Track.Source.Microphone
-        )?.track?.mediaStreamTrack;
-      }
-
-      if (!mediaStreamTrack) throw new Error("No Microphone Track Found");
-
-      const stream = new MediaStream([mediaStreamTrack]);
-      streamRef.current = stream;
-
-      const AudioContextClass =
-        window.AudioContext || (window as any).webkitAudioContext;
-      const audioContext = new AudioContextClass({ sampleRate: 16000 });
-      audioContextRef.current = audioContext;
-
-      const blob = new Blob([PCM_WORKLET_CODE], {
-        type: "application/javascript",
-      });
-      const blobUrl = URL.createObjectURL(blob);
-      await audioContext.audioWorklet.addModule(blobUrl);
-
-      const source = audioContext.createMediaStreamSource(stream);
-      const worklet = new AudioWorkletNode(audioContext, "pcm-processor");
-
-      worklet.port.onmessage = (e) => {
-        if (deepgramLiveRef.current?.getReadyState() === 1) {
-          deepgramLiveRef.current.send(e.data);
-        }
-      };
-      source.connect(worklet);
-      worklet.connect(audioContext.destination);
-    } catch (err) {
-      console.error("Deepgram Error", err);
-      setIsTranscribing(false);
     }
-  }, [isTranscribing, sendData, slug, room, isPainter]);
 
+    if (!mediaStreamTrack) throw new Error("No Microphone Track Found");
+
+    // ⚡ FIX 1: Clone the track to prevent LiveKit conflicts
+    const trackClone = mediaStreamTrack.clone(); 
+    const stream = new MediaStream([trackClone]);
+    streamRef.current = stream; // Keep ref to stream
+    
+    // 2. Setup Audio Context
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const audioContext = new AudioContextClass();
+    
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+    audioContextRef.current = audioContext;
+    console.log(`🎛️ Audio Context: ${audioContext.state} (${audioContext.sampleRate}Hz)`);
+
+    // 3. Setup Deepgram
+    const connection = deepgram.listen.live({
+      model: "nova-3",
+      language: "en-US",
+      smart_format: true,
+      encoding: "linear16",
+      sample_rate: audioContext.sampleRate,
+      interim_results: true,
+    });
+
+    connection.on(LiveTranscriptionEvents.Open, () => console.log("🟢 Deepgram OPEN"));
+    connection.on(LiveTranscriptionEvents.Close, () => console.log("🔴 Deepgram CLOSED"));
+    connection.on(LiveTranscriptionEvents.Error, (e) => console.error("☠️ Deepgram Error", e));
+    
+    connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+      const transcript = data.channel.alternatives[0].transcript;
+      if (transcript && data.is_final) {
+         console.log(`✅ MATCH: ${transcript}`);
+         setTranscripts((prev) => [
+            ...prev,
+            { sender: "local", text: transcript, timestamp: Date.now() },
+         ]);
+         sendData("TRANSCRIPT", { text: transcript });
+         handleChunkAnalysis(transcript);
+      }
+    });
+
+    await connection.keepAlive();
+    deepgramLiveRef.current = connection;
+
+    // 4. Setup Worklet (The Pipeline)
+    const blob = new Blob([PCM_WORKLET_CODE], { type: "application/javascript" });
+    const blobUrl = URL.createObjectURL(blob);
+    await audioContext.audioWorklet.addModule(blobUrl);
+
+    // ⚡ FIX 2: Store nodes in Refs to prevent Garbage Collection
+    const source = audioContext.createMediaStreamSource(stream);
+    sourceRef.current = source;
+    
+    const worklet = new AudioWorkletNode(audioContext, "pcm-processor");
+    workletRef.current = worklet;
+
+    let packetCount = 0;
+    worklet.port.onmessage = (e) => {
+      // Send to Deepgram
+      if (deepgramLiveRef.current?.getReadyState() === 1) {
+        deepgramLiveRef.current.send(e.data);
+        
+        // Debug first 3 packets to prove flow
+        if (packetCount < 3) {
+          console.log(`🔊 Packet ${packetCount++} sent (Size: ${e.data.byteLength})`);
+        }
+      }
+    };
+
+    // 5. Connect Pipeline (Mic -> Worklet -> Mute -> Speaker)
+    source.connect(worklet);
+    
+    const muteGain = audioContext.createGain();
+    muteGain.gain.value = 0; // Prevent feedback
+    worklet.connect(muteGain);
+    muteGain.connect(audioContext.destination); // Keep graph alive
+
+  } catch (err) {
+    console.error("❌ Setup Error", err);
+    setIsTranscribing(false);
+  }
+}, [isTranscribing, sendData, slug, room]);
   // --- H. AI VISUAL GEN LOGIC ---
   const triggerAI = async (slug: string) => {
     if (isGenerating) return;

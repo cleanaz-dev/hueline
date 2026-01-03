@@ -1,5 +1,5 @@
-//api/subdomain/[slug]/room/[roomId]/scope/route.ts
-import { getRoomScope } from "@/lib/redis";
+// app/api/subdomain/[slug]/room/[roomId]/scope/route.ts
+import { createClient } from 'redis';
 import { NextResponse } from "next/server";
 
 interface Params {
@@ -19,11 +19,13 @@ export async function GET(req: Request, { params }: Params) {
         { status: 400 }
       );
 
-    const items = await getRoomScope(roomId); 
+   const data = ""
+    
+   return NextResponse.json(data)
 
-    return NextResponse.json({ items: items || [] }); 
   } catch (error) {
     console.error(error);
-   return NextResponse.json({ items: [] }, { status: 500 });
+    return NextResponse.json({message: "Internal Server Error"}, {status: 500});
   }
 }
+

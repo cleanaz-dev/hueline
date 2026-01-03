@@ -67,3 +67,11 @@ export async function getRoomIntelligence(slug: string) {
   if (!data) return null;
   return JSON.parse(data) as CachedRoomIntelligence;
 }
+
+export async function getRoomScopeData(roomId: string) {
+  const client = await getRedisClient();
+  const key = keys.roomScopeData(roomId);
+  const data = await client.get(key);
+  if(!data) return null
+  return JSON.parse(data)
+}

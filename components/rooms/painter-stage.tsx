@@ -24,6 +24,7 @@ import {
   MicOff as MicOffIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ScopeList from "./room-scope-list";
 
 interface LiveStageProps {
   slug: string;
@@ -58,13 +59,13 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
 
   // --- FIX: ROBUST INVITE ACTION ---
   const copyInvite = () => {
-    // 1. Use the 'roomId' prop, not 'room.name'. 
+    // 1. Use the 'roomId' prop, not 'room.name'.
     //    This guarantees the ID matches the route param.
     // 2. Remove the 'if (!room) return' check so you can invite before connecting.
-    
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
     const url = `${origin}/meet/${roomId}?role=client`;
-    
+
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -96,7 +97,9 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
         isDisabled
           ? "opacity-40 cursor-not-allowed"
           : "cursor-pointer hover:bg-zinc-100/80",
-        !isActive && variant !== "primary" && (colorClass || "text-muted-foreground"),
+        !isActive &&
+          variant !== "primary" &&
+          (colorClass || "text-muted-foreground"),
         isActive && "bg-cyan-50 text-primary",
         variant === "primary" &&
           !isDisabled &&
@@ -138,7 +141,6 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
 
       {/* --- LEFT: MAIN CANVAS --- */}
       <div className="flex-1 relative flex flex-col overflow-hidden">
-        
         {/* Status Bar */}
         <div className="absolute top-6 left-6 z-20 flex items-center gap-3 pointer-events-none">
           <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/10 px-4 py-1.5 rounded-full shadow-xl">
@@ -151,7 +153,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
               )}
             />
             <span className="text-[9px] md:text-xs font-bold text-white tracking-widest uppercase">
-               {/* Display Room ID if Name isn't available yet */}
+              {/* Display Room ID if Name isn't available yet */}
               {room?.name || roomId || "Initializing..."}
             </span>
           </div>
@@ -182,13 +184,13 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
                   Waiting for Camera
                 </p>
                 <div className="mt-4">
-                    {/* Added a button here for easy testing if track fails */}
-                    <button 
-                        onClick={copyInvite}
-                        className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded-full transition"
-                    >
-                        {copied ? "Link Copied!" : "Copy Invite Link"}
-                    </button>
+                  {/* Added a button here for easy testing if track fails */}
+                  <button
+                    onClick={copyInvite}
+                    className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded-full transition"
+                  >
+                    {copied ? "Link Copied!" : "Copy Invite Link"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -257,7 +259,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
         <div className="text-xs font-semibold text-muted-foreground mb-1 hidden md:flex">
           TOOLS
         </div>
-        
+
         <div className="flex lg:grid lg:grid-cols-2 gap-2 w-full">
           <ToolButton
             icon={copied ? Check : Share2}
@@ -286,38 +288,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
             onClick={() => console.log("Settings clicked")}
           />
         </div>
-
-        {/* --- INTEL LIST --- */}
-        <div className="hidden lg:flex lg:flex-col lg:flex-1 gap-2 overflow-y-auto mt-4">
-          <div className="flex justify-between items-end mb-1">
-             <div className="text-xs font-semibold text-muted-foreground">INTEL</div>
-             <div className="text-[10px] text-white/30">{liveScopeItems?.length || 0} items</div>
-          </div>
-          
-          {liveScopeItems && liveScopeItems.length > 0 ? (
-            liveScopeItems.map((item) => (
-              <div key={item.id} className="bg-muted/50 rounded-md p-2 text-xs border border-white/5 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="text-primary font-mono font-bold text-[10px] mb-1 flex gap-2 items-center uppercase tracking-wider">
-                  <DatabaseZap className="size-3 text-primary" />
-                  {item.category}
-                </div>
-                <div className="text-black font-medium">{item.item}</div>
-                <div className="text-muted-foreground font-semibold">
-                  {item.action}
-                </div>
-                <div className="text-black/30 text-[10px] mt-1 font-mono">
-                  {item.timestamp}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center opacity-40 text-center space-y-2">
-               <MicOffIcon className="size-8 text-muted-foreground" />
-               <p className="text-xs ">No items captured.</p>
-               <p className="text-[10px] ">Turn on 'Record' to start capturing scope.</p>
-            </div>
-          )}
-        </div>
+        <ScopeList roomId={roomId} slug={slug} />
       </div>
     </div>
   );
