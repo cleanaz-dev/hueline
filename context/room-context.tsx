@@ -617,13 +617,14 @@ export const RoomProvider = ({
         token={token}
         serverUrl={serverUrl}
         connect={true}
-        // 👇 CRITICAL: False allows CameraHandler to manage devices
-        video={false}
-        audio={false}
+        // // 👇 CRITICAL: False allows CameraHandler to manage devices
+        // video={false}
+        // audio={false}
         connectOptions={{ autoSubscribe: true }}
       >
+         <RoomAudioRenderer />
         {children}
-        <RoomAudioRenderer />
+
       </LiveKitRoom>
     </RoomContext.Provider>
   );
