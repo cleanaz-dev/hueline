@@ -1,6 +1,7 @@
 export interface RoomData {
-  bookingId: string;
+  bookingId?: string;
   roomName: string;
-  clientName: string;
-  clientPhone: string;
+  clientName?: string;
+  clientPhone?: string;
+  sessionType?: "PROJECT" | "QUICK"; // Add this
 }

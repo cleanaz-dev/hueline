@@ -109,7 +109,7 @@ export default function RoomsDashboard() {
           roomName: projectName,
           clientName: selectedBooking?.name,
           clientPhone: selectedBooking?.phone,
-          type: "PROJECT", // Optional: Good to track in DB
+          sessionType: "PROJECT", // Changed from type to sessionType
         };
       } else {
         const slug =
@@ -118,7 +118,7 @@ export default function RoomsDashboard() {
         payload = {
           roomName: quickRoomName,
           clientName: quickClientName,
-          type: "QUICK", // Optional: Good to track in DB
+          sessionType: "QUICK", // Changed from type to sessionType
         };
       }
 
@@ -128,7 +128,6 @@ export default function RoomsDashboard() {
       );
 
       if (response.data) {
-        // ✅ ROUTING LOGIC UPDATE
         if (mode === "quick") {
           router.push(`/my/rooms/quick-session/${roomId}`);
         } else {

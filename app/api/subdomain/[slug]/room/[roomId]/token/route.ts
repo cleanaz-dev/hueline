@@ -1,5 +1,5 @@
 // app/api/token/[slug]/room/[roomId]/route.ts
-import { AccessToken, AgentDispatchClient } from "livekit-server-sdk";
+import { AccessToken } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -13,8 +13,8 @@ interface Params {
 export async function GET(req: Request, { params }: Params) {
   try {
     const { slug, roomId } = await params;
-    
     const { searchParams } = new URL(req.url);
+    
     const identity = searchParams.get("identity");
     
     if (!identity) {
@@ -36,7 +36,6 @@ export async function GET(req: Request, { params }: Params) {
         roomKey: true,
         clientName: true,
         sessionType: true,
-        agentDispatched: true,
       },
     });
 
@@ -76,40 +75,7 @@ export async function GET(req: Request, { params }: Params) {
       canSubscribe: true,
     });
 
-    // 🤖 ONLY DISPATCH AGENT IF HOST IS JOINING AND NOT ALREADY DISPATCHED
-    const isHost = identity.startsWith('host-');
-    
-    if (isHost && !roomData.agentDispatched) {
-      try {
-        const agentDispatchClient = new AgentDispatchClient(wsUrl, apiKey, apiSecret);
-        
-        await agentDispatchClient.createDispatch(
-          roomData.roomKey,
-          "agent",
-          {
-            metadata: JSON.stringify({
-              clientName: roomData.clientName,
-              sessionType: roomData.sessionType,
-              dbId: roomData.id
-            })
-          }
-        );
-
-        // Mark as dispatched immediately
-        await prisma.room.update({
-          where: { id: roomData.id },
-          data: { agentDispatched: true }
-        });
-
-        console.log(`✅ Agent dispatched to room: ${roomData.roomKey}`);
-      } catch (dispatchError) {
-        console.error("❌ Agent dispatch failed:", dispatchError);
-      }
-    } else if (isHost && roomData.agentDispatched) {
-      console.log(`Agent already dispatched for room: ${roomData.roomKey}`);
-    } else {
-      console.log(`Client joining, no agent dispatch for: ${roomData.roomKey}`);
-    }
+    console.log(`✅ Token generated for ${identity} in room ${roomData.roomKey}`);
 
     return NextResponse.json({
       token: await at.toJwt(),
