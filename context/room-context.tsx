@@ -16,7 +16,7 @@ import {
   RemoteParticipant,
   Track,
 } from "livekit-client";
-import { LiveKitRoom } from "@livekit/components-react";
+import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
 import {
   createClient,
   LiveClient,
@@ -623,6 +623,7 @@ export const RoomProvider = ({
         connectOptions={{ autoSubscribe: true }}
       >
         {children}
+        <RoomAudioRenderer />
       </LiveKitRoom>
     </RoomContext.Provider>
   );
