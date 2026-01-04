@@ -9,6 +9,7 @@ export async function handleRoomFinished(event: WebhookEvent) {
 
   try {
     const scopeData = await getRoomScopeData(room.name);
+    console.log("Scope Data:", scopeData)
 
     await prisma.room.update({
       where: { roomKey: room.name },
