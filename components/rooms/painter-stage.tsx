@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react"; // <--- 1. Import useEffect
+import React, { useRef, useState, useEffect } from "react";
 import { useRoomContext } from "@/context/room-context";
 import {
   VideoTrack,
@@ -21,7 +21,7 @@ import {
   X,
   Check,
   Share2,
-  SwitchCamera,
+  SwitchCamera, // Imported for the button
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ScopeList from "./room-scope-list";
@@ -46,29 +46,51 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
-  // --- 2. PREVENT APPLE PULL-TO-REFRESH ---
+  // --- 1. NUCLEAR SCROLL LOCK (Fixes Pull-to-Refresh) ---
   useEffect(() => {
-    // This locks the overscroll behavior on the body while this component is mounted
-    const originalStyle = document.body.style.overscrollBehaviorY;
-    document.body.style.overscrollBehaviorY = "none";
+    // We must capture the original styles to restore them on unmount
+    const originalHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+    const originalBodyOverscroll = document.body.style.overscrollBehavior;
+    const originalBodyPosition = document.body.style.position;
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalBodyWidth = document.body.style.width;
+
+    // Apply the lock
+    // 1. Disable bounce on root elements
+    document.documentElement.style.overscrollBehavior = "none";
+    document.body.style.overscrollBehavior = "none";
+    
+    // 2. The "Fixed Body" trick: This is the only thing that strictly stops Safari 
+    // from rubber-banding the address bar. It freezes the viewport.
+    document.body.style.position = "fixed";
+    document.body.style.overflow = "hidden";
+    document.body.style.width = "100%";
+    document.body.style.height = "100%"; // Ensures full height capture
 
     return () => {
-      // Revert back to normal when leaving the page
-      document.body.style.overscrollBehaviorY = originalStyle;
+      // Restore everything when leaving this specific page
+      document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
+      document.body.style.overscrollBehavior = originalBodyOverscroll;
+      document.body.style.position = originalBodyPosition;
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.width = originalBodyWidth;
+      document.body.style.height = "";
     };
   }, []);
-  // ----------------------------------------
 
-  // Camera Switching Logic
+  // --- 2. CAMERA SWITCHING LOGIC ---
   const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({
     kind: 'videoinput',
   });
 
   const handleSwitchCamera = async () => {
     if (devices.length < 2) return;
+    
+    // Cycle through available cameras (Front -> Back -> External)
     const currentIndex = devices.findIndex((d) => d.deviceId === activeDeviceId);
     const nextIndex = (currentIndex + 1) % devices.length;
     const nextDevice = devices[nextIndex];
+    
     if (nextDevice) {
       await setActiveMediaDevice(nextDevice.deviceId);
     }
@@ -158,8 +180,8 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   );
 
   return (
-    // Added 'overscroll-y-none' class to the main container as a backup
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] md:h-[calc(100vh-9rem)] lg:h-[calc(100vh-8rem)] w-full overflow-hidden overscroll-y-none gap-4">
+    // We also apply a class here, but the useEffect above does the heavy lifting
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] md:h-[calc(100vh-9rem)] lg:h-[calc(100vh-8rem)] w-full overflow-hidden gap-4">
       <RoomAudioRenderer />
 
       {/* --- LEFT: MAIN CANVAS --- */}
@@ -282,7 +304,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
         </div>
 
         <div className="flex lg:grid lg:grid-cols-2 gap-2 w-full">
-          {/* Show Switch Camera button if multiple video inputs exist */}
+          {/* Flip Cam Button: Only shows if multiple cameras exist */}
           {devices.length > 1 && (
              <ToolButton
               icon={SwitchCamera}
