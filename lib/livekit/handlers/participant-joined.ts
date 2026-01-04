@@ -23,6 +23,11 @@ export async function handleParticipantJoined(event: WebhookEvent) {
         clientName: true,
         sessionType: true,
         agentDispatched: true,
+        domain: {
+          select: {
+            id: true
+          },
+        },
       },
     });
 
@@ -54,7 +59,8 @@ export async function handleParticipantJoined(event: WebhookEvent) {
               clientName: roomData.clientName,
               sessionType: roomData.sessionType,
               dbId: roomData.id,
-              roomKey: room.name, // ⬅️ ADD THIS so the agent knows the room identifier
+              roomKey: room.name,
+              domainId: roomData.domain?.id
             }),
           }
         );
