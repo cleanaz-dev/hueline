@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react"; // <--- 1. Import useEffect
 import { useRoomContext } from "@/context/room-context";
 import {
   VideoTrack,
@@ -8,7 +8,7 @@ import {
   RoomAudioRenderer,
   isTrackReference,
   type TrackReference,
-  useMediaDeviceSelect, // <--- 1. ADD THIS IMPORT
+  useMediaDeviceSelect,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import {
@@ -21,9 +21,7 @@ import {
   X,
   Check,
   Share2,
-  DatabaseZap,
-  MicOff as MicOffIcon,
-  SwitchCamera, // <--- 2. ADD THIS ICON
+  SwitchCamera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ScopeList from "./room-scope-list";
@@ -48,25 +46,33 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
-  // --- 3. ADD CAMERA SWITCHING LOGIC ---
-  // This hook automatically gets the list of video devices and handles the switching
+  // --- 2. PREVENT APPLE PULL-TO-REFRESH ---
+  useEffect(() => {
+    // This locks the overscroll behavior on the body while this component is mounted
+    const originalStyle = document.body.style.overscrollBehaviorY;
+    document.body.style.overscrollBehaviorY = "none";
+
+    return () => {
+      // Revert back to normal when leaving the page
+      document.body.style.overscrollBehaviorY = originalStyle;
+    };
+  }, []);
+  // ----------------------------------------
+
+  // Camera Switching Logic
   const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({
     kind: 'videoinput',
   });
 
   const handleSwitchCamera = async () => {
     if (devices.length < 2) return;
-    
-    // Find current index and switch to the next available device
     const currentIndex = devices.findIndex((d) => d.deviceId === activeDeviceId);
     const nextIndex = (currentIndex + 1) % devices.length;
     const nextDevice = devices[nextIndex];
-    
     if (nextDevice) {
       await setActiveMediaDevice(nextDevice.deviceId);
     }
   };
-  // -------------------------------------
 
   // Fetch Tracks
   const tracks = useTracks([
@@ -152,7 +158,8 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   );
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] md:h-[calc(100vh-9rem)] lg:h-[calc(100vh-8rem)] w-full overflow-hidden gap-4">
+    // Added 'overscroll-y-none' class to the main container as a backup
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] md:h-[calc(100vh-9rem)] lg:h-[calc(100vh-8rem)] w-full overflow-hidden overscroll-y-none gap-4">
       <RoomAudioRenderer />
 
       {/* --- LEFT: MAIN CANVAS --- */}
@@ -210,7 +217,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
             </div>
           )}
 
-          {/* Overlays (Laser, Mockups, PIP) */}
+          {/* Overlays */}
           {laserPosition && (
             <div
               className="absolute w-12 h-12 -ml-6 -mt-6 border-4 border-cyan-400 rounded-full animate-ping z-50 pointer-events-none shadow-[0_0_30px_rgba(34,211,238,0.8)]"
@@ -275,8 +282,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
         </div>
 
         <div className="flex lg:grid lg:grid-cols-2 gap-2 w-full">
-          {/* --- 4. ADD SWITCH CAMERA BUTTON --- */}
-          {/* Only show if we have more than 1 camera available */}
+          {/* Show Switch Camera button if multiple video inputs exist */}
           {devices.length > 1 && (
              <ToolButton
               icon={SwitchCamera}
