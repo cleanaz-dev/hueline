@@ -8,6 +8,7 @@ import {
   RoomAudioRenderer,
   isTrackReference,
   type TrackReference,
+  useMediaDeviceSelect, // <--- 1. ADD THIS IMPORT
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import {
@@ -22,13 +23,14 @@ import {
   Share2,
   DatabaseZap,
   MicOff as MicOffIcon,
+  SwitchCamera, // <--- 2. ADD THIS ICON
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ScopeList from "./room-scope-list";
 
 interface LiveStageProps {
   slug: string;
-  roomId: string; // This is the source of truth
+  roomId: string;
 }
 
 export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
@@ -37,7 +39,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
     sendData,
     isPainter,
     activeMockupUrl,
-    room, // We still use this for status, but not for the invite link
+    room,
     liveScopeItems,
     isTranscribing,
     toggleTranscription,
@@ -45,6 +47,26 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+
+  // --- 3. ADD CAMERA SWITCHING LOGIC ---
+  // This hook automatically gets the list of video devices and handles the switching
+  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({
+    kind: 'videoinput',
+  });
+
+  const handleSwitchCamera = async () => {
+    if (devices.length < 2) return;
+    
+    // Find current index and switch to the next available device
+    const currentIndex = devices.findIndex((d) => d.deviceId === activeDeviceId);
+    const nextIndex = (currentIndex + 1) % devices.length;
+    const nextDevice = devices[nextIndex];
+    
+    if (nextDevice) {
+      await setActiveMediaDevice(nextDevice.deviceId);
+    }
+  };
+  // -------------------------------------
 
   // Fetch Tracks
   const tracks = useTracks([
@@ -57,12 +79,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
     (t) => !t.participant.isLocal && isTrackReference(t)
   ) as TrackReference | undefined;
 
-  // --- FIX: ROBUST INVITE ACTION ---
   const copyInvite = () => {
-    // 1. Use the 'roomId' prop, not 'room.name'.
-    //    This guarantees the ID matches the route param.
-    // 2. Remove the 'if (!room) return' check so you can invite before connecting.
-
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const url = `${origin}/meet/${roomId}?role=client`;
 
@@ -79,7 +96,6 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
     sendData("POINTER", { x, y });
   };
 
-  // --- Toolbar Component ---
   const ToolButton = ({
     icon: Icon,
     label,
@@ -153,7 +169,6 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
               )}
             />
             <span className="text-[9px] md:text-xs font-bold text-white tracking-widest uppercase">
-              {/* Display Room ID if Name isn't available yet */}
               {room?.name || roomId || "Initializing..."}
             </span>
           </div>
@@ -184,7 +199,6 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
                   Waiting for Camera
                 </p>
                 <div className="mt-4">
-                  {/* Added a button here for easy testing if track fails */}
                   <button
                     onClick={copyInvite}
                     className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded-full transition"
@@ -261,6 +275,17 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
         </div>
 
         <div className="flex lg:grid lg:grid-cols-2 gap-2 w-full">
+          {/* --- 4. ADD SWITCH CAMERA BUTTON --- */}
+          {/* Only show if we have more than 1 camera available */}
+          {devices.length > 1 && (
+             <ToolButton
+              icon={SwitchCamera}
+              label="Flip Cam"
+              onClick={handleSwitchCamera}
+              colorClass="text-purple-400"
+            />
+          )}
+
           <ToolButton
             icon={copied ? Check : Share2}
             label={copied ? "Copied" : "Invite"}
