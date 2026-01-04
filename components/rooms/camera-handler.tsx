@@ -24,7 +24,7 @@ export const CameraHandler = () => {
           try {
             // Try back camera first
             await room.localParticipant.setCameraEnabled(true, {
-              resolution: VideoPresets.h720.resolution,
+              resolution: VideoPresets.h1080.resolution,
               facingMode: 'environment'
             });
             
