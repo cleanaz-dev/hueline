@@ -22,6 +22,7 @@ import {
   Check,
   Share2,
   SwitchCamera,
+  ArrowRightLeft, // Imported for the swap icon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ScopeList from "./room-scope-list";
@@ -45,20 +46,19 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  
+  // State to handle swapping main feed with PIP feed
+  const [isSwapped, setIsSwapped] = useState(false);
 
   // --- SIMPLE PULL-TO-REFRESH PREVENTION ---
   useEffect(() => {
-    // Save original values
     const originalHtmlOverscroll = document.documentElement.style.overscrollBehavior;
     const originalBodyOverscroll = document.body.style.overscrollBehavior;
 
-    // Only disable overscroll behavior (allows normal scrolling but prevents pull-to-refresh)
     document.documentElement.style.overscrollBehavior = "none";
     document.body.style.overscrollBehavior = "none";
 
-    // Additional iOS Safari prevention
     const preventPullToRefresh = (e: TouchEvent) => {
-      // Only prevent if user is at the top of the page and trying to scroll down
       if (window.scrollY === 0 && e.touches[0].clientY > e.touches[0].pageY) {
         e.preventDefault();
       }
@@ -67,7 +67,6 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
     document.body.addEventListener('touchmove', preventPullToRefresh, { passive: false });
 
     return () => {
-      // Restore original values
       document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
       document.body.style.overscrollBehavior = originalBodyOverscroll;
       document.body.removeEventListener('touchmove', preventPullToRefresh);
@@ -102,6 +101,10 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
     (t) => !t.participant.isLocal && isTrackReference(t)
   ) as TrackReference | undefined;
 
+  // Determine which track goes where based on isSwapped state
+  const mainFeed = isSwapped ? localTrack : remoteTrack;
+  const pipFeed = isSwapped ? remoteTrack : localTrack;
+
   const copyInvite = () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const url = `${origin}/meet/${roomId}?role=client`;
@@ -112,7 +115,10 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   };
 
   const handlePointer = (e: React.MouseEvent) => {
+    // Only allow pointer if main feed is the remote track (default state)
+    // or if you want to point at your own feed, remove the !isSwapped check
     if (!isPainter || !containerRef.current || activeMockupUrl) return;
+    
     const rect = containerRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
@@ -201,12 +207,17 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
         <div
           ref={containerRef}
           onClick={handlePointer}
-          className="relative flex-1 w-full h-full bg-zinc-950 md:rounded-2xl overflow-hidden border border-white/10 shadow-md cursor-crosshair group "
+          className="relative flex-1 w-full h-full bg-zinc-950 md:rounded-2xl overflow-hidden border border-white/10 shadow-md cursor-crosshair group"
         >
-          {remoteTrack ? (
+          {/* 
+              LANDSCAPE FIX: 
+              - 'object-contain' ensures the full video is seen without cropping.
+              - 'max-h-full max-w-full' ensures responsiveness.
+          */}
+          {mainFeed ? (
             <VideoTrack
-              trackRef={remoteTrack}
-              className="w-full h-full object-contain"
+              trackRef={mainFeed}
+              className="w-full h-full max-w-full max-h-full object-contain pointer-events-none"
             />
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-6">
@@ -219,22 +230,24 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
               </div>
               <div className="text-center">
                 <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">
-                  Waiting for Camera
+                  {isSwapped ? "Waiting for Local Camera" : "Waiting for Remote Camera"}
                 </p>
-                <div className="mt-4">
-                  <button
-                    onClick={copyInvite}
-                    className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded-full transition"
-                  >
-                    {copied ? "Link Copied!" : "Copy Invite Link"}
-                  </button>
-                </div>
+                {!isSwapped && (
+                  <div className="mt-4">
+                    <button
+                      onClick={copyInvite}
+                      className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded-full transition"
+                    >
+                      {copied ? "Link Copied!" : "Copy Invite Link"}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* Overlays */}
-          {laserPosition && (
+          {laserPosition && !isSwapped && (
             <div
               className="absolute w-12 h-12 -ml-6 -mt-6 border-4 border-cyan-400 rounded-full animate-ping z-50 pointer-events-none shadow-[0_0_30px_rgba(34,211,238,0.8)]"
               style={{
@@ -270,11 +283,11 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
             </div>
           )}
 
-          {/* PIP (Local User) */}
-          <div className="absolute bottom-4 left-4 w-32 h-44 rounded-xl overflow-hidden border border-white/20 shadow-2xl z-30 bg-black/50 backdrop-blur-sm transition-transform hover:scale-105">
-            {localTrack ? (
+          {/* PIP (Secondary Feed) */}
+          <div className="absolute bottom-4 left-4 w-32 h-44 rounded-xl overflow-hidden border border-white/20 shadow-2xl z-30 bg-black/50 backdrop-blur-sm transition-transform hover:scale-105 group/pip">
+            {pipFeed ? (
               <VideoTrack
-                trackRef={localTrack}
+                trackRef={pipFeed}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -282,11 +295,24 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
                 <Video size={20} />
               </div>
             )}
-            <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 to-transparent p-2">
+            
+            <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 to-transparent p-2 flex justify-between items-end">
               <p className="text-[9px] font-black uppercase text-white tracking-wider pl-1">
-                You
+                {isSwapped ? "Client" : "You"}
               </p>
             </div>
+
+            {/* SWAP BUTTON */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsSwapped(!isSwapped);
+              }}
+              className="absolute top-2 right-2 bg-black/60 hover:bg-white/20 text-white p-1.5 rounded-full backdrop-blur-md transition-all opacity-0 group-hover/pip:opacity-100"
+              title="Swap View"
+            >
+              <ArrowRightLeft size={14} />
+            </button>
           </div>
         </div>
       </div>
