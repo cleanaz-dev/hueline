@@ -21,7 +21,7 @@ import {
   X,
   Check,
   Share2,
-  SwitchCamera, // Imported for the button
+  SwitchCamera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ScopeList from "./room-scope-list";
@@ -46,39 +46,35 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
-  // --- 1. NUCLEAR SCROLL LOCK (Fixes Pull-to-Refresh) ---
+  // --- SIMPLE PULL-TO-REFRESH PREVENTION ---
   useEffect(() => {
-    // We must capture the original styles to restore them on unmount
+    // Save original values
     const originalHtmlOverscroll = document.documentElement.style.overscrollBehavior;
     const originalBodyOverscroll = document.body.style.overscrollBehavior;
-    const originalBodyPosition = document.body.style.position;
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalBodyWidth = document.body.style.width;
 
-    // Apply the lock
-    // 1. Disable bounce on root elements
+    // Only disable overscroll behavior (allows normal scrolling but prevents pull-to-refresh)
     document.documentElement.style.overscrollBehavior = "none";
     document.body.style.overscrollBehavior = "none";
-    
-    // 2. The "Fixed Body" trick: This is the only thing that strictly stops Safari 
-    // from rubber-banding the address bar. It freezes the viewport.
-    document.body.style.position = "fixed";
-    document.body.style.overflow = "hidden";
-    document.body.style.width = "100%";
-    document.body.style.height = "100%"; // Ensures full height capture
+
+    // Additional iOS Safari prevention
+    const preventPullToRefresh = (e: TouchEvent) => {
+      // Only prevent if user is at the top of the page and trying to scroll down
+      if (window.scrollY === 0 && e.touches[0].clientY > e.touches[0].pageY) {
+        e.preventDefault();
+      }
+    };
+
+    document.body.addEventListener('touchmove', preventPullToRefresh, { passive: false });
 
     return () => {
-      // Restore everything when leaving this specific page
+      // Restore original values
       document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
       document.body.style.overscrollBehavior = originalBodyOverscroll;
-      document.body.style.position = originalBodyPosition;
-      document.body.style.overflow = originalBodyOverflow;
-      document.body.style.width = originalBodyWidth;
-      document.body.style.height = "";
+      document.body.removeEventListener('touchmove', preventPullToRefresh);
     };
   }, []);
 
-  // --- 2. CAMERA SWITCHING LOGIC ---
+  // --- CAMERA SWITCHING LOGIC ---
   const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({
     kind: 'videoinput',
   });
@@ -86,7 +82,6 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   const handleSwitchCamera = async () => {
     if (devices.length < 2) return;
     
-    // Cycle through available cameras (Front -> Back -> External)
     const currentIndex = devices.findIndex((d) => d.deviceId === activeDeviceId);
     const nextIndex = (currentIndex + 1) % devices.length;
     const nextDevice = devices[nextIndex];
@@ -180,7 +175,6 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   );
 
   return (
-    // We also apply a class here, but the useEffect above does the heavy lifting
     <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] md:h-[calc(100vh-9rem)] lg:h-[calc(100vh-8rem)] w-full overflow-hidden gap-4">
       <RoomAudioRenderer />
 
@@ -304,7 +298,6 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
         </div>
 
         <div className="flex lg:grid lg:grid-cols-2 gap-2 w-full">
-          {/* Flip Cam Button: Only shows if multiple cameras exist */}
           {devices.length > 1 && (
              <ToolButton
               icon={SwitchCamera}
