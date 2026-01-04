@@ -1,12 +1,7 @@
-import SubdomainDashboardPage from "@/components/subdomains/dashboard/client-dashboard-page";
 import { verifySubdomainOwner } from "@/lib/auth";
 import { checkSubdomainExists } from "@/lib/auth/guard/check-if-subdomain-exists";
-import { getSubDomainData } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
-import type { BookingData } from "@/types/subdomain-type";
-import AdminDashboard from "@/components/admin/admin-dashboard";
 import AdminWrapper from "@/components/admin/admin-wrapper";
-
 
 interface PageProps {
   params: Promise<{
@@ -24,21 +19,16 @@ export default async function Page({ params }: PageProps) {
 
   const session = await verifySubdomainOwner(slug);
 
-  if(session?.role === "SUPER_ADMIN" && session.user.subdomainSlug === "admin") {
-    return (
-      <AdminWrapper />
-    )
+  // Only SUPER_ADMIN with admin subdomain can access this page
+  if (session?.role === "SUPER_ADMIN" && session.user.subdomainSlug === "admin") {
+    return <AdminWrapper />;
   }
 
-  const subDomainData = await getSubDomainData(slug);
-  if (!subDomainData) notFound();
+  // If user is OWNER or any other role, redirect to /my/dashboard
+  if (session?.role === "OWNER") {
+    redirect("/my/dashboard");
+  }
 
-  // console.log("Domain Data:", JSON.stringify(subDomainData, null, 2));
-
-  return (
-    <SubdomainDashboardPage
-      bookingData={subDomainData.bookings as BookingData[]}
-      accountData={subDomainData}
-    />
-  );
+  // If no valid session or unauthorized role, redirect to login
+  redirect(`${process.env.NEXTAUTH_URL}/login`);
 }
