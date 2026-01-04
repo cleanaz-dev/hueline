@@ -23,6 +23,9 @@ import {
   Share2,
   SwitchCamera,
   ArrowRightLeft,
+  ChevronDown,
+  ChevronUp,
+  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ScopeList from "./room-scope-list";
@@ -46,9 +49,10 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
-  
-  // State to handle swapping main feed with PIP feed
   const [isSwapped, setIsSwapped] = useState(false);
+  
+  // Mobile Tool Visibility State
+  const [showTools, setShowTools] = useState(true);
 
   // --- SIMPLE PULL-TO-REFRESH PREVENTION ---
   useEffect(() => {
@@ -80,11 +84,9 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
 
   const handleSwitchCamera = async () => {
     if (devices.length < 2) return;
-    
     const currentIndex = devices.findIndex((d) => d.deviceId === activeDeviceId);
     const nextIndex = (currentIndex + 1) % devices.length;
     const nextDevice = devices[nextIndex];
-    
     if (nextDevice) {
       await setActiveMediaDevice(nextDevice.deviceId);
     }
@@ -101,7 +103,6 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
     (t) => !t.participant.isLocal && isTrackReference(t)
   ) as TrackReference | undefined;
 
-  // Determine which track goes where based on isSwapped state
   const mainFeed = isSwapped ? localTrack : remoteTrack;
   const pipFeed = isSwapped ? remoteTrack : localTrack;
 
@@ -135,41 +136,33 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
       disabled={isDisabled}
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center justify-center w-full p-2.5 rounded-xl transition-all duration-200 group bg-muted",
+        "flex flex-col items-center justify-center w-full p-2 rounded-xl transition-all duration-200 group relative",
+        // Mobile / Desktop specific styling
+        "bg-white/10 backdrop-blur-md lg:bg-muted", 
         isDisabled
           ? "opacity-40 cursor-not-allowed"
-          : "cursor-pointer hover:bg-zinc-100/80",
+          : "cursor-pointer hover:bg-white/20 lg:hover:bg-zinc-100/80",
         !isActive &&
           variant !== "primary" &&
-          (colorClass || "text-muted-foreground"),
-        isActive && "bg-cyan-50 text-primary",
-        variant === "primary" &&
-          !isDisabled &&
-          "bg-zinc-900 text-white hover:bg-zinc-800 shadow-lg shadow-zinc-900/20"
+          (colorClass || "text-white lg:text-muted-foreground"),
+        isActive && "bg-cyan-500/20 text-cyan-300 lg:bg-cyan-50 lg:text-primary",
       )}
     >
       <div
         className={cn(
-          "p-2.5 rounded-xl md:mb-1.5 transition-all duration-200 group-hover:scale-105",
-          variant === "primary"
-            ? "bg-white/10"
-            : cn(
-                "bg-white border shadow-sm",
-                isActive
-                  ? "border-cyan-200 shadow-cyan-100"
-                  : "border-zinc-200 shadow-zinc-100 group-hover:border-zinc-300 group-hover:shadow-md"
-              )
+          "p-2 rounded-lg transition-all duration-200 group-hover:scale-105",
+          isActive ? "bg-cyan-500/20 lg:bg-white lg:border-cyan-200" : "lg:bg-white lg:border lg:shadow-sm"
         )}
       >
         <Icon
-          size={variant === "primary" ? 22 : 20}
-          strokeWidth={variant === "primary" ? 2.5 : 2}
+          size={20}
+          strokeWidth={2}
         />
       </div>
       <span
         className={cn(
-          "text-[10px] font-bold uppercase tracking-wider md:block hidden",
-          variant === "primary" ? "text-black" : "opacity-90"
+          "text-[9px] font-bold uppercase tracking-wider mt-1 lg:block hidden", // Hidden label on mobile to save space
+          "opacity-90"
         )}
       >
         {label}
@@ -178,24 +171,26 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   );
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] md:h-[calc(100vh-9rem)] lg:h-[calc(100vh-8rem)] w-full overflow-hidden gap-4">
+    // MAIN CONTAINER: Changed to flex-row for desktop, but relative/block for mobile to allow overlay
+    <div className="relative lg:flex lg:flex-row h-[calc(100vh-4rem)] md:h-[calc(100vh-9rem)] lg:h-[calc(100vh-8rem)] w-full overflow-hidden lg:gap-4 bg-black">
       <RoomAudioRenderer />
 
-      {/* --- LEFT: MAIN CANVAS --- */}
-      <div className="flex-1 relative flex flex-col overflow-hidden">
+      {/* --- VIDEO AREA (Full Screen on Mobile) --- */}
+      <div className="absolute inset-0 lg:relative lg:flex-1 lg:h-full z-0 flex flex-col overflow-hidden">
+        
         {/* Status Bar */}
-        <div className="absolute top-6 left-6 z-20 flex items-center gap-3 pointer-events-none">
-          <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/10 px-4 py-1.5 rounded-full shadow-xl">
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-3 pointer-events-none">
+          <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full shadow-xl">
             <div
               className={cn(
-                "w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentColor]",
+                "w-2 h-2 rounded-full shadow-[0_0_10px_currentColor]",
                 room?.state === "connected"
                   ? "bg-green-500 text-green-500 animate-pulse"
                   : "bg-yellow-500 text-yellow-500"
               )}
             />
-            <span className="text-[9px] md:text-xs font-bold text-white tracking-widest uppercase">
-              {room?.name || roomId || "Initializing..."}
+            <span className="text-[10px] font-bold text-white tracking-widest uppercase">
+              {room?.name || roomId || "Init..."}
             </span>
           </div>
         </div>
@@ -204,11 +199,9 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
         <div
           ref={containerRef}
           onClick={handlePointer}
-          className="relative flex-1 w-full h-full bg-zinc-950 md:rounded-2xl overflow-hidden border border-white/10 shadow-md cursor-crosshair group"
+          className="relative w-full h-full bg-zinc-950 lg:rounded-2xl overflow-hidden border-0 lg:border border-white/10 shadow-md cursor-crosshair group"
         >
           {mainFeed ? (
-             // CRITICAL FIX: explicit style={{ objectFit: 'contain' }} forces the video
-             // to show entirely, ensuring landscape videos aren't cropped in portrait mode.
             <VideoTrack
               trackRef={mainFeed}
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
@@ -225,18 +218,8 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
               </div>
               <div className="text-center">
                 <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">
-                  {isSwapped ? "Waiting for Local Camera" : "Waiting for Remote Camera"}
+                  {isSwapped ? "Local Cam" : "Waiting..."}
                 </p>
-                {!isSwapped && (
-                  <div className="mt-4">
-                    <button
-                      onClick={copyInvite}
-                      className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded-full transition"
-                    >
-                      {copied ? "Link Copied!" : "Copy Invite Link"}
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -272,14 +255,17 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
                   onClick={() => window.open(activeMockupUrl)}
                   className="bg-white text-black px-6 py-3 rounded-full font-bold flex items-center gap-2 hover:bg-zinc-200 transition"
                 >
-                  <Maximize2 className="w-4 h-4" /> Open Full Resolution
+                  <Maximize2 className="w-4 h-4" /> Open Full
                 </button>
               </div>
             </div>
           )}
 
-          {/* PIP (Secondary Feed) */}
-          <div className="absolute bottom-4 left-4 w-32 h-44 rounded-xl overflow-hidden border border-white/20 shadow-2xl z-30 bg-black/50 backdrop-blur-sm transition-transform hover:scale-105 group/pip">
+          {/* PIP (Secondary Feed) - Positioned higher on mobile to avoid tool overlay */}
+          <div className={cn(
+            "absolute left-4 w-28 h-36 lg:w-32 lg:h-44 rounded-xl overflow-hidden border border-white/20 shadow-2xl z-30 bg-black/50 backdrop-blur-sm transition-all duration-300 ease-in-out",
+            showTools ? "bottom-32 lg:bottom-4" : "bottom-4" // Moves up when tools are shown on mobile
+          )}>
             {pipFeed ? (
               <VideoTrack
                 trackRef={pipFeed}
@@ -291,13 +277,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
               </div>
             )}
             
-            <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 to-transparent p-2 flex justify-between items-end">
-              <p className="text-[9px] font-black uppercase text-white tracking-wider pl-1">
-                {isSwapped ? "Client" : "You"}
-              </p>
-            </div>
-
-            {/* SWAP BUTTON - ALWAYS VISIBLE */}
+            {/* SWAP BUTTON */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -306,23 +286,38 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
               className="absolute top-2 right-2 bg-white/10 hover:bg-cyan-500 text-white p-2 rounded-full backdrop-blur-md transition-all shadow-lg z-50 cursor-pointer border border-white/20"
               title="Swap View"
             >
-              <ArrowRightLeft size={16} />
+              <ArrowRightLeft size={14} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* --- RIGHT: TOOLBAR SIDEBAR --- */}
-      <div className="w-full lg:w-48 lg:border-t-0 border-muted-foreground flex lg:flex-col items-center lg:items-stretch gap-2 p-2 mt-0 z-40 shrink-0">
-        <div className="text-xs font-semibold text-muted-foreground mb-1 hidden md:flex">
+      {/* --- TOGGLE BUTTON (Mobile Only) --- */}
+      <button 
+        onClick={() => setShowTools(!showTools)}
+        className="lg:hidden absolute bottom-4 right-4 z-50 bg-white/10 backdrop-blur-md border border-white/20 text-white p-3 rounded-full shadow-lg"
+      >
+        {showTools ? <ChevronDown size={20} /> : <Wrench size={20} />}
+      </button>
+
+      {/* --- TOOLS SIDEBAR / OVERLAY --- */}
+      <div className={cn(
+        "absolute lg:static z-40 w-full lg:w-48 bg-black/80 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-t border-white/10 lg:border-0 transition-transform duration-300 ease-in-out flex flex-col gap-2 p-4 lg:p-2",
+        // Position logic
+        "bottom-0 left-0",
+        // Hide/Show logic for mobile
+        showTools ? "translate-y-0" : "translate-y-[110%] lg:translate-y-0"
+      )}>
+        
+        <div className="text-xs font-semibold text-white/50 lg:text-muted-foreground mb-1 hidden md:flex">
           TOOLS
         </div>
 
-        <div className="flex lg:grid lg:grid-cols-2 gap-2 w-full">
+        <div className="grid grid-cols-5 lg:grid-cols-2 gap-2 w-full">
           {devices.length > 1 && (
              <ToolButton
               icon={SwitchCamera}
-              label="Flip Cam"
+              label="Flip"
               onClick={handleSwitchCamera}
               colorClass="text-purple-400"
             />
@@ -337,13 +332,13 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
 
           <ToolButton
             icon={Camera}
-            label="Snapshot"
+            label="Snap"
             onClick={() => console.log("Snapshot clicked")}
           />
 
           <ToolButton
             icon={isTranscribing ? Mic : MicOff}
-            label={isTranscribing ? "Listening" : "Record"}
+            label={isTranscribing ? "On" : "Rec"}
             isActive={isTranscribing}
             onClick={toggleTranscription}
             colorClass={isTranscribing ? "text-red-400" : "text-zinc-400"}
@@ -351,11 +346,18 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
 
           <ToolButton
             icon={Settings}
-            label="Settings"
+            label="Set"
             onClick={() => console.log("Settings clicked")}
           />
         </div>
-        <ScopeList roomId={roomId} slug={slug} />
+
+        {/* Divider for mobile */}
+        <div className="h-px w-full bg-white/10 lg:hidden my-1" />
+
+        {/* Scope List Container - scrollable on mobile */}
+        <div className="flex-1 overflow-y-auto max-h-[150px] lg:max-h-full">
+           <ScopeList roomId={roomId} slug={slug} />
+        </div>
       </div>
     </div>
   );
