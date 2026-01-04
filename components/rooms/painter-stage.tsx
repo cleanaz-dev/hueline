@@ -22,7 +22,7 @@ import {
   Check,
   Share2,
   SwitchCamera,
-  ArrowRightLeft, // Imported for the swap icon
+  ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ScopeList from "./room-scope-list";
@@ -46,14 +46,13 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
-
+  
   // State to handle swapping main feed with PIP feed
   const [isSwapped, setIsSwapped] = useState(false);
 
   // --- SIMPLE PULL-TO-REFRESH PREVENTION ---
   useEffect(() => {
-    const originalHtmlOverscroll =
-      document.documentElement.style.overscrollBehavior;
+    const originalHtmlOverscroll = document.documentElement.style.overscrollBehavior;
     const originalBodyOverscroll = document.body.style.overscrollBehavior;
 
     document.documentElement.style.overscrollBehavior = "none";
@@ -65,33 +64,27 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
       }
     };
 
-    document.body.addEventListener("touchmove", preventPullToRefresh, {
-      passive: false,
-    });
+    document.body.addEventListener('touchmove', preventPullToRefresh, { passive: false });
 
     return () => {
-      document.documentElement.style.overscrollBehavior =
-        originalHtmlOverscroll;
+      document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
       document.body.style.overscrollBehavior = originalBodyOverscroll;
-      document.body.removeEventListener("touchmove", preventPullToRefresh);
+      document.body.removeEventListener('touchmove', preventPullToRefresh);
     };
   }, []);
 
   // --- CAMERA SWITCHING LOGIC ---
-  const { devices, activeDeviceId, setActiveMediaDevice } =
-    useMediaDeviceSelect({
-      kind: "videoinput",
-    });
+  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({
+    kind: 'videoinput',
+  });
 
   const handleSwitchCamera = async () => {
     if (devices.length < 2) return;
-
-    const currentIndex = devices.findIndex(
-      (d) => d.deviceId === activeDeviceId
-    );
+    
+    const currentIndex = devices.findIndex((d) => d.deviceId === activeDeviceId);
     const nextIndex = (currentIndex + 1) % devices.length;
     const nextDevice = devices[nextIndex];
-
+    
     if (nextDevice) {
       await setActiveMediaDevice(nextDevice.deviceId);
     }
@@ -122,10 +115,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   };
 
   const handlePointer = (e: React.MouseEvent) => {
-    // Only allow pointer if main feed is the remote track (default state)
-    // or if you want to point at your own feed, remove the !isSwapped check
     if (!isPainter || !containerRef.current || activeMockupUrl) return;
-
     const rect = containerRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
@@ -216,15 +206,13 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
           onClick={handlePointer}
           className="relative flex-1 w-full h-full bg-zinc-950 md:rounded-2xl overflow-hidden border border-white/10 shadow-md cursor-crosshair group"
         >
-          {/* 
-              LANDSCAPE FIX: 
-              - 'object-contain' ensures the full video is seen without cropping.
-              - 'max-h-full max-w-full' ensures responsiveness.
-          */}
           {mainFeed ? (
+             // CRITICAL FIX: explicit style={{ objectFit: 'contain' }} forces the video
+             // to show entirely, ensuring landscape videos aren't cropped in portrait mode.
             <VideoTrack
               trackRef={mainFeed}
-              className="w-full h-full max-w-full max-h-full object-contain pointer-events-none"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              className="pointer-events-none"
             />
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-6">
@@ -237,9 +225,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
               </div>
               <div className="text-center">
                 <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">
-                  {isSwapped
-                    ? "Waiting for Local Camera"
-                    : "Waiting for Remote Camera"}
+                  {isSwapped ? "Waiting for Local Camera" : "Waiting for Remote Camera"}
                 </p>
                 {!isSwapped && (
                   <div className="mt-4">
@@ -304,20 +290,20 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
                 <Video size={20} />
               </div>
             )}
-
+            
             <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 to-transparent p-2 flex justify-between items-end">
               <p className="text-[9px] font-black uppercase text-white tracking-wider pl-1">
                 {isSwapped ? "Client" : "You"}
               </p>
             </div>
 
-            {/* SWAP BUTTON - NOW ALWAYS VISIBLE */}
+            {/* SWAP BUTTON - ALWAYS VISIBLE */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setIsSwapped(!isSwapped);
               }}
-              className="absolute top-2 right-2 bg-black/60 hover:bg-cyan-500 text-white p-2 rounded-full backdrop-blur-md transition-all shadow-lg z-50 cursor-pointer"
+              className="absolute top-2 right-2 bg-white/10 hover:bg-cyan-500 text-white p-2 rounded-full backdrop-blur-md transition-all shadow-lg z-50 cursor-pointer border border-white/20"
               title="Swap View"
             >
               <ArrowRightLeft size={16} />
@@ -334,7 +320,7 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
 
         <div className="flex lg:grid lg:grid-cols-2 gap-2 w-full">
           {devices.length > 1 && (
-            <ToolButton
+             <ToolButton
               icon={SwitchCamera}
               label="Flip Cam"
               onClick={handleSwitchCamera}
