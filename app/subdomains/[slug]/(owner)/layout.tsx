@@ -1,42 +1,27 @@
 // app/(owner)/layout.tsx
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
 import { OwnerProvider } from "@/context/owner-context";
-import SubdomainNav from "@/components/subdomains/layout/subdomain-nav";
 import { getOwnerData } from "@/lib/prisma/queries/owner/get-owner-data";
-import OwnerSidebar from "@/components/owner/owner-sidebar";
-
-interface Params {
-  params: Promise<{
-    slug: string;
-  }>;
-}
 
 export default async function OwnerRootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // A. Resolve Subdomain from Host Header (middleware logic assumption)
+  // 1. Resolve Subdomain
   const headersList = await headers();
   const host = headersList.get("host") || "";
-  const slug = host.split(".")[0]; // e.g., "demo" from "demo.hue-line.com"
+  const slug = host.split(".")[0]; 
 
-  // B. Fetch Data (Single DB Query for everything)
-
+  // 2. Fetch Data
   const subdomain = await getOwnerData(slug);
-
   if (!subdomain) return notFound();
 
-  // C. Auth Check (Optional: ensure user owns this subdomain)
-  // const session = await getSession();
-  // if (subdomain.userId !== session.user.id) redirect("/login");
-
-  // D. Pass Data to Client Context
+  // 3. Pass Data ONLY. No visual sidebar here.
   return (
     <OwnerProvider value={{ subdomain }}>
-      <OwnerSidebar>{children}</OwnerSidebar>
+      {children}
     </OwnerProvider>
   );
 }

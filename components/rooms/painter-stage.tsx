@@ -24,25 +24,55 @@ import {
   SwitchCamera,
   ArrowRightLeft,
   ChevronDown,
-  ChevronUp,
   Wrench,
+  Info,
+  Layers,
+  LayoutGrid
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ScopeList from "./room-scope-list";
 
+// --- TYPES ---
+interface BookingDataProps {
+  name: string;
+  phone: string;
+  summary: string;
+  roomType: string;
+  initialIntent: string;
+  estimatedValue?: number | null;
+  dateTime: Date | string;
+}
+
 interface LiveStageProps {
   slug: string;
   roomId: string;
+  booking?: BookingDataProps | null;
 }
 
-export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
+// --- TAB COMPONENT ---
+const SidebarTab = ({ active, onClick, icon: Icon, label }: any) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "flex items-center gap-2 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2",
+      active 
+        ? "border-cyan-500 text-cyan-400 bg-cyan-950/10" 
+        : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
+    )}
+  >
+    <Icon size={14} />
+    {label}
+  </button>
+);
+
+// --- MAIN COMPONENT ---
+export const PainterStage = ({ slug, roomId, booking }: LiveStageProps) => {
   const {
     laserPosition,
     sendData,
     isPainter,
     activeMockupUrl,
     room,
-    liveScopeItems,
     isTranscribing,
     toggleTranscription,
   } = useRoomContext();
@@ -51,66 +81,41 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
   const [copied, setCopied] = useState(false);
   const [isSwapped, setIsSwapped] = useState(false);
   
-  // Mobile Tool Visibility State
-  const [showTools, setShowTools] = useState(true);
+  // UI State
+  const [activeTab, setActiveTab] = useState<"controls" | "info">("controls");
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  // --- SIMPLE PULL-TO-REFRESH PREVENTION ---
+  // --- PREVENT SCROLLING / PULL-TO-REFRESH ---
   useEffect(() => {
-    const originalHtmlOverscroll = document.documentElement.style.overscrollBehavior;
-    const originalBodyOverscroll = document.body.style.overscrollBehavior;
-
-    document.documentElement.style.overscrollBehavior = "none";
+    document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
-
-    const preventPullToRefresh = (e: TouchEvent) => {
-      if (window.scrollY === 0 && e.touches[0].clientY > e.touches[0].pageY) {
-        e.preventDefault();
-      }
-    };
-
-    document.body.addEventListener('touchmove', preventPullToRefresh, { passive: false });
-
     return () => {
-      document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
-      document.body.style.overscrollBehavior = originalBodyOverscroll;
-      document.body.removeEventListener('touchmove', preventPullToRefresh);
+      document.body.style.overflow = "";
+      document.body.style.overscrollBehavior = "";
     };
   }, []);
 
-  // --- CAMERA SWITCHING LOGIC ---
-  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({
-    kind: 'videoinput',
-  });
-
+  // --- TRACKS & DEVICES ---
+  const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({ kind: 'videoinput' });
+  
   const handleSwitchCamera = async () => {
     if (devices.length < 2) return;
     const currentIndex = devices.findIndex((d) => d.deviceId === activeDeviceId);
-    const nextIndex = (currentIndex + 1) % devices.length;
-    const nextDevice = devices[nextIndex];
-    if (nextDevice) {
-      await setActiveMediaDevice(nextDevice.deviceId);
-    }
+    const nextDevice = devices[(currentIndex + 1) % devices.length];
+    if (nextDevice) await setActiveMediaDevice(nextDevice.deviceId);
   };
 
-  // Fetch Tracks
-  const tracks = useTracks([
-    { source: Track.Source.Camera, withPlaceholder: false },
-  ]);
-  const localTrack = tracks.find(
-    (t) => t.participant.isLocal && isTrackReference(t)
-  ) as TrackReference | undefined;
-  const remoteTrack = tracks.find(
-    (t) => !t.participant.isLocal && isTrackReference(t)
-  ) as TrackReference | undefined;
-
+  const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: false }]);
+  const localTrack = tracks.find((t) => t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
+  const remoteTrack = tracks.find((t) => !t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
+  
   const mainFeed = isSwapped ? localTrack : remoteTrack;
   const pipFeed = isSwapped ? remoteTrack : localTrack;
 
+  // --- ACTIONS ---
   const copyInvite = () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const url = `${origin}/meet/${roomId}?role=client`;
-
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(`${origin}/meet/${roomId}?role=client`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -123,242 +128,219 @@ export const PainterStage = ({ slug, roomId }: LiveStageProps) => {
     sendData("POINTER", { x, y });
   };
 
-  const ToolButton = ({
-    icon: Icon,
-    label,
-    isActive = false,
-    isDisabled = false,
-    onClick,
-    variant = "default",
-    colorClass,
-  }: any) => (
+  // --- COMPONENTS ---
+  const ToolButton = ({ icon: Icon, label, isActive, onClick, colorClass }: any) => (
     <button
-      disabled={isDisabled}
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center justify-center w-full p-2 rounded-xl transition-all duration-200 group relative",
-        // Mobile / Desktop specific styling
-        "bg-white/10 backdrop-blur-md lg:bg-muted", 
-        isDisabled
-          ? "opacity-40 cursor-not-allowed"
-          : "cursor-pointer hover:bg-white/20 lg:hover:bg-zinc-100/80",
-        !isActive &&
-          variant !== "primary" &&
-          (colorClass || "text-white lg:text-muted-foreground"),
-        isActive && "bg-cyan-500/20 text-cyan-300 lg:bg-cyan-50 lg:text-primary",
+        "flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 group w-full",
+        "bg-zinc-900/50 border-white/5 hover:bg-zinc-800 hover:border-white/10",
+        isActive && "bg-cyan-950/40 border-cyan-500/30"
       )}
     >
-      <div
-        className={cn(
-          "p-2 rounded-lg transition-all duration-200 group-hover:scale-105",
-          isActive ? "bg-cyan-500/20 lg:bg-white lg:border-cyan-200" : "lg:bg-white lg:border lg:shadow-sm"
-        )}
-      >
-        <Icon
-          size={20}
-          strokeWidth={2}
-        />
-      </div>
-      <span
-        className={cn(
-          "text-[9px] font-bold uppercase tracking-wider mt-1 lg:block hidden", // Hidden label on mobile to save space
-          "opacity-90"
-        )}
-      >
+      <Icon 
+        size={20} 
+        className={cn("mb-2 transition-colors", isActive ? "text-cyan-400" : (colorClass || "text-zinc-400"))} 
+      />
+      <span className={cn("text-[9px] font-bold uppercase tracking-wider", isActive ? "text-cyan-500" : "text-zinc-500")}>
         {label}
       </span>
     </button>
   );
 
   return (
-    // MAIN CONTAINER: Changed to flex-row for desktop, but relative/block for mobile to allow overlay
-    <div className="relative lg:flex lg:flex-row h-[calc(100vh-4rem)] md:h-[calc(100vh-9rem)] lg:h-[calc(100vh-8rem)] w-full overflow-hidden lg:gap-4 bg-black">
+    <div className="flex h-screen w-full bg-zinc-950 overflow-hidden font-sans">
       <RoomAudioRenderer />
 
-      {/* --- VIDEO AREA (Full Screen on Mobile) --- */}
-      <div className="absolute inset-0 lg:relative lg:flex-1 lg:h-full z-0 flex flex-col overflow-hidden">
+      {/* =========================================
+          LEFT STAGE (VIDEO CENTER) 
+      ========================================= */}
+      <div className="flex-1 relative flex flex-col min-w-0">
         
-        {/* Status Bar */}
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-3 pointer-events-none">
-          <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full shadow-xl">
-            <div
-              className={cn(
-                "w-2 h-2 rounded-full shadow-[0_0_10px_currentColor]",
-                room?.state === "connected"
-                  ? "bg-green-500 text-green-500 animate-pulse"
-                  : "bg-yellow-500 text-yellow-500"
-              )}
-            />
-            <span className="text-[10px] font-bold text-white tracking-widest uppercase">
-              {room?.name || roomId || "Init..."}
-            </span>
-          </div>
+        {/* Top Header Overlay */}
+        <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between pointer-events-none">
+           <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md border border-white/5 px-4 py-2 rounded-full pointer-events-auto">
+              <div className={cn("w-2 h-2 rounded-full shadow-[0_0_10px_currentColor]", room?.state === "connected" ? "bg-green-500 text-green-500" : "bg-yellow-500 text-yellow-500")} />
+              <span className="text-xs font-bold text-zinc-200 tracking-wide uppercase">
+                {room?.name || roomId}
+              </span>
+           </div>
         </div>
 
-        {/* Video Wrapper */}
-        <div
-          ref={containerRef}
-          onClick={handlePointer}
-          className="relative w-full h-full bg-zinc-950 lg:rounded-2xl overflow-hidden border-0 lg:border border-white/10 shadow-md cursor-crosshair group"
-        >
-          {mainFeed ? (
-            <VideoTrack
-              trackRef={mainFeed}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              className="pointer-events-none"
-            />
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-6">
-              <div className="relative">
-                <div className="w-16 h-16 border-2 border-t-cyan-500 border-zinc-800 rounded-full animate-spin" />
-                <Video
-                  className="absolute inset-0 m-auto text-zinc-800"
-                  size={24}
-                />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">
-                  {isSwapped ? "Local Cam" : "Waiting..."}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Overlays */}
-          {laserPosition && !isSwapped && (
-            <div
-              className="absolute w-12 h-12 -ml-6 -mt-6 border-4 border-cyan-400 rounded-full animate-ping z-50 pointer-events-none shadow-[0_0_30px_rgba(34,211,238,0.8)]"
-              style={{
-                left: `${laserPosition.x * 100}%`,
-                top: `${laserPosition.y * 100}%`,
-              }}
-            />
-          )}
-
-          {activeMockupUrl && (
-            <div className="absolute inset-0 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-8 z-[60] animate-in fade-in zoom-in-95 duration-300">
-              <div className="relative max-h-full max-w-full">
-                <img
-                  src={activeMockupUrl}
-                  className="max-h-[80vh] w-auto rounded-lg shadow-2xl border border-white/10"
-                  alt="AI Mockup"
-                />
-                <button
-                  onClick={() => sendData("MOCKUP_READY", { url: null })}
-                  className="absolute -top-4 -right-4 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 shadow-lg"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              <div className="mt-6 flex gap-4">
-                <button
-                  onClick={() => window.open(activeMockupUrl)}
-                  className="bg-white text-black px-6 py-3 rounded-full font-bold flex items-center gap-2 hover:bg-zinc-200 transition"
-                >
-                  <Maximize2 className="w-4 h-4" /> Open Full
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* PIP (Secondary Feed) - Positioned higher on mobile to avoid tool overlay */}
-          <div className={cn(
-            "absolute left-4 w-28 h-36 lg:w-32 lg:h-44 rounded-xl overflow-hidden border border-white/20 shadow-2xl z-30 bg-black/50 backdrop-blur-sm transition-all duration-300 ease-in-out",
-            showTools ? "bottom-32 lg:bottom-4" : "bottom-4" // Moves up when tools are shown on mobile
-          )}>
-            {pipFeed ? (
-              <VideoTrack
-                trackRef={pipFeed}
-                className="w-full h-full object-cover"
+        {/* Video Stage: 
+            This uses flexbox centering to ensure the video naturally finds its aspect ratio 
+            without being forced to stretch weirdly.
+        */}
+        <div className="flex-1 flex items-center justify-center bg-black relative overflow-hidden">
+          <div 
+            ref={containerRef}
+            onClick={handlePointer}
+            // Aspect Ratio Wrapper: This ensures the clickable area matches the video visuals roughly
+            // but max-w/max-h ensures it fits on screen.
+            className="relative w-full h-full max-w-full max-h-full flex items-center justify-center cursor-crosshair"
+          >
+            {mainFeed ? (
+              <VideoTrack 
+                trackRef={mainFeed} 
+                // CRITICAL: objectFit: 'contain' keeps aspect ratio correct inside the available space
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                className="max-w-full max-h-full"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-700">
-                <Video size={20} />
+              <div className="flex flex-col items-center justify-center text-zinc-600 gap-4">
+                 <div className="w-12 h-12 border-2 border-t-cyan-500 border-zinc-800 rounded-full animate-spin" />
+                 <span className="text-xs font-bold uppercase tracking-widest">Waiting for Feed</span>
               </div>
             )}
-            
-            {/* SWAP BUTTON */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsSwapped(!isSwapped);
-              }}
-              className="absolute top-2 right-2 bg-white/10 hover:bg-cyan-500 text-white p-2 rounded-full backdrop-blur-md transition-all shadow-lg z-50 cursor-pointer border border-white/20"
-              title="Swap View"
-            >
-              <ArrowRightLeft size={14} />
-            </button>
+
+            {/* Pointer Overlay */}
+            {laserPosition && !isSwapped && (
+              <div className="absolute w-8 h-8 -ml-4 -mt-4 border-2 border-cyan-400 bg-cyan-400/20 rounded-full animate-ping z-50 pointer-events-none" style={{ left: `${laserPosition.x * 100}%`, top: `${laserPosition.y * 100}%` }} />
+            )}
+
+            {/* Active Mockup Overlay */}
+            {activeMockupUrl && (
+              <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-6">
+                <img src={activeMockupUrl} className="max-w-full max-h-full object-contain shadow-2xl rounded-sm" alt="Mockup" />
+                <button onClick={() => sendData("MOCKUP_READY", { url: null })} className="absolute top-6 right-6 bg-white/10 hover:bg-red-600 text-white p-2 rounded-full transition-colors"><X size={20}/></button>
+              </div>
+            )}
+          </div>
+
+          {/* PIP (Picture in Picture) */}
+          <div className="absolute bottom-6 left-6 z-30 w-32 aspect-[3/4] bg-zinc-900 rounded-lg overflow-hidden border border-white/10 shadow-2xl group">
+             {pipFeed ? (
+               <VideoTrack trackRef={pipFeed} className="w-full h-full object-cover" />
+             ) : (
+               <div className="w-full h-full flex items-center justify-center"><Video size={20} className="text-zinc-700"/></div>
+             )}
+             <button 
+                onClick={(e) => { e.stopPropagation(); setIsSwapped(!isSwapped); }} 
+                className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-cyan-600 text-white rounded-md backdrop-blur-sm transition-colors"
+             >
+                <ArrowRightLeft size={12} />
+             </button>
           </div>
         </div>
       </div>
 
-      {/* --- TOGGLE BUTTON (Mobile Only) --- */}
-      <button 
-        onClick={() => setShowTools(!showTools)}
-        className="lg:hidden absolute bottom-4 right-4 z-50 bg-white/10 backdrop-blur-md border border-white/20 text-white p-3 rounded-full shadow-lg"
-      >
-        {showTools ? <ChevronDown size={20} /> : <Wrench size={20} />}
-      </button>
-
-      {/* --- TOOLS SIDEBAR / OVERLAY --- */}
-      <div className={cn(
-        "absolute lg:static z-40 w-full lg:w-48 bg-black/80 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-t border-white/10 lg:border-0 transition-transform duration-300 ease-in-out flex flex-col gap-2 p-4 lg:p-2",
-        // Position logic
-        "bottom-0 left-0",
-        // Hide/Show logic for mobile
-        showTools ? "translate-y-0" : "translate-y-[110%] lg:translate-y-0"
-      )}>
+      {/* =========================================
+          RIGHT SIDEBAR (DESKTOP)
+      ========================================= */}
+      <div className="hidden lg:flex flex-col w-96 bg-zinc-950 border-l border-white/5 shrink-0 z-30">
         
-        <div className="text-xs font-semibold text-white/50 lg:text-muted-foreground mb-1 hidden md:flex">
-          TOOLS
+        {/* Sidebar Tabs */}
+        <div className="flex items-center border-b border-white/5 bg-zinc-900/50">
+           <SidebarTab 
+             active={activeTab === 'controls'} 
+             onClick={() => setActiveTab('controls')} 
+             icon={Layers} 
+             label="Controls" 
+           />
+           <SidebarTab 
+             active={activeTab === 'info'} 
+             onClick={() => setActiveTab('info')} 
+             icon={Info} 
+             label="Job Info" 
+           />
         </div>
 
-        <div className="grid grid-cols-5 lg:grid-cols-2 gap-2 w-full">
-          {devices.length > 1 && (
-             <ToolButton
-              icon={SwitchCamera}
-              label="Flip"
-              onClick={handleSwitchCamera}
-              colorClass="text-purple-400"
-            />
-          )}
+        {/* CONTENT: CONTROLS */}
+        {activeTab === 'controls' && (
+          <div className="flex-1 flex flex-col min-h-0">
+             {/* Tools Grid */}
+             <div className="p-4 border-b border-white/5">
+                <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Tools</div>
+                <div className="grid grid-cols-2 gap-2">
+                    <ToolButton icon={copied ? Check : Share2} label={copied ? "Copied" : "Invite"} onClick={copyInvite} colorClass="text-blue-400" />
+                    <ToolButton icon={Camera} label="Snapshot" onClick={() => console.log('snap')} />
+                    <ToolButton icon={isTranscribing ? Mic : MicOff} label={isTranscribing ? "Listening" : "Transcribe"} isActive={isTranscribing} onClick={toggleTranscription} colorClass="text-red-400" />
+                    {devices.length > 1 && <ToolButton icon={SwitchCamera} label="Flip Cam" onClick={handleSwitchCamera} colorClass="text-purple-400" />}
+                </div>
+             </div>
+             
+             {/* Scope List */}
+             <div className="flex-1 flex flex-col min-h-0 p-4 bg-zinc-900/30">
+                <div className="flex items-center justify-between mb-3">
+                   <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Scope Items</span>
+                </div>
+                <div className="flex-1 overflow-y-auto pr-1">
+                   <ScopeList roomId={roomId} slug={slug} />
+                </div>
+             </div>
+          </div>
+        )}
 
-          <ToolButton
-            icon={copied ? Check : Share2}
-            label={copied ? "Copied" : "Invite"}
-            onClick={copyInvite}
-            colorClass={copied ? "text-green-400" : "text-blue-400"}
-          />
+        {/* CONTENT: INFO */}
+        {activeTab === 'info' && booking && (
+           <div className="flex-1 p-6 overflow-y-auto">
+              <div className="space-y-6">
+                 <div>
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase block mb-1">Client</label>
+                    <div className="text-lg font-medium text-white">{booking.name}</div>
+                    <div className="text-sm text-zinc-400">{booking.phone}</div>
+                 </div>
 
-          <ToolButton
-            icon={Camera}
-            label="Snap"
-            onClick={() => console.log("Snapshot clicked")}
-          />
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 rounded bg-zinc-900 border border-white/5">
+                       <label className="text-[10px] font-bold text-zinc-500 uppercase block mb-1">Type</label>
+                       <div className="text-sm font-medium text-white">{booking.roomType}</div>
+                    </div>
+                    <div className="p-3 rounded bg-zinc-900 border border-white/5">
+                       <label className="text-[10px] font-bold text-zinc-500 uppercase block mb-1">Value</label>
+                       <div className="text-sm font-medium text-green-400">${booking.estimatedValue?.toLocaleString() || '0'}</div>
+                    </div>
+                 </div>
 
-          <ToolButton
-            icon={isTranscribing ? Mic : MicOff}
-            label={isTranscribing ? "On" : "Rec"}
-            isActive={isTranscribing}
-            onClick={toggleTranscription}
-            colorClass={isTranscribing ? "text-red-400" : "text-zinc-400"}
-          />
-
-          <ToolButton
-            icon={Settings}
-            label="Set"
-            onClick={() => console.log("Settings clicked")}
-          />
-        </div>
-
-        {/* Divider for mobile */}
-        <div className="h-px w-full bg-white/10 lg:hidden my-1" />
-
-        {/* Scope List Container - scrollable on mobile */}
-        <div className="flex-1 overflow-y-auto max-h-[150px] lg:max-h-full">
-           <ScopeList roomId={roomId} slug={slug} />
-        </div>
+                 <div>
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase block mb-2">Summary</label>
+                    <div className="p-4 rounded-lg bg-zinc-900 border border-white/5 text-xs text-zinc-300 leading-relaxed">
+                       {booking.summary || "No summary available."}
+                    </div>
+                 </div>
+              </div>
+           </div>
+        )}
+        {!booking && activeTab === 'info' && (
+           <div className="flex-1 flex items-center justify-center text-zinc-500 text-xs uppercase tracking-widest">No Booking Data</div>
+        )}
       </div>
+
+      {/* =========================================
+          MOBILE OVERLAY (DRAWER)
+      ========================================= */}
+      <div className={cn(
+        "lg:hidden fixed inset-x-0 bottom-0 z-50 bg-zinc-950 border-t border-white/10 transition-transform duration-300 flex flex-col shadow-2xl",
+        showMobileMenu ? "translate-y-0 h-[60vh]" : "translate-y-[calc(100%-80px)] h-auto"
+      )}>
+         {/* Handle / Header */}
+         <div onClick={() => setShowMobileMenu(!showMobileMenu)} className="flex items-center justify-between p-4 bg-zinc-900/80 backdrop-blur-md border-b border-white/5 cursor-pointer">
+             <div className="flex items-center gap-2">
+                <LayoutGrid size={16} className="text-cyan-500" />
+                <span className="text-xs font-bold text-white uppercase tracking-wider">Menu</span>
+             </div>
+             {showMobileMenu ? <ChevronDown size={18} className="text-zinc-400"/> : <div className="w-10 h-1 bg-zinc-700 rounded-full" />}
+         </div>
+
+         <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-zinc-950">
+             {/* Mobile Tools */}
+             <div className="grid grid-cols-4 gap-2">
+                <ToolButton icon={isTranscribing ? Mic : MicOff} label={isTranscribing ? "On" : "Rec"} isActive={isTranscribing} onClick={toggleTranscription} colorClass="text-red-400" />
+                {devices.length > 1 && <ToolButton icon={SwitchCamera} label="Flip" onClick={handleSwitchCamera} colorClass="text-purple-400" />}
+                <ToolButton icon={Camera} label="Snap" onClick={() => console.log('snap')} />
+                <ToolButton icon={Share2} label="Share" onClick={copyInvite} colorClass="text-blue-400" />
+             </div>
+
+             {/* Mobile Scope */}
+             <div className="border-t border-white/5 pt-4">
+               <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-3">Scope Items</span>
+               <div className="h-40 overflow-y-auto">
+                 <ScopeList roomId={roomId} slug={slug} />
+               </div>
+             </div>
+         </div>
+      </div>
+
     </div>
   );
 };
