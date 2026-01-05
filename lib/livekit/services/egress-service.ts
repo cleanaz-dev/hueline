@@ -15,9 +15,9 @@ export async function startRoomRecording(roomName: string, domainId: string) {
       return;
     }
 
-    // 2. DEFINE OUTPUT (v2 API)
+    // 2. DEFINE OUTPUT (v2 API) - REMOVE LEADING SLASH
     const output = new EncodedFileOutput({
-      filepath: `/subdomains/${domainId}/recordings/${roomName}/${Date.now()}.mp4`,
+      filepath: `subdomains/${domainId}/recordings/${roomName}/${Date.now()}.mp4`, // NO LEADING SLASH!
       output: {
         case: 's3',
         value: new S3Upload({
@@ -34,10 +34,10 @@ export async function startRoomRecording(roomName: string, domainId: string) {
     
     await egressClient.startRoomCompositeEgress(
       roomName,
-      { file: output },  // Wrapped in object
+      { file: output },
       {
         layout: "grid",
-        encodingOptions: EncodingOptionsPreset.H264_720P_30,  // Use preset
+        encodingOptions: EncodingOptionsPreset.H264_1080P_30,
       }
     );
 
