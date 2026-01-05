@@ -41,5 +41,5 @@ export const keys = {
   room: (roomId: string): string => `room:${roomId}`,
   roomScope: (roomId: string): string => `room:${roomId}:scope`,
   roomIntelligence: (slug: string): string => `slug:${slug}:roomIntelligence`,
-  roomScopeData: (roomId: string): string => `room:${roomId}:scopes:data`
+  roomScopeData: (roomId: string): string => `room:${roomId}:scope:data`
 }
