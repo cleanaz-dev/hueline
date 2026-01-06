@@ -4,6 +4,7 @@ import { getRoomKey } from "@/lib/redis/services/room";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
+
 interface Params {
   params: Promise<{
     roomId: string;
@@ -24,7 +25,7 @@ export default async function page({ params }: Params) {
   });
 
   if (dbRoom) {
-   
+
     return <RoomDetailsView room={dbRoom as any} />;
   }
 

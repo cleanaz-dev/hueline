@@ -8,20 +8,10 @@ import { cn } from "@/lib/utils";
 // Import new split components
 import { RoomDetailsTabSow } from "./room-details-tab-sow";
 import { RoomDetailsTabEventLog } from "./room-details-tab-event-log";
+import { ScopeItem } from "@/types/room-types";
 
 // --- TYPES ---
-// Updated to support images
-export interface ScopeItem {
-  id?: string;
-  type: string;
-  area: string;
-  item: string;
-  action: string;
-  timestamp: string;
-  // Support single image or array
-  image_url?: string | null;
-  images?: string[];
-}
+
 
 interface RoomDetailsTabsProps {
   items: ScopeItem[];

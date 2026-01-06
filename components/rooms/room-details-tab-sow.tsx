@@ -16,6 +16,7 @@ import {
   Pencil,
   Trash2,
   CirclePlus,
+  Image
 } from "lucide-react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -39,16 +40,6 @@ import { ScopeItem, ScopeType } from "@/types/room-types";
 
 // --- TYPES ---
 
-// export interface ScopeItem {
-//   type: string;
-//   area: string;
-//   item: string;
-//   action: string;
-//   timestamp?: string; // Used as unique ID
-//   image_url?: string | null;
-//   images?: string[];
-// }
-
 interface RoomDetailsTabSowProps {
   initialItems: ScopeItem[];
   activeArea: string;
@@ -60,7 +51,7 @@ interface RoomDetailsTabSowProps {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 // --- CONFIG ---
-const CATEGORY_ORDER = ["REPAIR", "PREP", "PAINT", "NOTE"];
+const CATEGORY_ORDER = ["REPAIR", "PREP", "PAINT", "NOTE", "IMAGE"];
 
 const getCategoryConfig = (type: string) => {
   switch (type) {
@@ -72,6 +63,8 @@ const getCategoryConfig = (type: string) => {
       return { label: "Paint", icon: Paintbrush, color: "text-blue-600" };
     case "NOTE":
       return { label: "Notes", icon: StickyNote, color: "text-zinc-500" };
+      case "IMAGE":
+        return {label: "Image", icon: Image, color: "text-accent"}
     default:
       return { label: "General", icon: DatabaseZap, color: "text-zinc-600" };
   }

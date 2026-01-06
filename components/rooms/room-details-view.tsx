@@ -7,8 +7,9 @@ import {
   DatabaseZap
 } from "lucide-react";
 import { Room, BookingData } from "@/types/subdomain-type";
-import { RoomDetailsTabs, ScopeItem } from "./room-details-tabs";
+import { RoomDetailsTabs } from "./room-details-tabs";
 import { SecureVideoPlayer } from "./video/secure-video-player";
+import { ScopeItem } from "@/types/room-types";
 
 interface RoomDetailsProps {
   room: Room & { booking?: BookingData };
