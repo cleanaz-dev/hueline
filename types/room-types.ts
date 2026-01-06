@@ -5,15 +5,25 @@ export interface RoomData {
   roomName: string;
   clientName?: string;
   clientPhone?: string;
-  sessionType?: RoomType
+  sessionType?: RoomType;
+}
+
+export enum ScopeType {
+  PREP = "PREP",
+  PAINT = "PAINT",
+  REPAIR = "REPAIR",
+  NOTE = "NOTE",
+  IMAGE = "IMAGE"
 }
 
 export interface ScopeItem {
-  type: string; // "PREP" | "PAINT" | "REPAIR" | "NOTE"
+  type: ScopeType;
   area: string;
-  item: string;
-  action: string;
-  timestamp?: string; // ISO String
-  image_url?: string | null;
-  images?: string[]; // Optional extra support if your schema evolves
+  item?: string;
+  action?: string;
+  timestamp: string;
+  image_urls?: string[];
 }
+
+
+

@@ -35,18 +35,19 @@ import { SowAddItemDialog } from "./dialogs/sow-add-item-dialog";
 import { SowEditItemDialog } from "./dialogs/sow-edit-item-dialog";
 import { SowDeleteItemDialog } from "./dialogs/sow-delete-item-dialog";
 import { useOwner } from "@/context/owner-context";
+import { ScopeItem, ScopeType } from "@/types/room-types";
 
 // --- TYPES ---
 
-export interface ScopeItem {
-  type: string;
-  area: string;
-  item: string;
-  action: string;
-  timestamp?: string; // Used as unique ID
-  image_url?: string | null;
-  images?: string[];
-}
+// export interface ScopeItem {
+//   type: string;
+//   area: string;
+//   item: string;
+//   action: string;
+//   timestamp?: string; // Used as unique ID
+//   image_url?: string | null;
+//   images?: string[];
+// }
 
 interface RoomDetailsTabSowProps {
   initialItems: ScopeItem[];
@@ -103,16 +104,15 @@ export function RoomDetailsTabSow({
 
   // --- PRE-FILL STATES ---
   const [preFillArea, setPreFillArea] = useState<string>("");
-  const [preFillCategory, setPreFillCategory] = useState<string | undefined>(undefined);
+  const [preFillCategory, setPreFillCategory] = useState<string | undefined>(
+    undefined
+  );
   const [isAreaLocked, setIsAreaLocked] = useState(false);
 
   // --- CORE UPDATE LOGIC (Optimistic UI) ---
   const executeUpdate = async (newItems: ScopeItem[]) => {
     // 1. Optimistic Update (Immediate UI change)
-    await mutate(
-      { ...roomData, scopeData: newItems },
-      { revalidate: false }
-    );
+    await mutate({ ...roomData, scopeData: newItems }, { revalidate: false });
 
     // Notify parent if needed
     onUpdateItems?.(newItems);
@@ -130,13 +130,13 @@ export function RoomDetailsTabSow({
       // 3. Sync with Server (Update cache with actual server response)
       const updatedServerData = await response.json();
       mutate(updatedServerData, { revalidate: false });
-      
+
       toast.success("Saved");
     } catch (error) {
       console.error("Error saving scope items:", error);
       toast.error("Failed to save changes");
       // 4. Rollback on error
-      mutate(); 
+      mutate();
     }
   };
 
@@ -144,12 +144,12 @@ export function RoomDetailsTabSow({
 
   const handleAddItem = (newItem: ScopeItem) => {
     // Ensure we have a unique ID/Timestamp
-    const itemWithId = { 
-      ...newItem, 
-      timestamp: newItem.timestamp || new Date().toISOString() 
+    const itemWithId = {
+      ...newItem,
+      timestamp: newItem.timestamp || new Date().toISOString(),
     };
     const updatedList = [...items, itemWithId];
-    
+
     executeUpdate(updatedList);
     setIsAddOpen(false);
   };
@@ -232,15 +232,18 @@ export function RoomDetailsTabSow({
 
           {/* AREA GROUPS */}
           {Object.entries(groupedByArea).map(([areaName, areaItems]) => {
+            // Get all images from IMAGE type items
             const allImages = areaItems
-              .flatMap((i) => i.images || (i.image_url ? [i.image_url] : []))
-              .filter(Boolean);
+              .filter((i) => i.type === ScopeType.IMAGE)
+              .flatMap((i) => i.image_urls || []);
+
             const coverImage = allImages[0];
             const extraPhotoCount = Math.max(0, allImages.length - 1);
 
-            // Group items inside this area by Category
+            // Group items inside this area by Category (exclude IMAGE type)
             const itemsByCategory: Record<string, ScopeItem[]> = {};
             areaItems.forEach((i) => {
+              if (i.type === ScopeType.IMAGE) return; // Skip IMAGE items
               if (!itemsByCategory[i.type]) itemsByCategory[i.type] = [];
               itemsByCategory[i.type].push(i);
             });
@@ -396,7 +399,8 @@ export function RoomDetailsTabSow({
                                       }}
                                       className="text-xs cursor-pointer"
                                     >
-                                      <Pencil className="mr-2 size-3 hover:text-white" /> Edit
+                                      <Pencil className="mr-2 size-3 hover:text-white" />{" "}
+                                      Edit
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
@@ -426,7 +430,7 @@ export function RoomDetailsTabSow({
       </ScrollArea>
 
       {/* --- DIALOGS --- */}
-      
+
       <SowAddItemDialog
         isOpen={isAddOpen}
         onOpenChange={setIsAddOpen}
