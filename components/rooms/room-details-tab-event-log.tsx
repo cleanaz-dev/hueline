@@ -3,13 +3,19 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DatabaseZap, MicOff } from "lucide-react";
 import { ScopeItem } from "@/types/room-types";
-import Image from "next/image";
+// Removed next/image to avoid config/sizing issues with dynamic S3 URLs
+// import Image from "next/image"; 
 
 interface RoomDetailsTabEventLogProps {
   items: ScopeItem[];
+  // Add the map here
+  presignedUrls?: Record<string, string>;
 }
 
-export function RoomDetailsTabEventLog({ items }: RoomDetailsTabEventLogProps) {
+export function RoomDetailsTabEventLog({ 
+  items, 
+  presignedUrls = {} // Default to empty object
+}: RoomDetailsTabEventLogProps) {
   return (
     <ScrollArea className="h-full">
       <div className="p-4 flex flex-col gap-2">
@@ -21,40 +27,47 @@ export function RoomDetailsTabEventLog({ items }: RoomDetailsTabEventLogProps) {
         </div>
 
         {items.length > 0 ? (
-          items.map((scope, i) => (
-            <div
-              key={i}
-              className="bg-zinc-50 rounded-md p-2 text-xs border border-zinc-100 animate-in fade-in slide-in-from-top-2 duration-300"
-            >
-              <div className="text-zinc-900 font-mono font-bold text-[10px] mb-1 flex justify-between items-center uppercase tracking-wider">
-                <span className="flex items-center gap-2">
-                  <DatabaseZap className="w-3 h-3 text-zinc-900" />
-                  {scope.type}
-                </span>
-                {scope.type === "IMAGE" &&
-                  (scope.image_urls?.length ?? 0) > 0 && (
-                    <Image
-                      src={scope.image_urls![0]}
+          items.map((scope, i) => {
+            // RESOLVE THE URL
+            const imageKey = scope.image_urls?.[0];
+            const imageUrl = imageKey ? presignedUrls[imageKey] : null;
+
+            return (
+              <div
+                key={i}
+                className="bg-zinc-50 rounded-md p-2 text-xs border border-zinc-100 animate-in fade-in slide-in-from-top-2 duration-300"
+              >
+                <div className="text-zinc-900 font-mono font-bold text-[10px] mb-1 flex justify-between items-center uppercase tracking-wider">
+                  <span className="flex items-center gap-2">
+                    <DatabaseZap className="w-3 h-3 text-zinc-900" />
+                    {scope.type}
+                  </span>
+                  
+                  {/* RENDER IMAGE IF URL EXISTS */}
+                  {scope.type === "IMAGE" && imageUrl && (
+                    <img
+                      src={imageUrl}
                       alt={scope.area}
-                      className="h-12 w-12 object-contain"
-                      priority
+                      className="h-12 w-12 object-contain rounded-sm bg-white border border-zinc-200"
                     />
                   )}
-                <span className="text-zinc-400 font-sans capitalize">
-                  {scope.area}
-                </span>
+                  
+                  <span className="text-zinc-400 font-sans capitalize">
+                    {scope.area}
+                  </span>
+                </div>
+                <div className="text-zinc-900 font-medium leading-relaxed">
+                  {scope.item}
+                </div>
+                <div className="text-zinc-500 font-semibold mt-0.5">
+                  {scope.action}
+                </div>
+                <div className="text-zinc-400 text-[10px] mt-1 font-mono">
+                  {new Date(scope.timestamp).toLocaleString()}
+                </div>
               </div>
-              <div className="text-zinc-900 font-medium leading-relaxed">
-                {scope.item}
-              </div>
-              <div className="text-zinc-500 font-semibold mt-0.5">
-                {scope.action}
-              </div>
-              <div className="text-zinc-400 text-[10px] mt-1 font-mono">
-                {new Date(scope.timestamp).toLocaleString()}
-              </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center py-10 opacity-40 text-center space-y-2">
             <MicOff className="w-8 h-8 text-zinc-400" />

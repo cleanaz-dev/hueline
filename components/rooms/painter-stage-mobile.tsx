@@ -11,6 +11,7 @@ import {
   MoreVertical,
   ListTodo,
   PhoneOff,
+  Scan,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ScopeList from "./room-scope-list";
@@ -103,7 +104,7 @@ export const PainterStageMobile = (props: PainterUIProps) => {
                   <div className="relative">
                     <div className="w-32 h-32 rounded-full border-8 border-white/20 flex items-center justify-center">
                       <span className="text-8xl font-bold text-white animate-pulse">
-                        {countdown > 0 ? countdown : '📸'}
+                        {countdown > 0 ? countdown : <Scan className="size-4"/>}
                       </span>
                     </div>
                     {countdown > 0 && (
@@ -111,7 +112,7 @@ export const PainterStageMobile = (props: PainterUIProps) => {
                     )}
                   </div>
                   <p className="text-white text-xl font-bold uppercase tracking-wider">
-                    {countdown > 0 ? 'Get Ready!' : 'Smile!'}
+                    {countdown > 0 ? 'Get Ready!' : 'Hold Still!'}
                   </p>
                 </div>
               </div>

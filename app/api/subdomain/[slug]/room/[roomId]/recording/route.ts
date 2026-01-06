@@ -4,7 +4,7 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 interface RouteParams {
-  params: Promise <{
+  params: Promise<{
     slug: string;
     roomId: string;
   }>;
@@ -51,6 +51,7 @@ export async function GET(req: Request, { params }: RouteParams) {
 
     // URL expires in 15 minutes (900 seconds)
     const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
+    console.log("SignedUrl for video:", signedUrl);
 
     return NextResponse.json({ url: signedUrl });
   } catch (error) {

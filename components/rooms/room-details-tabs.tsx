@@ -1,24 +1,30 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Clipboard, History, ArrowRight, Filter } from "lucide-react";
+import { Clipboard, History, Filter } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { KeyedMutator } from "swr"; // 1. Import KeyedMutator
 
-// Import new split components
 import { RoomDetailsTabSow } from "./room-details-tab-sow";
 import { RoomDetailsTabEventLog } from "./room-details-tab-event-log";
 import { ScopeItem } from "@/types/room-types";
 
 // --- TYPES ---
-
-
 interface RoomDetailsTabsProps {
   items: ScopeItem[];
   roomId: string;
+  // 2. Add new props
+  presignedUrls: Record<string, string>;
+  onDataChange: KeyedMutator<any>; 
 }
 
-export function RoomDetailsTabs({ items, roomId }: RoomDetailsTabsProps) {
+export function RoomDetailsTabs({ 
+  items, 
+  roomId, 
+  presignedUrls, 
+  onDataChange 
+}: RoomDetailsTabsProps) {
   const [activeArea, setActiveArea] = useState<string>("ALL");
 
   // --- UNIQUE AREAS FOR FILTERING ---
@@ -84,10 +90,13 @@ export function RoomDetailsTabs({ items, roomId }: RoomDetailsTabsProps) {
           value="tasks"
           className="flex-1 mt-0 relative overflow-hidden focus-visible:ring-0"
         >
+          {/* 3. Pass new props to SOW Tab */}
           <RoomDetailsTabSow
             initialItems={items}
             activeArea={activeArea}
             roomId={roomId}
+            presignedUrls={presignedUrls}
+            onUpdateTrigger={onDataChange}
           />
         </TabsContent>
 
@@ -96,10 +105,12 @@ export function RoomDetailsTabs({ items, roomId }: RoomDetailsTabsProps) {
           value="timeline"
           className="flex-1 mt-0 relative overflow-hidden focus-visible:ring-0"
         >
-          <RoomDetailsTabEventLog items={items} />
+          {/* 4. Pass URLs to Event Log Tab */}
+          <RoomDetailsTabEventLog 
+            items={items} 
+            presignedUrls={presignedUrls}
+          />
         </TabsContent>
-
-        {/* --- FOOTER --- */}
       </Tabs>
     </div>
   );
