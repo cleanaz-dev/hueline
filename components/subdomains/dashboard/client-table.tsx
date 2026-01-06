@@ -327,11 +327,11 @@ export default function ClientTable() {
                     </button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black border-zinc-800">
-                    <DialogTitle sr-only="video dialog" />
+                    <DialogTitle sr-only="video" />
                     <div className="aspect-video w-full">
                       <SecureVideoPlayer
                         roomId={roomKey}
-                        className="w-full h-full"
+                        className="w-full h-full rounded-none"
                       />
                     </div>
                   </DialogContent>

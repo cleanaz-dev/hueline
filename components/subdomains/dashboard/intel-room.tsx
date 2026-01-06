@@ -22,13 +22,15 @@ interface ScopeItem {
   area: string;
   item: string;
   action: string;
-  image_url?: string | null;
-  images?: string[];
+  image_urls?: string[];
+  image_id?: string;
+  timestamp: string;
 }
 
 interface IntelRoomProps {
   rooms?: any[];
   createdAt?: string | Date;
+  presignedUrls?: Record<string, string>;
 }
 
 // --- CONFIG ---
@@ -79,16 +81,14 @@ const SCOPE_CONFIG = (type: string) => {
   }
 };
 
-export function IntelRoom({ rooms, createdAt }: IntelRoomProps) {
+export function IntelRoom({ rooms, createdAt, presignedUrls = {} }: IntelRoomProps) {
   const [showVideo, setShowVideo] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [videoHeight, setVideoHeight] = useState(0);
   const videoContainerRef = useRef<HTMLDivElement>(null);
 
-  // Calculate the height when video should be shown
   useEffect(() => {
     if (showVideo && videoContainerRef.current) {
-      // Get the natural height of the content
       const contentHeight = videoContainerRef.current.scrollHeight;
       setVideoHeight(contentHeight);
     } else {
@@ -96,7 +96,6 @@ export function IntelRoom({ rooms, createdAt }: IntelRoomProps) {
     }
   }, [showVideo]);
 
-  // Logic: Flatten Data & Find Room ID with Video
   const { scopeData, totalScopeItems, displayDate, videoRoomId } = useMemo(() => {
     if (!rooms || rooms.length === 0)
       return {
@@ -140,7 +139,6 @@ export function IntelRoom({ rooms, createdAt }: IntelRoomProps) {
       {/* HEADER */}
       <div className="px-4 py-3 border-b border-slate-200 bg-slate-50/80 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          {/* Primary Icon */}
           <div className="p-2 bg-slate-800 border border-slate-900 rounded-md shadow-sm">
             <ClipboardCheck className="w-4 h-4 text-white" />
           </div>
@@ -153,7 +151,6 @@ export function IntelRoom({ rooms, createdAt }: IntelRoomProps) {
                 {totalScopeItems} Total Items
               </span>
 
-              {/* VIDEO TRIGGER */}
               {videoRoomId && (
                 <button
                   onClick={handleToggleVideo}
@@ -194,7 +191,7 @@ export function IntelRoom({ rooms, createdAt }: IntelRoomProps) {
         </div>
       </div>
 
-      {/* VIDEO PLAYER SECTION - Premium Smooth Expansion */}
+      {/* VIDEO PLAYER SECTION */}
       <div
         className="overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
         style={{ 
@@ -212,7 +209,6 @@ export function IntelRoom({ rooms, createdAt }: IntelRoomProps) {
             <div className="relative w-full aspect-video mx-auto bg-black group">
               <SecureVideoPlayer roomId={videoRoomId} className="w-full h-full" />
               
-              {/* Close Button Overlay */}
               <button
                 onClick={() => setShowVideo(false)}
                 className="absolute top-4 right-4 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 z-50 transform hover:scale-105"
@@ -229,8 +225,8 @@ export function IntelRoom({ rooms, createdAt }: IntelRoomProps) {
       <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/30">
         {scopeData.map(([area, items]) => {
           const areaImages = items
-            .flatMap((i) => i.images || (i.image_url ? [i.image_url] : []))
-            .filter(Boolean);
+            .filter((i) => i.type === "IMAGE" && i.image_urls)
+            .flatMap((i) => i.image_urls!.map(key => presignedUrls[key]).filter(Boolean));
 
           const itemsByType: Record<string, ScopeItem[]> = {};
           items.forEach((i) => {
@@ -243,7 +239,6 @@ export function IntelRoom({ rooms, createdAt }: IntelRoomProps) {
               key={area}
               className="flex flex-col gap-3 p-3 rounded-lg border border-slate-200 bg-white shadow-sm"
             >
-              {/* Area Title */}
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800 uppercase tracking-wide">
                   <MapPin className="w-3 h-3 text-slate-500" />
@@ -257,7 +252,6 @@ export function IntelRoom({ rooms, createdAt }: IntelRoomProps) {
                 )}
               </div>
 
-              {/* IMAGES */}
               {areaImages.length > 0 && (
                 <div className="grid grid-cols-4 gap-2">
                   {areaImages.slice(0, 4).map((img, idx) => (
@@ -266,7 +260,7 @@ export function IntelRoom({ rooms, createdAt }: IntelRoomProps) {
                       className="aspect-square rounded-md overflow-hidden border border-slate-200 bg-slate-50"
                     >
                       <img
-                        src={img as string}
+                        src={img}
                         alt="Scope"
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       />
@@ -280,7 +274,6 @@ export function IntelRoom({ rooms, createdAt }: IntelRoomProps) {
                 </div>
               )}
 
-              {/* LIST ITEMS */}
               <div className="space-y-3 mt-1">
                 {CATEGORY_ORDER.map((cat) => {
                   const catItems = itemsByType[cat];

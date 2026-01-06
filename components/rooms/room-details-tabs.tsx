@@ -16,14 +16,14 @@ interface RoomDetailsTabsProps {
   roomId: string;
   // 2. Add new props
   presignedUrls: Record<string, string>;
-  onDataChange: KeyedMutator<any>; 
+  onDataChange: KeyedMutator<any>;
 }
 
-export function RoomDetailsTabs({ 
-  items, 
-  roomId, 
-  presignedUrls, 
-  onDataChange 
+export function RoomDetailsTabs({
+  items,
+  roomId,
+  presignedUrls,
+  onDataChange,
 }: RoomDetailsTabsProps) {
   const [activeArea, setActiveArea] = useState<string>("ALL");
 
@@ -106,8 +106,9 @@ export function RoomDetailsTabs({
           className="flex-1 mt-0 relative overflow-hidden focus-visible:ring-0"
         >
           {/* 4. Pass URLs to Event Log Tab */}
-          <RoomDetailsTabEventLog 
-            items={items} 
+          <RoomDetailsTabEventLog
+            items={items}
+            activeArea={activeArea}
             presignedUrls={presignedUrls}
           />
         </TabsContent>

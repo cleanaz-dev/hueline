@@ -8,10 +8,12 @@ import {
   formatProjectScope,
   getEstimatedValueRange,
 } from "@/lib/utils/dashboard-utils";
+import { useRoomScopes } from "@/hooks/use-room-scopes";
 
 // Sub-components
 import { IntelRoom } from "./intel-room";
 import { IntelCall } from "./intel-call";
+import { useOwner } from "@/context/owner-context";
 
 interface IntelligenceDialogProps {
   isOpen: boolean;
@@ -25,6 +27,14 @@ export default function IntelligenceDialog({
   booking,
 }: IntelligenceDialogProps) {
   if (!isOpen) return null;
+  const { subdomain } = useOwner()
+
+  // Get slug and roomId
+  const slug = subdomain?.slug || "";
+  const roomId = booking.rooms?.[0]?.roomKey || "";
+
+  // Fetch presigned URLs
+  const { presignedUrls, isLoading: loadingUrls } = useRoomScopes(slug, roomId);
 
   // 1. Sort Calls
   const sortedCalls = useMemo(
@@ -106,7 +116,15 @@ export default function IntelligenceDialog({
         <div className="flex-1 overflow-y-auto bg-slate-50/50 p-3 sm:p-6">
           <div className="space-y-6">
             {/* COMPONENT: SITE SURVEY (Rooms) */}
-            <IntelRoom rooms={booking.rooms} />
+            {loadingUrls ? (
+              <div className="text-center py-8 text-slate-400">Loading images...</div>
+            ) : (
+              <IntelRoom 
+                rooms={booking.rooms} 
+                presignedUrls={presignedUrls}
+                createdAt={booking.rooms?.[0]?.createdAt}
+              />
+            )}
 
             {/* COMPONENT: CALLS LIST */}
             {sortedCalls.map((call) => (
