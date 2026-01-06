@@ -16,7 +16,7 @@ import {
   Pencil,
   Trash2,
   CirclePlus,
-  Image
+  Image,
 } from "lucide-react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -63,8 +63,8 @@ const getCategoryConfig = (type: string) => {
       return { label: "Paint", icon: Paintbrush, color: "text-blue-600" };
     case "NOTE":
       return { label: "Notes", icon: StickyNote, color: "text-zinc-500" };
-      case "IMAGE":
-        return {label: "Image", icon: Image, color: "text-accent"}
+    case "IMAGE":
+      return { label: "Image", icon: Image, color: "text-accent" };
     default:
       return { label: "General", icon: DatabaseZap, color: "text-zinc-600" };
   }
