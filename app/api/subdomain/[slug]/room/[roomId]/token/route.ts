@@ -59,14 +59,36 @@ export async function GET(req: Request, { params }: Params) {
       );
     }
 
-    // Update room metadata with domain ID
     const roomService = new RoomServiceClient(wsUrl, apiKey, apiSecret);
-    await roomService.updateRoomMetadata(roomData.roomKey, JSON.stringify({
-      domainId: roomData.domainId,
-      clientName: roomData.clientName,
-      sessionType: roomData.sessionType,
-      dbId: roomData.id
-    }));
+
+    // Create room if it doesn't exist
+    try {
+      await roomService.createRoom({
+        name: roomData.roomKey,
+        emptyTimeout: 0, // Room won't auto-delete
+        metadata: JSON.stringify({
+          domainId: roomData.domainId,
+          clientName: roomData.clientName,
+          sessionType: roomData.sessionType,
+          dbId: roomData.id
+        })
+      });
+      console.log(`✅ Room created: ${roomData.roomKey}`);
+    } catch (error: any) {
+      // Room might already exist, that's fine
+      if (error?.message?.includes('already exists')) {
+        console.log(`ℹ️ Room already exists: ${roomData.roomKey}`);
+        // Update metadata if room exists
+        await roomService.updateRoomMetadata(roomData.roomKey, JSON.stringify({
+          domainId: roomData.domainId,
+          clientName: roomData.clientName,
+          sessionType: roomData.sessionType,
+          dbId: roomData.id
+        }));
+      } else {
+        throw error; // Re-throw if it's a different error
+      }
+    }
 
     const at = new AccessToken(apiKey, apiSecret, {
       identity: identity,

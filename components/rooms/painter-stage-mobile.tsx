@@ -12,6 +12,8 @@ import {
   ListTodo,
   PhoneOff,
   Scan,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ScopeList from "./room-scope-list";
@@ -57,7 +59,8 @@ export const PainterStageMobile = (props: PainterUIProps) => {
   const { countdown, isCapturing } = useCameraEvents(props.slug, props.roomId);
 
   return (
-    <div className="flex-1 relative flex flex-col min-w-0 h-full">
+    // CHANGED: h-full -> h-[100dvh] to fix mobile browser address bar cutting off content
+    <div className="flex-1 relative flex flex-col min-w-0 h-[100dvh]">
       {/* VIDEO STAGE (FULLSCREEN MOBILE) */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-3 bg-zinc-600/50 backdrop-blur-md border border-zinc-700 shadow-sm px-4 py-2 rounded-full pointer-events-auto">
@@ -104,7 +107,11 @@ export const PainterStageMobile = (props: PainterUIProps) => {
                   <div className="relative">
                     <div className="w-32 h-32 rounded-full border-8 border-white/20 flex items-center justify-center">
                       <span className="text-8xl font-bold text-white animate-pulse">
-                        {countdown > 0 ? countdown : <Scan className="size-4"/>}
+                        {countdown > 0 ? (
+                          countdown
+                        ) : (
+                          <Scan className="size-4" />
+                        )}
                       </span>
                     </div>
                     {countdown > 0 && (
@@ -112,7 +119,7 @@ export const PainterStageMobile = (props: PainterUIProps) => {
                     )}
                   </div>
                   <p className="text-white text-xl font-bold uppercase tracking-wider">
-                    {countdown > 0 ? 'Get Ready!' : 'Hold Still!'}
+                    {countdown > 0 ? "Get Ready!" : "Hold Still!"}
                   </p>
                 </div>
               </div>
@@ -163,7 +170,11 @@ export const PainterStageMobile = (props: PainterUIProps) => {
               }}
               className="absolute top-2 right-2 p-1.5 bg-white/20 hover:bg-white text-white hover:text-black rounded-full backdrop-blur-sm transition-all"
             >
-              <ArrowRightLeft size={12} />
+              {props.isSwapped ? (
+                <Minimize2 size={12} />
+              ) : (
+                <Maximize2 size={12} />
+              )}
             </button>
           </div>
         </div>
@@ -196,12 +207,12 @@ export const PainterStageMobile = (props: PainterUIProps) => {
           }}
           colorClass="text-orange-500"
         />
-        <MobileToolButton
+        {/* <MobileToolButton
           icon={props.isTranscribing ? Mic : MicOff}
           isActive={props.isTranscribing}
           onClick={props.onToggleTranscription}
           colorClass="text-red-500"
-        />
+        /> */}
         {props.deviceCount > 1 && (
           <MobileToolButton
             icon={SwitchCamera}
@@ -224,8 +235,9 @@ export const PainterStageMobile = (props: PainterUIProps) => {
       {/* MOBILE SCOPE MODAL */}
       {showMobileScope && (
         <div className="absolute inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end">
-          <div className="w-full bg-white rounded-t-2xl max-h-[80vh] flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <div className="w-full bg-white rounded-t-2xl max-h-[85dvh] flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl">
+            {/* CHANGED: added flex-none to header so it doesn't shrink */}
+            <div className="flex-none flex items-center justify-between p-4 border-b border-gray-100">
               <span className="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
                 <ListTodo size={18} className="text-orange-500" /> Active Scope
               </span>
@@ -236,7 +248,8 @@ export const PainterStageMobile = (props: PainterUIProps) => {
                 <X size={18} />
               </button>
             </div>
-            <div className="p-4 overflow-y-auto min-h-[300px]">
+            {/* CHANGED: added flex-1, pb-24 (padding bottom), and overscroll-contain */}
+            <div className="flex-1 p-4 overflow-y-auto min-h-[300px] pb-24 overscroll-contain">
               <ScopeList roomId={props.roomId} slug={props.slug} />
             </div>
           </div>
