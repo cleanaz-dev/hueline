@@ -1,5 +1,5 @@
 // app/api/token/[slug]/room/[roomId]/route.ts
-import { AccessToken } from "livekit-server-sdk";
+import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -58,6 +58,15 @@ export async function GET(req: Request, { params }: Params) {
         { status: 500 }
       );
     }
+
+    // Update room metadata with domain ID
+    const roomService = new RoomServiceClient(wsUrl, apiKey, apiSecret);
+    await roomService.updateRoomMetadata(roomData.roomKey, JSON.stringify({
+      domainId: roomData.domainId,
+      clientName: roomData.clientName,
+      sessionType: roomData.sessionType,
+      dbId: roomData.id
+    }));
 
     const at = new AccessToken(apiKey, apiSecret, {
       identity: identity,
