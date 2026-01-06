@@ -56,8 +56,8 @@ export function SowEditItemDialog({
       ...itemToEdit, // Keep timestamp and image_urls
       area,
       type,
-      item: item || undefined,
-      action: action || undefined
+      item: item,
+      action: action
     };
 
     onSave(updatedItem);
