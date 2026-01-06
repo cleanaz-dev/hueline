@@ -20,15 +20,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ScopeItem } from "../room-details-tab-sow"; 
-import { cn } from "@/lib/utils"; // Ensure you have utils or use standard class strings
+import { ScopeItem, ScopeType } from "@/types/room-types";
+import { cn } from "@/lib/utils";
 
 interface SowAddItemDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   initialArea?: string; 
   initialCategory?: string; 
-  isAreaLocked?: boolean; // <--- NEW PROP
+  isAreaLocked?: boolean;
   onSave: (newItem: ScopeItem) => void;
 }
 
@@ -37,18 +37,18 @@ export function SowAddItemDialog({
   onOpenChange, 
   initialArea, 
   initialCategory, 
-  isAreaLocked = false, // Default to false
+  isAreaLocked = false,
   onSave 
 }: SowAddItemDialogProps) {
   const [area, setArea] = useState("");
-  const [type, setType] = useState("PAINT");
+  const [type, setType] = useState<ScopeType>(ScopeType.PAINT);
   const [item, setItem] = useState("");
   const [action, setAction] = useState("");
 
   useEffect(() => {
     if (isOpen) {
       setArea(initialArea || "");
-      setType(initialCategory || "PAINT");
+      setType((initialCategory as ScopeType) || ScopeType.PAINT);
       setItem("");
       setAction("");
     }
@@ -63,7 +63,6 @@ export function SowAddItemDialog({
       item: item.toLowerCase(),
       action: action.toLowerCase(),
       timestamp: new Date().toISOString(),
-      image_url: null
     };
 
     onSave(newItem);
@@ -78,7 +77,6 @@ export function SowAddItemDialog({
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          {/* Area Input */}
           <div className="grid gap-2">
             <Label htmlFor="area">Area / Room</Label>
             <Input 
@@ -90,22 +88,22 @@ export function SowAddItemDialog({
                 "capitalize",
                 isAreaLocked && "bg-zinc-100 text-zinc-500 cursor-not-allowed"
               )}
-              disabled={isAreaLocked} // <--- DISABLE INPUT IF LOCKED
+              disabled={isAreaLocked}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="type">Category</Label>
-              <Select value={type} onValueChange={setType}>
+              <Select value={type} onValueChange={(val) => setType(val as ScopeType)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PAINT">Paint</SelectItem>
-                  <SelectItem value="PREP">Prep</SelectItem>
-                  <SelectItem value="REPAIR">Repair</SelectItem>
-                  <SelectItem value="NOTE">Note</SelectItem>
+                  <SelectItem value={ScopeType.PAINT}>Paint</SelectItem>
+                  <SelectItem value={ScopeType.PREP}>Prep</SelectItem>
+                  <SelectItem value={ScopeType.REPAIR}>Repair</SelectItem>
+                  <SelectItem value={ScopeType.NOTE}>Note</SelectItem>
                 </SelectContent>
               </Select>
             </div>

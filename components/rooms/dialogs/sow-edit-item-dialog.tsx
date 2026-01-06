@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ScopeItem } from "@/types/room-types";
+import { ScopeItem, ScopeType } from "@/types/room-types";
 
 interface SowEditItemDialogProps {
   isOpen: boolean;
@@ -36,14 +36,14 @@ export function SowEditItemDialog({
   onSave 
 }: SowEditItemDialogProps) {
   const [area, setArea] = useState("");
-  const [type, setType] = useState("");
+  const [type, setType] = useState<ScopeType>(ScopeType.PAINT);
   const [item, setItem] = useState("");
   const [action, setAction] = useState("");
 
   useEffect(() => {
     if (isOpen && itemToEdit) {
-      setArea(itemToEdit.area || "");
-      setType(itemToEdit.type || "PAINT");
+      setArea(itemToEdit.area);
+      setType(itemToEdit.type);
       setItem(itemToEdit.item || "");
       setAction(itemToEdit.action || "");
     }
@@ -53,11 +53,11 @@ export function SowEditItemDialog({
     if (!itemToEdit) return;
 
     const updatedItem: ScopeItem = {
-      ...itemToEdit, // Keep timestamp and image_url
+      ...itemToEdit, // Keep timestamp and image_urls
       area,
       type,
-      item,
-      action
+      item: item || undefined,
+      action: action || undefined
     };
 
     onSave(updatedItem);
@@ -86,7 +86,7 @@ export function SowEditItemDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="edit-type">Category</Label>
-              <Select value={type} onValueChange={setType}>
+              <Select value={type as string} onValueChange={(value) => setType(value as ScopeType)}>
                 <SelectTrigger id="edit-type">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -95,6 +95,7 @@ export function SowEditItemDialog({
                   <SelectItem value="PREP">Prep</SelectItem>
                   <SelectItem value="REPAIR">Repair</SelectItem>
                   <SelectItem value="NOTE">Note</SelectItem>
+                  <SelectItem value="IMAGE">Image</SelectItem>
                 </SelectContent>
               </Select>
             </div>
