@@ -233,6 +233,7 @@ model Room {
 enum RoomType {
   QUICK
   PROJECT
+  SELF_SERVE
 }
 
 enum RoomStatus {

@@ -151,7 +151,7 @@ export default function RoomsDashboard() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              Live Rooms{" "}
+              Rooms{" "}
             </h1>
             <p className="text-zinc-500 ">
               Bridge the gap between a lead and a contract with a virtual

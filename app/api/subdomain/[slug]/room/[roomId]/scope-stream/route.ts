@@ -30,11 +30,18 @@ export async function GET(req: Request, { params }: Params) {
         await subscriber.connect();
         console.log(`[Stream] Connected: room ${roomId}`);
         
-        // Subscribe to the room's scope channel
+        // Subscribe to BOTH channels
         await subscriber.subscribe(`room:${roomId}:scopes`, (message) => {
-          console.log(`[Stream] Message:`, message);
+          console.log(`[Stream] Scope:`, message);
           controller.enqueue(
-            encoder.encode(`data: ${message}\n\n`)
+            encoder.encode(`data: ${JSON.stringify({ type: 'scope', data: JSON.parse(message) })}\n\n`)
+          );
+        });
+        
+        await subscriber.subscribe(`room:${roomId}:events`, (message) => {
+          console.log(`[Stream] Event:`, message);
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ type: 'event', data: JSON.parse(message) })}\n\n`)
           );
         });
         

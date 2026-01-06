@@ -39,7 +39,7 @@ export const AudioPlayer = ({
   }, [isPlaying, url]);
 
   return (
-    <div className="group flex items-center gap-3 w-full max-w-[300px] transition-opacity hover:opacity-100 opacity-90">
+    <div className="group flex items-center gap-3 w-full max-w-[300px] transition-opacity hover:opacity-100 opacity-90 ">
       {/* Only render audio element if we have a presigned URL */}
       {url && (
         <audio
@@ -58,7 +58,7 @@ export const AudioPlayer = ({
         onClick={onPlayPause}
         disabled={isLoading}
         className={cn(
-          "flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-1",
+          "flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-1 cursor-pointer",
           isLoading && "cursor-wait opacity-50",
           isPlaying 
             ? "border-indigo-600 bg-indigo-50 text-indigo-600" 

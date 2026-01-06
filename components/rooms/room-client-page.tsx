@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { RoomProvider } from '@/context/room-context';
 import { ClientStage } from './client-stage';
+import { ClientSelfServeStage } from './stage/client-self-serve-stage';
 import { PainterStage } from './painter-stage';
 import { QuickSessionStage } from './quick-session-stage';
 import { CameraHandler } from './camera-handler';
@@ -12,7 +13,7 @@ interface RoomClientProps {
   roomData: RoomData;
   slug: string;
   role?: string;
-  mode?: 'project' | 'quick';
+  mode?: 'project' | 'quick' | 'self-serve';
 }
 
 export function RoomClient({ 
@@ -27,7 +28,7 @@ export function RoomClient({
   const [hasJoined, setHasJoined] = useState(false);
   
   const isClient = role === "client";
-  const isHost = !isClient; // Painter or Quick session creator = host
+  const isHost = mode === 'self-serve' ? true : !isClient;
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -57,8 +58,8 @@ export function RoomClient({
     );
   }
 
-  // Client Interstitial
-  if (isClient && !hasJoined) {
+  // Client Interstitial (skip for self-serve)
+  if (isClient && !hasJoined && mode !== 'self-serve') {
     return (
       <div className="h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
         <h1 className="text-2xl text-white font-bold mb-4">Welcome to the Walkthrough</h1>
@@ -74,6 +75,9 @@ export function RoomClient({
 
   // --- RENDER LOGIC ---
   const renderStage = () => {
+    if (isClient && mode === 'self-serve') {
+      return <ClientSelfServeStage slug={slug} roomId={roomId} />;
+    }
     if (isClient) return <ClientStage />;
     if (mode === 'quick') return <QuickSessionStage />;
     return <PainterStage slug={slug} roomId={roomId} />;

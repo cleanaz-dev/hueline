@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { BookingData } from "@/types/subdomain-type";
+import { QuoteSurvey } from "./quote-survey";
 
 export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
   const [timeLeft, setTimeLeft] = useState(72 * 60 * 60);
@@ -115,80 +116,10 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
         </Card>
 
         {/* --- RIGHT: THE QUOTE (Invoice Style) --- */}
-        <Card className="relative overflow-hidden border-0 bg-white shadow-xl shadow-blue-900/10 rounded-3xl flex flex-col h-full transform transition-all hover:translate-y-[-2px]">
-       
-
-          <div className="p-6 md:p-8 flex-1 flex flex-col">
-            <div className="flex items-center gap-4 mb-6">
-           
-              <div>
-                <h3 className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-1">Estimate Preview</h3>
-                <p className="text-sm text-gray-500 mt-1 font-medium">Prepared for {booking.name}</p>
-              </div>
-            </div>
-
-            <Separator className="mb-6 bg-gray-100" />
-
-            <div className="mb-8">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 block">Selected Palette</span>
-              <div className="flex flex-wrap gap-4">
-                {(booking.paintColors && booking.paintColors.length > 0) ? (
-                  booking.paintColors.map((color) => (
-                    <div key={color.id} className="group flex flex-col items-center gap-2">
-                      <div 
-                        className="w-12 h-12 rounded-full border-4 border-white shadow-md ring-1 ring-gray-100 transition-transform group-hover:scale-110" 
-                        style={{ backgroundColor: color.hex }}
-                      />
-                      <span className="text-[10px] font-semibold text-gray-600 max-w-[60px] text-center  px-1 py-0.5 bg-gray-50 rounded-md">
-                        {color.name}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                     <div className="flex flex-col items-center gap-2 opacity-60">
-                        <div className="w-10 h-10 rounded-full bg-[#1e293b] border-2 border-white shadow-sm" />
-                        <span className="text-[10px] text-gray-500">Navy</span>
-                     </div>
-                     <div className="flex flex-col items-center gap-2 opacity-60">
-                        <div className="w-10 h-10 rounded-full bg-[#f1f5f9] border-2 border-gray-100 shadow-sm" />
-                        <span className="text-[10px] text-gray-500">White</span>
-                     </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Line Items */}
-            <div className="space-y-4 flex-1">
-               <div className="flex justify-between items-baseline text-sm p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
-                  <span className="text-gray-600 font-medium">Surface Prep & Repairs</span>
-                  <span className="font-mono font-semibold text-gray-900">$350.00</span>
-               </div>
-               <div className="flex justify-between items-baseline text-sm p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
-                  <span className="text-gray-600 font-medium">Premium Materials</span>
-                  <span className="font-mono font-semibold text-gray-900">$425.00</span>
-               </div>
-               <div className="flex justify-between items-baseline text-sm p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
-                  <span className="text-gray-600 font-medium">Labor & Application</span>
-                  <span className="font-mono font-semibold text-gray-900">$650.00</span>
-               </div>
-               
-               <div className="pt-4 mt-2 border-t border-gray-100 px-3">
-                  <div className="flex justify-between items-baseline">
-                     <span className="text-base font-bold text-gray-900">Estimated Total</span>
-                     <span className="font-mono text-2xl font-bold text-gray-900">$1,425.00</span>
-                  </div>
-               </div>
-            </div>
+      
             
-            <div className="mt-8 bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-               <p className="text-[10px] text-gray-400 font-medium">
-                  This is a mock-up of what {booking.name} receives automatically.
-               </p>
-            </div>
-          </div>
-        </Card>
+              <QuoteSurvey booking={booking} />
+
       </div>
     </section>
   );
