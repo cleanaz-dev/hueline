@@ -36,6 +36,7 @@ export async function GET(req: Request, { params }: Params) {
         roomKey: true,
         clientName: true,
         sessionType: true,
+        domainId: true,
       },
     });
 
@@ -64,7 +65,8 @@ export async function GET(req: Request, { params }: Params) {
         isAgent: false,
         clientName: roomData.clientName,
         type: roomData.sessionType,
-        dbId: roomData.id 
+        dbId: roomData.id,
+        domainId: roomData.domainId
       }),
     });
 
