@@ -1,3 +1,4 @@
+import { RoomType } from "@/app/generated/prisma";
 import { getRedisClient, keys } from "../../config";
 
 interface RoomData {
@@ -5,7 +6,7 @@ interface RoomData {
   roomName: string;
   clientName?: string;
   clientPhone?: string;
-  sessionType?: "PROJECT" | "QUICK";
+  sessionType?: RoomType
 }
 
 interface ScopeData {

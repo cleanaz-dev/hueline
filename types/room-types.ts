@@ -1,9 +1,11 @@
+import { RoomType } from "@/app/generated/prisma";
+
 export interface RoomData {
   bookingId?: string;
   roomName: string;
   clientName?: string;
   clientPhone?: string;
-  sessionType?: "PROJECT" | "QUICK" | "SELF_SERVE"
+  sessionType?: RoomType
 }
 
 export interface ScopeItem {
