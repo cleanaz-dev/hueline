@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRoomContext } from "@/context/room-context";
 import { useCameraEvents } from "@/hooks/use-camera-events";
-import { useTracks, isTrackReference, type TrackReference } from "@livekit/components-react";
-import { Track } from "livekit-client";
+import { 
+  useTracks, 
+  isTrackReference, 
+  type TrackReference 
+} from "@livekit/components-react";
+import { Track, LocalVideoTrack } from "livekit-client"; 
 import { ScopeItem } from "@/components/rooms/stage/self-serve-room-list";
 
 export const useSelfServe = (slug: string, roomId: string) => {
@@ -25,7 +29,7 @@ export const useSelfServe = (slug: string, roomId: string) => {
   const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: false }]);
   const localTrack = tracks.find((t) => t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
 
-  // --- EVENT LISTENER (THE BRAIN) ---
+  // --- EVENT LISTENER ---
   useEffect(() => {
     const eventSource = new EventSource(`/api/subdomain/${slug}/room/${roomId}/scope-stream`);
     
@@ -34,8 +38,6 @@ export const useSelfServe = (slug: string, roomId: string) => {
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        
-        // 1. Handle Photo Capture (Flash Trigger)
         if (data.event === 'photo_capture_complete') {
           const newItem: ScopeItem = {
             type: "IMAGE",
@@ -45,15 +47,11 @@ export const useSelfServe = (slug: string, roomId: string) => {
             timestamp: new Date().toISOString(),
             image_path: data.data.image_path
           };
-          
           setScopes(prev => [...prev, newItem]);
           setLastCapture({ path: data.data.image_path, area: data.data.area });
-        }
-        // 2. Handle Regular Scope Items
-        else if (Array.isArray(data)) {
+        } else if (Array.isArray(data)) {
           setScopes(prev => [...prev, ...data]);
-        } 
-        else if (data.type) {
+        } else if (data.type) {
           setScopes(prev => [...prev, data]);
         }
       } catch (e) {
@@ -69,18 +67,37 @@ export const useSelfServe = (slug: string, roomId: string) => {
     return () => eventSource.close();
   }, [slug, roomId]);
 
-  // --- DEVICE CHECKS ---
+  // --- DEVICE CHECKS (Ensures Button Shows) ---
   useEffect(() => {
     document.body.style.overscrollBehavior = "none";
+
     const checkDevices = async () => {
       try {
+        // Enumerate devices to check if we should show the button
         const devices = await navigator.mediaDevices.enumerateDevices();
-        setHasMultipleCameras(devices.filter((d) => d.kind === "videoinput").length > 1);
-      } catch (e) { console.error(e); }
+        const videoInputs = devices.filter((d) => d.kind === "videoinput");
+        setHasMultipleCameras(videoInputs.length > 1);
+      } catch (e) { 
+        console.error(e); 
+      }
     };
+
+    // 1. Run immediately
     checkDevices();
-    return () => { document.body.style.overscrollBehavior = ""; };
-  }, []);
+    
+    // 2. Run AGAIN when permission is granted (localTrack appears)
+    if (localTrack) {
+      checkDevices();
+    }
+
+    // 3. Listen for hardware changes
+    navigator.mediaDevices.addEventListener("devicechange", checkDevices);
+
+    return () => { 
+      document.body.style.overscrollBehavior = ""; 
+      navigator.mediaDevices.removeEventListener("devicechange", checkDevices);
+    };
+  }, [localTrack]); 
 
   // --- ACTIONS ---
   const handleEndRoom = async () => {
@@ -91,16 +108,28 @@ export const useSelfServe = (slug: string, roomId: string) => {
   };
 
   const handleSwitchCamera = useCallback(async () => {
-    if (!room) return;
+    // 1. Get the underlying LocalVideoTrack class
+    const videoTrack = localTrack?.publication?.track as LocalVideoTrack | undefined;
+    
+    if (!videoTrack) return;
+
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter((d) => d.kind === "videoinput");
-      if (videoDevices.length < 2) return;
-      const currentDeviceId = room.getActiveDevice("videoinput");
-      const nextIndex = (videoDevices.findIndex(d => d.deviceId === currentDeviceId) + 1) % videoDevices.length;
-      await room.switchActiveDevice("videoinput", videoDevices[nextIndex].deviceId);
-    } catch (error) { console.error(error); }
-  }, [room]);
+      // 2. Determine current facing mode
+      const currentSettings = videoTrack.mediaStreamTrack.getSettings();
+      // Default to 'user' (front) if undefined
+      const currentFacingMode = currentSettings.facingMode || 'user';
+      
+      const nextFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+
+      // 3. Use the correct public method: restartTrack
+      await videoTrack.restartTrack({
+        facingMode: nextFacingMode
+      });
+      
+    } catch (error) {
+      console.error("Failed to switch camera:", error);
+    }
+  }, [localTrack]); 
 
   return {
     room,
@@ -111,15 +140,13 @@ export const useSelfServe = (slug: string, roomId: string) => {
     countdown,
     isCapturing,
     hasMultipleCameras,
-    // Data Props
     data: {
       scopes,
       isStreamConnected,
       lastCapture
     },
-    // UI Props
     uiState: { showEndDialog, showMobileMenu, showMobileScope },
-    setUiState: { setShowEndDialog, setShowMobileMenu, setShowMobileScope, setLastCapture }, // Expose setLastCapture to clear it
+    setUiState: { setShowEndDialog, setShowMobileMenu, setShowMobileScope, setLastCapture }, 
     actions: { handleEndRoom, handleSwitchCamera, dismissMockup: () => sendData("MOCKUP_READY", { url: null }) },
   };
 };
