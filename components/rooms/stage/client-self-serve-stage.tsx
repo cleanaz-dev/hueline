@@ -14,7 +14,7 @@ import {
   Maximize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import ScopeList from "../room-scope-list"; // Updated Dumb Component
+import SelfServeScopeList from "./self-serve-room-list";
 import { useSelfServe } from "@/hooks/use-self-serve";
 import Image from "next/image";
 
@@ -280,7 +280,7 @@ export const ClientSelfServeStage = ({
             </div>
             <div className="flex-1 p-4 overflow-y-auto min-h-[300px] pb-24 overscroll-contain">
               {/* PASSING DATA DOWN */}
-              <ScopeList
+              <SelfServeScopeList
                 scopes={data.scopes}
                 isConnected={data.isStreamConnected}
               />

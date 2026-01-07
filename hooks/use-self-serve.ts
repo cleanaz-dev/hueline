@@ -3,7 +3,7 @@ import { useRoomContext } from "@/context/room-context";
 import { useCameraEvents } from "@/hooks/use-camera-events";
 import { useTracks, isTrackReference, type TrackReference } from "@livekit/components-react";
 import { Track } from "livekit-client";
-import { ScopeItem } from "@/components/rooms/room-scope-list";
+import { ScopeItem } from "@/components/rooms/stage/self-serve-room-list";
 
 export const useSelfServe = (slug: string, roomId: string) => {
   const { room, laserPosition, activeMockupUrl, sendData } = useRoomContext();
