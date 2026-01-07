@@ -64,6 +64,7 @@ export default function IntelligenceDialog({
   // 4. Check data existence for empty state
   const hasCalls = sortedCalls.length > 0;
   const hasRooms = booking.rooms && booking.rooms.length > 0;
+  console.log("Sorted Calls:", sortedCalls)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4">
