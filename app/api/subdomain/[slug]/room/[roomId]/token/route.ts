@@ -37,6 +37,11 @@ export async function GET(req: Request, { params }: Params) {
         clientName: true,
         sessionType: true,
         domainId: true,
+        booking:{
+          include: {
+            paintColors: true,
+          },
+        },
       },
     });
 
@@ -83,7 +88,8 @@ export async function GET(req: Request, { params }: Params) {
           domainId: roomData.domainId,
           clientName: roomData.clientName,
           sessionType: roomData.sessionType,
-          dbId: roomData.id
+          dbId: roomData.id,
+          booking: roomData?.booking
         }));
       } else {
         throw error; // Re-throw if it's a different error
