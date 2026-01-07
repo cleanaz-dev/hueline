@@ -178,12 +178,13 @@ model SubBookingData {
   initialIntent CallReason @default(NEW_PROJECT)
 
   // 2. SNAPSHOT (Overwritten every call)
-  lastCallReason   CallReason?
-  lastCallAt       DateTime?
-  lastCallAudioUrl String?
-  lastVideoUrl     String?
-  lastVideoAt      String?
-  lastInteraction  String? // The new "Pulse" headline
+  lastCallReason      CallReason?
+  lastCallAt          DateTime?
+  lastCallAudioUrl    String?
+  lastVideoUrl        String?
+  lastVideoAt         String?
+  lastInteraction     String? // The new "Pulse" headline
+  selfServeCompletion Boolean?    @default(false)
 
   // 3. STICKY / ACCUMULATIVE (Builds up over time)
   projectType    String? // e.g. "Residential"
@@ -223,8 +224,8 @@ model Room {
   recordingUrl String?
   transcript   String?
 
-  sessionType     RoomType?  @default(QUICK)
-  agentDispatched Boolean?   @default(false)
+  sessionType     RoomType? @default(QUICK)
+  agentDispatched Boolean?  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
