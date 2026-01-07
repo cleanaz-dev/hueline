@@ -13,7 +13,8 @@ export enum ScopeType {
   PAINT = "PAINT",
   REPAIR = "REPAIR",
   NOTE = "NOTE",
-  IMAGE = "IMAGE"
+  IMAGE = "IMAGE",
+  QUESTION = "QUESTION"
 }
 
 export interface ScopeItem {

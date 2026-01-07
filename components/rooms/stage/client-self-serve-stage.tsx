@@ -1,15 +1,7 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
-import { useRoomContext } from "@/context/room-context";
-import {
-  useTracks,
-  RoomAudioRenderer,
-  isTrackReference,
-  VideoTrack,
-  type TrackReference,
-} from "@livekit/components-react";
-import { Track } from "livekit-client";
+import React, { useEffect, useState } from "react";
+import { RoomAudioRenderer, VideoTrack } from "@livekit/components-react";
 import {
   PhoneOff,
   X,
@@ -18,126 +10,127 @@ import {
   SwitchCamera,
   Scan,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  Maximize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import ScopeList from "../room-scope-list";
-import { useCameraEvents } from "@/hooks/use-camera-events";
+import ScopeList from "../room-scope-list"; // Updated Dumb Component
+import { useSelfServe } from "@/hooks/use-self-serve";
+import Image from "next/image";
 
-// --- REUSABLE MOBILE BUTTON ---
-const MobileToolButton = ({
-  icon: Icon,
-  isActive,
-  onClick,
-  colorClass,
-  variant = "default",
-}: any) => (
-  <button
-    onClick={onClick}
-    className={cn(
-      "w-12 h-12 rounded-full border active:scale-95 shadow-md flex items-center justify-center transition-all duration-200 group",
-      variant === "destructive"
-        ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100"
-        : "bg-white border-gray-200 hover:bg-gray-50",
-      isActive && "bg-blue-50 border-blue-200 ring-1 ring-blue-200"
-    )}
-  >
-    <Icon
-      size={20}
-      className={cn(
-        "transition-colors",
-        isActive
-          ? "text-blue-600"
-          : colorClass ||
-              (variant === "destructive"
-                ? "text-red-600"
-                : "text-gray-500 group-hover:text-gray-700")
-      )}
-    />
-  </button>
-);
+// --- FLASH COMPONENT (Securely Resolves & Shows Thumbnail) ---
+const FlashNotification = ({
+  storageKey,
+  area,
+  onDismiss,
+  onExpand,
+}: {
+  storageKey: string;
+  area: string;
+  onDismiss: () => void;
+  onExpand: (url: string) => void;
+}) => {
+  const [url, setUrl] = useState<string | null>(null);
 
-interface ClientStageProps {
+  useEffect(() => {
+    // 1. Resolve URL immediately
+    const fetchUrl = async () => {
+      try {
+        const res = await fetch(
+          `/api/storage/sign?key=${encodeURIComponent(storageKey)}`
+        );
+        const data = await res.json();
+        if (data.url) setUrl(data.url);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchUrl();
+
+    // 2. Auto-Dismiss Timer (5s)
+    const timer = setTimeout(onDismiss, 5000);
+    return () => clearTimeout(timer);
+  }, [storageKey, onDismiss]);
+
+  if (!url) return null; // Don't show until we have an image
+
+  return (
+    <div
+      onClick={() => onExpand(url)}
+      className="absolute top-20 right-4 z-50 bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-xl shadow-2xl animate-in slide-in-from-right duration-500 cursor-pointer hover:bg-white/20 transition-colors flex gap-3 items-center"
+    >
+      <div className="relative w-16 h-12 rounded-lg overflow-hidden bg-black">
+        <Image src={url} alt="Capture" fill className="object-cover" />
+      </div>
+      <div className="pr-2">
+        <p className="text-[10px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1">
+          <CheckCircle2 size={10} /> Captured
+        </p>
+        <p className="text-xs text-white font-medium capitalize">{area}</p>
+      </div>
+    </div>
+  );
+};
+
+export const ClientSelfServeStage = ({
+  slug,
+  roomId,
+}: {
   slug: string;
   roomId: string;
-}
-
-export const ClientSelfServeStage = ({ slug, roomId }: ClientStageProps) => {
+}) => {
   const {
     room,
+    localTrack,
+    containerRef,
     laserPosition,
     activeMockupUrl,
-    sendData,
-  } = useRoomContext();
+    countdown,
+    isCapturing,
+    hasMultipleCameras,
+    data,
+    uiState,
+    setUiState,
+    actions,
+  } = useSelfServe(slug, roomId);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  // UI State
-  const [showEndDialog, setShowEndDialog] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showMobileScope, setShowMobileScope] = useState(false);
-  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
-  
-  // Camera Event Hooks
-  const { countdown, isCapturing } = useCameraEvents(slug, roomId);
-
-  // 1. TRACK LOGIC: Grab the LOCAL camera
-  const tracks = useTracks([
-    { source: Track.Source.Camera, withPlaceholder: false },
-  ]);
-
-  const localTrack = tracks.find(
-    (t) => t.participant.isLocal && isTrackReference(t)
-  ) as TrackReference | undefined;
-
-  // 2. INITIALIZATION
-  useEffect(() => {
-    const checkDevices = async () => {
-        try {
-            // FIXED: Use standard browser API
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter((d) => d.kind === 'videoinput');
-            setHasMultipleCameras(videoDevices.length > 1);
-        } catch (e) {
-            console.error("Error checking devices", e);
-        }
-    };
-    checkDevices();
-
-    document.body.style.overscrollBehavior = "none";
-    return () => {
-      document.body.style.overscrollBehavior = "";
-    };
-  }, []);
-
-  // 3. ACTIONS
-  const handleEndRoom = async () => {
-    if (room) {
-      await room.disconnect();
-      window.location.href = `/`;
-    }
-  };
-
-  const handleSwitchCamera = useCallback(async () => {
-    if (!room) return;
-    
-    // FIXED: Use standard browser API
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter((d) => d.kind === 'videoinput');
-    
-    if (videoDevices.length < 2) return; 
-
-    const currentDeviceId = room.getActiveDevice('videoinput');
-    const currentIndex = videoDevices.findIndex((d) => d.deviceId === currentDeviceId);
-    const nextIndex = (currentIndex + 1) % videoDevices.length;
-    
-    await room.switchActiveDevice('videoinput', videoDevices[nextIndex].deviceId);
-  }, [room]);
-
+  // Local state for Lightbox (Reviewing the flash capture)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   return (
     <div className="flex-1 relative flex flex-col min-w-0 h-[100dvh] bg-black text-white font-sans">
       <RoomAudioRenderer />
+
+      {/* --- FLASH NOTIFICATION --- */}
+      {data.lastCapture && (
+        <FlashNotification
+          key={data.lastCapture.path} // Re-mounts on new capture to restart timer/animation
+          storageKey={data.lastCapture.path}
+          area={data.lastCapture.area}
+          onDismiss={() => setUiState.setLastCapture(null)}
+          onExpand={(url) => setLightboxUrl(url)}
+        />
+      )}
+
+      {/* --- LIGHTBOX (For Flash Click) --- */}
+      {lightboxUrl && (
+        <div
+          className="absolute inset-0 z-[70] bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <div className="relative w-full max-w-3xl aspect-video bg-black rounded-lg overflow-hidden border border-white/10 shadow-2xl">
+            <Image
+              src={lightboxUrl}
+              alt="Review"
+              fill
+              className="object-contain"
+            />
+            <button className="absolute top-4 right-4 bg-black/50 p-2 rounded-full text-white">
+              <X size={24} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* --- HEADER --- */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between pointer-events-none">
@@ -156,129 +149,122 @@ export const ClientSelfServeStage = ({ slug, roomId }: ClientStageProps) => {
         </div>
       </div>
 
-      {/* --- MAIN VIDEO STAGE --- */}
+      {/* --- MAIN STAGE --- */}
       <div className="flex-1 flex items-center justify-center p-0 overflow-hidden bg-black">
-        <div className="relative w-full h-full max-w-full max-h-full flex items-center justify-center overflow-hidden">
-          <div
-            ref={containerRef}
-            className="w-full h-full flex items-center justify-center relative"
-          >
-            {localTrack ? (
-              <VideoTrack
-                trackRef={localTrack}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                className="max-w-full max-h-full bg-black"
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center text-gray-500 gap-4">
-                <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-                <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                  Starting Camera...
-                </span>
-              </div>
-            )}
+        <div
+          ref={containerRef}
+          className="w-full h-full flex items-center justify-center relative"
+        >
+          {localTrack ? (
+            <VideoTrack
+              trackRef={localTrack}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              className="max-w-full max-h-full bg-black"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-gray-500 gap-4">
+              <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                Starting Camera...
+              </span>
+            </div>
+          )}
 
-            {/* COUNTDOWN OVERLAY */}
-            {isCapturing && countdown !== null && (
-              <div className="absolute inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
-                <div className="flex flex-col items-center gap-6">
-                  <div className="relative">
-                    <div className="w-32 h-32 rounded-full border-8 border-white/20 flex items-center justify-center">
-                      <span className="text-8xl font-bold text-white animate-pulse">
-                        {countdown > 0 ? (
-                          countdown
-                        ) : (
-                          <Scan className="size-16" />
-                        )}
-                      </span>
-                    </div>
-                    {countdown > 0 && (
-                      <div className="absolute inset-0 rounded-full border-8 border-blue-500 animate-ping" />
-                    )}
+          {/* OVERLAYS */}
+          {isCapturing && countdown !== null && (
+            <div className="absolute inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
+              <div className="flex flex-col items-center gap-6">
+                <div className="relative">
+                  <div className="w-32 h-32 rounded-full border-8 border-white/20 flex items-center justify-center">
+                    <span className="text-8xl font-bold text-white animate-pulse">
+                      {countdown > 0 ? countdown : <Scan className="size-16" />}
+                    </span>
                   </div>
-                  <p className="text-white text-xl font-bold uppercase tracking-wider">
-                    {countdown > 0 ? "Hold Steady" : "Capturing!"}
-                  </p>
+                  {countdown > 0 && (
+                    <div className="absolute inset-0 rounded-full border-8 border-blue-500 animate-ping" />
+                  )}
                 </div>
+                <p className="text-white text-xl font-bold uppercase tracking-wider">
+                  {countdown > 0 ? "Hold Steady" : "Capturing!"}
+                </p>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* LASER */}
-            {laserPosition && (
-              <div
-                className="absolute w-8 h-8 -ml-4 -mt-4 border-2 border-red-500 bg-red-500/20 rounded-full animate-ping z-50 pointer-events-none shadow-lg"
-                style={{
-                  left: `${laserPosition.x * 100}%`,
-                  top: `${laserPosition.y * 100}%`,
-                }}
+          {/* MOCKUP & LASER */}
+          {laserPosition && (
+            <div
+              className="absolute w-8 h-8 -ml-4 -mt-4 border-2 border-red-500 bg-red-500/20 rounded-full animate-ping z-50 pointer-events-none shadow-lg"
+              style={{
+                left: `${laserPosition.x * 100}%`,
+                top: `${laserPosition.y * 100}%`,
+              }}
+            />
+          )}
+          {activeMockupUrl && (
+            <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-6">
+              <img
+                src={activeMockupUrl}
+                className="max-w-full max-h-full object-contain shadow-2xl rounded-sm"
+                alt="Mockup"
               />
-            )}
-
-            {/* MOCKUP */}
-            {activeMockupUrl && (
-              <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-6">
-                <img
-                  src={activeMockupUrl}
-                  className="max-w-full max-h-full object-contain shadow-2xl rounded-sm"
-                  alt="Mockup"
-                />
-                <button
-                  onClick={() => sendData("MOCKUP_READY", { url: null })}
-                  className="absolute top-6 right-6 bg-white text-black p-2 rounded-full hover:bg-gray-200 transition-colors shadow-lg"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            )}
-          </div>
+              <button
+                onClick={actions.dismissMockup}
+                className="absolute top-6 right-6 bg-white text-black p-2 rounded-full hover:bg-gray-200 transition-colors shadow-lg"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* --- FAB MENU --- */}
+      {/* --- MENU --- */}
       <button
-        onClick={() => setShowMobileMenu(!showMobileMenu)}
+        onClick={() => setUiState.setShowMobileMenu(!uiState.showMobileMenu)}
         className={cn(
           "absolute right-6 bottom-6 z-50 text-white bg-blue-600/75 p-1.5 rounded-full shadow-lg shadow-blue-600/30 border border-white/20 transition-all duration-200 active:scale-95",
-          showMobileMenu ? "rotate-90 bg-gray-800 text-white" : ""
+          uiState.showMobileMenu ? "rotate-90 bg-gray-800 text-white" : ""
         )}
       >
-        {showMobileMenu ? <X size={24} /> : <MoreVertical size={24} />}
+        {uiState.showMobileMenu ? <X size={24} /> : <MoreVertical size={24} />}
       </button>
 
       <div
         className={cn(
           "absolute right-6 bottom-24 z-40 flex flex-col gap-3 transition-all duration-300 origin-bottom",
-          showMobileMenu
+          uiState.showMobileMenu
             ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-90 translate-y-8 pointer-events-none"
         )}
       >
-        <MobileToolButton
-          icon={ListTodo}
+        <button
           onClick={() => {
-            setShowMobileScope(true);
-            setShowMobileMenu(false);
+            setUiState.setShowMobileScope(true);
+            setUiState.setShowMobileMenu(false);
           }}
-          colorClass="text-orange-500"
-        />
-        
+          className="w-12 h-12 rounded-full border bg-white border-gray-200 shadow-md flex items-center justify-center transition-all duration-200 active:scale-95 text-orange-500"
+        >
+          <ListTodo size={20} />
+        </button>
         {hasMultipleCameras && (
-          <MobileToolButton
-            icon={SwitchCamera}
-            onClick={handleSwitchCamera}
-            colorClass="text-purple-500"
-          />
+          <button
+            onClick={actions.handleSwitchCamera}
+            className="w-12 h-12 rounded-full border bg-white border-gray-200 shadow-md flex items-center justify-center transition-all duration-200 active:scale-95 text-purple-500"
+          >
+            <SwitchCamera size={20} />
+          </button>
         )}
-        
-        <MobileToolButton
-          variant="destructive"
-          icon={PhoneOff}
-          onClick={() => setShowEndDialog(true)}
-        />
+        <button
+          onClick={() => setUiState.setShowEndDialog(true)}
+          className="w-12 h-12 rounded-full border bg-red-50 border-red-100 text-red-600 shadow-md flex items-center justify-center transition-all duration-200 active:scale-95"
+        >
+          <PhoneOff size={20} />
+        </button>
       </div>
 
-      {/* --- SCOPE MODAL --- */}
-      {showMobileScope && (
+      {/* --- SCOPE MODAL (Uses Data from Hook) --- */}
+      {uiState.showMobileScope && (
         <div className="absolute inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end">
           <div className="w-full bg-white rounded-t-2xl max-h-[85dvh] flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl">
             <div className="flex-none flex items-center justify-between p-4 border-b border-gray-100">
@@ -286,47 +272,49 @@ export const ClientSelfServeStage = ({ slug, roomId }: ClientStageProps) => {
                 <ListTodo size={18} className="text-orange-500" /> Active Scope
               </span>
               <button
-                onClick={() => setShowMobileScope(false)}
+                onClick={() => setUiState.setShowMobileScope(false)}
                 className="bg-gray-100 p-2 rounded-full hover:bg-gray-200 transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
             <div className="flex-1 p-4 overflow-y-auto min-h-[300px] pb-24 overscroll-contain">
-              <ScopeList roomId={roomId} slug={slug} />
+              {/* PASSING DATA DOWN */}
+              <ScopeList
+                scopes={data.scopes}
+                isConnected={data.isStreamConnected}
+              />
             </div>
           </div>
         </div>
       )}
 
       {/* --- END DIALOG --- */}
-      {showEndDialog && (
+      {uiState.showEndDialog && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
-                <PhoneOff size={24} />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
-                Finish Survey?
-              </h3>
-              <p className="text-sm text-gray-500 mb-6">
-                Are you done capturing the room details?
-              </p>
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={() => setShowEndDialog(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-colors"
-                >
-                  Go Back
-                </button>
-                <button
-                  onClick={handleEndRoom}
-                  className="flex-1 py-2.5 rounded-xl bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition-colors shadow-lg shadow-green-200 flex items-center justify-center gap-2"
-                >
-                  Complete <CheckCircle2 size={16} />
-                </button>
-              </div>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200 text-center">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <PhoneOff size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Finish Survey?
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Are you done capturing details?
+            </p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setUiState.setShowEndDialog(false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={actions.handleEndRoom}
+                className="flex-1 py-2.5 rounded-xl bg-green-600 text-white font-bold text-sm hover:bg-green-700 shadow-lg shadow-green-200 flex items-center justify-center gap-2"
+              >
+                Complete <CheckCircle2 size={16} />
+              </button>
             </div>
           </div>
         </div>
