@@ -66,33 +66,34 @@ export async function GET(req: Request, { params }: Params) {
 
     const roomService = new RoomServiceClient(wsUrl, apiKey, apiSecret);
 
+    // CREATE CONSISTENT METADATA OBJECT
+    const roomMetadata = {
+      domainId: roomData.domainId,
+      clientName: roomData.clientName,
+      sessionType: roomData.sessionType,
+      dbId: roomData.id,
+      booking: roomData?.booking || {}
+    };
+
     // Create room if it doesn't exist
     try {
       await roomService.createRoom({
         name: roomData.roomKey,
-        emptyTimeout: 0, // Room won't auto-delete
-        metadata: JSON.stringify({
-          domainId: roomData.domainId,
-          clientName: roomData.clientName,
-          sessionType: roomData.sessionType,
-          dbId: roomData.id
-        })
+        emptyTimeout: 0,
+        metadata: JSON.stringify(roomMetadata)
       });
       console.log(`✅ Room created: ${roomData.roomKey}`);
+      console.log(`📋 Booking data included:`, roomMetadata.booking);
     } catch (error: any) {
-      // Room might already exist, that's fine
       if (error?.message?.includes('already exists')) {
         console.log(`ℹ️ Room already exists: ${roomData.roomKey}`);
-        // Update metadata if room exists
-        await roomService.updateRoomMetadata(roomData.roomKey, JSON.stringify({
-          domainId: roomData.domainId,
-          clientName: roomData.clientName,
-          sessionType: roomData.sessionType,
-          dbId: roomData.id,
-          booking: roomData?.booking
-        }));
+        await roomService.updateRoomMetadata(
+          roomData.roomKey, 
+          JSON.stringify(roomMetadata)
+        );
+        console.log(`📋 Booking data updated:`, roomMetadata.booking);
       } else {
-        throw error; // Re-throw if it's a different error
+        throw error;
       }
     }
 
