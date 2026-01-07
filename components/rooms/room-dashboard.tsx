@@ -129,7 +129,7 @@ export default function RoomsDashboard() {
 
       if (response.data) {
         if (mode === "quick") {
-          router.push(`//quick-session/${roomId}`);
+          router.push(`/quick-session/${roomId}`);
         } else {
           router.push(`/room/${roomId}`);
         }

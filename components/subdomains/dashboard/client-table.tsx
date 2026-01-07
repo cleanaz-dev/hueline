@@ -161,13 +161,13 @@ export default function ClientTable() {
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
               ) : info.getValue() ? (
-   <Image
-  src={thumbnailUrl}
-  alt="Room"
-  className="object-cover"
-  fill
-  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-/>
+                <Image
+                  src={thumbnailUrl}
+                  alt="Room"
+                  className="object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
               ) : (
                 <Camera className="w-6 h-6 text-gray-400" />
               )}
