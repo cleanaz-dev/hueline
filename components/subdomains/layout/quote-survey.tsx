@@ -179,110 +179,110 @@ export const QuoteSurvey = ({ booking }: QuoteSurveyProps) => {
       </Card>
 
       {/* SURVEY DIALOG */}
-      {showDialog && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="px-6 md:px-8 pt-8 md:pt-10 pb-8 text-center">
-              <h3 className="text-xl font-bold text-slate-900 mb-2">
-                Let&apos;s take a quick look
-              </h3>
-              <p className="text-sm text-slate-500 mb-8 leading-relaxed text-balance">
-                You&apos;ll be guided step-by-step through a quick video
-                walkthrough, with voice-activated snapshots.This helps us
-                accurately define your project.
-              </p>
+{showDialog && (
+  <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+    <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="px-6 md:px-8 pt-6 md:pt-10 pb-6 md:pb-8 text-center">
+        <h3 className="text-xl font-bold text-slate-900 mb-2">
+          Let&apos;s take a quick look
+        </h3>
 
-              <div className="bg-slate-50 rounded-xl p-5 mb-6 text-left border border-slate-100">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-                  Checklist
-                </h4>
+        <p className="text-sm text-slate-500 mb-5 leading-relaxed text-balance">
+          Take a short guided video walkthrough. Voice commands capture
+          snapshots as you go so we can quickly define your project.
+        </p>
 
-                <ul className="space-y-3 mb-5">
-                  {[
-                    "Good lighting turned on",
-                    "Access to all rooms",
-                    "Camera enabled",
-                  ].map((item, i) => (
-                    <li
-                      key={i}
-                      className="flex items-center gap-3 text-sm text-slate-700 font-medium"
-                    >
-                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle2 size={12} className="text-green-600" />
-                      </div>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+        <div className="bg-slate-50 rounded-xl p-4 mb-5 text-left border border-slate-100">
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+            Quick checklist
+          </h4>
 
-                <div className="border-t border-slate-200 pt-4">
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Please do not record people, faces, personal belongings,
-                    confidential documents, or screens displaying sensitive
-                    information.
-                  </p>
+          <ul className="space-y-2 mb-4">
+            {[
+              "Lights turned on",
+              "Access to all rooms",
+              "Camera enabled",
+            ].map((item, i) => (
+              <li
+                key={i}
+                className="flex items-center gap-3 text-sm text-slate-700 font-medium"
+              >
+                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 size={12} className="text-green-600" />
                 </div>
-              </div>
+                {item}
+              </li>
+            ))}
+          </ul>
 
-              {/* --- SEND TO MOBILE TOGGLE (INSIDE DIALOG) --- */}
-              <div className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl p-3 mb-6">
-                <div className="flex items-center gap-2.5">
-                  <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-sm text-slate-600">
-                    <Smartphone size={16} />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-xs font-semibold text-slate-800">
-                      Use your phone?
-                    </p>
-                    <p className="text-[10px] text-slate-500">
-                      Easier to walk around
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  checked={sendToMobile}
-                  onCheckedChange={setSendToMobile}
-                  className="data-[state=checked]:bg-indigo-600"
-                />
-              </div>
-
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={() => setShowDialog(false)}
-                  disabled={isCreating || isSendingSMS}
-                  className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-
-                {/* DYNAMIC ACTION BUTTON */}
-                <button
-                  onClick={sendToMobile ? handleSendSMS : handleStartSurvey}
-                  disabled={isCreating || isSendingSMS}
-                  className={`flex-1 py-3 rounded-xl text-white font-bold text-sm transition-colors shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 ${
-                    sendToMobile
-                      ? "bg-slate-900 hover:bg-slate-800 shadow-slate-200"
-                      : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200"
-                  }`}
-                >
-                  {isCreating || isSendingSMS ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {isCreating ? "Connecting..." : "Sending..."}
-                    </>
-                  ) : sendToMobile ? (
-                    <>
-                      Send Link <Send size={16} />
-                    </>
-                  ) : (
-                    "I'm Ready"
-                  )}
-                </button>
-              </div>
-            </div>
+          <div className="border-t border-slate-200 pt-3">
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Avoid recording people, faces, personal items, or sensitive
+              information.
+            </p>
           </div>
         </div>
-      )}
+
+        {/* SEND TO MOBILE TOGGLE */}
+        <div className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl p-3 mb-5">
+          <div className="flex items-center gap-2.5">
+            <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-sm text-slate-600">
+              <Smartphone size={16} />
+            </div>
+            <div className="text-left">
+              <p className="text-xs font-semibold text-slate-800">
+                Use your phone
+              </p>
+              <p className="text-[10px] text-slate-500">
+                Easier to move around
+              </p>
+            </div>
+          </div>
+
+          <Switch
+            checked={sendToMobile}
+            onCheckedChange={setSendToMobile}
+            className="data-[state=checked]:bg-indigo-600"
+          />
+        </div>
+
+        <div className="flex gap-3 w-full">
+          <button
+            onClick={() => setShowDialog(false)}
+            disabled={isCreating || isSendingSMS}
+            className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={sendToMobile ? handleSendSMS : handleStartSurvey}
+            disabled={isCreating || isSendingSMS}
+            className={`flex-1 py-3 rounded-xl text-white font-bold text-sm transition-colors shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 ${
+              sendToMobile
+                ? "bg-slate-900 hover:bg-slate-800 shadow-slate-200"
+                : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200"
+            }`}
+          >
+            {isCreating || isSendingSMS ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {isCreating ? "Connecting..." : "Sending..."}
+              </>
+            ) : sendToMobile ? (
+              <>
+                Send Link <Send size={16} />
+              </>
+            ) : (
+              "I'm Ready"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
     </>
   );
 };
