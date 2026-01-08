@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRoomContext } from "@/context/room-context";
 import { useCameraEvents } from "@/hooks/use-camera-events";
-import { useTracks, isTrackReference, type TrackReference } from "@livekit/components-react";
-import { Track, LocalVideoTrack } from "livekit-client"; 
+import {
+  useTracks,
+  isTrackReference,
+  type TrackReference,
+} from "@livekit/components-react";
+import { Track, LocalVideoTrack } from "livekit-client";
 import { ScopeItem } from "@/components/rooms/stage/self-serve-room-list";
 
 export const useSelfServe = (slug: string, roomId: string) => {
@@ -10,72 +14,97 @@ export const useSelfServe = (slug: string, roomId: string) => {
   const { countdown, isCapturing } = useCameraEvents(slug, roomId);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // --- DATA STATE ---
   const [scopes, setScopes] = useState<ScopeItem[]>([]);
   const [isStreamConnected, setIsStreamConnected] = useState(false);
-  const [lastCapture, setLastCapture] = useState<{ path: string; area: string } | null>(null);
+  const [lastCapture, setLastCapture] = useState<{
+    path: string;
+    area: string;
+  } | null>(null);
 
-  // UI State
+  // --- UI STATE ---
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showMobileScope, setShowMobileScope] = useState(false);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
 
-  const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: false }]);
-  const localTrack = tracks.find((t) => t.participant.isLocal && isTrackReference(t)) as TrackReference | undefined;
+  // --- TRACK LOGIC ---
+  const tracks = useTracks([
+    { source: Track.Source.Camera, withPlaceholder: false },
+  ]);
+  const localTrack = tracks.find(
+    (t) => t.participant.isLocal && isTrackReference(t)
+  ) as TrackReference | undefined;
 
   // --- ACTIONS ---
+  // Moved up so it can be used in the useEffect
   const handleEndRoom = useCallback(async () => {
     console.log("🛑 END SIGNAL RECEIVED. CLOSING ROOM.");
-    if (room) await room.disconnect();
-    window.location.href = `/post-session`; 
+    if (room) {
+      await room.disconnect();
+    }
+    window.location.href = `/post-session`;
   }, [room]);
 
   // --- EVENT LISTENER ---
   useEffect(() => {
-    const eventSource = new EventSource(`/api/subdomain/${slug}/room/${roomId}/scope-stream`);
-    
+    const eventSource = new EventSource(
+      `/api/subdomain/${slug}/room/${roomId}/scope-stream`
+    );
+
     eventSource.onopen = () => setIsStreamConnected(true);
-    
+
     eventSource.onmessage = async (event) => {
       try {
-        const data = JSON.parse(event.data);
-        
-        // --- 1. THE FIX: Handle both Array and Object ---
-        // If it's an array (history), we look inside it. If it's an object (new event), we wrap it.
-        const items = Array.isArray(data) ? data : [data];
+        const parsed = JSON.parse(event.data);
 
-        // Check if ANY item in this batch is the END signal
-        const hasEndSignal = items.some((i: any) => i.type === "END");
+        // Unwrap the data (it's nested inside parsed.data)
+        const data = parsed.data;
 
-        if (hasEndSignal) {
+        // 1. Handle Arrays
+        if (Array.isArray(data)) {
+          // Check if any item in the array is an END signal
+          const endEvent = data.find((item) => item.type === "END");
+          if (endEvent) {
+            console.log("🛑 END signal found in array!");
+            eventSource.close();
+            await handleEndRoom();
+            return;
+          }
+
+          // Filter out END events and add the rest to scopes
+          const scopeItems = data.filter((item) => item.type !== "END");
+          setScopes((prev) => [...prev, ...scopeItems]);
+          return;
+        }
+
+        // 2. CHECK FOR END SIGNAL (single event)
+        if (data.type === "END") {
+          console.log("🛑 END signal received!");
           eventSource.close();
           await handleEndRoom();
           return;
         }
 
-        // --- 2. Process Data for UI ---
-        if (Array.isArray(data)) {
-          // Add history to list
-          setScopes(prev => [...prev, ...data]);
-        } 
-        else if (data.event === 'photo_capture_complete') {
-          // Handle Photo
-          setScopes(prev => [...prev, {
+        // 3. Handle Photos
+        if (data.event === "photo_capture_complete") {
+          const newItem: ScopeItem = {
             type: "IMAGE",
             area: data.data.area,
             item: "Snapshot",
             action: "Visual Capture",
             timestamp: new Date().toISOString(),
-            image_path: data.data.image_path
-          }]);
+            image_path: data.data.image_path,
+          };
+          setScopes((prev) => [...prev, newItem]);
           setLastCapture({ path: data.data.image_path, area: data.data.area });
-        } 
+        }
+        // 4. Handle Standard Scope Items
         else if (data.type) {
-          // Handle Standard Item
-          setScopes(prev => [...prev, data]);
+          setScopes((prev) => [...prev, data]);
         }
       } catch (e) {
-        console.error("Stream parse error", e);
+        console.error("Parse error", e);
       }
     };
 
@@ -87,35 +116,53 @@ export const useSelfServe = (slug: string, roomId: string) => {
     return () => eventSource.close();
   }, [slug, roomId, handleEndRoom]);
 
-  // --- DEVICE CHECKS ---
+  // --- DEVICE CHECKS (Ensures Button Shows) ---
   useEffect(() => {
     document.body.style.overscrollBehavior = "none";
+
     const checkDevices = async () => {
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        setHasMultipleCameras(devices.filter((d) => d.kind === "videoinput").length > 1);
-      } catch (e) { console.error(e); }
+        const videoInputs = devices.filter((d) => d.kind === "videoinput");
+        setHasMultipleCameras(videoInputs.length > 1);
+      } catch (e) {
+        console.error(e);
+      }
     };
 
     checkDevices();
-    if (localTrack) checkDevices();
+
+    if (localTrack) {
+      checkDevices();
+    }
+
     navigator.mediaDevices.addEventListener("devicechange", checkDevices);
-    return () => { 
-      document.body.style.overscrollBehavior = ""; 
+
+    return () => {
+      document.body.style.overscrollBehavior = "";
       navigator.mediaDevices.removeEventListener("devicechange", checkDevices);
     };
-  }, [localTrack]); 
+  }, [localTrack]);
 
-  // --- CAMERA SWITCH ---
   const handleSwitchCamera = useCallback(async () => {
-    const videoTrack = localTrack?.publication?.track as LocalVideoTrack | undefined;
+    const videoTrack = localTrack?.publication?.track as
+      | LocalVideoTrack
+      | undefined;
     if (!videoTrack) return;
 
     try {
-      const current = videoTrack.mediaStreamTrack.getSettings().facingMode || 'user';
-      await videoTrack.restartTrack({ facingMode: current === 'user' ? 'environment' : 'user' });
-    } catch (e) { console.error(e); }
-  }, [localTrack]); 
+      const currentSettings = videoTrack.mediaStreamTrack.getSettings();
+      const currentFacingMode = currentSettings.facingMode || "user";
+      const nextFacingMode =
+        currentFacingMode === "user" ? "environment" : "user";
+
+      await videoTrack.restartTrack({
+        facingMode: nextFacingMode,
+      });
+    } catch (error) {
+      console.error("Failed to switch camera:", error);
+    }
+  }, [localTrack]);
 
   return {
     room,
@@ -126,9 +173,22 @@ export const useSelfServe = (slug: string, roomId: string) => {
     countdown,
     isCapturing,
     hasMultipleCameras,
-    data: { scopes, isStreamConnected, lastCapture },
+    data: {
+      scopes,
+      isStreamConnected,
+      lastCapture,
+    },
     uiState: { showEndDialog, showMobileMenu, showMobileScope },
-    setUiState: { setShowEndDialog, setShowMobileMenu, setShowMobileScope, setLastCapture }, 
-    actions: { handleEndRoom, handleSwitchCamera, dismissMockup: () => sendData("MOCKUP_READY", { url: null }) },
+    setUiState: {
+      setShowEndDialog,
+      setShowMobileMenu,
+      setShowMobileScope,
+      setLastCapture,
+    },
+    actions: {
+      handleEndRoom,
+      handleSwitchCamera,
+      dismissMockup: () => sendData("MOCKUP_READY", { url: null }),
+    },
   };
 };
