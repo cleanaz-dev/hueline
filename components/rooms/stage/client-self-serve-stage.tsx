@@ -161,19 +161,16 @@ export const ClientSelfServeStage = ({
           </span>
         </div>
 
-
         {/* --- RIGHT: AI AGENT ORB --- */}
         {/* We wrap it in pointer-events-auto so if you want to add click-to-mute later, you can */}
         <div className="pointer-events-auto transition-all duration-500 animate-in fade-in slide-in-from-top-4">
           {isAgentConnected ? (
-            <AgentOrb 
-              participant={agentParticipant} 
-              trackPublication={agentAudioTrack} 
+            <AgentOrb
+              participant={agentParticipant}
+              trackPublication={agentAudioTrack}
             />
-          ) : (
-             // Optional: Show a "Connecting Agent..." placeholder or nothing
-             null
-          )}
+          ) : // Optional: Show a "Connecting Agent..." placeholder or nothing
+          null}
         </div>
       </div>
 
