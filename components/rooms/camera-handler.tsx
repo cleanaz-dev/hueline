@@ -41,7 +41,7 @@ export const CameraHandler = () => {
           // Painter: Try to enable camera but don't fail if unavailable
           try {
             await room.localParticipant.setCameraEnabled(true, {
-              resolution: VideoPresets.h720.resolution
+              resolution: VideoPresets.h1080.resolution
             });
             console.log("✅ Painter camera active");
           } catch (cameraError) {

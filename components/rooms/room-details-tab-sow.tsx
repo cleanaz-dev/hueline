@@ -7,6 +7,7 @@ import {
   Clipboard, MapPin, Paintbrush, Hammer, AlertTriangle, 
   StickyNote, DatabaseZap, Camera, MoreHorizontal, Pencil, 
   Trash2, CirclePlus, Image as ImageIcon, Link2, Loader2,
+  CircleHelp, // Added Question icon
 } from "lucide-react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,6 +24,7 @@ import { SowEditItemDialog } from "./dialogs/sow-edit-item-dialog";
 import { SowDeleteItemDialog } from "./dialogs/sow-delete-item-dialog";
 import { useOwner } from "@/context/owner-context";
 import { ScopeItem, ScopeType } from "@/types/room-types";
+import { useRoomInteraction } from "./room-interaction-context";
 
 interface RoomDetailsTabSowProps {
   initialItems: ScopeItem[];
@@ -34,14 +36,15 @@ interface RoomDetailsTabSowProps {
 }
 
 // Helpers
-const CATEGORY_ORDER = ["REPAIR", "PREP", "PAINT", "NOTE", "IMAGE"];
-// ... (keep getCategoryConfig helper same as before) ...
+const CATEGORY_ORDER = ["REPAIR", "PREP", "PAINT", "NOTE", "QUESTION", "IMAGE"]; // Added QUESTION to order
+
 const getCategoryConfig = (type: string) => {
   switch (type) {
     case "REPAIR": return { label: "Repairs", icon: AlertTriangle, color: "text-rose-600" };
     case "PREP": return { label: "Prep Work", icon: Hammer, color: "text-amber-600" };
     case "PAINT": return { label: "Paint", icon: Paintbrush, color: "text-blue-600" };
     case "NOTE": return { label: "Notes", icon: StickyNote, color: "text-zinc-500" };
+    case "QUESTION": return { label: "Questions", icon: CircleHelp, color: "text-violet-600" }; // Added QUESTION config
     case "IMAGE": return { label: "Image", icon: ImageIcon, color: "text-accent" };
     default: return { label: "General", icon: DatabaseZap, color: "text-zinc-600" };
   }
@@ -55,6 +58,8 @@ export function RoomDetailsTabSow({
   onUpdateTrigger
 }: RoomDetailsTabSowProps) {
   const { subdomain } = useOwner();
+  const { viewImage } = useRoomInteraction(); 
+
   const apiEndpoint = `/api/subdomain/${subdomain.slug}/room/${roomId}/scopes`;
 
   // --- DIALOG STATES ---
@@ -188,7 +193,10 @@ export function RoomDetailsTabSow({
                 {/* HEADER */}
                 <div className="relative border-b border-zinc-100">
                   {coverUrl ? (
-                    <div className="absolute inset-0 z-0 group cursor-pointer">
+                    <div 
+                      className="absolute inset-0 z-0 group cursor-pointer"
+                      onClick={() => viewImage(coverUrl)} 
+                    >
                       <img src={coverUrl} alt={areaName} className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
                     </div>
@@ -221,7 +229,9 @@ export function RoomDetailsTabSow({
                       {allKeys.map((key, idx) => {
                         const url = presignedUrls[key]; // Lookup from props
                         return (
-                          <div key={idx} className="aspect-square rounded-lg overflow-hidden border border-zinc-200 bg-zinc-100 hover:ring-2 hover:ring-blue-500 transition-all cursor-pointer group relative">
+                          <div key={idx} 
+                           onClick={() => url && viewImage(url)}
+                          className="aspect-square rounded-lg overflow-hidden border border-zinc-200 bg-zinc-100 hover:ring-2 hover:ring-blue-500 transition-all cursor-pointer group relative">
                             {url ? (
                               <img src={url} alt={`photo ${idx}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
                             ) : (
