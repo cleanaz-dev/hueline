@@ -30,37 +30,45 @@ export function RoomClient({
   const isClient = role === "client";
   const isHost = mode === 'self-serve' ? true : !isClient;
 
-   useEffect(() => {
-    let lastTouchY = 0;
-    let maybePreventPullToRefresh = false;
+useEffect(() => {
+  let lastTouchY = 0;
+  let lastTouchX = 0;
+  let maybePreventPullToRefresh = false;
 
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
-      lastTouchY = e.touches[0].clientY;
-      maybePreventPullToRefresh = window.pageYOffset === 0;
-    };
+  const handleTouchStart = (e: TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    lastTouchY = e.touches[0].clientY;
+    lastTouchX = e.touches[0].clientX;
+    // Check BOTH scroll positions for landscape/portrait
+    maybePreventPullToRefresh = window.pageYOffset === 0 && window.pageXOffset === 0;
+  };
 
-    const handleTouchMove = (e: TouchEvent) => {
-      const touchY = e.touches[0].clientY;
-      const touchYDelta = touchY - lastTouchY;
-      lastTouchY = touchY;
+  const handleTouchMove = (e: TouchEvent) => {
+    const touchY = e.touches[0].clientY;
+    const touchX = e.touches[0].clientX;
+    const touchYDelta = touchY - lastTouchY;
+    const touchXDelta = touchX - lastTouchX;
+    lastTouchY = touchY;
+    lastTouchX = touchX;
 
-      if (maybePreventPullToRefresh) {
-        maybePreventPullToRefresh = false;
-        if (touchYDelta > 0) {
-          e.preventDefault();
-        }
+    if (maybePreventPullToRefresh) {
+      // Prevent if pulling down OR pulling right (for landscape mode)
+      if (touchYDelta > 0 || touchXDelta > 0) {
+        e.preventDefault();
+        return false;
       }
-    };
+      maybePreventPullToRefresh = false;
+    }
+  };
 
-    document.addEventListener('touchstart', handleTouchStart, { passive: true });
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+  document.addEventListener('touchstart', handleTouchStart, { passive: true });
+  document.addEventListener('touchmove', handleTouchMove, { passive: false });
 
-    return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, []);
+  return () => {
+    document.removeEventListener('touchstart', handleTouchStart);
+    document.removeEventListener('touchmove', handleTouchMove);
+  };
+}, []);
 
   useEffect(() => {
     const fetchToken = async () => {
