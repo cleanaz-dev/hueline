@@ -98,7 +98,7 @@ export const ClientSelfServeStage = ({
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   return (
-    <div className="flex-1 relative flex flex-col min-w-0 h-[100dvh] bg-black text-white font-sans">
+    <div className="flex-1 relative flex flex-col min-w-0 h-[100dvh] bg-black text-white font-sans" style={{ overscrollBehavior: 'none' }}>
       <RoomAudioRenderer />
 
       {/* --- FLASH NOTIFICATION --- */}
