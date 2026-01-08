@@ -32,28 +32,23 @@ export function RoomClient({
 
 useEffect(() => {
   let lastTouchY = 0;
-  let lastTouchX = 0;
   let maybePreventPullToRefresh = false;
 
   const handleTouchStart = (e: TouchEvent) => {
     if (e.touches.length !== 1) return;
     lastTouchY = e.touches[0].clientY;
-    lastTouchX = e.touches[0].clientX;
-    // Check BOTH scroll positions for landscape/portrait
-    maybePreventPullToRefresh = window.pageYOffset === 0 && window.pageXOffset === 0;
+    // Only prevent at the VERY top
+    maybePreventPullToRefresh = window.pageYOffset === 0;
   };
 
   const handleTouchMove = (e: TouchEvent) => {
     const touchY = e.touches[0].clientY;
-    const touchX = e.touches[0].clientX;
     const touchYDelta = touchY - lastTouchY;
-    const touchXDelta = touchX - lastTouchX;
     lastTouchY = touchY;
-    lastTouchX = touchX;
 
     if (maybePreventPullToRefresh) {
-      // Prevent if pulling down OR pulling right (for landscape mode)
-      if (touchYDelta > 0 || touchXDelta > 0) {
+      // Only prevent downward pulls (refresh gesture)
+      if (touchYDelta > 0) {
         e.preventDefault();
         return false;
       }
@@ -69,7 +64,6 @@ useEffect(() => {
     document.removeEventListener('touchmove', handleTouchMove);
   };
 }, []);
-
   useEffect(() => {
     const fetchToken = async () => {
       try {
