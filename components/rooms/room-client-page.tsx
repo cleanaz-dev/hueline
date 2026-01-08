@@ -30,6 +30,38 @@ export function RoomClient({
   const isClient = role === "client";
   const isHost = mode === 'self-serve' ? true : !isClient;
 
+   useEffect(() => {
+    let lastTouchY = 0;
+    let maybePreventPullToRefresh = false;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      lastTouchY = e.touches[0].clientY;
+      maybePreventPullToRefresh = window.pageYOffset === 0;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touchY = e.touches[0].clientY;
+      const touchYDelta = touchY - lastTouchY;
+      lastTouchY = touchY;
+
+      if (maybePreventPullToRefresh) {
+        maybePreventPullToRefresh = false;
+        if (touchYDelta > 0) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, []);
+
   useEffect(() => {
     const fetchToken = async () => {
       try {
