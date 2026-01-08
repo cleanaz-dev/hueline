@@ -11,14 +11,15 @@ import {
   Scan,
   Loader2,
   CheckCircle2,
-  Maximize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SelfServeScopeList from "./self-serve-room-list";
 import { useSelfServe } from "@/hooks/use-self-serve";
 import Image from "next/image";
+import { AgentOrb } from "./ai-agent-orb";
+import { useAgentListener } from "@/hooks/use-agent-listener";
 
-// --- FLASH COMPONENT (Securely Resolves & Shows Thumbnail) ---
+// --- FLASH COMPONENT ---
 const FlashNotification = ({
   storageKey,
   area,
@@ -33,7 +34,6 @@ const FlashNotification = ({
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // 1. Resolve URL immediately
     const fetchUrl = async () => {
       try {
         const res = await fetch(
@@ -47,12 +47,11 @@ const FlashNotification = ({
     };
     fetchUrl();
 
-    // 2. Auto-Dismiss Timer (5s)
     const timer = setTimeout(onDismiss, 5000);
     return () => clearTimeout(timer);
   }, [storageKey, onDismiss]);
 
-  if (!url) return null; // Don't show until we have an image
+  if (!url) return null;
 
   return (
     <div
@@ -94,29 +93,30 @@ export const ClientSelfServeStage = ({
     actions,
   } = useSelfServe(slug, roomId);
 
-  // Local state for Lightbox (Reviewing the flash capture)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const { agentParticipant, agentAudioTrack, isAgentConnected } =
+    useAgentListener();
 
   return (
-  <div 
-    className="flex-1 relative flex flex-col min-w-0 bg-black text-white font-sans" 
-    style={{ 
-      height: '100dvh',
-      width: '100dvw',
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      overscrollBehavior: 'none' 
-    }}
-  >
+    <div
+      className="flex-1 relative flex flex-col min-w-0 bg-black text-white font-sans"
+      style={{
+        height: "100dvh",
+        width: "100dvw",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overscrollBehavior: "none",
+      }}
+    >
       <RoomAudioRenderer />
 
       {/* --- FLASH NOTIFICATION --- */}
       {data.lastCapture && (
         <FlashNotification
-          key={data.lastCapture.path} // Re-mounts on new capture to restart timer/animation
+          key={data.lastCapture.path}
           storageKey={data.lastCapture.path}
           area={data.lastCapture.area}
           onDismiss={() => setUiState.setLastCapture(null)}
@@ -124,7 +124,7 @@ export const ClientSelfServeStage = ({
         />
       )}
 
-      {/* --- LIGHTBOX (For Flash Click) --- */}
+      {/* --- LIGHTBOX --- */}
       {lightboxUrl && (
         <div
           className="absolute inset-0 z-[70] bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-200"
@@ -146,6 +146,7 @@ export const ClientSelfServeStage = ({
 
       {/* --- HEADER --- */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between pointer-events-none">
+        {/* Status Pill */}
         <div className="flex items-center gap-3 bg-zinc-600/50 backdrop-blur-md border border-zinc-700 shadow-sm px-4 py-2 rounded-full pointer-events-auto">
           <div
             className={cn(
@@ -159,6 +160,71 @@ export const ClientSelfServeStage = ({
             {room?.state === "connected" ? "Live Survey" : "Connecting..."}
           </span>
         </div>
+
+
+        {/* --- RIGHT: AI AGENT ORB --- */}
+        {/* We wrap it in pointer-events-auto so if you want to add click-to-mute later, you can */}
+        <div className="pointer-events-auto transition-all duration-500 animate-in fade-in slide-in-from-top-4">
+          {isAgentConnected ? (
+            <AgentOrb 
+              participant={agentParticipant} 
+              trackPublication={agentAudioTrack} 
+            />
+          ) : (
+             // Optional: Show a "Connecting Agent..." placeholder or nothing
+             null
+          )}
+        </div>
+      </div>
+
+      {/* --- SWITCH CAMERA (Bottom Left) --- */}
+      {hasMultipleCameras && (
+        <button
+          onClick={actions.handleSwitchCamera}
+          className="absolute left-6 bottom-6 z-50 w-12 h-12 rounded-full bg-zinc-800/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-lg transition-transform active:scale-95 hover:bg-zinc-700/80"
+        >
+          <SwitchCamera size={24} />
+        </button>
+      )}
+
+      {/* --- MENU BUTTON (Bottom Right) --- */}
+      <button
+        onClick={() => setUiState.setShowMobileMenu(!uiState.showMobileMenu)}
+        className={cn(
+          "absolute right-6 bottom-6 z-50 text-white bg-blue-600/75 p-1.5 rounded-full shadow-lg shadow-blue-600/30 border border-white/20 transition-all duration-200 active:scale-95",
+          uiState.showMobileMenu ? "rotate-90 bg-gray-800 text-white" : ""
+        )}
+      >
+        {uiState.showMobileMenu ? <X size={24} /> : <MoreVertical size={24} />}
+      </button>
+
+      {/* --- MENU OPTIONS (Bottom Right Stack) --- */}
+      <div
+        className={cn(
+          "absolute right-6 bottom-24 z-40 flex flex-col gap-3 transition-all duration-300 origin-bottom",
+          uiState.showMobileMenu
+            ? "opacity-100 scale-100 translate-y-0"
+            : "opacity-0 scale-90 translate-y-8 pointer-events-none"
+        )}
+      >
+        <button
+          onClick={() => {
+            setUiState.setShowMobileScope(true);
+            setUiState.setShowMobileMenu(false);
+          }}
+          className="w-12 h-12 rounded-full border bg-white border-gray-200 shadow-md flex items-center justify-center transition-all duration-200 active:scale-95 text-orange-500"
+        >
+          <ListTodo size={20} />
+        </button>
+
+        {/* Note: Switch Camera removed from here, moved to main stage */}
+
+        <button
+          onClick={() => setUiState.setShowEndDialog(true)}
+          className="w-12 h-12 rounded-full border bg-red-50 border-red-100 text-red-600 shadow-md flex items-center justify-center transition-all duration-200 active:scale-95"
+        >
+          <PhoneOff size={20} />
+        </button>
       </div>
 
       {/* --- MAIN STAGE --- */}
@@ -182,7 +248,7 @@ export const ClientSelfServeStage = ({
             </div>
           )}
 
-          {/* OVERLAYS */}
+          {/* OVERLAYS (Countdown) */}
           {isCapturing && countdown !== null && (
             <div className="absolute inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
               <div className="flex flex-col items-center gap-6">
@@ -231,51 +297,7 @@ export const ClientSelfServeStage = ({
         </div>
       </div>
 
-      {/* --- MENU --- */}
-      <button
-        onClick={() => setUiState.setShowMobileMenu(!uiState.showMobileMenu)}
-        className={cn(
-          "absolute right-6 bottom-6 z-50 text-white bg-blue-600/75 p-1.5 rounded-full shadow-lg shadow-blue-600/30 border border-white/20 transition-all duration-200 active:scale-95",
-          uiState.showMobileMenu ? "rotate-90 bg-gray-800 text-white" : ""
-        )}
-      >
-        {uiState.showMobileMenu ? <X size={24} /> : <MoreVertical size={24} />}
-      </button>
-
-      <div
-        className={cn(
-          "absolute right-6 bottom-24 z-40 flex flex-col gap-3 transition-all duration-300 origin-bottom",
-          uiState.showMobileMenu
-            ? "opacity-100 scale-100 translate-y-0"
-            : "opacity-0 scale-90 translate-y-8 pointer-events-none"
-        )}
-      >
-        <button
-          onClick={() => {
-            setUiState.setShowMobileScope(true);
-            setUiState.setShowMobileMenu(false);
-          }}
-          className="w-12 h-12 rounded-full border bg-white border-gray-200 shadow-md flex items-center justify-center transition-all duration-200 active:scale-95 text-orange-500"
-        >
-          <ListTodo size={20} />
-        </button>
-        {hasMultipleCameras && (
-          <button
-            onClick={actions.handleSwitchCamera}
-            className="w-12 h-12 rounded-full border bg-white border-gray-200 shadow-md flex items-center justify-center transition-all duration-200 active:scale-95 text-purple-500"
-          >
-            <SwitchCamera size={20} />
-          </button>
-        )}
-        <button
-          onClick={() => setUiState.setShowEndDialog(true)}
-          className="w-12 h-12 rounded-full border bg-red-50 border-red-100 text-red-600 shadow-md flex items-center justify-center transition-all duration-200 active:scale-95"
-        >
-          <PhoneOff size={20} />
-        </button>
-      </div>
-
-      {/* --- SCOPE MODAL (Uses Data from Hook) --- */}
+      {/* --- SCOPE MODAL --- */}
       {uiState.showMobileScope && (
         <div className="absolute inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end">
           <div className="w-full bg-white rounded-t-2xl max-h-[85dvh] flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl">
@@ -291,7 +313,6 @@ export const ClientSelfServeStage = ({
               </button>
             </div>
             <div className="flex-1 p-4 overflow-y-auto min-h-[300px] pb-24 overscroll-contain">
-              {/* PASSING DATA DOWN */}
               <SelfServeScopeList
                 scopes={data.scopes}
                 isConnected={data.isStreamConnected}
