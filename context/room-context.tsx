@@ -119,13 +119,26 @@ export const RoomProvider = ({
   slug,
 }: RoomProviderProps) => {
   // --- A. ROOM INIT ---
-  const room = useMemo(() => {
-    return new Room({
-      adaptiveStream: true,
-      dynacast: true,
-      publishDefaults: { simulcast: true },
-    });
-  }, []);
+const room = useMemo(() => {
+  return new Room({
+    adaptiveStream: false,     
+    dynacast: false,            
+    publishDefaults: { 
+      simulcast: false,         
+      videoEncoding: {
+        maxBitrate: 6_000_000,  
+        maxFramerate: 30,
+      },
+    },
+    videoCaptureDefaults: {
+      resolution: {
+        width: 1920,
+        height: 1080,
+        frameRate: 30,
+      },
+    },
+  });
+}, []);
 
   // --- B. STATE ---
   const [isConnecting, setIsConnecting] = useState(true);
