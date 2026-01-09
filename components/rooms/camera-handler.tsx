@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useRoomContext } from '@/context/room-context';
-import { VideoPresets, Track } from 'livekit-client';
+import { Track } from 'livekit-client';
 
 export const CameraHandler = () => {
   const { room, isPainter } = useRoomContext();
@@ -22,31 +22,50 @@ export const CameraHandler = () => {
         // 2. Camera (OPTIONAL - only for non-painters/clients with cameras)
         if (!isPainter) {
           try {
-            // Try back camera first
+            // Try back camera with hard-coded 1080p resolution
             await room.localParticipant.setCameraEnabled(true, {
-              resolution: VideoPresets.h1080.resolution,
+              resolution: {
+                width: 1920,
+                height: 1080,
+                frameRate: 30
+              },
               facingMode: 'environment'
             });
             
             const publication = room.localParticipant.getTrackPublication(Track.Source.Camera);
             if (publication?.videoTrack) {
               publication.videoTrack.mediaStreamTrack.contentHint = 'detail';
+              
+              // Log actual resolution
+              const settings = publication.videoTrack.mediaStreamTrack.getSettings();
+              console.log("📸 CLIENT CAMERA RESOLUTION:", settings.width, "x", settings.height, "@", settings.frameRate, "fps");
             }
             console.log("✅ Client camera active");
           } catch (cameraError) {
             console.log("Camera not available (optional):", cameraError);
-            // Don't fail - camera is optional
           }
         } else {
-          // Painter: Try to enable camera but don't fail if unavailable
           try {
             await room.localParticipant.setCameraEnabled(true, {
-              resolution: VideoPresets.h1080.resolution
+              resolution: {
+                width: 1920,
+                height: 1080,
+                frameRate: 30
+              },
+              facingMode: 'user'
             });
+            
+            const publication = room.localParticipant.getTrackPublication(Track.Source.Camera);
+            if (publication?.videoTrack) {
+              publication.videoTrack.mediaStreamTrack.contentHint = 'detail';
+              
+              // Log actual resolution
+              const settings = publication.videoTrack.mediaStreamTrack.getSettings();
+              console.log("📸 PAINTER CAMERA RESOLUTION:", settings.width, "x", settings.height, "@", settings.frameRate, "fps");
+            }
             console.log("✅ Painter camera active");
           } catch (cameraError) {
             console.log("Painter camera not available (optional):", cameraError);
-            // Don't fail - camera is optional for painter too
           }
         }
       } catch (e) {
@@ -58,4 +77,4 @@ export const CameraHandler = () => {
   }, [room, isPainter]);
 
   return null;
-}
+};
