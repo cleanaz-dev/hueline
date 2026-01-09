@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { TrackPublication, LocalParticipant, RemoteParticipant } from "livekit-client";
+import {
+  TrackPublication,
+  LocalParticipant,
+  RemoteParticipant,
+} from "livekit-client";
 import { useTrackVolume } from "@livekit/components-react";
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -159,7 +163,7 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
       0.5
     );
     const outputPass = new OutputPass();
-    
+
     composer.addPass(renderPass);
     composer.addPass(bloomPass);
     composer.addPass(outputPass);
@@ -204,6 +208,9 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
 
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      if (containerRef.current && renderer.domElement) {
+        containerRef.current.removeChild(renderer.domElement);
+      }
       renderer.dispose();
       geometry.dispose();
       material.dispose();
@@ -212,20 +219,22 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
 
   if (!participant) return null;
 
-  const isConnected = participant.connectionQuality !== 'lost';
+  const isConnected = participant.connectionQuality !== "lost";
 
   return (
     <div className="relative flex items-center justify-center">
       <div ref={containerRef} className="rounded-xl overflow-hidden" />
-      
+
       <div className="absolute -bottom-1 -right-1">
         <span className="relative flex h-2 w-2">
           {isConnected && (
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
           )}
-          <span className={`relative inline-flex rounded-full h-2 w-2 border border-white ${
-            isConnected ? 'bg-green-500' : 'bg-gray-400'
-          }`} />
+          <span
+            className={`relative inline-flex rounded-full h-2 w-2 border border-white ${
+              isConnected ? "bg-green-500" : "bg-gray-400"
+            }`}
+          />
         </span>
       </div>
     </div>
