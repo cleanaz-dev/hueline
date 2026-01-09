@@ -80,11 +80,11 @@ export async function handleParticipantJoined(event: WebhookEvent) {
     }
 
     // Start recording
-    console.log(`🎥 Host joined ${room.name}. Starting recording...`);
+    console.log(`🎥 Host joined ${room.name}. Room NOT Recording...`);
 
-    if (roomData.domainId) {
-      await startRoomRecording(room.name, roomData.domainId);
-      console.log(`✅ Recording started for ${room.name}`);
-    }
+    // if (roomData.domainId) {
+    //   await startRoomRecording(room.name, roomData.domainId);
+    //   console.log(`✅ Recording started for ${room.name}`);
+    // }
   }
 }
