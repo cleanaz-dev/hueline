@@ -112,8 +112,8 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
   const uniformsRef = useRef<any>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationRef = useRef<number | null>(null);
+  const meshRef = useRef<THREE.Mesh | null>(null);
   const volume = useTrackVolume(trackPublication as any);
-
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -122,10 +122,10 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-    camera.position.set(0, 0, 8);
+    camera.position.set(0, 0, 4);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(300, 300);
+    renderer.setSize(120, 120); // Mobile-friendly size
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
@@ -139,7 +139,7 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
     };
     uniformsRef.current = uniforms;
 
-    const geometry = new THREE.IcosahedronGeometry(2, 30);
+    const geometry = new THREE.IcosahedronGeometry(1, 30); // Smaller
     const material = new THREE.ShaderMaterial({
       uniforms,
       vertexShader,
@@ -147,12 +147,13 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
       wireframe: true,
     });
     const mesh = new THREE.Mesh(geometry, material);
+    meshRef.current = mesh;
     scene.add(mesh);
 
     const composer = new EffectComposer(renderer);
     const renderPass = new RenderPass(scene, camera);
     const bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(300, 300),
+      new THREE.Vector2(120, 120),
       0.4,
       0.8,
       0.5
@@ -179,7 +180,14 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
     const clock = new THREE.Clock();
 
     const animate = () => {
-      uniformsRef.current.u_time.value = clock.getElapsedTime();
+      const elapsed = clock.getElapsedTime();
+      uniformsRef.current.u_time.value = elapsed;
+
+      // Gentle idle rotation
+      if (meshRef.current) {
+        meshRef.current.rotation.y = Math.sin(elapsed * 0.3) * 0.2;
+        meshRef.current.rotation.x = Math.cos(elapsed * 0.2) * 0.1;
+      }
 
       if (analyserRef.current) {
         const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
@@ -208,14 +216,14 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
 
   return (
     <div className="relative flex items-center justify-center">
-      <div ref={containerRef} className="rounded-2xl overflow-hidden" />
+      <div ref={containerRef} className="rounded-xl overflow-hidden" />
       
-      <div className="absolute -bottom-2 -right-2">
-        <span className="relative flex h-3 w-3">
+      <div className="absolute -bottom-1 -right-1">
+        <span className="relative flex h-2 w-2">
           {isConnected && (
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
           )}
-          <span className={`relative inline-flex rounded-full h-3 w-3 border border-white ${
+          <span className={`relative inline-flex rounded-full h-2 w-2 border border-white ${
             isConnected ? 'bg-green-500' : 'bg-gray-400'
           }`} />
         </span>
