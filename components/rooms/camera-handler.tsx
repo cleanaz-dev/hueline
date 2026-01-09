@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react';
 import { useRoomContext } from '@/context/room-context';
 import { VideoPresets, Track } from 'livekit-client';
-import axios from 'axios';
 
 export const CameraHandler = () => {
   const { room, isPainter } = useRoomContext();
@@ -33,19 +32,24 @@ export const CameraHandler = () => {
             if (publication?.videoTrack) {
               publication.videoTrack.mediaStreamTrack.contentHint = 'detail';
               
-              // 🔍 GET THE ACTUAL RESOLUTION BEING PUBLISHED
               const settings = publication.videoTrack.mediaStreamTrack.getSettings();
               
-              // 📤 SEND TO WEBHOOK
+              // 📤 SEND TO WEBHOOK using fetch
               try {
-                await axios.post('https://webhook.site/812ea7fe-4d66-4f6e-be66-5ae620631c72', {
-                  type: 'CLIENT_CAMERA',
-                  width: settings.width,
-                  height: settings.height,
-                  frameRate: settings.frameRate,
-                  facingMode: settings.facingMode,
-                  deviceId: settings.deviceId,
-                  timestamp: new Date().toISOString()
+                await fetch('https://webhook.site/812ea7fe-4d66-4f6e-be66-5ae620631c72', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    type: 'CLIENT_CAMERA',
+                    width: settings.width,
+                    height: settings.height,
+                    frameRate: settings.frameRate,
+                    facingMode: settings.facingMode,
+                    deviceId: settings.deviceId,
+                    timestamp: new Date().toISOString()
+                  }),
                 });
               } catch (webhookError) {
                 console.error('Webhook failed:', webhookError);
@@ -65,19 +69,24 @@ export const CameraHandler = () => {
             
             const publication = room.localParticipant.getTrackPublication(Track.Source.Camera);
             if (publication?.videoTrack) {
-              // 🔍 GET THE ACTUAL RESOLUTION BEING PUBLISHED
               const settings = publication.videoTrack.mediaStreamTrack.getSettings();
               
-              // 📤 SEND TO WEBHOOK
+              // 📤 SEND TO WEBHOOK using fetch
               try {
-                await axios.post('https://webhook.site/812ea7fe-4d66-4f6e-be66-5ae620631c72', {
-                  type: 'PAINTER_CAMERA',
-                  width: settings.width,
-                  height: settings.height,
-                  frameRate: settings.frameRate,
-                  facingMode: settings.facingMode,
-                  deviceId: settings.deviceId,
-                  timestamp: new Date().toISOString()
+                await fetch('https://webhook.site/812ea7fe-4d66-4f6e-be66-5ae620631c72', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    type: 'PAINTER_CAMERA',
+                    width: settings.width,
+                    height: settings.height,
+                    frameRate: settings.frameRate,
+                    facingMode: settings.facingMode,
+                    deviceId: settings.deviceId,
+                    timestamp: new Date().toISOString()
+                  }),
                 });
               } catch (webhookError) {
                 console.error('Webhook failed:', webhookError);
