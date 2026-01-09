@@ -220,7 +220,6 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
 
   if (!participant) return null;
 
-  const isConnected = participant.connectionQuality !== "lost";
 
   return (
     <div className="relative flex items-center justify-center">

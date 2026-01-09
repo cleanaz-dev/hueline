@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRoomContext } from '@/context/room-context';
 import { VideoPresets, Track } from 'livekit-client';
+import axios from 'axios';
 
 export const CameraHandler = () => {
   const { room, isPainter } = useRoomContext();
@@ -31,22 +32,54 @@ export const CameraHandler = () => {
             const publication = room.localParticipant.getTrackPublication(Track.Source.Camera);
             if (publication?.videoTrack) {
               publication.videoTrack.mediaStreamTrack.contentHint = 'detail';
+              
+              // 🔍 GET THE ACTUAL RESOLUTION BEING PUBLISHED
+              const settings = publication.videoTrack.mediaStreamTrack.getSettings();
+              
+              // 📤 SEND TO WEBHOOK
+              await axios.post('https://webhook.site/812ea7fe-4d66-4f6e-be66-5ae620631c72', {
+                type: 'CLIENT_CAMERA',
+                width: settings.width,
+                height: settings.height,
+                frameRate: settings.frameRate,
+                facingMode: settings.facingMode,
+                deviceId: settings.deviceId,
+                timestamp: new Date().toISOString()
+              }).catch(e => console.error('Webhook failed:', e));
+              
+              console.log("📸 PUBLISHING VIDEO AT:", settings.width, "x", settings.height);
             }
             console.log("✅ Client camera active");
           } catch (cameraError) {
             console.log("Camera not available (optional):", cameraError);
-            // Don't fail - camera is optional
           }
         } else {
-          // Painter: Try to enable camera but don't fail if unavailable
           try {
             await room.localParticipant.setCameraEnabled(true, {
               resolution: VideoPresets.h1080.resolution
             });
+            
+            const publication = room.localParticipant.getTrackPublication(Track.Source.Camera);
+            if (publication?.videoTrack) {
+              // 🔍 GET THE ACTUAL RESOLUTION BEING PUBLISHED
+              const settings = publication.videoTrack.mediaStreamTrack.getSettings();
+              
+              // 📤 SEND TO WEBHOOK
+              await axios.post('https://webhook.site/812ea7fe-4d66-4f6e-be66-5ae620631c72', {
+                type: 'PAINTER_CAMERA',
+                width: settings.width,
+                height: settings.height,
+                frameRate: settings.frameRate,
+                facingMode: settings.facingMode,
+                deviceId: settings.deviceId,
+                timestamp: new Date().toISOString()
+              }).catch(e => console.error('Webhook failed:', e));
+              
+              console.log("📸 PUBLISHING VIDEO AT:", settings.width, "x", settings.height);
+            }
             console.log("✅ Painter camera active");
           } catch (cameraError) {
             console.log("Painter camera not available (optional):", cameraError);
-            // Don't fail - camera is optional for painter too
           }
         }
       } catch (e) {
