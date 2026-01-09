@@ -63,7 +63,7 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
     camera.position.z = 3;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(120, 120);
+    renderer.setSize(60, 60);
     renderer.setPixelRatio(window.devicePixelRatio);
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
