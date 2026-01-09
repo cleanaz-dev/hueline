@@ -27,6 +27,7 @@ export const useSelfServe = (slug: string, roomId: string) => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showMobileScope, setShowMobileScope] = useState(false);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [isBoostingResolution, setIsBoostingResolution] = useState(false);
 
   // --- TRACK LOGIC ---
   const tracks = useTracks([
@@ -36,8 +37,62 @@ export const useSelfServe = (slug: string, roomId: string) => {
     (t) => t.participant.isLocal && isTrackReference(t)
   ) as TrackReference | undefined;
 
+  // --- RESOLUTION MANAGEMENT ---
+  const boostResolution = useCallback(async () => {
+    const videoTrack = localTrack?.publication?.track as LocalVideoTrack | undefined;
+    if (!videoTrack || isBoostingResolution) return;
+
+    const currentSettings = videoTrack.mediaStreamTrack.getSettings();
+   const currentFacingMode = (currentSettings.facingMode || "user") as "user" | "environment";
+    try {
+      setIsBoostingResolution(true);
+      console.log("📸 Boosting to 4K for snapshot...");
+      
+      await videoTrack.restartTrack({
+        facingMode: currentFacingMode,
+        resolution: {
+          width: 3840,
+          height: 2160,
+          frameRate: 30
+        }
+      });
+      
+      const newSettings = videoTrack.mediaStreamTrack.getSettings();
+      console.log("✅ Resolution boosted:", newSettings.width, "x", newSettings.height);
+    } catch (error) {
+      console.error("Failed to boost resolution:", error);
+      setIsBoostingResolution(false);
+    }
+  }, [localTrack, isBoostingResolution]);
+
+  const dropResolution = useCallback(async () => {
+    const videoTrack = localTrack?.publication?.track as LocalVideoTrack | undefined;
+    if (!videoTrack) return;
+
+    const currentSettings = videoTrack.mediaStreamTrack.getSettings();
+    const currentFacingMode = (currentSettings.facingMode || "user") as "user" | "environment";
+
+    try {
+      console.log("📉 Dropping back to 1080p...");
+      
+      await videoTrack.restartTrack({
+        facingMode: currentFacingMode,
+        resolution: {
+          width: 1920,
+          height: 1080,
+          frameRate: 30
+        }
+      });
+      
+      const newSettings = videoTrack.mediaStreamTrack.getSettings();
+      console.log("✅ Back to streaming resolution:", newSettings.width, "x", newSettings.height);
+      setIsBoostingResolution(false);
+    } catch (error) {
+      console.error("Failed to drop resolution:", error);
+    }
+  }, [localTrack]);
+
   // --- ACTIONS ---
-  // Moved up so it can be used in the useEffect
   const handleEndRoom = useCallback(async () => {
     console.log("🛑 END SIGNAL RECEIVED. CLOSING ROOM.");
     if (room) {
@@ -57,13 +112,10 @@ export const useSelfServe = (slug: string, roomId: string) => {
     eventSource.onmessage = async (event) => {
       try {
         const parsed = JSON.parse(event.data);
-
-        // Unwrap the data (it's nested inside parsed.data)
         const data = parsed.data;
 
         // 1. Handle Arrays
         if (Array.isArray(data)) {
-          // Check if any item in the array is an END signal
           const endEvent = data.find((item) => item.type === "END");
           if (endEvent) {
             console.log("🛑 END signal found in array!");
@@ -72,7 +124,6 @@ export const useSelfServe = (slug: string, roomId: string) => {
             return;
           }
 
-          // Filter out END events and add the rest to scopes
           const scopeItems = data.filter((item) => item.type !== "END");
           setScopes((prev) => [...prev, ...scopeItems]);
           return;
@@ -86,7 +137,14 @@ export const useSelfServe = (slug: string, roomId: string) => {
           return;
         }
 
-        // 3. Handle Photos
+        // 3. BOOST RESOLUTION ON COUNTDOWN START
+        if (data.event === "photo_countdown_start") {
+          console.log("⏰ Countdown started - boosting resolution");
+          await boostResolution();
+          return;
+        }
+
+        // 4. Handle Photos & DROP RESOLUTION
         if (data.event === "photo_capture_complete") {
           const newItem: ScopeItem = {
             type: "IMAGE",
@@ -98,9 +156,15 @@ export const useSelfServe = (slug: string, roomId: string) => {
           };
           setScopes((prev) => [...prev, newItem]);
           setLastCapture({ path: data.data.image_path, area: data.data.area });
+          
+          // DROP RESOLUTION BACK
+          console.log("✅ Capture complete - dropping resolution");
+          await dropResolution();
+          return;
         }
-        // 4. Handle Standard Scope Items
-        else if (data.type) {
+
+        // 5. Handle Standard Scope Items
+        if (data.type) {
           setScopes((prev) => [...prev, data]);
         }
       } catch (e) {
@@ -114,7 +178,7 @@ export const useSelfServe = (slug: string, roomId: string) => {
     };
 
     return () => eventSource.close();
-  }, [slug, roomId, handleEndRoom]);
+  }, [slug, roomId, handleEndRoom, boostResolution, dropResolution]);
 
   // --- DEVICE CHECKS (Ensures Button Shows) ---
   useEffect(() => {
@@ -156,7 +220,6 @@ export const useSelfServe = (slug: string, roomId: string) => {
       const nextFacingMode =
         currentFacingMode === "user" ? "environment" : "user";
 
-      // ADD RESOLUTION CONSTRAINTS HERE
       await videoTrack.restartTrack({
         facingMode: nextFacingMode,
         resolution: {
@@ -166,9 +229,8 @@ export const useSelfServe = (slug: string, roomId: string) => {
         },
       });
 
-      // Log the new resolution after switch
       const newSettings = videoTrack.mediaStreamTrack.getSettings();
-  
+      console.log("📸 Camera switched:", nextFacingMode, newSettings.width, "x", newSettings.height);
     } catch (error) {
       console.error("Failed to switch camera:", error);
     }
