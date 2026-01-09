@@ -143,7 +143,7 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
     };
     uniformsRef.current = uniforms;
 
-    const geometry = new THREE.IcosahedronGeometry(0.4, 30); // Smaller
+    const geometry = new THREE.IcosahedronGeometry(0.6, 30); // Smaller
     const material = new THREE.ShaderMaterial({
       uniforms,
       vertexShader,
@@ -226,18 +226,6 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
     <div className="relative flex items-center justify-center">
       <div ref={containerRef} className="rounded-xl overflow-hidden" />
 
-      <div className="absolute -bottom-1 -right-1">
-        <span className="relative flex h-2 w-2">
-          {isConnected && (
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-          )}
-          <span
-            className={`relative inline-flex rounded-full h-2 w-2 border border-white ${
-              isConnected ? "bg-green-500" : "bg-gray-400"
-            }`}
-          />
-        </span>
-      </div>
     </div>
   );
 };
