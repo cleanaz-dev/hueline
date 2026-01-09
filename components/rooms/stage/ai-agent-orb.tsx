@@ -104,7 +104,7 @@ const fragmentShader = `
   uniform float u_blue;
   
   void main() {
-    gl_FragColor = vec4(vec3(u_red, u_green, u_blue), 1.0);
+    gl_FragColor = vec4(vec3(u_red, u_green, u_blue), 0.6);
   }
 `;
 
@@ -143,12 +143,13 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
     };
     uniformsRef.current = uniforms;
 
-    const geometry = new THREE.IcosahedronGeometry(1, 30); // Smaller
+    const geometry = new THREE.IcosahedronGeometry(0.6, 30); // Smaller
     const material = new THREE.ShaderMaterial({
       uniforms,
       vertexShader,
       fragmentShader,
       wireframe: true,
+      transparent: true, // ADD THIS
     });
     const mesh = new THREE.Mesh(geometry, material);
     meshRef.current = mesh;
