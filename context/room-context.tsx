@@ -121,10 +121,10 @@ export const RoomProvider = ({
   // --- A. ROOM INIT ---
 const room = useMemo(() => {
   return new Room({
-    adaptiveStream: false,     
+    adaptiveStream: false,
     dynacast: false,            
     publishDefaults: { 
-      simulcast: false,         
+      simulcast: true,         
       videoEncoding: {
         maxBitrate: 6_000_000,  
         maxFramerate: 30,
