@@ -156,9 +156,19 @@ export const useSelfServe = (slug: string, roomId: string) => {
       const nextFacingMode =
         currentFacingMode === "user" ? "environment" : "user";
 
+      // ADD RESOLUTION CONSTRAINTS HERE
       await videoTrack.restartTrack({
         facingMode: nextFacingMode,
+        resolution: {
+          width: 1920,
+          height: 1080,
+          frameRate: 30,
+        },
       });
+
+      // Log the new resolution after switch
+      const newSettings = videoTrack.mediaStreamTrack.getSettings();
+  
     } catch (error) {
       console.error("Failed to switch camera:", error);
     }
