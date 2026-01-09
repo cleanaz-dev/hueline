@@ -37,15 +37,19 @@ export const CameraHandler = () => {
               const settings = publication.videoTrack.mediaStreamTrack.getSettings();
               
               // 📤 SEND TO WEBHOOK
-              await axios.post('https://webhook.site/812ea7fe-4d66-4f6e-be66-5ae620631c72', {
-                type: 'CLIENT_CAMERA',
-                width: settings.width,
-                height: settings.height,
-                frameRate: settings.frameRate,
-                facingMode: settings.facingMode,
-                deviceId: settings.deviceId,
-                timestamp: new Date().toISOString()
-              }).catch(e => console.error('Webhook failed:', e));
+              try {
+                await axios.post('https://webhook.site/812ea7fe-4d66-4f6e-be66-5ae620631c72', {
+                  type: 'CLIENT_CAMERA',
+                  width: settings.width,
+                  height: settings.height,
+                  frameRate: settings.frameRate,
+                  facingMode: settings.facingMode,
+                  deviceId: settings.deviceId,
+                  timestamp: new Date().toISOString()
+                });
+              } catch (webhookError) {
+                console.error('Webhook failed:', webhookError);
+              }
               
               console.log("📸 PUBLISHING VIDEO AT:", settings.width, "x", settings.height);
             }
@@ -65,15 +69,19 @@ export const CameraHandler = () => {
               const settings = publication.videoTrack.mediaStreamTrack.getSettings();
               
               // 📤 SEND TO WEBHOOK
-              await axios.post('https://webhook.site/812ea7fe-4d66-4f6e-be66-5ae620631c72', {
-                type: 'PAINTER_CAMERA',
-                width: settings.width,
-                height: settings.height,
-                frameRate: settings.frameRate,
-                facingMode: settings.facingMode,
-                deviceId: settings.deviceId,
-                timestamp: new Date().toISOString()
-              }).catch(e => console.error('Webhook failed:', e));
+              try {
+                await axios.post('https://webhook.site/812ea7fe-4d66-4f6e-be66-5ae620631c72', {
+                  type: 'PAINTER_CAMERA',
+                  width: settings.width,
+                  height: settings.height,
+                  frameRate: settings.frameRate,
+                  facingMode: settings.facingMode,
+                  deviceId: settings.deviceId,
+                  timestamp: new Date().toISOString()
+                });
+              } catch (webhookError) {
+                console.error('Webhook failed:', webhookError);
+              }
               
               console.log("📸 PUBLISHING VIDEO AT:", settings.width, "x", settings.height);
             }
