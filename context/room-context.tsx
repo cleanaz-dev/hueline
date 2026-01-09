@@ -124,8 +124,10 @@ const room = useMemo(() => {
     adaptiveStream: false,
     dynacast: false,            
     publishDefaults: { 
-      simulcast: true,         
+      videoCodec: "h265",
+      simulcast: false,         
       videoEncoding: {
+        priority: "high",
         maxBitrate: 6_000_000,  
         maxFramerate: 30,
       },
