@@ -143,7 +143,7 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
     };
     uniformsRef.current = uniforms;
 
-    const geometry = new THREE.IcosahedronGeometry(0.6, 30); // Smaller
+    const geometry = new THREE.IcosahedronGeometry(0.4, 30); // Smaller
     const material = new THREE.ShaderMaterial({
       uniforms,
       vertexShader,
