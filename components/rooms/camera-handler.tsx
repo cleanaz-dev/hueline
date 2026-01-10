@@ -25,8 +25,8 @@ export const CameraHandler = () => {
             // Try back camera with hard-coded 1080p resolution
             await room.localParticipant.setCameraEnabled(true, {
               resolution: {
-                width: 1920,
-                height: 1080,
+                width: 3840,
+                height: 2160,
                 frameRate: 30
               },
               facingMode: 'environment'
@@ -48,8 +48,8 @@ export const CameraHandler = () => {
           try {
             await room.localParticipant.setCameraEnabled(true, {
               resolution: {
-                width: 1920,
-                height: 1080,
+                width: 3840,
+                height: 2160,
                 frameRate: 30
               },
               facingMode: 'user'
