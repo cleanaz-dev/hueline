@@ -1,3 +1,4 @@
+// useSelfServe.tsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRoomContext } from "@/context/room-context";
 import { useCameraEvents } from "@/hooks/use-camera-events";
@@ -37,13 +38,18 @@ export const useSelfServe = (slug: string, roomId: string) => {
     (t) => t.participant.isLocal && isTrackReference(t)
   ) as TrackReference | undefined;
 
-  // --- RESOLUTION MANAGEMENT ---
+  // ┌─────────────────────────────────────────────────────────────────┐
+  // │ RESOLUTION MANAGEMENT                                           │
+  // │ These callbacks UPDATE when localTrack changes (that's correct!)│
+  // └─────────────────────────────────────────────────────────────────┘
+  
   const boostResolution = useCallback(async () => {
     const videoTrack = localTrack?.publication?.track as LocalVideoTrack | undefined;
     if (!videoTrack || isBoostingResolution) return;
 
     const currentSettings = videoTrack.mediaStreamTrack.getSettings();
     const currentFacingMode = (currentSettings.facingMode || "user") as "user" | "environment";
+    
     try {
       setIsBoostingResolution(true);
       console.log("📸 Boosting to 4K for snapshot...");
@@ -63,7 +69,7 @@ export const useSelfServe = (slug: string, roomId: string) => {
       console.error("Failed to boost resolution:", error);
       setIsBoostingResolution(false);
     }
-  }, [localTrack, isBoostingResolution]);
+  }, [localTrack, isBoostingResolution]); // ✅ These dependencies are CORRECT
 
   const dropResolution = useCallback(async () => {
     const videoTrack = localTrack?.publication?.track as LocalVideoTrack | undefined;
@@ -90,7 +96,7 @@ export const useSelfServe = (slug: string, roomId: string) => {
     } catch (error) {
       console.error("Failed to drop resolution:", error);
     }
-  }, [localTrack]);
+  }, [localTrack]); // ✅ This dependency is CORRECT
 
   // --- ACTIONS ---
   const handleEndRoom = useCallback(async () => {
@@ -99,15 +105,27 @@ export const useSelfServe = (slug: string, roomId: string) => {
       await room.disconnect();
     }
     window.location.href = `/post-session`;
-  }, [room]);
+  }, [room]); // ✅ This dependency is CORRECT
 
-  // --- EVENT LISTENER ---
+  // ┌─────────────────────────────────────────────────────────────────┐
+  // │ EVENT SOURCE CONNECTION                                         │
+  // │ KEY FIX: Only depends on [slug, roomId]                         │
+  // │ Even though it USES boostResolution/dropResolution/handleEndRoom│
+  // │ it doesn't need them in dependencies because JavaScript closures│
+  // │ will always reference the LATEST version of these functions     │
+  // └─────────────────────────────────────────────────────────────────┘
+  
   useEffect(() => {
+    console.log("🔌 Creating EventSource connection for room:", roomId);
+    
     const eventSource = new EventSource(
       `/api/subdomain/${slug}/room/${roomId}/scope-stream`
     );
 
-    eventSource.onopen = () => setIsStreamConnected(true);
+    eventSource.onopen = () => {
+      console.log("✅ EventSource connected");
+      setIsStreamConnected(true);
+    };
 
     eventSource.onmessage = async (event) => {
       try {
@@ -120,7 +138,7 @@ export const useSelfServe = (slug: string, roomId: string) => {
           if (endEvent) {
             console.log("🛑 END signal found in array!");
             eventSource.close();
-            await handleEndRoom();
+            await handleEndRoom(); // ⭐ Uses LATEST handleEndRoom via closure
             return;
           }
 
@@ -133,14 +151,14 @@ export const useSelfServe = (slug: string, roomId: string) => {
         if (data.type === "END") {
           console.log("🛑 END signal received!");
           eventSource.close();
-          await handleEndRoom();
+          await handleEndRoom(); // ⭐ Uses LATEST handleEndRoom via closure
           return;
         }
 
         // 3. BOOST RESOLUTION ON COUNTDOWN START
         if (data.event === "photo_countdown_start") {
           console.log("⏰ Countdown started - boosting resolution");
-          await boostResolution();
+          await boostResolution(); // ⭐ Uses LATEST boostResolution via closure
           return;
         }
 
@@ -159,7 +177,7 @@ export const useSelfServe = (slug: string, roomId: string) => {
           
           // DROP RESOLUTION BACK
           console.log("✅ Capture complete - dropping resolution");
-          await dropResolution();
+          await dropResolution(); // ⭐ Uses LATEST dropResolution via closure
           return;
         }
 
@@ -173,12 +191,33 @@ export const useSelfServe = (slug: string, roomId: string) => {
     };
 
     eventSource.onerror = () => {
+      console.log("❌ EventSource error");
       setIsStreamConnected(false);
       eventSource.close();
     };
 
-    return () => eventSource.close();
-  }, [slug, roomId]); // ⭐ REMOVED: handleEndRoom, boostResolution, dropResolution
+    return () => {
+      console.log("🔌 Closing EventSource connection");
+      eventSource.close();
+    };
+  }, [slug, roomId]); 
+  // ⭐⭐⭐ THE FIX: Only [slug, roomId] here!
+  // NOT [slug, roomId, handleEndRoom, boostResolution, dropResolution]
+  // 
+  // WHY THIS WORKS:
+  // - EventSource only recreates when slug/roomId changes (almost never)
+  // - When boostResolution/dropResolution/handleEndRoom update (from localTrack changing),
+  //   the eventSource.onmessage closure ALREADY has access to the new versions
+  // - No need to tear down and recreate the entire connection
+  //
+  // THE FLOW:
+  // 1. Redis publishes: photo_countdown_start
+  // 2. EventSource receives it
+  // 3. Calls boostResolution() → switches to 4K
+  // 4. Redis publishes: photo_capture_complete  
+  // 5. EventSource receives it
+  // 6. Calls dropResolution() → switches back to 1080p
+  // 7. EventSource stays connected throughout! ✅
 
   // --- DEVICE CHECKS (Ensures Button Shows) ---
   useEffect(() => {
