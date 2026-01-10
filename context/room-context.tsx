@@ -125,7 +125,6 @@ const room = useMemo(() => {
     dynacast: false,
     publishDefaults: {
       simulcast: false,
-      videoCodec: "vp9",
       videoEncoding: {
         maxBitrate: 10_000_000,
         maxFramerate: 30,
