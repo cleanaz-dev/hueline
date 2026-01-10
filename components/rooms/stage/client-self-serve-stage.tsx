@@ -11,6 +11,7 @@ import {
   Scan,
   Loader2,
   CheckCircle2,
+  ScanFace,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SelfServeScopeList from "./self-serve-room-list";
@@ -251,7 +252,7 @@ export const ClientSelfServeStage = ({
                 <div className="relative">
                   <div className="w-32 h-32 rounded-full border-8 border-white/20 flex items-center justify-center">
                     <span className="text-8xl font-bold text-white animate-pulse">
-                      {countdown > 0 ? countdown : <Scan className="size-16" />}
+                      {countdown > 0 ? countdown : <ScanFace className="size-16" />}
                     </span>
                   </div>
                   {countdown > 0 && (
