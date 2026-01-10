@@ -43,7 +43,7 @@ export const useSelfServe = (slug: string, roomId: string) => {
     if (!videoTrack || isBoostingResolution) return;
 
     const currentSettings = videoTrack.mediaStreamTrack.getSettings();
-   const currentFacingMode = (currentSettings.facingMode || "user") as "user" | "environment";
+    const currentFacingMode = (currentSettings.facingMode || "user") as "user" | "environment";
     try {
       setIsBoostingResolution(true);
       console.log("📸 Boosting to 4K for snapshot...");
@@ -178,7 +178,7 @@ export const useSelfServe = (slug: string, roomId: string) => {
     };
 
     return () => eventSource.close();
-  }, [slug, roomId, handleEndRoom, boostResolution, dropResolution]);
+  }, [slug, roomId]); // ⭐ REMOVED: handleEndRoom, boostResolution, dropResolution
 
   // --- DEVICE CHECKS (Ensures Button Shows) ---
   useEffect(() => {
