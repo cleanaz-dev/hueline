@@ -14,7 +14,8 @@ export enum ScopeType {
   REPAIR = "REPAIR",
   NOTE = "NOTE",
   IMAGE = "IMAGE",
-  QUESTION = "QUESTION"
+  QUESTION = "QUESTION",
+  DETECTION = "DETECTION"
 }
 
 export interface ScopeItem {
@@ -24,7 +25,13 @@ export interface ScopeItem {
   action: string;
   timestamp: string;
   image_urls?: string[];
-  // New fields for image tracking
-  image_id?: string;  // Present on IMAGE type items - unique ID for this image
-  image_reference_id?: string;  // Present on other items - references the associated IMAGE's image_id
+  // Image tracking
+  image_id?: string;
+  image_reference_id?: string;
+  // Detection data for doors/windows
+  detection_data?: {
+    doors: number;
+    windows: number;
+    summary: string;
+  };
 }
