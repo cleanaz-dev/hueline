@@ -32,6 +32,7 @@ export default async function BookingRoomPage({ params }: Params) {
       slug={booking.subdomain.slug} 
       role="client"
       mode="self-serve"
+      huelineId={huelineId}
     />
   );
 }

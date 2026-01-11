@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { RoomAudioRenderer, VideoTrack } from "@livekit/components-react";
 import {
   PhoneOff,
@@ -75,9 +75,11 @@ const FlashNotification = ({
 export const ClientSelfServeStage = ({
   slug,
   roomId,
+  huelineId,
 }: {
   slug: string;
   roomId: string;
+  huelineId: string
 }) => {
   const {
     room,
@@ -92,7 +94,7 @@ export const ClientSelfServeStage = ({
     uiState,
     setUiState,
     actions,
-  } = useSelfServe(slug, roomId);
+  } = useSelfServe(slug, roomId, huelineId);
 
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const { agentParticipant, agentAudioTrack, isAgentConnected } =

@@ -14,11 +14,13 @@ interface RoomClientProps {
   slug: string;
   role?: string;
   mode?: 'project' | 'quick' | 'self-serve';
+  huelineId?: string
 }
 
 export function RoomClient({ 
   roomId, 
-  roomData, 
+  roomData,
+  huelineId, 
   slug, 
   role, 
   mode = 'project'
@@ -109,8 +111,8 @@ useEffect(() => {
 
   // --- RENDER LOGIC ---
   const renderStage = () => {
-    if (isClient && mode === 'self-serve') {
-      return <ClientSelfServeStage slug={slug} roomId={roomId} />;
+    if (isClient && mode === 'self-serve' && huelineId) {
+      return <ClientSelfServeStage slug={slug} roomId={roomId} huelineId={huelineId}/>;
     }
     if (isClient) return <ClientStage />;
     if (mode === 'quick') return <QuickSessionStage />;
