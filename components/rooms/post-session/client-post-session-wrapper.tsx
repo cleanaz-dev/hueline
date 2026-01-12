@@ -2,12 +2,9 @@
 
 import useSWR from "swr";
 import { Loader2 } from "lucide-react";
-
-import { useEffect, useState } from "react";
 import ClientPostSession from "./client-post-session";
 import { useBooking } from "@/context/booking-context";
 
-// Standard fetcher
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ClientPostSessionWrapper({ 
@@ -20,31 +17,23 @@ export default function ClientPostSessionWrapper({
   initialData: any 
 }) {
   
-  // 1. Determine if we need to poll
-  // If initialData says "COMPLETED", we don't need to poll at all.
-  const isInitiallyReady = initialData?.status === "COMPLETED";
+  const isInitiallyReady = initialData?.room?.status === "COMPLETED";
   const { subdomain } = useBooking()
 
-  // 2. Setup SWR
-  // Only fetch if NOT ready. 
-  // refreshInterval: 3000 = Poll every 3 seconds
   const { data, error } = useSWR(
-    isInitiallyReady ? null : `/api/subdomain/${subdomain.slug}/booking/${huelineId}/${roomId}`, 
+    isInitiallyReady ? null : `/api/subdomain/${subdomain.slug}/booking/${huelineId}/${roomId}/post-session`, 
     fetcher, 
     { 
       fallbackData: initialData,
       refreshInterval: (latestData) => {
-        // Stop polling if status becomes COMPLETED
-        return latestData?.status === "COMPLETED" ? 0 : 2000;
+        return latestData?.room?.status === "COMPLETED" ? 0 : 2000;
       }
     }
   );
 
-  // 3. Logic: Are we ready?
   const sessionData = data || initialData;
-  const isReady = sessionData?.status === "COMPLETED";
-
-  // --- VIEW A: LOADING / AI PROCESSING ---
+  const isReady = sessionData?.room?.isProcessing === false
+  console.log("session data", sessionData)
   if (!isReady) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 space-y-4">
@@ -60,6 +49,5 @@ export default function ClientPostSessionWrapper({
     );
   }
 
-  // --- VIEW B: THE DASHBOARD (Success) ---
-  return <ClientPostSession  />;
+  return <ClientPostSession data={sessionData} presignedUrls={sessionData.presignedUrls || {}} />;
 }

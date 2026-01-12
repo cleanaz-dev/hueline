@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useRef } from "react";
 import { TrackPublication, LocalParticipant, RemoteParticipant } from "livekit-client";
 import { useTrackVolume } from "@livekit/components-react";
@@ -16,14 +15,12 @@ const vertexShader = `
   uniform float uTime;
   uniform float uIntensity;
 
-  // Simple noise function
   float noise(vec3 p) {
     return sin(p.x * 10.0 + uTime) * sin(p.y * 10.0 + uTime) * sin(p.z * 10.0 + uTime);
   }
 
   void main() {
     vUv = uv;
-    // Constant base movement (0.1) + audio reactivity (uIntensity)
     vDistortion = noise(normal + uTime * 0.5) * (0.1 + uIntensity);
     vec3 newPosition = position + normal * vDistortion;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
@@ -33,11 +30,12 @@ const vertexShader = `
 const fragmentShader = `
   varying float vDistortion;
   uniform vec3 uColor;
-  
+  uniform float uOpacity;
+
   void main() {
-    // Brighten the color based on displacement
     float brightness = 0.5 + vDistortion * 2.0;
-    gl_FragColor = vec4(uColor * brightness, 1.0);
+    // Use uOpacity to control transparency
+    gl_FragColor = vec4(uColor * brightness, uOpacity);
   }
 `;
 
@@ -48,16 +46,15 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
   const uniformsRef = useRef({
     uTime: { value: 0.0 },
     uIntensity: { value: 0.0 },
-    uColor: { value: new THREE.Color("#8B5CF6") }, // Purple
+    uColor: { value: new THREE.Color("#ffffff") }, // White color
+    uOpacity: { value: 0.4 }, // Adjust this value (0.0 to 1.0) for transparency
   });
 
-  // Use the built-in LiveKit hook for volume (returns 0 to 1)
   const volume = useTrackVolume(trackPublication as any);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // 1. Setup Scene
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10);
     camera.position.z = 3;
@@ -68,35 +65,31 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 2. Create Orb
     const geometry = new THREE.IcosahedronGeometry(1, 15);
     const material = new THREE.ShaderMaterial({
       uniforms: uniformsRef.current,
       vertexShader,
       fragmentShader,
       wireframe: true,
+      transparent: true, // Enable transparency
+      blending: THREE.AdditiveBlending, // Optional: creates a glowing effect
     });
-    
+
     const mesh = new THREE.Mesh(geometry, material);
     meshRef.current = mesh;
     scene.add(mesh);
 
-    // 3. Animation Loop
     let frameId: number;
     const clock = new THREE.Clock();
 
     const animate = () => {
       const delta = clock.getElapsedTime();
-      
-      // Update Uniforms
-      uniformsRef.current.uTime.value = delta;
-      
-      // Smoothly interpolate volume to avoid flickering
-      // volume * 1.5 makes it more dramatic
-      const targetIntensity = volume * 1.5;
-      uniformsRef.current.uIntensity.value += (targetIntensity - uniformsRef.current.uIntensity.value) * 0.1;
 
-      // Rotate Orb
+      uniformsRef.current.uTime.value = delta;
+      const targetIntensity = volume * 1.5;
+      uniformsRef.current.uIntensity.value +=
+        (targetIntensity - uniformsRef.current.uIntensity.value) * 0.1;
+
       if (meshRef.current) {
         meshRef.current.rotation.y += 0.01;
         meshRef.current.rotation.z += 0.005;
@@ -117,19 +110,17 @@ export const AgentOrb = ({ trackPublication, participant }: AgentOrbProps) => {
         containerRef.current.removeChild(renderer.domElement);
       }
     };
-  }, []); // Only run once on mount
+  }, []);
 
   if (!participant) return null;
 
   return (
-    <div className="flex items-center justify-center">
-      {/* Glow Effect via CSS (Cheaper than Three.js Bloom) */}
-      <div 
-        ref={containerRef} 
-        className="relative transition-transform duration-300"
+    <div className="relative">
+      <div
+        ref={containerRef}
+        className="orb-container"
         style={{
-          filter: `drop-shadow(0 0 ${10 + volume * 20}px rgba(139, 92, 246, 0.5))`,
-          transform: `scale(${1 + volume * 0.2})`
+          filter: "drop-shadow(0 0 8px rgba(255, 255, 255, 0.4))", // White glow
         }}
       />
     </div>

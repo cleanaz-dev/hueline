@@ -7,7 +7,7 @@ import {
   Clipboard, MapPin, Paintbrush, Hammer, AlertTriangle, 
   StickyNote, DatabaseZap, Camera, MoreHorizontal, Pencil, 
   Trash2, CirclePlus, Image as ImageIcon, Link2, Loader2,
-  CircleHelp, // Added Question icon
+  CircleHelp, ScanEye, // Added ScanEye for Detections
 } from "lucide-react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,13 +30,12 @@ interface RoomDetailsTabSowProps {
   initialItems: ScopeItem[];
   activeArea: string;
   roomId: string;
-  // New Props:
   presignedUrls: Record<string, string>;
   onUpdateTrigger: KeyedMutator<any>;
 }
 
 // Helpers
-const CATEGORY_ORDER = ["REPAIR", "PREP", "PAINT", "NOTE", "QUESTION", "IMAGE"]; // Added QUESTION to order
+const CATEGORY_ORDER = ["REPAIR", "PREP", "PAINT", "DETECTION", "NOTE", "QUESTION", "IMAGE"]; // Moved DETECTION up for visibility
 
 const getCategoryConfig = (type: string) => {
   switch (type) {
@@ -44,14 +43,15 @@ const getCategoryConfig = (type: string) => {
     case "PREP": return { label: "Prep Work", icon: Hammer, color: "text-amber-600" };
     case "PAINT": return { label: "Paint", icon: Paintbrush, color: "text-blue-600" };
     case "NOTE": return { label: "Notes", icon: StickyNote, color: "text-zinc-500" };
-    case "QUESTION": return { label: "Questions", icon: CircleHelp, color: "text-violet-600" }; // Added QUESTION config
+    case "QUESTION": return { label: "Questions", icon: CircleHelp, color: "text-violet-600" };
+    case "DETECTION": return { label: "AI Detection", icon: ScanEye, color: "text-indigo-600" }; // New Config
     case "IMAGE": return { label: "Image", icon: ImageIcon, color: "text-accent" };
     default: return { label: "General", icon: DatabaseZap, color: "text-zinc-600" };
   }
 };
 
 export function RoomDetailsTabSow({
-  initialItems: items, // Rename prop to 'items' for convenience
+  initialItems: items, 
   activeArea,
   roomId,
   presignedUrls,
@@ -75,15 +75,12 @@ export function RoomDetailsTabSow({
 
   // --- CORE UPDATE LOGIC ---
   const executeUpdate = async (newItems: ScopeItem[]) => {
-    // 1. Optimistic Update (Update parent immediately)
-    // We assume the presignedUrls haven't changed during a simple text edit
     await onUpdateTrigger((currentData: any) => ({
         ...currentData,
         scopeData: newItems
     }), { revalidate: false });
 
     try {
-      // 2. Persist to API
       const response = await fetch(apiEndpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -91,14 +88,11 @@ export function RoomDetailsTabSow({
       });
 
       if (!response.ok) throw new Error("Failed to save changes");
-
-      // 3. Revalidate Parent (Fetches fresh data + potentially new signed URLs if an image was added)
       await onUpdateTrigger(); 
       toast.success("Saved");
     } catch (error) {
       console.error("Error saving scope items:", error);
       toast.error("Failed to save changes");
-      // Revert parent data on error
       await onUpdateTrigger(); 
     }
   };
@@ -176,7 +170,6 @@ export function RoomDetailsTabSow({
           {Object.entries(groupedByArea).map(([areaName, areaItems]) => {
             const allKeys = areaItems.filter((i) => i.type === ScopeType.IMAGE).flatMap((i) => i.image_urls || []);
             
-            // USE PROPS FOR URL LOOKUP
             const coverKey = allKeys[0];
             const coverUrl = presignedUrls[coverKey];
             const extraPhotoCount = Math.max(0, allKeys.length - 1);
@@ -201,7 +194,6 @@ export function RoomDetailsTabSow({
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
                     </div>
                   ) : (
-                    // Show gray background if key exists but url not found (rare) or no images
                     coverKey && <div className="absolute inset-0 z-0 bg-zinc-100 flex items-center justify-center"><Loader2 className="animate-spin text-zinc-300" /></div>
                   )}
 
@@ -227,7 +219,7 @@ export function RoomDetailsTabSow({
                   <div className="p-4 border-b border-zinc-100 bg-zinc-50/30">
                     <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                       {allKeys.map((key, idx) => {
-                        const url = presignedUrls[key]; // Lookup from props
+                        const url = presignedUrls[key];
                         return (
                           <div key={idx} 
                            onClick={() => url && viewImage(url)}
@@ -261,6 +253,13 @@ export function RoomDetailsTabSow({
                         <tbody>
                           {catItems.map((item, idx) => {
                             const linkedImage = item.image_reference_id ? imageMap.get(item.image_reference_id) : null;
+                            
+                            // Check for Detection Data
+                            const isDetection = item.type === "DETECTION";
+                            const dData = item.detection_data as any; // Cast for access
+                            const hasDoors = dData?.doors > 0;
+                            const hasWindows = dData?.windows > 0;
+
                             return (
                               <tr key={idx} className="border-b border-zinc-50 last:border-b-0 hover:bg-zinc-50/30 group/row">
                                 <td className="px-3 py-2 w-[30px]">
@@ -269,8 +268,38 @@ export function RoomDetailsTabSow({
                                     {linkedImage && <span title={`Linked to snapshot: ${linkedImage.area}`}><Link2 className="w-2.5 h-2.5 text-blue-500" /></span>}
                                   </div>
                                 </td>
-                                <td className="px-3 py-2 text-xs capitalize text-zinc-900">{item.item}</td>
-                                <td className="px-3 py-2 text-[10px] uppercase tracking-wide font-mono text-zinc-500">{item.action}</td>
+
+                                {/* ITEM LABEL */}
+                                <td className="px-3 py-2 text-xs capitalize text-zinc-900">
+                                  {isDetection ? (
+                                    <span className="font-medium text-zinc-700">Openings Found</span>
+                                  ) : (
+                                    item.item
+                                  )}
+                                </td>
+
+                                {/* ACTION / DETAILS */}
+                                <td className="px-3 py-2 text-[10px] uppercase tracking-wide font-mono text-zinc-500">
+                                  {isDetection ? (
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {hasDoors && (
+                                        <Badge variant="secondary" className="h-5 px-1.5 text-[9px] bg-zinc-100 text-zinc-700 border-zinc-200 font-medium rounded-sm">
+                                          Doors: {dData.doors}
+                                        </Badge>
+                                      )}
+                                      {hasWindows && (
+                                        <Badge variant="secondary" className="h-5 px-1.5 text-[9px] bg-zinc-100 text-zinc-700 border-zinc-200 font-medium rounded-sm">
+                                          Windows: {dData.windows}
+                                        </Badge>
+                                      )}
+                                      {!hasDoors && !hasWindows && <span className="text-zinc-400 italic">None</span>}
+                                    </div>
+                                  ) : (
+                                    item.action
+                                  )}
+                                </td>
+
+                                {/* MENU */}
                                 <td className="px-3 py-2 text-right w-[60px]">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -297,7 +326,6 @@ export function RoomDetailsTabSow({
         </div>
       </ScrollArea>
 
-      {/* DIALOGS */}
       <SowAddItemDialog isOpen={isAddOpen} onOpenChange={setIsAddOpen} initialArea={preFillArea} initialCategory={preFillCategory} isAreaLocked={isAreaLocked} onSave={handleAddItem} />
       <SowEditItemDialog isOpen={isEditOpen} onOpenChange={setIsEditOpen} itemToEdit={selectedItem} onSave={handleEditItem} />
       <SowDeleteItemDialog isOpen={isDeleteOpen} onOpenChange={setIsDeleteOpen} itemToDelete={selectedItem} onConfirm={handleDeleteItem} />

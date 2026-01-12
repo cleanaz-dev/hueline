@@ -36,7 +36,6 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 }
-
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ huelineId: string; roomId: string; slug: string }> }
