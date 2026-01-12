@@ -9,25 +9,32 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  
+
   // 1. Get Subdomain ID
   const subdomain = await prisma.subdomain.findUnique({
     where: { slug },
-    select: { id: true, activeFlowId: true }
+    select: { id: true, activeFlowId: true },
   });
 
-  if (!subdomain) return NextResponse.json({ error: "Subdomain not found" }, { status: 404 });
+  if (!subdomain)
+    return NextResponse.json({ error: "Subdomain not found" }, { status: 404 });
 
   // 2. Fetch all versions (sorted newest first)
   const flows = await prisma.callFlow.findMany({
     where: { subdomainId: subdomain.id },
-    orderBy: { version: 'desc' },
-    select: { id: true, version: true, createdAt: true, isPublished: true, nodes: true } // We fetch nodes here for simplicity, or fetch on demand
+    orderBy: { version: "desc" },
+    select: {
+      id: true,
+      version: true,
+      createdAt: true,
+      isPublished: true,
+      nodes: true,
+    }, // We fetch nodes here for simplicity, or fetch on demand
   });
 
   return NextResponse.json({
     versions: flows,
-    activeFlowId: subdomain.activeFlowId
+    activeFlowId: subdomain.activeFlowId,
   });
 }
 
@@ -43,16 +50,17 @@ export async function POST(
   // 1. Get Subdomain
   const subdomain = await prisma.subdomain.findUnique({
     where: { slug },
-    select: { id: true }
+    select: { id: true },
   });
 
-  if (!subdomain) return NextResponse.json({ error: "Subdomain not found" }, { status: 404 });
+  if (!subdomain)
+    return NextResponse.json({ error: "Subdomain not found" }, { status: 404 });
 
   // 2. Get current latest version number
   const latestFlow = await prisma.callFlow.findFirst({
     where: { subdomainId: subdomain.id },
-    orderBy: { version: 'desc' },
-    select: { version: true }
+    orderBy: { version: "desc" },
+    select: { version: true },
   });
 
   const newVersion = (latestFlow?.version || 0) + 1;
@@ -63,21 +71,21 @@ export async function POST(
       subdomainId: subdomain.id,
       version: newVersion,
       nodes: nodes, // Saves the JSON tree
-    }
+    },
   });
 
   // 4. Cleanup: Keep only last 10 versions
   // Fetch IDs of all flows sorted by version DESC
   const allFlows = await prisma.callFlow.findMany({
     where: { subdomainId: subdomain.id },
-    orderBy: { version: 'desc' },
-    select: { id: true }
+    orderBy: { version: "desc" },
+    select: { id: true },
   });
 
   if (allFlows.length > 10) {
-    const toDelete = allFlows.slice(10).map(f => f.id);
+    const toDelete = allFlows.slice(10).map((f) => f.id);
     await prisma.callFlow.deleteMany({
-      where: { id: { in: toDelete } }
+      where: { id: { in: toDelete } },
     });
   }
 
@@ -94,18 +102,18 @@ export async function PATCH(
 
   const subdomain = await prisma.subdomain.update({
     where: { slug },
-    data: { activeFlowId: flowId }
+    data: { activeFlowId: flowId },
   });
 
   // Also update the boolean flags on the flows for UI convenience
   await prisma.callFlow.updateMany({
     where: { subdomainId: subdomain.id },
-    data: { isPublished: false }
+    data: { isPublished: false },
   });
-  
+
   await prisma.callFlow.update({
     where: { id: flowId },
-    data: { isPublished: true }
+    data: { isPublished: true },
   });
 
   return NextResponse.json({ success: true });
