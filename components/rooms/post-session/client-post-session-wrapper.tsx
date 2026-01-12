@@ -61,5 +61,5 @@ export default function ClientPostSessionWrapper({
   }
 
   // --- VIEW B: THE DASHBOARD (Success) ---
-  return <ClientPostSession data={sessionData} />;
+  return <ClientPostSession  />;
 }

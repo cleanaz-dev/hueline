@@ -36,7 +36,12 @@ export async function GET(req: Request, { params }: Params) {
         roomKey: true,
         clientName: true,
         sessionType: true,
-        domainId: true,
+        domain: {
+          select: {
+            id: true,
+            slug: true,
+          }
+        },
         booking:{
           include: {
             paintColors: true,
@@ -68,11 +73,13 @@ export async function GET(req: Request, { params }: Params) {
 
     // CREATE CONSISTENT METADATA OBJECT
     const roomMetadata = {
-      domainId: roomData.domainId,
+      domainId: roomData.domain.id,
       clientName: roomData.clientName,
       sessionType: roomData.sessionType,
       dbId: roomData.id,
-      booking: roomData?.booking || {}
+      booking: roomData?.booking || {},
+      slug: roomData.domain.slug,
+      huelineId: roomData.booking?.huelineId
     };
 
     // Create room if it doesn't exist
@@ -104,7 +111,7 @@ export async function GET(req: Request, { params }: Params) {
         clientName: roomData.clientName,
         type: roomData.sessionType,
         dbId: roomData.id,
-        domainId: roomData.domainId
+        domainId: roomData.domain.id
       }),
     });
 

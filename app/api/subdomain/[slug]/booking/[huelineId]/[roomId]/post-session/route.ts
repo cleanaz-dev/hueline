@@ -1,5 +1,6 @@
 import { getClientPostSession } from "@/lib/prisma/queries/post-session/get-client-post-session";
 import { NextResponse } from "next/server";
+import { success } from "zod";
 
 interface Params {
   params: Promise<{
@@ -14,17 +15,14 @@ export async function GET(req: Request, { params }: Params) {
     const { huelineId, roomId, slug } = await params;
 
     if (!huelineId || !roomId || !slug) {
-      return NextResponse.json(
-        { message: "Invalid Request" }, 
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
     const data = await getClientPostSession(huelineId, roomId);
 
     if (!data) {
       return NextResponse.json(
-        { message: "Post session not found" }, 
+        { message: "Post session not found" },
         { status: 404 }
       );
     }
@@ -33,7 +31,25 @@ export async function GET(req: Request, { params }: Params) {
   } catch (error) {
     console.error("Error fetching post session:", error);
     return NextResponse.json(
-      { message: "Internal Server Error" }, 
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: Request, { params }: Params) {
+  try {
+    const { huelineId, roomId, slug } = await params;
+
+    if (!huelineId || !roomId || !slug) {
+      return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error fetching post session:", error);
+    return NextResponse.json(
+      { message: "Internal Server Error" },
       { status: 500 }
     );
   }
