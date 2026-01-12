@@ -157,7 +157,7 @@ export const useSelfServe = (slug: string, roomId: string, huelineId: string) =>
 
       await videoTrack.restartTrack({
         facingMode: nextFacingMode,
-        resolution: VideoPresets.h2160.resolution
+        resolution: VideoPresets.h1080.resolution
       });
 
       const newSettings = videoTrack.mediaStreamTrack.getSettings();
