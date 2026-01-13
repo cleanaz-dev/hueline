@@ -8,6 +8,7 @@ import SubTransformationGallery from "./layout/sub-transformation-gallery";
 import SubDesignSummary from "./layout/sub-design-summary";
 import { SubCouponQuoteCards } from "./layout/sub-coupon-quote-card";
 import SubdomainNav from "./layout/subdomain-nav";
+import { BookingCTA } from "./layout/booking-cta";
 
 type Props = {
   booking: BookingData;
@@ -48,6 +49,9 @@ export default function SubDomainIdPage({ booking, subdomain }: Props) {
 
           {/* Quote Cards */}
           <SubCouponQuoteCards booking={booking} />
+
+          {/* CTA */}
+          <BookingCTA />
         </main>
       </div>
     </ScrollArea>
