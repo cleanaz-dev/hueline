@@ -27,7 +27,7 @@ export default function IntelligenceDialog({
   booking,
 }: IntelligenceDialogProps) {
   if (!isOpen) return null;
-  const { subdomain } = useOwner()
+  const { subdomain } = useOwner();
 
   // Get slug and roomId
   const slug = subdomain?.slug || "";
@@ -41,15 +41,15 @@ export default function IntelligenceDialog({
     () =>
       [...(booking.calls || [])].sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       ),
-    [booking.calls]
+    [booking.calls],
   );
 
   // 2. Calculate Stats
   const totalValue = sortedCalls.reduce(
     (sum, c) => sum + (c.intelligence?.estimatedAdditionalValue || 0),
-    0
+    0,
   );
 
   // Calculate Total Interactions (Calls + Rooms)
@@ -64,10 +64,10 @@ export default function IntelligenceDialog({
   // 4. Check data existence for empty state
   const hasCalls = sortedCalls.length > 0;
   const hasRooms = booking.rooms && booking.rooms.length > 0;
-  console.log("Sorted Calls:", sortedCalls)
+  console.log("Sorted Calls:", sortedCalls);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
@@ -75,7 +75,8 @@ export default function IntelligenceDialog({
       />
 
       {/* Modal Content */}
-      <div className="relative w-full h-full sm:h-auto sm:max-h-[85vh] sm:max-w-2xl bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative z-[10000] w-full h-full sm:h-auto sm:max-h-[85vh] sm:max-w-2xl bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* HEADER */}
         {/* HEADER */}
         <div className="shrink-0 flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white">
           <div>
@@ -118,10 +119,12 @@ export default function IntelligenceDialog({
           <div className="space-y-6">
             {/* COMPONENT: SITE SURVEY (Rooms) */}
             {loadingUrls ? (
-              <div className="text-center py-8 text-slate-400">Loading images...</div>
+              <div className="text-center py-8 text-slate-400">
+                Loading images...
+              </div>
             ) : (
-              <IntelRoom 
-                rooms={booking.rooms} 
+              <IntelRoom
+                rooms={booking.rooms}
                 presignedUrls={presignedUrls}
                 createdAt={booking.rooms?.[0]?.createdAt}
               />
