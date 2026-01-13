@@ -25,6 +25,17 @@ export default async function BookingRoomPage({ params }: Params) {
     return redirect(`/booking/${huelineId}`);
   }
   
+  // ✅ Check if room is completed in the database
+  const room = await prisma.room.findUnique({
+    where: { roomKey: roomId },
+    select: { status: true }
+  });
+
+  // If room is completed or expired, redirect to booking page
+  if (room && (room.status === "COMPLETED" || room.status === "EXPIRED")) {
+    return redirect(`/booking/${huelineId}`);
+  }
+  
   return (
     <RoomClient 
       roomId={roomId} 
