@@ -293,19 +293,16 @@ export const QuoteSurvey = ({ booking }: QuoteSurveyProps) => {
                   </div>
                   <div className="text-left">
                     <p className="text-xs font-semibold text-slate-800">
-                      Use your phone
-                    </p>
-                    <p className="text-[10px] text-slate-500">
-                      Easier to move around
+                      Please Use A Mobile Device
                     </p>
                   </div>
                 </div>
 
-                <Switch
+                {/* <Switch
                   checked={sendToMobile}
                   onCheckedChange={setSendToMobile}
                   className="data-[state=checked]:bg-blue-600"
-                />
+                /> */}
               </div>
 
               <div className="flex gap-3 w-full">
