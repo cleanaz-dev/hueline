@@ -9,7 +9,11 @@ import {
 import { Track, LocalVideoTrack, VideoPresets } from "livekit-client";
 import { ScopeItem } from "@/components/rooms/stage/self-serve-room-list";
 
-export const useSelfServe = (slug: string, roomId: string, huelineId: string) => {
+export const useSelfServe = (
+  slug: string,
+  roomId: string,
+  huelineId: string
+) => {
   const { room, laserPosition, activeMockupUrl, sendData } = useRoomContext();
   const { countdown, isCapturing } = useCameraEvents(slug, roomId);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -36,15 +40,14 @@ export const useSelfServe = (slug: string, roomId: string, huelineId: string) =>
     (t) => t.participant.isLocal && isTrackReference(t)
   ) as TrackReference | undefined;
 
-
   // --- ACTIONS ---
   const handleEndRoom = useCallback(async () => {
     console.log("🛑 END SIGNAL RECEIVED. CLOSING ROOM.");
     if (room) {
       await room.disconnect();
     }
-    window.location.href = `booking/${huelineId}/${roomId}/post-session`;
-  }, [room]);
+    window.location.href = `/booking/${huelineId}/${roomId}/post-session`; // ✅ Added leading /
+  }, [room, huelineId, roomId]); // ✅ Also added missing dependencies
 
   // --- EVENT LISTENER ---
   useEffect(() => {
@@ -94,7 +97,7 @@ export const useSelfServe = (slug: string, roomId: string, huelineId: string) =>
           };
           setScopes((prev) => [...prev, newItem]);
           setLastCapture({ path: data.data.image_path, area: data.data.area });
-          
+
           return;
         }
 
@@ -157,11 +160,17 @@ export const useSelfServe = (slug: string, roomId: string, huelineId: string) =>
 
       await videoTrack.restartTrack({
         facingMode: nextFacingMode,
-        resolution: VideoPresets.h1080.resolution
+        resolution: VideoPresets.h1080.resolution,
       });
 
       const newSettings = videoTrack.mediaStreamTrack.getSettings();
-      console.log("📸 Camera switched:", nextFacingMode, newSettings.width, "x", newSettings.height);
+      console.log(
+        "📸 Camera switched:",
+        nextFacingMode,
+        newSettings.width,
+        "x",
+        newSettings.height
+      );
     } catch (error) {
       console.error("Failed to switch camera:", error);
     }
