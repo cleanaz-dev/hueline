@@ -34,7 +34,7 @@ export function proxy(request: NextRequest) {
   }
 
   // ✅ EXCLUDE paths that should NOT be rewritten for subdomains
-  const excludedPaths = ['/login', '/signup', '/register', '/auth'];
+  const excludedPaths = ['/register', '/auth'];
   const shouldExclude = excludedPaths.some(path => pathname.startsWith(path));
   
   if (shouldExclude) {

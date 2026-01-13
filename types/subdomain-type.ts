@@ -47,23 +47,22 @@ export interface Room {
   clientPhone?: string | null;
   status: RoomStatus;
   
-  // Relations (Keep these as-is)
   creatorId: string | null;
   creator?: SubdomainUser | null;
   bookingId?: string | null;
   booking?: BookingData | null;
   domainId: string;
   domain?: Subdomain | null;
-  sessionType?: RoomType
+  sessionType?: RoomType | null;  // ✅ Changed from `| undefined` to `| null`
+  isProcessing?: boolean | null;   // ✅ Changed from `| null | undefined` to `| null`
+  agentDispatched?: boolean | null; // ✅ Add if missing
 
-  // 👇 THE FIX: Define the specific shape, don't use Prisma.JsonValue
-  scopeData?: Prisma.JsonValue
+  scopeData?: Prisma.JsonValue | null;  // ✅ Add | null
 
   recordingUrl?: string | null;
   transcript?: string | null;
   endedAt?: Date | string | null;
   
-  // Allow string for serialization (Next.js passes dates as strings to client)
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -131,7 +130,7 @@ export interface BookingData {
   lastInteraction?: string | null; // ✅ The new headline field
   lastVideoUrl?:     string | null;
   lastVideoAt? :     string | null;
-  selfServeCompletion?: boolean
+  selfServeCompletion?: boolean | null | undefined;
 
   // 3. Cumulative / Sticky (Profile Info)
   projectType?: string | null;
