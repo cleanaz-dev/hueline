@@ -89,7 +89,7 @@ export const BookingCTA = () => {
           </Button>
 
           <p className="text-[10px] text-center text-gray-400 mt-3 font-medium">
-            15-minute demo • No commitment required
+            30-minute demo • No commitment required
           </p>
         </div>
       </div>
