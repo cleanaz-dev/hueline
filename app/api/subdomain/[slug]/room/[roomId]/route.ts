@@ -3,7 +3,7 @@ import { setRoomKey } from "@/lib/redis/services/room";
 import { RoomData } from "@/types/room-types";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/auth"; // Ensure this path is correct
 import { createRoomLog } from "@/lib/prisma/mutations/logs/create-room-log";
 
 interface Params {
@@ -23,22 +23,34 @@ export async function POST(req: Request, { params }: Params) {
   }
   
   try {
-    // 1. AUTHENTICATION (Strict: Must be a logged-in User)
+    // 1. AUTHENTICATION & SESSION CHECK
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+
+    const userEmail = session?.user?.email;
+    // Check if they are authenticated via PIN (Client)
+    const isPinAuth = !!session?.user?.huelineId; 
+
+    // If neither email auth nor PIN auth, reject
+    if (!userEmail && !isPinAuth) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     
-    const user = await prisma.subdomainUser.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    });
-    
-    if (!user) {
-      return NextResponse.json({ message: "User not found" }, { status: 403 });
+    // 2. RESOLVE USER (Only if Email Auth)
+    let userId: string | null = null;
+
+    if (userEmail) {
+      const user = await prisma.subdomainUser.findUnique({
+        where: { email: userEmail },
+        select: { id: true },
+      });
+      
+      if (!user) {
+        return NextResponse.json({ message: "User not found" }, { status: 403 });
+      }
+      userId = user.id;
     }
     
-    // 2. GET SUBDOMAIN
+    // 3. GET SUBDOMAIN
     const subdomain = await prisma.subdomain.findUnique({
       where: { slug },
       select: { id: true },
@@ -51,39 +63,48 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
     
-    // 3. REDIS (Hot Storage - Saves everything passed from frontend)
+    // 4. REDIS (Hot Storage)
     await setRoomKey(roomId, body);
     
-    // 4. DATABASE (Cold Storage)
-    const room = await prisma.room.create({
-      data: {
+    // 5. DATABASE (Cold Storage)
+    // We strictly define the data object to handle conditional creator
+    const roomCreateData: any = {
         roomKey: roomId,
         domain: { connect: { id: subdomain.id } },
-        creator: { connect: { id: user.id } },
         // Add sessionType
         ...(body.sessionType && { sessionType: body.sessionType }),
-        // OPTIONAL: Only add Client Name if provided
+        // Client Info
         ...(body.clientName && { clientName: body.clientName }),
-        // OPTIONAL: Only add Client Phone if provided
         ...(body.clientPhone && { clientPhone: body.clientPhone }),
-        // OPTIONAL: Only connect Booking if it exists
+        // Booking Connection
         ...(body.bookingId && {
           booking: { connect: { id: body.bookingId } },
         }),
-      },
+    };
+
+    // 🛑 CRITICAL CHANGE: Only connect 'creator' if we actually have a userId (Account Owner).
+    // If it's a PIN Client, this field is skipped (assuming your Prisma schema allows creator to be optional or you rely on 'booking' relation).
+    if (userId) {
+        roomCreateData.creator = { connect: { id: userId } };
+    }
+
+    const room = await prisma.room.create({
+      data: roomCreateData,
     });
     
-    // 5. ✅ CREATE LOG
+    // 6. ✅ CREATE LOG
     await createRoomLog({
       subdomainId: subdomain.id,
       roomKey: roomId,
       dbRoomId: room.id,
-      actorEmail: session.user.email,
+      // Fallback for PIN users who don't have emails
+      actorEmail: userEmail || `Client-PIN-${session?.user?.huelineId}`,
       clientName: body.clientName,
       bookingDataId: body.bookingId,
     });
     
     return NextResponse.json({ success: true, id: room.id }, { status: 200 });
+
   } catch (error) {
     console.error("Create Room Error:", error);
     return NextResponse.json(
