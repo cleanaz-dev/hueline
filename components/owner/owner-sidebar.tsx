@@ -31,9 +31,9 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarRail,
+  SidebarSeparator,
   SidebarTrigger,
   SidebarInset,
-  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -84,7 +84,7 @@ function AppSidebar() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground transition-all"
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-accent text-white shadow-md">
-                {subdomain.companyName?.slice(0,1)}
+                {subdomain.companyName?.slice(0, 1)}
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold tracking-tight">
@@ -124,20 +124,6 @@ function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {/* <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel>Settings</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="">
-                  <Plus className="size-4" />
-                  <span>New Estimate</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup> */}
       </SidebarContent>
 
       <SidebarFooter>
@@ -234,7 +220,6 @@ export default function OwnerSidebar({
   const { subdomain } = useOwner();
   const pathname = usePathname();
 
-  // ✅ LOGIC: Get the last part of the URL for the Breadcrumb
   const pageTitle =
     pathname.split("/").pop()?.replace(/-/g, " ") || "Dashboard";
   const formattedTitle = pageTitle.charAt(0).toUpperCase() + pageTitle.slice(1);
@@ -243,14 +228,13 @@ export default function OwnerSidebar({
     <SidebarProvider>
       <AppSidebar />
 
-      <SidebarInset className="bg-background flex flex-col h-full">
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border/40 px-4 md:px-6 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 sticky top-0 z-10 bg-background/80 backdrop-blur-md">
+      <SidebarInset className="flex flex-col overflow-hidden">
+        {/* Fixed Header */}
+        <header className="flex-shrink-0 h-16 flex items-center gap-2 border-b border-border/40 px-4 md:px-6 bg-background">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
             <SidebarSeparator orientation="vertical" className="mr-2 h-4" />
 
-            {/* ✅ DYNAMIC BREADCRUMB */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="font-medium text-foreground hidden sm:block">
                 {subdomain.companyName}
@@ -282,13 +266,15 @@ export default function OwnerSidebar({
             </button>
           </div>
         </header>
-        {/* ✅ CONTENT AREA - FIXED FOR MOBILE */}
-        {/* Mobile: p-0 (Full Bleed). Desktop: p-6 (Card Style). */}
-        <div className="flex flex-1 flex-col p-0 md:p-4 overflow-hidden">
-          <div className="flex-1 bg-muted/10 md:rounded-xl md:border md:border-border/40 p-0 md:p-4 overflow-auto">
-            {children}
+
+        {/* Scrollable Content Area */}
+        <main className="flex-1 overflow-auto bg-background">
+          <div className="h-full p-4 md:p-6">
+            <div className="h-full bg-muted/10 rounded-xl border border-border/40 p-4 md:p-6 overflow-auto">
+              {children}
+            </div>
           </div>
-        </div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );
