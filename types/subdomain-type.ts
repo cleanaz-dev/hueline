@@ -1,4 +1,4 @@
-import { Prisma } from "@/app/generated/prisma";
+import { Prisma, RoomType } from "@/app/generated/prisma";
 import { 
   CallReason, 
   CallOutcome, 
@@ -54,6 +54,7 @@ export interface Room {
   booking?: BookingData | null;
   domainId: string;
   domain?: Subdomain | null;
+  sessionType?: RoomType
 
   // 👇 THE FIX: Define the specific shape, don't use Prisma.JsonValue
   scopeData?: Prisma.JsonValue
@@ -130,6 +131,7 @@ export interface BookingData {
   lastInteraction?: string | null; // ✅ The new headline field
   lastVideoUrl?:     string | null;
   lastVideoAt? :     string | null;
+  selfServeCompletion?: boolean
 
   // 3. Cumulative / Sticky (Profile Info)
   projectType?: string | null;

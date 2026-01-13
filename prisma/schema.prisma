@@ -186,6 +186,9 @@ model SubBookingData {
   lastInteraction     String? // The new "Pulse" headline
   selfServeCompletion Boolean?    @default(false)
 
+
+  
+
   // 3. STICKY / ACCUMULATIVE (Builds up over time)
   projectType    String? // e.g. "Residential"
   projectScope   String[] // ✅ Renamed & Array (e.g. ["Interior", "Cabinets"])

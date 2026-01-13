@@ -1,10 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { CheckCircle2, Palette, Image as ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BookingData } from "@/types/subdomain-type";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
+import { ColorPalette } from "./color-palette";
 
 interface ProjectOverviewProps {
   booking: BookingData;
@@ -13,6 +15,21 @@ interface ProjectOverviewProps {
 }
 
 export function ProjectOverview({ booking, logoSrc, presignedUrls }: ProjectOverviewProps) {
+  const validImages = booking.mockups
+    ?.map((m) => ({
+      id: m.id,
+      url: presignedUrls[m.s3Key],
+    }))
+    .filter((img) => img.url) || [];
+
+  const [activeImage, setActiveImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (validImages.length > 0 && !activeImage) {
+      setActiveImage(validImages[0].url);
+    }
+  }, [validImages, activeImage]);
+
   return (
     <div className="bg-white border-b border-zinc-200">
       <div className="flex justify-center pt-6">
@@ -25,101 +42,101 @@ export function ProjectOverview({ booking, logoSrc, presignedUrls }: ProjectOver
           priority
         />
       </div>
+      
       <div className="max-w-3xl mx-auto px-4 md:px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-              Project Overview
+              Post Session
             </h1>
             <p className="text-zinc-500 text-sm">
-              Reviewing details for{" "}
-              <span className="font-semibold text-purple-600">
+              Reviewing details for your {" "}
+              <span className="font-semibold text-primary">
                 {booking.projectType || "Interior Paint"}
               </span>
+              {""} project.
             </p>
           </div>
-          <Badge
-            variant="outline"
-            className="bg-green-50 text-green-700 border-green-200 px-3 py-1"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-            Session Complete
-          </Badge>
+          <div className="self-start sm:self-auto">
+            <Badge
+              variant="outline"
+              className="bg-green-50 text-green-700 border-green-200 px-3 py-1"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+              Session Complete
+            </Badge>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Inspiration Gallery */}
-          <div className="md:col-span-2 space-y-3">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-              <ImageIcon className="w-3 h-3" /> Inspiration & Vibe
-            </h3>
-            {booking.mockups && booking.mockups.length > 0 ? (
-              <div className="grid grid-cols-3 gap-2 h-48">
-                {/* Hero Image */}
-                <div className="col-span-2 row-span-2 relative rounded-xl overflow-hidden group border border-zinc-100">
+        {/* --- MAIN CONTENT ROW (Always Flex Row) --- */}
+        <div className="flex flex-row gap-4 items-start">
+          
+          {/* LEFT: Main Image & Thumbnails (Takes remaining space) */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <ImageIcon className="w-3.5 h-3.5 text-zinc-400" />
+              <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                 Inspiration
+              </h3>
+            </div>
+
+            {validImages.length > 0 && activeImage ? (
+              <div className="space-y-2">
+                {/* Main Hero Image */}
+                <div className="relative w-full aspect-video bg-zinc-100 rounded-lg overflow-hidden border border-zinc-200 shadow-sm">
                   <img
-                    src={
-                      presignedUrls[booking.mockups[0].s3Key] ||
-                      "https://placehold.co/800"
-                    }
+                    src={activeImage}
                     alt="Main inspiration"
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    className="w-full h-full object-cover"
                   />
                 </div>
-                {/* Secondary Images */}
-                {booking.mockups.slice(1, 3).map((mockup, i) => (
-                  <div
-                    key={mockup.id}
-                    className="rounded-xl overflow-hidden relative border border-zinc-100"
-                  >
-                    <img
-                      src={
-                        presignedUrls[mockup.s3Key] ||
-                        "https://placehold.co/400"
-                      }
-                      alt={`Inspiration ${i + 2}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
+
+                {/* Thumbnails */}
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  {validImages.map((img) => (
+                    <button
+                      key={img.id}
+                      onClick={() => setActiveImage(img.url)}
+                      className={cn(
+                        "relative flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-md overflow-hidden border-2 transition-all",
+                        activeImage === img.url
+                          ? "border-primary ring-2 ring-primary/20 opacity-100"
+                          : "border-transparent opacity-60 hover:opacity-100 hover:border-zinc-300"
+                      )}
+                    >
+                      <img
+                        src={img.url}
+                        alt="Thumbnail"
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="h-48 bg-zinc-100 rounded-xl flex items-center justify-center text-zinc-400 border border-zinc-200 border-dashed">
-                No mockup images available
+              <div className="aspect-video bg-zinc-50 rounded-lg flex items-center justify-center text-zinc-400 border border-zinc-200 border-dashed">
+                <p className="text-xs">No images</p>
               </div>
             )}
           </div>
 
-          {/* Color Palette */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-              <Palette className="w-3 h-3" /> Selected Palette
-            </h3>
-            <div className="bg-zinc-50 rounded-xl p-4 border border-zinc-200 space-y-3 h-48 overflow-y-auto">
-              {booking.paintColors && booking.paintColors.length > 0 ? (
-                booking.paintColors.map((color) => (
-                  <div key={color.id} className="flex items-center gap-3">
-                    <div
-                      className="w-8 h-8 rounded-full border border-zinc-200 shadow-sm shrink-0"
-                      style={{ backgroundColor: color.hex }}
-                    />
-                    <div className="text-sm">
-                      <p className="font-medium text-zinc-900 leading-none mb-1">
-                        {color.name}
-                      </p>
-                      <p className="text-[10px] text-zinc-400 font-mono">
-                        {color.hex}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-zinc-400 text-center py-8">
-                  No colors selected
-                </p>
-              )}
+          {/* RIGHT: Palette Component (Fixed Width, Minimal Style) */}
+          {/* w-28 on mobile fits about 100px of content, perfect for name only */}
+          <div className="w-28 sm:w-48 shrink-0">
+            <div className="flex items-center gap-2 mb-2">
+              <Palette className="w-3.5 h-3.5 text-zinc-400" />
+              <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                Palette
+              </h3>
             </div>
+            
+            <ColorPalette 
+              colors={booking.paintColors} 
+              variant="minimal" 
+            />
           </div>
+
         </div>
       </div>
     </div>

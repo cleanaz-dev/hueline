@@ -43,7 +43,7 @@ export const useSelfServe = (slug: string, roomId: string, huelineId: string) =>
     if (room) {
       await room.disconnect();
     }
-    window.location.href = `booking/${huelineId}/room/${roomId}/post-session`;
+    window.location.href = `booking/${huelineId}/${roomId}/post-session`;
   }, [room]);
 
   // --- EVENT LISTENER ---

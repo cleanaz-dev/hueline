@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import {
   Sparkles,
   Lock,
-  ChevronRight,
   ScanFace,
   CheckCircle2,
   ArrowRight,
   Smartphone,
   Send,
   Loader2,
+  FileText,
+  Eye,
+  ScanLine
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,28 +31,40 @@ export const QuoteSurvey = ({ booking }: QuoteSurveyProps) => {
   const [showDialog, setShowDialog] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isSendingSMS, setIsSendingSMS] = useState(false);
-  const [sendToMobile, setSendToMobile] = useState(false); // Toggle State
+  const [sendToMobile, setSendToMobile] = useState(false);
+  
   const router = useRouter();
   const { subdomain } = useBooking();
 
-  // --- HANDLER: Start Survey Immediately ---
+  // --- LOGIC: Find the specific Self-Serve Room ---
+  const selfServeRoom = useMemo(() => {
+    if (!booking.rooms || booking.rooms.length === 0) return null;
+    const selfServeRooms = booking.rooms.filter(
+      (r) => r.sessionType === "SELF_SERVE"
+    );
+    if (selfServeRooms.length === 0) return null;
+    return selfServeRooms.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )[0];
+  }, [booking.rooms]);
+
+  // --- HANDLER: Start New Survey ---
   const handleStartSurvey = async () => {
     if (isCreating) return;
 
     try {
       setIsCreating(true);
-
       const today = new Date();
       const dateStr = `${String(today.getMonth() + 1).padStart(2, "0")}${String(
         today.getDate()
       ).padStart(2, "0")}${today.getFullYear()}`;
       const slug = booking.name.toLowerCase().replace(/\s+/g, "");
-      const roomId = `${slug}-survey-${dateStr}-${Math.random()
+      const roomKey = `${slug}-survey-${dateStr}-${Math.random()
         .toString(36)
         .substring(2, 6)}`;
 
       const response = await axios.post(
-        `/api/subdomain/${subdomain.slug}/room/${roomId}`,
+        `/api/subdomain/${subdomain.slug}/room/${roomKey}`,
         {
           bookingId: booking.id,
           roomName: `AI Property Survey - ${booking.name}`,
@@ -61,7 +75,7 @@ export const QuoteSurvey = ({ booking }: QuoteSurveyProps) => {
       );
 
       if (response.data) {
-        router.push(`/booking/${booking.huelineId}/${roomId}`);
+        router.push(`/booking/${booking.huelineId}/${roomKey}`);
       }
     } catch (error) {
       console.error("Error creating survey room:", error);
@@ -70,17 +84,23 @@ export const QuoteSurvey = ({ booking }: QuoteSurveyProps) => {
     }
   };
 
-  // --- HANDLER: Send SMS Link ---
+  const handleViewResults = () => {
+    if (selfServeRoom && selfServeRoom.roomKey) {
+      router.push(`/booking/${booking.huelineId}/${selfServeRoom.roomKey}/post-session`);
+    } else {
+      toast.error("Survey data not found.");
+    }
+  };
+
   const handleSendSMS = async () => {
     if (isSendingSMS) return;
-
     try {
       setIsSendingSMS(true);
       await axios.post(
         `/api/subdomain/${subdomain.slug}/booking/${booking.huelineId}/send-self-serve-sms`
       );
       toast.success("Survey link sent to your mobile device!");
-      setShowDialog(false); // Close dialog on success
+      setShowDialog(false);
     } catch (error) {
       console.error("Error sending SMS:", error);
       toast.error("Failed to send SMS. Please try again.");
@@ -89,100 +109,149 @@ export const QuoteSurvey = ({ booking }: QuoteSurveyProps) => {
     }
   };
 
+  const isCompleted = booking.selfServeCompletion && selfServeRoom;
+
   return (
     <>
       <Card className="relative overflow-hidden border-0 bg-white shadow-xl shadow-blue-900/10 rounded-3xl flex flex-col h-full transform transition-all hover:translate-y-[-2px]">
-        {/* BACKGROUND DECORATION */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-
-        {/* MAIN CONTAINER */}
-        <div className="p-6 md:p-8 flex-1 flex flex-col relative z-10">
-          {/* HEADER: AI PERSONA */}
-          <div className="flex items-start gap-4 mb-6">
-            <div className="relative">
-              <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white shadow-lg ring-1 ring-slate-100">
-                <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white">
-                  <ScanFace size={28} />
-                </div>
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full flex items-center justify-center">
-                <Sparkles size={10} className="text-white fill-current" />
-              </div>
-            </div>
-            <div className="flex-1 pt-1">
-              <h3 className="text-lg font-bold text-slate-900 leading-tight">
-                Hi, {booking.name.split(" ")[0]}.
-              </h3>
-              <p className="text-sm text-slate-500 mt-1 leading-snug">
-                Ready for a quick pre-site survey?
+        {/* Top Accent Bar (matches coupon card implied structure) */}
+        
+        <div className="p-6 md:p-8 flex-1 flex flex-col">
+          
+          {/* --- HEADER SECTION --- */}
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-1">
+                AI Property Scan
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">
+                {isCompleted ? "Analysis Ready" : "Start Survey"}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1 font-medium">
+                {isCompleted ? "Scope & Snapshots captured" : "Video guided walkthrough"}
               </p>
             </div>
+            
+            {/* Status Badge */}
+            {isCompleted ? (
+              <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-full border border-green-100 shadow-sm">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span className="font-mono text-xs font-bold uppercase">Done</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm">
+                <ScanLine className="w-3.5 h-3.5" />
+                <span className="font-mono text-xs font-bold uppercase">Pending</span>
+              </div>
+            )}
           </div>
 
-          {/* MIDDLE: LOCKED PRICING */}
+          {/* --- MIDDLE SECTION (CONTENT) --- */}
           <div className="flex-1 flex flex-col justify-center space-y-6">
-            <div
-              className="bg-slate-50 rounded-2xl border border-slate-100 p-1 relative overflow-hidden group cursor-pointer h-full min-h-[140px]"
-              onClick={() => setShowDialog(true)}
-            >
-              {/* Blurred Content */}
-              <div className="p-5 filter blur-[6px] opacity-60 select-none grayscale-[50%] transition-all duration-500 group-hover:blur-[4px] h-full flex flex-col justify-center">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="h-4 w-32 bg-slate-300 rounded" />
-                  <div className="h-4 w-16 bg-slate-300 rounded" />
-                </div>
-                <div className="space-y-3 mb-6">
-                  <div className="h-3 w-full bg-slate-200 rounded" />
-                  <div className="h-3 w-3/4 bg-slate-200 rounded" />
-                </div>
-                <div className="flex justify-between items-end border-t border-slate-200 pt-4">
-                  <div className="h-4 w-24 bg-slate-300 rounded" />
-                  <div className="h-8 w-28 bg-slate-400 rounded" />
-                </div>
+            
+            {isCompleted ? (
+              /* COMPLETED STATE VISUAL */
+              <div className="bg-gray-50 rounded-xl p-6 border border-dashed border-gray-200 flex flex-col items-center justify-center text-center space-y-3">
+                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100">
+                    <FileText className="w-6 h-6 text-green-600" />
+                 </div>
+                 <div>
+                   <h4 className="font-bold text-gray-900">Data Processed</h4>
+                   <p className="text-xs text-gray-500">Your measurements are locked in.</p>
+                 </div>
               </div>
+            ) : (
+              /* PENDING STATE VISUAL (LOCKED INVOICE LOOK) */
+              <div 
+                onClick={() => setShowDialog(true)}
+                className="bg-gray-50 rounded-xl p-4 border border-dashed border-gray-200 relative overflow-hidden group cursor-pointer"
+              >
+                 {/* Blurred "Fake" Invoice Data */}
+                 <div className="filter blur-[3px] opacity-50 grayscale transition-all duration-300 group-hover:blur-[2px]">
+                    <div className="flex justify-between items-center mb-4">
+                       <div className="h-3 w-24 bg-gray-300 rounded" />
+                       <div className="h-3 w-12 bg-gray-300 rounded" />
+                    </div>
+                    <div className="space-y-2 mb-4">
+                       <div className="h-2 w-full bg-gray-200 rounded" />
+                       <div className="h-2 w-3/4 bg-gray-200 rounded" />
+                    </div>
+                    <div className="flex justify-between items-end border-t border-gray-200 pt-2">
+                       <div className="h-3 w-16 bg-gray-300 rounded" />
+                       <div className="h-6 w-20 bg-gray-400 rounded" />
+                    </div>
+                 </div>
 
-              {/* Overlay Lock with Updated Text */}
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/30 backdrop-blur-[2px] transition-colors group-hover:bg-white/10">
-                <div className="bg-white p-3 rounded-full shadow-xl shadow-blue-900/10 mb-2 transform group-hover:scale-110 transition-transform duration-300">
-                  <Lock className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg flex items-center gap-1">
-                  Get your quote faster!
-                </div>
+                 {/* Lock Overlay */}
+                 <div className="absolute inset-0 z-10 flex items-center justify-center">
+                    <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-gray-100 flex items-center gap-2 transform group-hover:scale-105 transition-all">
+                       <Lock className="w-3 h-3 text-blue-600" />
+                       <span className="text-xs font-bold text-gray-900">Get Quote Faster</span>
+                    </div>
+                 </div>
               </div>
+            )}
+            
+            {/* Info Text Area (Matches the 'Promo Code' label area in neighbor) */}
+            <div>
+               <label className="text-xs font-bold text-gray-900 mb-2 block uppercase tracking-wide">
+                 {isCompleted ? "Next Step" : "Requirement"}
+               </label>
+               <div className="w-full p-3 bg-white border-2 border-gray-100 rounded-xl flex items-center gap-3 text-gray-600">
+                  {isCompleted ? (
+                    <>
+                      <Eye className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm font-medium">Review AI Findings</span>
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm font-medium">Mobile Camera Access</span>
+                    </>
+                  )}
+               </div>
             </div>
+
           </div>
 
-          {/* FOOTER: ACTION AREA */}
+          {/* --- FOOTER SECTION (BUTTONS) --- */}
           <div className="mt-8 pt-4">
-            <Button
-              onClick={() => setShowDialog(true)}
-              disabled={isCreating}
-              className="w-full h-12 bg-green-500 hover:bg-gray-800 text-white rounded-xl font-semibold shadow-lg shadow-gray-200 transition-all hover:shadow-xl group"
-            >
-              Start Survey{" "}
-              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-
-            <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-gray-400 font-medium">
-              <span className="flex items-center gap-1">
-                <CheckCircle2 size={12} className="text-green-500" /> No payment
-                required
-              </span>
-              <span className="flex items-center gap-1">
-                <CheckCircle2 size={12} className="text-green-500" /> Takes ~3
-                mins
-              </span>
-            </div>
+             {isCompleted ? (
+                <Button 
+                  onClick={handleViewResults}
+                  className="w-full h-12 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-semibold shadow-lg shadow-gray-200 transition-all hover:shadow-xl group"
+                >
+                  View Session Results <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+             ) : (
+                <Button
+                  onClick={() => setShowDialog(true)}
+                  disabled={isCreating}
+                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all hover:shadow-xl group"
+                >
+                  Begin AI Survey <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+             )}
+             
+            <p className="text-[10px] text-center text-gray-400 mt-3 font-medium">
+              {isCompleted 
+                ? "Generated by HueLine AI" 
+                : "Takes approx 3 mins. No payment required."
+              }
+            </p>
           </div>
         </div>
       </Card>
 
-      {/* SURVEY DIALOG */}
+      {/* --- DIALOG (UNCHANGED LOGIC, JUST STYLING TWEAKS) --- */}
       {showDialog && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="px-6 md:px-8 pt-6 md:pt-10 pb-6 md:pb-8 text-center">
+              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <ScanFace size={24} />
+              </div>
+              
               <h3 className="text-xl font-bold text-slate-900 mb-2">
                 Let&apos;s take a quick look
               </h3>
@@ -214,19 +283,12 @@ export const QuoteSurvey = ({ booking }: QuoteSurveyProps) => {
                     </li>
                   ))}
                 </ul>
-
-                <div className="border-t border-slate-200 pt-3">
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Avoid recording people, faces, personal items, or sensitive
-                    information.
-                  </p>
-                </div>
               </div>
 
               {/* SEND TO MOBILE TOGGLE */}
-              <div className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl p-3 mb-5">
+              <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-3 mb-5 shadow-sm">
                 <div className="flex items-center gap-2.5">
-                  <div className="bg-white p-1.5 rounded-lg border border-slate-200 shadow-sm text-slate-600">
+                  <div className="bg-slate-50 p-1.5 rounded-lg text-slate-600">
                     <Smartphone size={16} />
                   </div>
                   <div className="text-left">
@@ -242,7 +304,7 @@ export const QuoteSurvey = ({ booking }: QuoteSurveyProps) => {
                 <Switch
                   checked={sendToMobile}
                   onCheckedChange={setSendToMobile}
-                  className="data-[state=checked]:bg-indigo-600"
+                  className="data-[state=checked]:bg-blue-600"
                 />
               </div>
 
@@ -261,7 +323,7 @@ export const QuoteSurvey = ({ booking }: QuoteSurveyProps) => {
                   className={`flex-1 py-3 rounded-xl text-white font-bold text-sm transition-colors shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 ${
                     sendToMobile
                       ? "bg-slate-900 hover:bg-slate-800 shadow-slate-200"
-                      : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200"
+                      : "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
                   }`}
                 >
                   {isCreating || isSendingSMS ? (
