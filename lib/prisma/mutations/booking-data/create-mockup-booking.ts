@@ -1,7 +1,6 @@
 //lib/prisma/mutations/booking-data/create-mockup-booking.ts
 import { prisma } from "../../config";
 
-
 interface MockupUrl {
   s3_key: string;
   room_type: string;
@@ -35,7 +34,7 @@ interface CreateMockupBookingPayload {
   alternate_colors: PaintColor[];
   dimensions: string;
   date_time: string;
-  pin: string 
+  pin: string;
   call_sid: string;
 }
 
@@ -56,6 +55,7 @@ export async function createMockupBooking(payload: CreateMockupBookingPayload) {
     pin,
   } = payload;
 
+  console.log("Creating Mockup Booking for:", payload);
 
   // Calculate expires at (3 days from now in seconds)
   const expiresAt = Math.floor(Date.now() / 1000) + 259200;
