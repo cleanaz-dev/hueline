@@ -1,26 +1,39 @@
-// components/subdomains/layout/client-download-page.tsx
 "use client";
 
 import { useBooking } from "@/context/booking-context";
-import {
-  Download,
-  CheckCircle,
-  Clock,
-  XCircle,
-  FileArchive,
-} from "lucide-react";
+import { Download, CheckCircle, Clock, XCircle, FileArchive } from "lucide-react";
 import { useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
+import useSWR from "swr";
 import type { Export } from "@/types/subdomain-type";
 import SubdomainNav from "./subdomain-nav";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function ClientDownloadPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const { subdomain, booking, isLoading } = useBooking();
 
+  // SWR polling - only poll if there are processing exports
+  const hasProcessingExports = booking?.exports?.some(
+    (e) => e.status === "processing"
+  );
+
+  const { data: exportUpdates } = useSWR(
+    hasProcessingExports ? `/api/exports/${booking?.id}` : null,
+    fetcher,
+    {
+      refreshInterval: 3000, // Poll every 3 seconds
+      dedupingInterval: 2000,
+      focusThrottleInterval: 5000,
+    }
+  );
+
+  // Merge SWR data with booking exports
+  const exports: Export[] = exportUpdates?.exports || booking?.exports || [];
+
   const handleDownload = async (downloadUrl: string, exportId: string) => {
     if (!downloadUrl) return;
-
     setDownloadingId(exportId);
     try {
       window.location.href = downloadUrl;
@@ -28,8 +41,6 @@ export default function ClientDownloadPage() {
       setTimeout(() => setDownloadingId(null), 2000);
     }
   };
-
-  const exports: Export[] = booking?.exports || [];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -107,12 +118,9 @@ export default function ClientDownloadPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <SubdomainNav data={subdomain} miniNav={false} />
 
-      {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-6 md:py-10">
-        {/* Page Header */}
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             Downloads
@@ -122,7 +130,6 @@ export default function ClientDownloadPage() {
           </p>
         </div>
 
-        {/* Empty State */}
         {exports.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-200 p-8 md:p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -137,7 +144,6 @@ export default function ClientDownloadPage() {
           </div>
         )}
 
-        {/* Exports List */}
         {exports.length > 0 && (
           <div className="space-y-4">
             {exports.map((exportItem) => (
@@ -146,7 +152,6 @@ export default function ClientDownloadPage() {
                 className="bg-white rounded-xl border border-gray-200 p-4 md:p-6 hover:shadow-md transition-shadow"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  {/* Left: Export Info */}
                   <div className="flex items-start gap-3 md:gap-4 flex-1 min-w-0">
                     <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                       <FileArchive className="w-6 h-6 text-gray-600" />
@@ -174,7 +179,7 @@ export default function ClientDownloadPage() {
                           <>
                             <span className="text-gray-300">•</span>
                             <span className="text-green-600">
-                              {formatTimeAgo(exportItem.completedAt)}{""} ago
+                              {formatTimeAgo(exportItem.completedAt)} ago
                             </span>
                           </>
                         )}
@@ -182,7 +187,6 @@ export default function ClientDownloadPage() {
                     </div>
                   </div>
 
-                  {/* Right: Action Button */}
                   <div className="flex-shrink-0">
                     {exportItem.status === "complete" &&
                     exportItem.downloadUrl ? (
