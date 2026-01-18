@@ -187,7 +187,7 @@ export interface CallFlow {
 
 export interface Export {
   id: string;
-  jobId: string;
+  jobId: string | null;
   bookingId: string;
   resolution: string;
   imageCount: number;
