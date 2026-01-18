@@ -4,7 +4,7 @@ import { render } from '@react-email/render';
 import { SubscriptionEmail } from '@/lib/config/email-config';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
+  apiVersion: '2025-10-29.clover',
 });
 
 // Define a safe interface for custom fields
