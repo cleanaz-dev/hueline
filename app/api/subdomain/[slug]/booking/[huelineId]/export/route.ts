@@ -3,7 +3,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { getPresignedUrl } from "@/lib/aws/s3";
 import { prisma } from "@/lib/prisma";
 import { SaveJobIdData } from "@/lib/prisma/mutations/export-data/save-job-id-data";
 
@@ -31,7 +30,7 @@ export async function POST(req: Request, { params }: Params) {
     if (!imageKeys?.length || !resolution || !phone) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -46,7 +45,7 @@ export async function POST(req: Request, { params }: Params) {
     if (!subdomain) {
       return NextResponse.json(
         { error: "Invalid Data Requst" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -90,7 +89,7 @@ export async function POST(req: Request, { params }: Params) {
     console.error("Export error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
