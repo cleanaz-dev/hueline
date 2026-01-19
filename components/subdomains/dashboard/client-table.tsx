@@ -83,7 +83,7 @@ export default function ClientTable() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState<string | null>(null);
   const [presignedUrls, setPresignedUrls] = useState<Record<string, string>>(
-    {}
+    {},
   );
   // videoOpenId state was unused in original logic provided, but keeping if needed for extensions
   const [videoOpenId, setVideoOpenId] = useState<string | null>(null);
@@ -106,7 +106,7 @@ export default function ClientTable() {
       try {
         setIsLoadingAudio(huelineId);
         const response = await fetch(
-          `/api/subdomain/${subdomain.slug}/call/last?huelineId=${huelineId}`
+          `/api/subdomain/${subdomain.slug}/call/last?huelineId=${huelineId}`,
         );
         const data = await response.json();
 
@@ -120,7 +120,7 @@ export default function ClientTable() {
         setIsLoadingAudio(null);
       }
     },
-    [playingId, presignedUrls, subdomain.slug]
+    [playingId, presignedUrls, subdomain.slug],
   );
 
   const tableData = useMemo(() => {
@@ -142,7 +142,7 @@ export default function ClientTable() {
         totalHiddenValue: (b.calls || []).reduce(
           (sum, call) =>
             sum + (call.intelligence?.estimatedAdditionalValue || 0),
-          0
+          0,
         ),
       };
     });
@@ -400,7 +400,7 @@ export default function ClientTable() {
       isLoadingAudio,
       presignedUrls,
       handlePlayPause,
-    ]
+    ],
   );
 
   const table = useReactTable({
@@ -447,40 +447,45 @@ export default function ClientTable() {
       </div>
 
       {/* --- DESKTOP VIEW --- */}
-      <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4">
-        <table className="w-full">
-          <thead className="bg-gray-50/50 border-b border-gray-200">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="hover:bg-gray-50/80 transition-colors"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm mb-4">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full">
+            <thead className="bg-gray-50/50 border-b border-gray-200">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="hover:bg-gray-50/80 transition-colors"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* --- MOBILE VIEW COMPONENT --- */}
