@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { SaveJobIdData } from "@/lib/prisma/mutations/export-data/save-job-id-data";
+import { headers } from "next/headers";
 
 interface Params {
   params: Promise<{
@@ -13,19 +13,18 @@ interface Params {
   }>;
 }
 
+// Create new export job
 export async function POST(req: Request, { params }: Params) {
   const { huelineId, slug } = await params;
 
   try {
-    // 1. Auth check
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Get body
     const body = await req.json();
-    const { imageKeys, resolution, phone } = body; // imageKeys = ["mockups/123/image1.jpg", ...]
+    const { imageKeys, resolution, phone } = body;
 
     if (!imageKeys?.length || !resolution || !phone) {
       return NextResponse.json(
@@ -44,12 +43,22 @@ export async function POST(req: Request, { params }: Params) {
 
     if (!subdomain) {
       return NextResponse.json(
-        { error: "Invalid Data Requst" },
+        { error: "Invalid Data Request" },
         { status: 400 },
       );
     }
 
-    // 4. Call Lambda
+    // Get booking ID
+    const booking = await prisma.subBookingData.findUnique({
+      where: { huelineId },
+      select: { id: true },
+    });
+
+    if (!booking) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+
+    // Call Lambda
     const lambdaResponse = await fetch(process.env.LAMBDA_EXPORT_URL!, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -63,22 +72,23 @@ export async function POST(req: Request, { params }: Params) {
         twilio_from: subdomain.twilioPhoneNumber,
       }),
     });
+
     if (!lambdaResponse.ok) {
       throw new Error("Lambda request failed");
     }
 
     const { job_id } = await lambdaResponse.json();
-    console.log("Job Id:", job_id);
 
-    const jobIdData = {
-      jobId: job_id,
-      huelineId,
-      resolution,
-      imageKeys: imageKeys.length, // Fixed
-      status: "processing",
-    };
-
-    await SaveJobIdData(jobIdData);
+    // Create export record
+    await prisma.export.create({
+      data: {
+        jobId: job_id,
+        bookingId: booking.id,
+        resolution,
+        imageCount: imageKeys.length,
+        status: "processing",
+      },
+    });
 
     return NextResponse.json({
       success: true,
@@ -89,6 +99,39 @@ export async function POST(req: Request, { params }: Params) {
     console.error("Export error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
+
+// Update existing export (called by Lambda)
+export async function PATCH(req: Request, { params }: Params) {
+  try {
+    const headersList = await headers();
+    const apiKey = headersList.get("x-api-key");
+
+    if (apiKey !== process.env.INTERNAL_API_KEY) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { jobId, status, downloadUrl, completedAt, error } = body;
+
+    const updatedExport = await prisma.export.update({
+      where: { jobId },
+      data: {
+        status,
+        ...(downloadUrl && { downloadUrl }),
+        ...(completedAt && { completedAt: new Date(completedAt) }),
+        ...(error && { error }),
+      },
+    });
+
+    return NextResponse.json({ success: true, export: updatedExport });
+  } catch (error) {
+    console.error("Error updating export:", error);
+    return NextResponse.json(
+      { error: "Failed to update export" },
       { status: 500 },
     );
   }

@@ -292,7 +292,7 @@ model CallIntelligence {
 
 model Export {
   id          String         @id @default(auto()) @map("_id") @db.ObjectId
-  jobId       String?         @unique
+  jobId       String?        @unique
   bookingId   String         @db.ObjectId
   booking     SubBookingData @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   resolution  String
