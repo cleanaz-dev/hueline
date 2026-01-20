@@ -132,7 +132,6 @@ export default function SubTransformationGallery({
           <SubAlternateDesign
             booking={booking}
             hasGeneratedImage={hasGeneratedImage}
-            hasSharedAccess={hasSharedAccess}
           />
         </div>
       </div>

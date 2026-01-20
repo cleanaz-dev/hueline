@@ -21,20 +21,19 @@ import { useBooking } from "@/context/booking-context";
 interface ComponentProps {
   booking: BookingData;
   hasGeneratedImage: boolean;
-  hasSharedAccess: boolean;
+
 }
 
 export default function SubAlternateDesign({
   booking,
   hasGeneratedImage,
-  hasSharedAccess,
 }: ComponentProps) {
   const [removeFurniture, setRemoveFurniture] = useState(false);
   const [selectedOption, setSelectedOption] = useState("");
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [generateStatus, setGenerateStatus] = useState<"idle" | "generating" | "success" | "error">("idle");
   const { setIsShareDialogOpen, subdomain } = useBooking()
-
+  const hasSharedAccess = true
   const options = [
     { id: "brighter", icon: RiSunFill, label: "Brighter" },
     { id: "darker", icon: RiMoonFill, label: "Darker" },
