@@ -9,7 +9,6 @@ import { formatProjectScope, getEstimatedValueRange } from "@/lib/utils/dashboar
 import { useRoomScopes } from "@/hooks/use-room-scopes";
 import { useOwner } from "@/context/owner-context";
 
-// Sub-components
 import { IntelRoom } from "./intel-room";
 import { IntelCall } from "./intel-call";
 import { IntelLogs } from "./intel-logs";
@@ -31,18 +30,15 @@ export default function IntelligenceDialog({
   const { subdomain } = useOwner();
   const slug = subdomain?.slug || "";
 
-  // 1. Fetch ONLY Logs
   const { data: logs, isLoading: loadingLogs } = useSWR(
     `/api/subdomain/${slug}/booking/${booking.huelineId}/logs`,
     fetcher,
     { revalidateOnFocus: false }
   );
 
-  // 2. Existing Hooks
   const roomId = booking.rooms?.[0]?.roomKey || "";
   const { presignedUrls } = useRoomScopes(slug, roomId);
 
-  // 3. Sort Calls
   const sortedCalls = useMemo(
     () => [...(booking.calls || [])].sort(
         (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -50,7 +46,6 @@ export default function IntelligenceDialog({
     [booking.calls]
   );
 
-  // 4. Stats & Config
   const totalValue = sortedCalls.reduce((sum: number, c: any) => sum + (c.intelligence?.estimatedAdditionalValue || 0), 0);
   const totalInteractions = (booking.calls?.length || 0) + (booking.rooms?.length || 0);
   const scope = booking.projectScope || "UNKNOWN";
@@ -63,19 +58,18 @@ export default function IntelligenceDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" 
         onClick={onClose} 
       />
 
       {/* 
-          MODAL CONTAINER 
-          - Mobile Fix: w-[95vw] and max-h-[85dvh]. 
-            This ensures it floats like a card and doesn't trigger full-page scrolling.
-          - Desktop: sm:h-[85vh] (fixed window look).
+          FIX IS HERE: 
+          Changed max-h-[85dvh] to h-[85dvh]. 
+          This forces the modal to be a static, fixed rectangle immediately.
+          No growing, no shrinking.
       */}
-      <div className="relative w-[95vw] max-h-[85dvh] sm:w-full sm:max-w-2xl sm:h-[85vh] bg-white rounded-xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative w-[95vw] h-[85dvh] sm:w-full sm:max-w-2xl sm:h-[85vh] bg-white rounded-xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         
         {/* HEADER (Fixed) */}
         <div className="shrink-0 flex items-start justify-between px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-white z-10">
@@ -104,7 +98,7 @@ export default function IntelligenceDialog({
           </button>
         </div>
 
-        {/* BODY (Scrollable) */}
+        {/* BODY (Scrolls internally within the fixed height) */}
         <div className="flex-1 overflow-y-auto bg-slate-50/50 p-3 sm:p-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
           <div className="max-w-3xl mx-auto space-y-6">
             
@@ -114,7 +108,6 @@ export default function IntelligenceDialog({
             {/* 2. CALLS */}
             {hasCalls && (
               <div className="space-y-3">
-                 {/* Header / Separator */}
                  <div className="flex items-center gap-2 mb-2 px-1">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Communication History</span>
                     <div className="h-px flex-1 bg-slate-200/60" />
@@ -130,12 +123,10 @@ export default function IntelligenceDialog({
                </div>
             ) : hasLogs ? (
                <div className="space-y-3">
-                  {/* NEW Header / Separator */}
                   <div className="flex items-center gap-2 mb-2 px-1 pt-2">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Related Logs</span>
                     <div className="h-px flex-1 bg-slate-200/60" />
                   </div>
-                  
                   <IntelLogs logs={logs} />
                </div>
             ) : null}
