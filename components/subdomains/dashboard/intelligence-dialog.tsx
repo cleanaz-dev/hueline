@@ -31,18 +31,18 @@ export default function IntelligenceDialog({
   const { subdomain } = useOwner();
   const slug = subdomain?.slug || "";
 
-  // 1. Fetch ONLY Logs (Lightweight, Background)
+  // 1. Fetch ONLY Logs
   const { data: logs, isLoading: loadingLogs } = useSWR(
     `/api/subdomain/${slug}/booking/${booking.huelineId}/logs`,
     fetcher,
     { revalidateOnFocus: false }
   );
 
-  // 2. Existing Hooks (Images & Rooms)
+  // 2. Existing Hooks
   const roomId = booking.rooms?.[0]?.roomKey || "";
   const { presignedUrls } = useRoomScopes(slug, roomId);
 
-  // 3. Sort Calls (From Props - Instant)
+  // 3. Sort Calls
   const sortedCalls = useMemo(
     () => [...(booking.calls || [])].sort(
         (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -50,7 +50,7 @@ export default function IntelligenceDialog({
     [booking.calls]
   );
 
-  // 4. Calculate Stats
+  // 4. Stats & Config
   const totalValue = sortedCalls.reduce((sum: number, c: any) => sum + (c.intelligence?.estimatedAdditionalValue || 0), 0);
   const totalInteractions = (booking.calls?.length || 0) + (booking.rooms?.length || 0);
   const scope = booking.projectScope || "UNKNOWN";
@@ -62,7 +62,7 @@ export default function IntelligenceDialog({
   const hasLogs = logs && logs.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" 
@@ -71,16 +71,17 @@ export default function IntelligenceDialog({
 
       {/* 
           MODAL CONTAINER 
-          - sm:h-[85vh] -> Enforces fixed height on desktop (Prevents bouncing)
-          - flex-col -> Allows header/footer to be fixed while body scrolls
+          - Mobile Fix: w-[95vw] and max-h-[85dvh]. 
+            This ensures it floats like a card and doesn't trigger full-page scrolling.
+          - Desktop: sm:h-[85vh] (fixed window look).
       */}
-      <div className="relative w-full h-full sm:h-[85vh] sm:max-w-2xl bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative w-[95vw] max-h-[85dvh] sm:w-full sm:max-w-2xl sm:h-[85vh] bg-white rounded-xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         
         {/* HEADER (Fixed) */}
-        <div className="shrink-0 flex items-start justify-between px-6 py-5 border-b border-slate-100 bg-white z-10">
+        <div className="shrink-0 flex items-start justify-between px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-white z-10">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight">{booking.name}</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">{booking.name}</h3>
               <div className="hidden sm:flex px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 items-center gap-1 uppercase tracking-wide">
                 <TypeIcon className="w-3 h-3" /> {formatProjectScope(scope)}
               </div>
@@ -93,7 +94,7 @@ export default function IntelligenceDialog({
               {totalValue > 0 && (
                 <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
                   <TrendingUp className="w-3.5 h-3.5" />
-                  +{getEstimatedValueRange(totalValue)} Value Found
+                  +{getEstimatedValueRange(totalValue)} Value
                 </span>
               )}
             </div>
@@ -103,17 +104,17 @@ export default function IntelligenceDialog({
           </button>
         </div>
 
-        {/* BODY (Scrollable Area) */}
-        {/* flex-1 ensures it takes all remaining height. overflow-y-auto enables internal scroll */}
+        {/* BODY (Scrollable) */}
         <div className="flex-1 overflow-y-auto bg-slate-50/50 p-3 sm:p-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
           <div className="max-w-3xl mx-auto space-y-6">
             
-            {/* 1. ROOMS (From Props) */}
+            {/* 1. ROOMS */}
             {hasRooms && <IntelRoom rooms={booking.rooms} presignedUrls={presignedUrls} />}
 
-            {/* 2. CALLS (From Props) */}
+            {/* 2. CALLS */}
             {hasCalls && (
               <div className="space-y-3">
+                 {/* Header / Separator */}
                  <div className="flex items-center gap-2 mb-2 px-1">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Communication History</span>
                     <div className="h-px flex-1 bg-slate-200/60" />
@@ -122,14 +123,21 @@ export default function IntelligenceDialog({
               </div>
             )}
             
-            {/* 3. LOGS (Fetched via SWR) */}
-            {/* Loading state sits inside the scroll area, no layout jumps */}
+            {/* 3. LOGS */}
             {loadingLogs ? (
                <div className="flex justify-center py-6 text-slate-400 text-sm animate-pulse">
                   Loading timeline...
                </div>
             ) : hasLogs ? (
-               <IntelLogs logs={logs} />
+               <div className="space-y-3">
+                  {/* NEW Header / Separator */}
+                  <div className="flex items-center gap-2 mb-2 px-1 pt-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Related Logs</span>
+                    <div className="h-px flex-1 bg-slate-200/60" />
+                  </div>
+                  
+                  <IntelLogs logs={logs} />
+               </div>
             ) : null}
 
             {/* EMPTY STATE */}
@@ -147,7 +155,7 @@ export default function IntelligenceDialog({
 
         {/* FOOTER (Fixed) */}
         <div className="shrink-0 p-4 border-t border-slate-100 bg-white flex justify-end">
-          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Close</Button>
         </div>
       </div>
     </div>
