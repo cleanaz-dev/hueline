@@ -24,14 +24,13 @@ export async function POST(req: Request, { params }: Params) {
   const { huelineId, slug } = await params;
 
   try {
-    // 1. 🔒 AUTH CHECK
+    // 1. AUTH CHECK
     const session = await getServerSession(authOptions);
     
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Allow access if any of these conditions are true:
     const isSuperAdmin = session.role === 'SUPER_ADMIN';
     const isSubdomainOwner = session.user?.subdomainSlug === slug && session.role !== 'customer';
     const isBookingOwner = 
@@ -48,10 +47,7 @@ export async function POST(req: Request, { params }: Params) {
     const result = shareSchema.safeParse(body);
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: "Invalid request", details: result.error },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid request", details: result.error }, { status: 400 });
     }
 
     const { emails, accessType } = result.data;
@@ -59,14 +55,10 @@ export async function POST(req: Request, { params }: Params) {
 
     // 3. Process Loop
     for (const email of emails) {
-      const pin = generatePin(); // Generate 4-digit PIN
-
-      // A. Update DB (Upsert)
+      const pin = generatePin(); 
       const accessRecord = await upsertSharedAccess(huelineId, email, accessType, pin);
-      
       const shareUrl = generateSharedLink(slug, huelineId);
 
-      // C. Send Email
       await sendShareProjectEmail({
         email: email,
         url: shareUrl,
@@ -77,22 +69,25 @@ export async function POST(req: Request, { params }: Params) {
       results.push(accessRecord);
     }
 
-     await createSharedProjectLog({
+    // 4. DETERMINE ACTOR
+    // Based on your auth config: 'customer' = CLIENT, anything else (ADMIN/MEMBER) = PAINTER
+    const actor = session.role === 'customer' ? 'CLIENT' : 'PAINTER';
+
+    // 5. LOG IT
+    await createSharedProjectLog({
       huelineId,
       slug,
       recipients: emails,
       accessType,
+      actor: actor
     });
 
-    console.log(`✅ Shared ${huelineId} with ${emails.length} people.`);
+    console.log(`✅ Shared ${huelineId} with ${emails.length} people. Actor: ${actor}`);
 
     return NextResponse.json({ success: true, sharedWith: results });
 
   } catch (error) {
     console.error("❌ Share Error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -1,15 +1,16 @@
 import { prisma } from "@/lib/prisma";
 
+// 👇 Update the params interface here
 export async function createSharedProjectLog(params: {
   huelineId: string;
   slug: string;
-  recipients: string[]; // List of emails
-  accessType: string;   // 'customer' or 'viewer'
+  recipients: string[];
+  accessType: string;
+  actor: "CLIENT" | "PAINTER" | "SYSTEM"; // <--- ADD THIS LINE
 }) {
-  const { huelineId, slug, recipients, accessType } = params;
+  const { huelineId, slug, recipients, accessType, actor } = params;
 
   try {
-    // 1. Resolve IDs needed for relations
     const [subdomain, booking] = await Promise.all([
       prisma.subdomain.findUnique({ 
         where: { slug }, 
@@ -21,30 +22,23 @@ export async function createSharedProjectLog(params: {
       })
     ]);
 
-    if (!subdomain || !booking) {
-      console.warn(`⚠️ Log Skipped: Missing ID for slug:${slug} or hue:${huelineId}`);
-      return;
-    }
+    if (!subdomain || !booking) return;
 
-    // 2. Create Log
     await prisma.logs.create({
       data: {
         bookingDataId: booking.id,
         subdomainId: subdomain.id,
         type: "SHARE", 
-        actor: "CLIENT", // Hardcoded as requested
+        actor: actor, // <--- Now this will work
         title: "Project Shared",
         description: `Shared with ${recipients.length} people (${accessType}): ${recipients.join(", ")}`,
         metadata: {
           action: "SHARE_PROJECT",
           recipients: recipients,
           accessType: accessType,
-          authMethod: "PIN/CLIENT"
         },
       },
     });
-
-    console.log(`📝 Shared Project log created for ${huelineId}`);
   } catch (error) {
     console.error("❌ Failed to create share log:", error);
   }
