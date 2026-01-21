@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { useMemo } from "react";
-import { X, Clock, Building2, Home, TrendingUp, Calendar, Activity } from "lucide-react";
+import { X, Building2, Home, TrendingUp, Calendar, Activity } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
 import { Button } from "@/components/ui/button";
 import { formatProjectScope, getEstimatedValueRange } from "@/lib/utils/dashboard-utils";
@@ -31,17 +31,18 @@ export default function IntelligenceDialog({
   const { subdomain } = useOwner();
   const slug = subdomain?.slug || "";
 
-  // 1. Fetch ONLY Logs (Simple & Fast)
+  // 1. Fetch ONLY Logs (Lightweight, Background)
   const { data: logs, isLoading: loadingLogs } = useSWR(
     `/api/subdomain/${slug}/booking/${booking.huelineId}/logs`,
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false }
   );
 
   // 2. Existing Hooks (Images & Rooms)
   const roomId = booking.rooms?.[0]?.roomKey || "";
   const { presignedUrls } = useRoomScopes(slug, roomId);
 
-  // 3. Sort Calls (From Props)
+  // 3. Sort Calls (From Props - Instant)
   const sortedCalls = useMemo(
     () => [...(booking.calls || [])].sort(
         (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -62,11 +63,20 @@ export default function IntelligenceDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4 animate-in fade-in duration-200">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" 
+        onClick={onClose} 
+      />
 
-      <div className="relative w-full h-full sm:h-auto sm:max-h-[85vh] sm:max-w-2xl bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      {/* 
+          MODAL CONTAINER 
+          - sm:h-[85vh] -> Enforces fixed height on desktop (Prevents bouncing)
+          - flex-col -> Allows header/footer to be fixed while body scrolls
+      */}
+      <div className="relative w-full h-full sm:h-[85vh] sm:max-w-2xl bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         
-        {/* HEADER */}
+        {/* HEADER (Fixed) */}
         <div className="shrink-0 flex items-start justify-between px-6 py-5 border-b border-slate-100 bg-white z-10">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -93,8 +103,9 @@ export default function IntelligenceDialog({
           </button>
         </div>
 
-        {/* BODY */}
-        <div className="flex-1 overflow-y-auto bg-slate-50/50 p-3 sm:p-6 scrollbar-thin">
+        {/* BODY (Scrollable Area) */}
+        {/* flex-1 ensures it takes all remaining height. overflow-y-auto enables internal scroll */}
+        <div className="flex-1 overflow-y-auto bg-slate-50/50 p-3 sm:p-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
           <div className="max-w-3xl mx-auto space-y-6">
             
             {/* 1. ROOMS (From Props) */}
@@ -112,8 +123,11 @@ export default function IntelligenceDialog({
             )}
             
             {/* 3. LOGS (Fetched via SWR) */}
+            {/* Loading state sits inside the scroll area, no layout jumps */}
             {loadingLogs ? (
-               <div className="flex justify-center py-6 text-slate-400 text-sm animate-pulse">Loading timeline...</div>
+               <div className="flex justify-center py-6 text-slate-400 text-sm animate-pulse">
+                  Loading timeline...
+               </div>
             ) : hasLogs ? (
                <IntelLogs logs={logs} />
             ) : null}
@@ -125,12 +139,13 @@ export default function IntelligenceDialog({
                   <Calendar className="w-8 h-8 text-slate-300" />
                 </div>
                 <h4 className="font-semibold text-slate-900">No Data Available</h4>
+                <p className="text-sm mt-1 text-slate-500">No activity recorded for this project yet.</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* FOOTER */}
+        {/* FOOTER (Fixed) */}
         <div className="shrink-0 p-4 border-t border-slate-100 bg-white flex justify-end">
           <Button variant="outline" onClick={onClose}>Close</Button>
         </div>
