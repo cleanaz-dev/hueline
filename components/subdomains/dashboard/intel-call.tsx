@@ -2,288 +2,169 @@
 
 import { useState, useRef, useEffect } from "react";
 import {
-  Play,
-  Pause,
-  CheckCircle2,
-  MinusCircle,
-  XCircle,
-  FileText,
-  SquareFunction,
-  Sparkles,
-  Layers,
-  Hash,
-  Tag,
-  Phone
+  Play, Pause, CheckCircle2, MinusCircle, XCircle, FileText,
+  SquareFunction, Layers, Hash, Tag, Phone, ChevronDown, Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  formatCallReason,
-  getEstimatedValueRange,
-} from "@/lib/utils/dashboard-utils";
+import { formatCallReason, getEstimatedValueRange } from "@/lib/utils/dashboard-utils";
 import { CallOutcome } from "@/app/generated/prisma";
 
-// --- CONFIG & UTILS ---
+// --- CONFIG ---
 const outcomeConfig = {
-  POSITIVE: {
-    icon: CheckCircle2,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
-    border: "border-emerald-100",
-    label: "Positive",
-  },
-  NEUTRAL: {
-    icon: MinusCircle,
-    color: "text-slate-500",
-    bg: "bg-slate-50",
-    border: "border-slate-200",
-    label: "Neutral",
-  },
-  NEGATIVE: {
-    icon: XCircle,
-    color: "text-rose-600",
-    bg: "bg-rose-50",
-    border: "border-rose-100",
-    label: "Negative",
-  },
+  POSITIVE: { icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100", label: "Positive" },
+  NEUTRAL: { icon: MinusCircle, color: "text-slate-500", bg: "bg-slate-50", border: "border-slate-200", label: "Neutral" },
+  NEGATIVE: { icon: XCircle, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100", label: "Negative" },
 };
 
-const formatLabel = (key: string) => {
-  const cleanKey = key.replace(/^(is_|has_|requires_)/, "");
-  return cleanKey
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-};
+const formatLabel = (key: string) => key.replace(/^(is_|has_|requires_)/, "").split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
-// --- AUDIO PLAYER COMPONENT ---
+// --- AUDIO PLAYER ---
 const MinimalAudioPlayer = ({ url }: { url: string }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    isPlaying ? audioRef.current.pause() : audioRef.current.play();
-    setIsPlaying(!isPlaying);
-  };
-
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-
-    const updateProgress = () => {
-      if (audio.duration)
-        setProgress((audio.currentTime / audio.duration) * 100);
-    };
-
-    audio.addEventListener("timeupdate", updateProgress);
-    audio.addEventListener("ended", () => setIsPlaying(false));
-    return () => {
-      audio.removeEventListener("timeupdate", updateProgress);
-      audio.removeEventListener("ended", () => setIsPlaying(false));
-    };
+    const update = () => audio.duration && setProgress((audio.currentTime / audio.duration) * 100);
+    const end = () => setIsPlaying(false);
+    audio.addEventListener("timeupdate", update);
+    audio.addEventListener("ended", end);
+    return () => { audio.removeEventListener("timeupdate", update); audio.removeEventListener("ended", end); };
   }, []);
 
   return (
-    <div className="flex items-center gap-3 w-full bg-slate-50 rounded-lg p-2 pr-4 border border-slate-100/50">
-      <audio ref={audioRef} src={url} className="hidden" />
+    <div className="flex items-center gap-3 w-full bg-slate-50 rounded-lg p-2 pr-4 border border-slate-200/60 shadow-inner">
+      <audio ref={audioRef} src={url} />
       <button
-        onClick={togglePlay}
-        className={cn(
-          "flex items-center justify-center w-8 h-8 rounded-full border transition-all focus:outline-none shrink-0",
-          isPlaying
-            ? "border-indigo-200 bg-indigo-50 text-indigo-600"
-            : "border-slate-200 bg-white text-slate-500 hover:border-indigo-200 hover:text-indigo-600"
-        )}
+        onClick={(e) => { e.stopPropagation(); if(audioRef.current) isPlaying ? audioRef.current.pause() : audioRef.current.play(); setIsPlaying(!isPlaying); }}
+        className={cn("flex items-center justify-center w-8 h-8 rounded-full border transition-all shrink-0 shadow-sm", isPlaying ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-indigo-300")}
       >
-        {isPlaying ? (
-          <Pause className="w-3.5 h-3.5 fill-current" />
-        ) : (
-          <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-        )}
+        {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
       </button>
-      <div className="flex-1 flex flex-col justify-center gap-1.5">
-        <div className="relative h-1 w-full bg-slate-200 rounded-full overflow-hidden">
-          <div
-            className="absolute top-0 left-0 h-full bg-indigo-500 transition-all duration-100 ease-linear"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+      <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+        <div className="h-full bg-indigo-500 transition-all duration-100 ease-linear" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );
 };
 
-interface IntelCallProps {
-  call: any; 
-}
+interface IntelCallProps { call: any; }
 
 export function IntelCall({ call }: IntelCallProps) {
+  const [isExpanded, setIsExpanded] = useState(false); // Collapsed by default
   const intel = call.intelligence;
   const date = new Date(call.createdAt);
-  const outcome = intel?.callOutcome as CallOutcome | undefined;
-  const outcomeStyle = outcome ? outcomeConfig[outcome] : outcomeConfig.NEUTRAL;
-  const customFields = (intel?.customFields as Record<string, any>) || {};
+  const outcome = (intel?.callOutcome as CallOutcome) || "NEUTRAL";
+  const style = outcomeConfig[outcome] || outcomeConfig.NEUTRAL;
   const estimatedValue = intel?.estimatedAdditionalValue || 0;
-  const hasValue = estimatedValue > 0;
-
-  // Filter Logic
-  const validEntries = Object.entries(customFields).filter(([_, val]) => {
-    if (val === null || val === undefined) return false;
-    if (val === false) return false;
-    if (val === "") return false;
-    if (val === 0) return false;
-    return true;
-  });
-
-  const booleanFlags = validEntries.filter(
-    ([_, val]) => typeof val === "boolean"
-  );
-  const dataPoints = validEntries.filter(
-    ([_, val]) => typeof val !== "boolean"
-  );
+  
+  // Parse Custom Fields
+  const customFields = (intel?.customFields as Record<string, any>) || {};
+  const validEntries = Object.entries(customFields).filter(([_, v]) => v !== null && v !== false && v !== "" && v !== 0);
+  const booleanFlags = validEntries.filter(([_, v]) => typeof v === "boolean");
+  const dataPoints = validEntries.filter(([_, v]) => typeof v !== "boolean");
 
   return (
-    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 mb-4">
-      {/* CARD HEADER */}
-      <div className="px-4 py-3 border-b border-slate-50 flex flex-wrap justify-between items-center gap-2 bg-slate-50/30">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-white border border-slate-200 rounded-md shadow-sm">
-             <Phone className="w-4 h-4 text-slate-600" />
+    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-sm transition-all duration-200 hover:shadow-md mb-3 overflow-hidden">
+      {/* HEADER (TRIGGER) */}
+      <div 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="px-4 py-3 cursor-pointer bg-white hover:bg-slate-50/50 transition-colors flex items-center justify-between group"
+      >
+        <div className="flex items-center gap-3">
+          <div className={cn("w-9 h-9 rounded-full flex items-center justify-center border", style.bg, style.border)}>
+            <Phone className={cn("w-4 h-4", style.color)} />
           </div>
-          <span className="font-semibold text-sm text-slate-900">
-            {formatCallReason(intel?.callReason || "General Inquiry")}
-          </span>
-          {outcome && (
-            <span
-              className={cn(
-                "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border uppercase tracking-wider",
-                outcomeStyle.bg,
-                outcomeStyle.border,
-                outcomeStyle.color
-              )}
-            >
-              <outcomeStyle.icon className="w-3 h-3" />
-              {outcomeStyle.label}
-            </span>
-          )}
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="font-bold text-sm text-slate-900">{formatCallReason(intel?.callReason || "Inquiry")}</span>
+              <span className={cn("text-[9px] px-1.5 py-0.5 rounded border uppercase font-bold tracking-wider", style.bg, style.border, style.color)}>
+                {style.label}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+               <span className="flex items-center gap-1"><Calendar className="w-3 h-3 text-slate-400"/> {date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+               <span className="text-slate-300">•</span>
+               <span>{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col items-end leading-tight">
-             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                {date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric'})}
+
+        <div className="flex items-center gap-3">
+           {estimatedValue > 0 && !isExpanded && (
+             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100">
+                +{getEstimatedValueRange(estimatedValue)}
              </span>
-             <span className="text-[10px] font-medium text-slate-400 tabular-nums">
-                {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-             </span>
+           )}
+           <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-300", isExpanded && "rotate-180")} />
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
-        {/* Audio Player */}
-        {call.audioUrl && <MinimalAudioPlayer url={call.audioUrl} />}
+      {/* EXPANDABLE BODY */}
+      <div className={cn("grid transition-[grid-template-rows] duration-300 ease-out", isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+        <div className="overflow-hidden">
+          <div className="p-4 pt-0 space-y-4 border-t border-slate-50 bg-slate-50/30">
+            <div className="h-2"></div> {/* Spacer */}
+            
+            {call.audioUrl && <MinimalAudioPlayer url={call.audioUrl} />}
 
-        {/* Call Summary (Refactored) */}
-        {intel?.callSummary && (
-          <div className="bg-indigo-50/30 border border-indigo-100 rounded-xl p-3.5">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-100/50">
-                <FileText className="w-3 h-3 text-indigo-600" />
-              </div>
-              <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">
-                Call Summary
-              </h4>
-            </div>
-            <p className="text-[13px] text-slate-700 font-medium leading-relaxed pl-7">
-              {intel.callSummary}
-            </p>
-          </div>
-        )}
-
-        {/* Cost Breakdown (Refactored) */}
-        {intel?.costBreakdown && (
-          <div className="bg-cyan-50/30 border border-cyan-100 rounded-xl p-3.5">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-100/50">
-                <SquareFunction className="w-3 h-3 text-cyan-600" />
-              </div>
-              <h4 className="text-[10px] font-bold text-cyan-500 uppercase tracking-widest">
-                Cost Breakdown
-              </h4>
-            </div>
-            <p className="text-[13px] text-slate-700 font-medium leading-relaxed pl-7">
-              {intel.costBreakdown}
-            </p>
-          </div>
-        )}
-
-        {/* Found Value */}
-        {hasValue && (
-          <div className="bg-emerald-50 border border-emerald-100/60 rounded-lg p-3 sm:px-4 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-2 text-emerald-800">
-             
-              <span className="text-xs font-bold uppercase tracking-wider">
-                Found Value
-              </span>
-            </div>
-            <div className="text-lg font-bold text-emerald-700 tracking-tight">
-              +{getEstimatedValueRange(estimatedValue)}
-            </div>
-          </div>
-        )}
-
-        {/* Detected Details */}
-        {validEntries.length > 0 && (
-          <div className="bg-slate-50 rounded-lg border border-slate-100 p-3 sm:p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Layers className="w-3.5 h-3.5 text-slate-400" />
-              <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                Detected Details
-              </h5>
+            <div className="grid grid-cols-1 gap-4">
+              {intel?.callSummary && (
+                <div className="space-y-1.5">
+                   <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-3 h-3" /> Summary
+                   </h5>
+                   <p className="text-sm text-slate-700 leading-relaxed bg-white border border-slate-100 p-3 rounded-lg shadow-sm">
+                      {intel.callSummary}
+                   </p>
+                </div>
+              )}
+              
+              {(intel?.costBreakdown || estimatedValue > 0) && (
+                 <div className="flex flex-col sm:flex-row gap-3">
+                    {intel?.costBreakdown && (
+                      <div className="flex-1 space-y-1.5">
+                         <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <SquareFunction className="w-3 h-3" /> Cost Breakdown
+                         </h5>
+                         <p className="text-xs text-slate-600 bg-white border border-slate-100 p-2.5 rounded-lg shadow-sm">
+                            {intel.costBreakdown}
+                         </p>
+                      </div>
+                    )}
+                    {estimatedValue > 0 && (
+                      <div className="sm:w-1/3 space-y-1.5">
+                         <h5 className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-wider">Est. Value</h5>
+                         <div className="bg-emerald-50 border border-emerald-100 p-2.5 rounded-lg text-emerald-700 font-bold text-lg text-center shadow-sm">
+                            +{getEstimatedValueRange(estimatedValue)}
+                         </div>
+                      </div>
+                    )}
+                 </div>
+              )}
             </div>
 
-            <div className="space-y-3">
-              {booleanFlags.length > 0 && (
+            {validEntries.length > 0 && (
+              <div className="pt-2 border-t border-slate-100 mt-2">
                 <div className="flex flex-wrap gap-2">
                   {booleanFlags.map(([key]) => (
-                    <div
-                      key={key}
-                      className="inline-flex items-center px-2.5 py-1 rounded-md bg-white border border-slate-200 shadow-sm text-xs font-medium text-slate-700"
-                    >
-                      <CheckCircle2 className="w-3 h-3 mr-1.5 text-indigo-500" />
-                      {formatLabel(key)}
-                    </div>
+                    <span key={key} className="inline-flex items-center px-2 py-1 rounded-md bg-white border border-slate-200 text-[11px] font-semibold text-slate-600 shadow-sm">
+                      <CheckCircle2 className="w-3 h-3 mr-1.5 text-indigo-500" /> {formatLabel(key)}
+                    </span>
                   ))}
-                </div>
-              )}
-
-              {dataPoints.length > 0 && (
-                <div className="grid grid-cols-2 gap-3">
                   {dataPoints.map(([key, value]) => (
-                    <div
-                      key={key}
-                      className="bg-white p-2.5 rounded border border-slate-200/60 shadow-sm flex flex-col justify-center"
-                    >
-                      <span className="text-[10px] uppercase tracking-wide text-slate-400 font-bold mb-0.5 flex items-center gap-1.5">
-                        {typeof value === "number" ? (
-                          <Hash className="w-3 h-3" />
-                        ) : (
-                          <Tag className="w-3 h-3" />
-                        )}
-                        {formatLabel(key)}
-                      </span>
-                      <span
-                        className="text-xs font-semibold text-slate-800 truncate"
-                        title={String(value)}
-                      >
-                        {String(value)}
-                      </span>
-                    </div>
+                    <span key={key} className="inline-flex items-center px-2 py-1 rounded-md bg-white border border-slate-200 text-[11px] font-semibold text-slate-600 shadow-sm" title={`${key}: ${value}`}>
+                       {typeof value === "number" ? <Hash className="w-3 h-3 mr-1.5 text-slate-400" /> : <Tag className="w-3 h-3 mr-1.5 text-slate-400" />}
+                       <span className="text-slate-400 mr-1">{formatLabel(key)}:</span> {String(value)}
+                    </span>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

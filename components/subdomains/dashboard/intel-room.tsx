@@ -12,18 +12,18 @@ import {
   PlayCircle,
   X,
   ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SecureVideoPlayer } from "@/components/rooms/video/secure-video-player";
 
-// --- TYPES ---
+// --- TYPES & CONFIG (Same as before) ---
 interface ScopeItem {
   type: string;
   area: string;
   item: string;
   action: string;
   image_urls?: string[];
-  image_id?: string;
   timestamp: string;
 }
 
@@ -33,82 +33,29 @@ interface IntelRoomProps {
   presignedUrls?: Record<string, string>;
 }
 
-// --- CONFIG ---
 const CATEGORY_ORDER = ["REPAIR", "PREP", "PAINT", "NOTE"];
 
 const SCOPE_CONFIG = (type: string) => {
   switch (type) {
-    case "REPAIR":
-      return {
-        label: "Repair",
-        icon: AlertTriangle,
-        color: "text-rose-600",
-        bg: "bg-rose-50",
-        border: "border-rose-100",
-      };
-    case "PREP":
-      return {
-        label: "Prep",
-        icon: Hammer,
-        color: "text-amber-600",
-        bg: "bg-amber-50",
-        border: "border-amber-100",
-      };
-    case "PAINT":
-      return {
-        label: "Paint",
-        icon: Paintbrush,
-        color: "text-blue-600",
-        bg: "bg-blue-50",
-        border: "border-blue-100",
-      };
-    case "NOTE":
-      return {
-        label: "Note",
-        icon: StickyNote,
-        color: "text-slate-500",
-        bg: "bg-slate-50",
-        border: "border-slate-100",
-      };
-    default:
-      return {
-        label: "Item",
-        icon: ClipboardCheck,
-        color: "text-slate-600",
-        bg: "bg-slate-50",
-        border: "border-slate-100",
-      };
+    case "REPAIR": return { label: "Repair", icon: AlertTriangle, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100" };
+    case "PREP": return { label: "Prep", icon: Hammer, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" };
+    case "PAINT": return { label: "Paint", icon: Paintbrush, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" };
+    case "NOTE": return { label: "Note", icon: StickyNote, color: "text-slate-500", bg: "bg-slate-50", border: "border-slate-100" };
+    default: return { label: "Item", icon: ClipboardCheck, color: "text-slate-600", bg: "bg-slate-50", border: "border-slate-100" };
   }
 };
 
 export function IntelRoom({ rooms, createdAt, presignedUrls = {} }: IntelRoomProps) {
+  // Default to expanded if there is data, but you can change to false
+  const [isExpanded, setIsExpanded] = useState(true);
   const [showVideo, setShowVideo] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
-  const [videoHeight, setVideoHeight] = useState(0);
-  const videoContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (showVideo && videoContainerRef.current) {
-      const contentHeight = videoContainerRef.current.scrollHeight;
-      setVideoHeight(contentHeight);
-    } else {
-      setVideoHeight(0);
-    }
-  }, [showVideo]);
-
+  
+  // Data Processing
   const { scopeData, totalScopeItems, displayDate, videoRoomId } = useMemo(() => {
-    if (!rooms || rooms.length === 0)
-      return {
-        scopeData: [],
-        totalScopeItems: 0,
-        displayDate: new Date(),
-        videoRoomId: null,
-      };
+    if (!rooms || rooms.length === 0) return { scopeData: [], totalScopeItems: 0, displayDate: new Date(), videoRoomId: null };
 
-    const allItems = rooms.flatMap(
-      (r) => (r.scopeData as unknown as ScopeItem[]) || []
-    );
-
+    const allItems = rooms.flatMap((r) => (r.scopeData as unknown as ScopeItem[]) || []);
     const grouped: Record<string, ScopeItem[]> = {};
     allItems.forEach((item) => {
       if (!item || !item.area) return;
@@ -127,208 +74,153 @@ export function IntelRoom({ rooms, createdAt, presignedUrls = {} }: IntelRoomPro
     };
   }, [rooms, createdAt]);
 
-  const handleToggleVideo = () => {
-    if (!hasStarted) setHasStarted(true);
-    setShowVideo((prev) => !prev);
-  };
-
   if (totalScopeItems === 0) return null;
 
   return (
-    <div className="w-full bg-white rounded-xl border border-slate-300 border-t-4 border-t-slate-300 shadow-lg shadow-slate-200/50 overflow-hidden mb-8">
-      {/* HEADER */}
-      <div className="px-4 py-3 border-b border-slate-200 bg-slate-50/80 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-slate-800 border border-slate-900 rounded-md shadow-sm">
-            <ClipboardCheck className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <h4 className="font-bold text-sm text-slate-900 leading-none mb-1">
-              Site Survey Snapshot
-            </h4>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-medium text-slate-500 bg-slate-200/60 px-1.5 py-0.5 rounded">
-                {totalScopeItems} Total Items
-              </span>
-
-              {videoRoomId && (
-                <button
-                  onClick={handleToggleVideo}
-                  className={cn(
-                    "group flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded border transition-all ml-1 select-none",
-                    showVideo
-                      ? "bg-slate-800 text-white border-slate-800"
-                      : "bg-white text-accent border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50"
-                  )}
-                >
-                  <PlayCircle 
-                    className={cn(
-                      "w-3 h-3 transition-transform duration-300", 
-                      showVideo && "rotate-90"
-                    )} 
-                  />
-                  {showVideo ? "Close Video" : "Watch Walkthrough"}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-end leading-tight opacity-80">
-          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">
-            {displayDate.toLocaleDateString(undefined, {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </span>
-          <span className="text-[10px] font-medium text-slate-400 tabular-nums">
-            {displayDate.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-        </div>
-      </div>
-
-      {/* VIDEO PLAYER SECTION */}
-      <div
-        className="overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-        style={{ 
-          maxHeight: showVideo ? `${videoHeight}px` : '0px',
-        }}
+    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6 transition-all duration-200 hover:shadow-md">
+      {/* CLICKABLE HEADER */}
+      <div 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="px-4 py-4 cursor-pointer bg-white hover:bg-slate-50/50 transition-colors flex justify-between items-center group select-none"
       >
-        <div
-          ref={videoContainerRef}
-          className={cn(
-            "bg-slate-900 border-b border-slate-200 transition-opacity duration-500",
-            showVideo ? "opacity-100 delay-200" : "opacity-0"
-          )}
-        >
-          {hasStarted && videoRoomId && (
-            <div className="relative w-full aspect-video mx-auto bg-black group">
-              <SecureVideoPlayer roomId={videoRoomId} className="w-full h-full" />
-              
-              <button
-                onClick={() => setShowVideo(false)}
-                className="absolute top-4 right-4 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 z-50 transform hover:scale-105"
-                aria-label="Close video"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <div className="flex items-center gap-4">
+          <div className={cn(
+            "w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200",
+            isExpanded ? "bg-indigo-100 text-indigo-600" : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
+          )}>
+            <ClipboardCheck className="w-4 h-4" />
+          </div>
+          
+          <div className="flex flex-col">
+            <h4 className="font-bold text-sm text-slate-900">Site Survey Snapshot</h4>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <span>{displayDate.toLocaleDateString()}</span>
+              <span className="w-1 h-1 bg-slate-300 rounded-full" />
+              <span>{totalScopeItems} Items detected</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {videoRoomId && (
+            <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded-full uppercase tracking-wide">
+              <PlayCircle className="w-3 h-3" />
+              Video Available
             </div>
           )}
+          <ChevronDown className={cn("w-5 h-5 text-slate-400 transition-transform duration-300", isExpanded && "rotate-180")} />
         </div>
       </div>
 
-      {/* BODY */}
-      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/30">
-        {scopeData.map(([area, items]) => {
-          const areaImages = items
-            .filter((i) => i.type === "IMAGE" && i.image_urls)
-            .flatMap((i) => i.image_urls!.map(key => presignedUrls[key]).filter(Boolean));
-
-          const itemsByType: Record<string, ScopeItem[]> = {};
-          items.forEach((i) => {
-            if (!itemsByType[i.type]) itemsByType[i.type] = [];
-            itemsByType[i.type].push(i);
-          });
-
-          return (
-            <div
-              key={area}
-              className="flex flex-col gap-3 p-3 rounded-lg border border-slate-200 bg-white shadow-sm"
-            >
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800 uppercase tracking-wide">
-                  <MapPin className="w-3 h-3 text-slate-500" />
-                  {area}
-                </div>
-                {areaImages.length > 0 && (
-                  <div className="flex items-center gap-1 text-[9px] font-medium text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
-                    <ImageIcon className="w-2.5 h-2.5" />
-                    {areaImages.length}
-                  </div>
-                )}
-              </div>
-
-              {areaImages.length > 0 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {areaImages.slice(0, 4).map((img, idx) => (
-                    <div
-                      key={idx}
-                      className="aspect-square rounded-md overflow-hidden border border-slate-200 bg-slate-50"
+      {/* EXPANDABLE CONTENT */}
+      <div className={cn(
+        "grid transition-[grid-template-rows] duration-300 ease-out",
+        isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+      )}>
+        <div className="overflow-hidden">
+          <div className="border-t border-slate-100 bg-slate-50/50 p-4">
+            
+            {/* VIDEO TOGGLE (Inside Content) */}
+            {videoRoomId && (
+              <div className="mb-6">
+                 {!showVideo ? (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setHasStarted(true); setShowVideo(true); }}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-dashed border-indigo-200 bg-indigo-50/50 text-indigo-600 text-sm font-semibold hover:bg-indigo-50 hover:border-indigo-300 transition-all group"
                     >
-                      <img
-                        src={img}
-                        alt="Scope"
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  ))}
-                  {areaImages.length > 4 && (
-                    <div className="flex items-center justify-center bg-slate-50 text-[9px] text-slate-400 font-medium rounded-md border border-slate-200">
-                      +{areaImages.length - 4}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="space-y-3 mt-1">
-                {CATEGORY_ORDER.map((cat) => {
-                  const catItems = itemsByType[cat];
-                  if (!catItems || catItems.length === 0) return null;
-                  const config = SCOPE_CONFIG(cat);
-                  const Icon = config.icon;
-
-                  return (
-                    <div key={cat} className="space-y-1.5">
-                      <div
-                        className={cn(
-                          "text-[9px] font-bold uppercase tracking-wider ml-1 opacity-70",
-                          config.color
-                        )}
-                      >
-                        {config.label}
+                      <PlayCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      Watch Walkthrough Video
+                    </button>
+                 ) : (
+                   <div className="relative w-full rounded-lg overflow-hidden bg-black border border-slate-800 shadow-xl">
+                      <div className="aspect-video">
+                        <SecureVideoPlayer roomId={videoRoomId} className="w-full h-full" />
                       </div>
+                      <button 
+                        onClick={() => setShowVideo(false)}
+                        className="absolute top-3 right-3 p-1 bg-black/50 text-white rounded-full hover:bg-black/80 backdrop-blur-sm transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                   </div>
+                 )}
+              </div>
+            )}
 
-                      <div className="space-y-1">
-                        {catItems.map((scopeItem, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-start gap-2.5 bg-slate-50/50 p-2 rounded border border-slate-100 hover:border-slate-200 transition-colors"
-                          >
-                            <div
-                              className={cn(
-                                "mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 border",
-                                config.bg,
-                                config.border
-                              )}
-                            >
-                              <Icon
-                                className={cn("w-2.5 h-2.5", config.color)}
-                              />
-                            </div>
-                            <div className="flex-1 flex justify-between items-start gap-2 min-w-0">
-                              <span className="text-xs font-semibold text-slate-700 leading-snug truncate capitalize">
-                                {scopeItem.item}
-                              </span>
-                              {scopeItem.action && (
-                                <span className="text-[10px] font-mono uppercase tracking-wide text-slate-400 shrink-0 mt-0.5">
-                                  {scopeItem.action}
-                                </span>
-                              )}
-                            </div>
+            {/* SCOPE GRID */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {scopeData.map(([area, items]) => {
+                const areaImages = items
+                  .filter((i) => i.type === "IMAGE" && i.image_urls)
+                  .flatMap((i) => i.image_urls!.map(key => presignedUrls[key]).filter(Boolean));
+
+                // Group items by type for cleaner display
+                const itemsByType: Record<string, ScopeItem[]> = {};
+                items.forEach((i) => {
+                  if (!itemsByType[i.type]) itemsByType[i.type] = [];
+                  itemsByType[i.type].push(i);
+                });
+
+                return (
+                  <div key={area} className="flex flex-col gap-3 p-3.5 rounded-xl border border-slate-200 bg-white shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)]">
+                    
+                    {/* Area Header */}
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-50">
+                      <div className="flex items-center gap-2 font-bold text-xs text-slate-800 uppercase tracking-wide">
+                        <div className="p-1 rounded bg-slate-100 text-slate-500"><MapPin className="w-3 h-3" /></div>
+                        {area}
+                      </div>
+                      {areaImages.length > 0 && (
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-full">
+                          <ImageIcon className="w-3 h-3" />
+                          {areaImages.length}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Images Preview */}
+                    {areaImages.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                        {areaImages.map((img, idx) => (
+                          <div key={idx} className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-slate-100 relative group cursor-zoom-in">
+                            <img src={img} alt={area} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                           </div>
                         ))}
                       </div>
+                    )}
+
+                    {/* List Items */}
+                    <div className="space-y-3 mt-1">
+                      {CATEGORY_ORDER.map((cat) => {
+                        const catItems = itemsByType[cat];
+                        if (!catItems?.length) return null;
+                        const config = SCOPE_CONFIG(cat);
+                        const Icon = config.icon;
+
+                        return (
+                          <div key={cat} className="space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className={cn("w-1.5 h-1.5 rounded-full", config.bg.replace('bg-', 'bg-').replace('50', '400'))} />
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{config.label}</span>
+                            </div>
+                            {catItems.map((scopeItem, idx) => (
+                              <div key={idx} className="relative group pl-3 py-1 border-l-2 border-slate-100 hover:border-slate-300 transition-colors">
+                                <p className="text-xs font-medium text-slate-700 leading-snug">
+                                  {scopeItem.item}
+                                  {scopeItem.action && <span className="text-slate-400 font-normal ml-1">— {scopeItem.action}</span>}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        </div>
       </div>
     </div>
   );
