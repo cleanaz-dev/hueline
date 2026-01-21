@@ -1,7 +1,8 @@
 "use client";
 
+import useSWR from "swr";
 import { useMemo } from "react";
-import { X, Clock, Home, Building2, TrendingUp, Calendar, Activity } from "lucide-react";
+import { X, Clock, Building2, Home, TrendingUp, Calendar, Activity } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
 import { Button } from "@/components/ui/button";
 import { formatProjectScope, getEstimatedValueRange } from "@/lib/utils/dashboard-utils";
@@ -16,37 +17,52 @@ import { IntelLogs } from "./intel-logs";
 interface IntelligenceDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  booking: BookingData & { rooms?: any[] };
+  booking: BookingData; 
 }
 
-export default function IntelligenceDialog({ isOpen, onClose, booking }: IntelligenceDialogProps) {
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+export default function IntelligenceDialog({
+  isOpen,
+  onClose,
+  booking,
+}: IntelligenceDialogProps) {
   if (!isOpen) return null;
   const { subdomain } = useOwner();
-
   const slug = subdomain?.slug || "";
+
+  // 1. Fetch ONLY Logs (Simple & Fast)
+  const { data: logs, isLoading: loadingLogs } = useSWR(
+    `/api/subdomain/${slug}/booking/${booking.huelineId}/logs`,
+    fetcher
+  );
+
+  // 2. Existing Hooks (Images & Rooms)
   const roomId = booking.rooms?.[0]?.roomKey || "";
-  const { presignedUrls, isLoading: loadingUrls } = useRoomScopes(slug, roomId);
+  const { presignedUrls } = useRoomScopes(slug, roomId);
 
-  const sortedCalls = useMemo(() => 
-    [...(booking.calls || [])].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()), 
-  [booking.calls]);
+  // 3. Sort Calls (From Props)
+  const sortedCalls = useMemo(
+    () => [...(booking.calls || [])].sort(
+        (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ),
+    [booking.calls]
+  );
 
-  const totalValue = sortedCalls.reduce((sum, c) => sum + (c.intelligence?.estimatedAdditionalValue || 0), 0);
+  // 4. Calculate Stats
+  const totalValue = sortedCalls.reduce((sum: number, c: any) => sum + (c.intelligence?.estimatedAdditionalValue || 0), 0);
   const totalInteractions = (booking.calls?.length || 0) + (booking.rooms?.length || 0);
-
   const scope = booking.projectScope || "UNKNOWN";
   const type = (booking as any).projectType || "RESIDENTIAL";
   const TypeIcon = type === "COMMERCIAL" ? Building2 : Home;
-
+  
   const hasCalls = sortedCalls.length > 0;
   const hasRooms = booking.rooms && booking.rooms.length > 0;
-
-  const logs = booking.logs || [];
-  const hasLogs = logs.length > 0;
+  const hasLogs = logs && logs.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4 animate-in fade-in duration-200">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative w-full h-full sm:h-auto sm:max-h-[85vh] sm:max-w-2xl bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         
@@ -77,43 +93,38 @@ export default function IntelligenceDialog({ isOpen, onClose, booking }: Intelli
           </button>
         </div>
 
-        {/* SCROLLABLE BODY */}
-        <div className="flex-1 overflow-y-auto bg-slate-50/50 p-3 sm:p-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-          <div className="max-w-3xl mx-auto">
+        {/* BODY */}
+        <div className="flex-1 overflow-y-auto bg-slate-50/50 p-3 sm:p-6 scrollbar-thin">
+          <div className="max-w-3xl mx-auto space-y-6">
             
-            {/* 1. ROOMS (SITE SURVEY) */}
-            {hasRooms && (
-               loadingUrls ? (
-                 <div className="h-24 flex items-center justify-center text-slate-400 text-sm animate-pulse">Loading site data...</div>
-               ) : (
-                 <IntelRoom rooms={booking.rooms} presignedUrls={presignedUrls} createdAt={booking.rooms?.[0]?.createdAt} />
-               )
-            )}
+            {/* 1. ROOMS (From Props) */}
+            {hasRooms && <IntelRoom rooms={booking.rooms} presignedUrls={presignedUrls} />}
 
-            {/* 2. CALLS */}
+            {/* 2. CALLS (From Props) */}
             {hasCalls && (
               <div className="space-y-3">
                  <div className="flex items-center gap-2 mb-2 px-1">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Communication History</span>
                     <div className="h-px flex-1 bg-slate-200/60" />
                  </div>
-                 {sortedCalls.map((call) => <IntelCall key={call.id} call={call} />)}
+                 {sortedCalls.map((call: any) => <IntelCall key={call.id} call={call} />)}
               </div>
             )}
-
-            {/* 3. LOGS (New Section) */}
-            {hasLogs && (
+            
+            {/* 3. LOGS (Fetched via SWR) */}
+            {loadingLogs ? (
+               <div className="flex justify-center py-6 text-slate-400 text-sm animate-pulse">Loading timeline...</div>
+            ) : hasLogs ? (
                <IntelLogs logs={logs} />
-            )}
+            ) : null}
 
             {/* EMPTY STATE */}
-            {!hasCalls && !hasRooms && (
+            {!hasCalls && !hasRooms && !hasLogs && !loadingLogs && (
               <div className="flex flex-col items-center justify-center py-16 text-slate-400">
                 <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4 border border-slate-200">
                   <Calendar className="w-8 h-8 text-slate-300" />
                 </div>
                 <h4 className="font-semibold text-slate-900">No Data Available</h4>
-                <p className="text-sm mt-1 max-w-xs text-center">There are no calls or site surveys recorded for this booking yet.</p>
               </div>
             )}
           </div>
@@ -121,9 +132,7 @@ export default function IntelligenceDialog({ isOpen, onClose, booking }: Intelli
 
         {/* FOOTER */}
         <div className="shrink-0 p-4 border-t border-slate-100 bg-white flex justify-end">
-          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto text-xs font-semibold">
-            Close Viewer
-          </Button>
+          <Button variant="outline" onClick={onClose}>Close</Button>
         </div>
       </div>
     </div>
