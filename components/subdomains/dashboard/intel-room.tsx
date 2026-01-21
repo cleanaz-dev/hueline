@@ -31,6 +31,7 @@ interface IntelRoomProps {
   rooms?: any[];
   createdAt?: string | Date;
   presignedUrls?: Record<string, string>;
+  defaultExpanded?: boolean;
 }
 
 const CATEGORY_ORDER = ["REPAIR", "PREP", "PAINT", "NOTE"];
@@ -45,9 +46,14 @@ const SCOPE_CONFIG = (type: string) => {
   }
 };
 
-export function IntelRoom({ rooms, createdAt, presignedUrls = {} }: IntelRoomProps) {
+export function IntelRoom({ 
+  rooms, 
+  createdAt, 
+  presignedUrls = {},
+  defaultExpanded= false
+ }: IntelRoomProps) {
   // Default to expanded if there is data, but you can change to false
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [showVideo, setShowVideo] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   

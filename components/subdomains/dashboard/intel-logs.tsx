@@ -45,11 +45,15 @@ const ACTOR_CONFIG: Record<string, { label: string; icon: any }> = {
 };
 
 interface IntelLogsProps {
-  logs?: any[]; // Replace 'any' with your Prisma Logs type
+  logs?: any[];
+  defaultExpanded?: boolean;
 }
 
-export function IntelLogs({ logs = [] }: IntelLogsProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function IntelLogs({ 
+  logs = [],
+  defaultExpanded = false
+}: IntelLogsProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   // --- DATA PROCESSING ---
   const { groupedLogs, totalLogs } = useMemo(() => {
