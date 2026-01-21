@@ -11,6 +11,7 @@ import { useOwner } from "@/context/owner-context";
 // Sub-components
 import { IntelRoom } from "./intel-room";
 import { IntelCall } from "./intel-call";
+import { IntelLogs } from "./intel-logs";
 
 interface IntelligenceDialogProps {
   isOpen: boolean;
@@ -39,6 +40,9 @@ export default function IntelligenceDialog({ isOpen, onClose, booking }: Intelli
 
   const hasCalls = sortedCalls.length > 0;
   const hasRooms = booking.rooms && booking.rooms.length > 0;
+
+  const logs = booking.logs || [];
+  const hasLogs = logs.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4 animate-in fade-in duration-200">
@@ -95,6 +99,11 @@ export default function IntelligenceDialog({ isOpen, onClose, booking }: Intelli
                  </div>
                  {sortedCalls.map((call) => <IntelCall key={call.id} call={call} />)}
               </div>
+            )}
+
+            {/* 3. LOGS (New Section) */}
+            {hasLogs && (
+               <IntelLogs logs={logs} />
             )}
 
             {/* EMPTY STATE */}
