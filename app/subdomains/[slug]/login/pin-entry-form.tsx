@@ -20,7 +20,7 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // AUTO REDIRECT (If already logged in)
+  // AUTO REDIRECT
   useEffect(() => {
     if (status === "authenticated" && session?.user && huelineId) {
       if (session.user.huelineId?.toLowerCase() === huelineId.toLowerCase()) {
@@ -30,8 +30,12 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
   }, [status, session, huelineId]);
 
   // SUBMIT LOGIC
-  const handlePinSubmit = async () => {
-    const pinValue = pin.join("");
+  // ACCEPTS OPTIONAL ARGUMENT TO BYPASS STALE STATE
+  const handlePinSubmit = async (pinOverride?: string[]) => {
+    // Use the override (latest input) if provided, otherwise use state
+    const currentPinArray = pinOverride || pin; 
+    const pinValue = currentPinArray.join("");
+
     if (pinValue.length !== 4) {
       toast.error("Please enter a 4-digit PIN");
       return;
@@ -78,12 +82,17 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
     newPin[index] = value;
     setPin(newPin);
 
+    // Auto-focus next input
     if (value && index < 3) {
       inputRefs.current[index + 1]?.focus();
     }
 
+    // CHECK IF COMPLETE AND SUBMIT USING newPin
+    // We pass newPin directly to avoid waiting for state update
     if (newPin.every(digit => digit !== "") && index === 3) {
-      handlePinSubmit();
+      // Remove focus from input to prevent double entry/mobile keyboard issues
+      inputRefs.current[index]?.blur(); 
+      handlePinSubmit(newPin);
     }
   };
 
@@ -108,7 +117,8 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
     inputRefs.current[lastIndex]?.focus();
 
     if (pastedData.length === 4) {
-      setTimeout(() => handlePinSubmit(), 100);
+      // Pass newPin directly to avoid timeout hacks
+      handlePinSubmit(newPin); 
     }
   };
 
