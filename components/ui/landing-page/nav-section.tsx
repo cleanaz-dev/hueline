@@ -52,7 +52,7 @@ export default function NavSection() {
   };
 
   return (
-    <section className="backdrop-blur-lg">
+    <section className="backdrop-blur-lg max-w-7xl mx-auto">
       <nav className="relative z-20 flex items-center text-muted-foreground justify-between px-3 md:px-6 py-2 md:py-2 backdrop-blur-sm flex-shrink-0 bg-white/50">
         {/* Logo */}
         <div className="flex items-center gap-2">

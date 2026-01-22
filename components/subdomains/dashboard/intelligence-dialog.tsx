@@ -1,10 +1,19 @@
 "use client";
 
 import useSWR from "swr";
-import { useMemo, useState } from "react";
-import { X, Building2, Home, TrendingUp, Calendar, Activity } from "lucide-react";
+import { useMemo } from "react";
+import { 
+  X, 
+  Building2, 
+  Home, 
+  TrendingUp, 
+  Calendar, 
+  Phone, 
+  Video, 
+  ScrollText, 
+  Loader2 
+} from "lucide-react"; // Added specific icons
 import { BookingData } from "@/types/subdomain-type";
-import { Button } from "@/components/ui/button";
 import { formatProjectScope, getEstimatedValueRange } from "@/lib/utils/dashboard-utils";
 import { useRoomScopes } from "@/hooks/use-room-scopes";
 import { useOwner } from "@/context/owner-context";
@@ -55,16 +64,21 @@ export default function IntelligenceDialog({
     [booking.calls]
   );
 
-  // Stats
+  // --- STATS CALCULATION ---
   const totalValue = sortedCalls.reduce((sum: number, c: any) => sum + (c.intelligence?.estimatedAdditionalValue || 0), 0);
-  const totalInteractions = (booking.calls?.length || 0) + (booking.rooms?.length || 0);
+  
+  // Specific Counts
+  const callCount = sortedCalls.length;
+  const roomCount = booking.rooms?.length || 0;
+  const logCount = logs?.length || 0;
+
   const scope = booking.projectScope || "UNKNOWN";
   const type = (booking as any).projectType || "RESIDENTIAL";
   const TypeIcon = type === "COMMERCIAL" ? Building2 : Home;
   
-  const hasCalls = sortedCalls.length > 0;
-  const hasRooms = booking.rooms && booking.rooms.length > 0;
-  const hasLogs = logs && logs.length > 0;
+  const hasCalls = callCount > 0;
+  const hasRooms = roomCount > 0;
+  const hasLogs = logCount > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -75,27 +89,54 @@ export default function IntelligenceDialog({
         {/* HEADER */}
         <div className="shrink-0 flex items-center justify-between px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-white z-10">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-2">
               <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">{booking.name}</h3>
               <div className="hidden sm:flex px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 items-center gap-1 uppercase tracking-wide">
                 <TypeIcon className="w-3 h-3" /> {formatProjectScope(scope)}
               </div>
             </div>
-            <div className="flex items-center gap-3 text-xs font-medium text-slate-500">
-              <span className="flex items-center gap-1.5">
-                <Activity className="w-3.5 h-3.5 text-indigo-500" />
-                {totalInteractions} Event{totalInteractions !== 1 && "s"}
-              </span>
+
+            {/* --- UPDATED STATUS BAR --- */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-slate-500">
+              
+              {/* Calls */}
+              <div className="flex items-center gap-1.5" title="Recorded Calls">
+                <Phone className="w-3.5 h-3.5 text-slate-400" />
+                <span>{callCount} Call{callCount !== 1 && "s"}</span>
+              </div>
+
+              {/* Rooms */}
+              <div className="flex items-center gap-1.5" title="Site Survey Rooms">
+                <Video className="w-3.5 h-3.5 text-slate-400" />
+                <span>{roomCount} Room{roomCount !== 1 && "s"}</span>
+              </div>
+
+              {/* Logs */}
+              <div className="flex items-center gap-1.5 min-w-[60px]" title="Activity Logs">
+                <ScrollText className="w-3.5 h-3.5 text-slate-400" />
+                {loadingLogs ? (
+                  <span className="flex items-center gap-1 text-slate-400">
+                     <Loader2 className="w-3 h-3 animate-spin" /> ...
+                  </span>
+                ) : (
+                  <span>{logCount} Log{logCount !== 1 && "s"}</span>
+                )}
+              </div>
+
+              {/* Value Separator & Badge */}
               {totalValue > 0 && (
-                 <span className="flex items-center gap-1 text-emerald-600">
-                  <TrendingUp className="w-3.5 h-3.5" />+{getEstimatedValueRange(totalValue)}
-                </span>
+                 <>
+                  <div className="w-px h-3 bg-slate-200 mx-1 hidden sm:block" />
+                  <span className="flex items-center gap-1 text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100/50">
+                    <TrendingUp className="w-3 h-3" />+{getEstimatedValueRange(totalValue)}
+                  </span>
+                </>
               )}
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-             <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
+             <button onClick={onClose} className="cursor-pointer p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
                <X className="w-5 h-5" />
              </button>
           </div>
@@ -132,7 +173,11 @@ export default function IntelligenceDialog({
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Activity History</span>
                     <div className="h-px flex-1 bg-slate-200/60" />
                  </div>
-                  <IntelLogs logs={logs || []} defaultExpanded={false} />
+                  <IntelLogs 
+                    logs={logs || []} 
+                    defaultExpanded={false} 
+                    loading={loadingLogs} 
+                  />
                </div>
             )}
 
