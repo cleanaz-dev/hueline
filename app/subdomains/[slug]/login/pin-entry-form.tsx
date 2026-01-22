@@ -6,6 +6,7 @@ import { Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation"; // Import useRouter
 
 interface PinEntryFormProps {
   logo: string | null;
@@ -15,24 +16,31 @@ interface PinEntryFormProps {
 
 export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProps) {
   const { data: session, status, update } = useSession();
+  const router = useRouter();
   
   const [pin, setPin] = useState(["", "", "", ""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // AUTO REDIRECT
+  // 1. AUTO REDIRECT (Only for returning users, not during active submission)
   useEffect(() => {
+    // If we are currently submitting, let the submit handler handle the redirect to avoid race conditions
+    if (isSubmitting) return;
+
     if (status === "authenticated" && session?.user && huelineId) {
-      if (session.user.huelineId?.toLowerCase() === huelineId.toLowerCase()) {
-        window.location.href = `/booking/${huelineId}`;
+      // Ensure strict type matching and casing
+      const sessionProjectId = (session.user as any).huelineId || ""; // Type assertion if needed
+      
+      if (sessionProjectId.toLowerCase() === huelineId.toLowerCase()) {
+        router.replace(`/booking/${huelineId}`); // Use replace to prevent back-button loops
       }
     }
-  }, [status, session, huelineId]);
+  }, [status, session, huelineId, isSubmitting, router]);
 
-  // SUBMIT LOGIC
-  // ACCEPTS OPTIONAL ARGUMENT TO BYPASS STALE STATE
+  // 2. SUBMIT LOGIC
   const handlePinSubmit = async (pinOverride?: string[]) => {
-    // Use the override (latest input) if provided, otherwise use state
+    if (isSubmitting) return; // Prevent double firing
+
     const currentPinArray = pinOverride || pin; 
     const pinValue = currentPinArray.join("");
 
@@ -53,7 +61,6 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
         huelineId: huelineId.toLowerCase(),
         pin: pinValue,
         redirect: false,
-        callbackUrl: window.location.origin + `/booking/${huelineId}`,
       });
 
       if (result?.error) {
@@ -64,7 +71,14 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
         return;
       }
 
+      // 3. SUCCESS HANDLING
+      // Force a session update on the client
       await update();
+      
+      // Refresh router to ensure server components see the new cookie
+      router.refresh();
+      
+      // Navigate
       window.location.href = `/booking/${huelineId}`;
 
     } catch (error) {
@@ -82,15 +96,11 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
     newPin[index] = value;
     setPin(newPin);
 
-    // Auto-focus next input
     if (value && index < 3) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // CHECK IF COMPLETE AND SUBMIT USING newPin
-    // We pass newPin directly to avoid waiting for state update
     if (newPin.every(digit => digit !== "") && index === 3) {
-      // Remove focus from input to prevent double entry/mobile keyboard issues
       inputRefs.current[index]?.blur(); 
       handlePinSubmit(newPin);
     }
@@ -117,7 +127,6 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
     inputRefs.current[lastIndex]?.focus();
 
     if (pastedData.length === 4) {
-      // Pass newPin directly to avoid timeout hacks
       handlePinSubmit(newPin); 
     }
   };
