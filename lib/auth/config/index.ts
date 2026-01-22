@@ -11,15 +11,17 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
 
   // --- COOKIE OVERRIDE ---
-  cookies: {
+   cookies: {
     sessionToken: {
       name: isProd ? `__Secure-next-auth.session-token` : `next-auth.session-token`,
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: isProd, 
-        domain: isProd ? ".hue-line.com" : ".lvh.me", // 🔥 CHANGED THIS LINE
+        secure: isProd,
+        // 🔥 FIX: Set to undefined in Dev. 
+        // Letting the browser handle the domain automatically prevents the loop.
+        domain: isProd ? ".hue-line.com" : undefined, 
       },
     },
     csrfToken: {
@@ -95,6 +97,10 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.role = token.role as string;
         session.user.subdomainSlug = token.subdomainSlug as string;
+        
+        // 🔥 ADD THIS LINE 🔥
+        // We map the token ID to huelineId so your page logic works
+        (session.user as any).huelineId = token.id as string;
       }
       return session;
     },

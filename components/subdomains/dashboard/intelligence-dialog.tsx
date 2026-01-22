@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { 
   X, 
   Building2, 
@@ -12,7 +12,7 @@ import {
   Video, 
   ScrollText, 
   Loader2 
-} from "lucide-react"; // Added specific icons
+} from "lucide-react"; 
 import { BookingData } from "@/types/subdomain-type";
 import { formatProjectScope, getEstimatedValueRange } from "@/lib/utils/dashboard-utils";
 import { useRoomScopes } from "@/hooks/use-room-scopes";
@@ -35,13 +35,33 @@ export default function IntelligenceDialog({
   onClose,
   booking,
 }: IntelligenceDialogProps) {
-  if (!isOpen) return null;
   const { subdomain } = useOwner();
   const slug = subdomain?.slug || "";
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+      
+      // Get scrollbar width to prevent layout shift
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      
+      document.body.style.overflow = 'hidden';
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+      
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
+    }
+  }, [isOpen]);
+
   // 1. Fetch Logs (EXCLUDE NOTES)
   const { data: allLogs, isLoading: loadingLogs } = useSWR(
-    `/api/subdomain/${slug}/booking/${booking.huelineId}/logs`,
+    isOpen ? `/api/subdomain/${slug}/booking/${booking.huelineId}/logs` : null,
     fetcher,
     { revalidateOnFocus: false }
   );
@@ -80,14 +100,27 @@ export default function IntelligenceDialog({
   const hasRooms = roomCount > 0;
   const hasLogs = logCount > 0;
 
+  // Early return AFTER all hooks
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+    // WRAPPER: 
+    // - Mobile: items-end (slide up feel), no padding
+    // - Desktop: items-center, p-4
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in duration-200">
+      
+      {/* Backdrop */}
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-[95vw] h-[85dvh] sm:w-full sm:max-w-2xl sm:h-[85vh] bg-white rounded-xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      {/* MODAL CONTAINER: 
+          - Mobile: w-full h-full (Full Screen), rounded-none
+          - Desktop: max-w-2xl, h-[85vh], rounded-2xl
+          - Animation: Slide up on mobile, Zoom on desktop
+      */}
+      <div className="relative w-full h-full sm:w-full sm:max-w-2xl sm:h-[85vh] bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
         
         {/* HEADER */}
-        <div className="shrink-0 flex items-center justify-between px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-white z-10">
+        <div className="shrink-0 flex items-center justify-between px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 bg-white z-10 safe-area-top">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">{booking.name}</h3>
@@ -96,7 +129,7 @@ export default function IntelligenceDialog({
               </div>
             </div>
 
-            {/* --- UPDATED STATUS BAR --- */}
+            {/* --- STATUS BAR --- */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-slate-500">
               
               {/* Calls */}
@@ -136,22 +169,22 @@ export default function IntelligenceDialog({
           </div>
           
           <div className="flex items-center gap-2">
-             <button onClick={onClose} className="cursor-pointer p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
-               <X className="w-5 h-5" />
+             <button onClick={onClose} className="cursor-pointer p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors active:scale-90">
+               <X className="w-6 h-6 sm:w-5 sm:h-5" />
              </button>
           </div>
         </div>
 
         {/* BODY */}
-        <div className="flex-1 overflow-y-auto bg-slate-50/50 p-3 sm:p-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-          <div className="max-w-3xl mx-auto space-y-4">
+        <div className="flex-1 overflow-y-auto bg-slate-50/50 p-4 sm:p-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+          <div className="max-w-3xl mx-auto space-y-4 pb-10 sm:pb-0">
             
             {/* 1. SITE SURVEY (Rooms) */}
             {hasRooms && (
                <IntelRoom 
                   rooms={booking.rooms} 
                   presignedUrls={presignedUrls} 
-                  defaultExpanded={false}
+                  defaultExpanded={true} // Expanded by default on mobile full view
                />
             )}
 
@@ -175,7 +208,7 @@ export default function IntelligenceDialog({
                  </div>
                   <IntelLogs 
                     logs={logs || []} 
-                    defaultExpanded={false} 
+                    defaultExpanded={true} 
                     loading={loadingLogs} 
                   />
                </div>
@@ -183,7 +216,7 @@ export default function IntelligenceDialog({
 
             {/* EMPTY STATE */}
             {!hasCalls && !hasRooms && !hasLogs && !loadingLogs && (
-              <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+              <div className="flex flex-col items-center justify-center py-20 sm:py-16 text-slate-400">
                 <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4 border border-slate-200">
                   <Calendar className="w-8 h-8 text-slate-300" />
                 </div>

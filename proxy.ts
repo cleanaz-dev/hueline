@@ -16,14 +16,17 @@ export function proxy(request: NextRequest) {
       currentHost = hostname.replace('.hueline.com', '');
     }
   } else {
-    // Extract subdomain from lvh.me:PORT
-    const match = hostname.match(/^([^.]+)\.lvh\.me:\d+$/); // 🔥 CHANGED THIS LINE
+    // Extract subdomain from lvh.me (ignore port logic)
+    // 🔴 OLD: const match = hostname.match(/^([^.]+)\.lvh\.me:\d+$/); 
+    // 🟢 NEW: Matches "demo" in "demo.lvh.me:3000"
+    const match = hostname.match(/^([^.]+)\.lvh\.me/); 
+    
     if (match) {
-      currentHost = match[1];
+      currentHost = match[1]; // Becomes "demo"
     } else {
       currentHost = hostname;
     }
-  }
+}
   
   console.log('🔍 Current Host:', currentHost);
   

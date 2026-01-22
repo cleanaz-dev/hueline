@@ -66,9 +66,6 @@ export default function NavSection() {
             priority
           />
           </Link>
-          {/* <span className="font-bold text-lg md:text-xl text-primary">
-            Hue-Line
-          </span> */}
         </div>
 
         {/* Desktop links */}
@@ -86,7 +83,9 @@ export default function NavSection() {
 
         {/* Desktop CTA */}
         <div className="items-center gap-2 hidden lg:flex">
-          
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/login">Partner Login</Link>
+          </Button>
           <Button size="sm" asChild>
             <Link href="/booking">Book a Call</Link>
           </Button>
@@ -94,7 +93,6 @@ export default function NavSection() {
 
         {/* Mobile */}
         <div className="flex items-center gap-2 lg:hidden">
-        
           <Sheet open={openMenu} onOpenChange={setOpenMenu}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -129,6 +127,14 @@ export default function NavSection() {
                     </button>
                   </motion.div>
                 ))}
+
+                <motion.div variants={itemVars}>
+                  <SheetClose asChild>
+                    <Button variant="outline" asChild>
+                      <Link href="/login">Partner Login</Link>
+                    </Button>
+                  </SheetClose>
+                </motion.div>
 
                 <motion.div variants={itemVars}>
                   <SheetClose asChild>

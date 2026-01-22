@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -48,18 +48,9 @@ import { ClientTableMobile } from "./client-table-mobile";
 // EXPORT Helper for use in Mobile Component
 export const formatImageUrl = (url: string | null | undefined): string => {
   if (!url) return "";
-
-  // 1. If it's already an absolute HTTP/HTTPS URL, return it
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-
-  // 2. Clean up the path to prevent "//" or "/subdomains//subdomains"
-  // Remove ALL leading slashes first
   const cleanPath = url.replace(/^\/+/, "");
-
-  // 3. Remove accidental double slashes inside the path (optional but safe)
   const sanitizedPath = cleanPath.replace(/\/\//g, "/");
-
-  // 4. Return with exactly one leading slash
   return `/${sanitizedPath}`;
 };
 
@@ -82,34 +73,30 @@ export default function ClientTable() {
   // Audio player state
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState<string | null>(null);
-  const [presignedUrls, setPresignedUrls] = useState<Record<string, string>>(
-    {},
-  );
-  // videoOpenId state was unused in original logic provided, but keeping if needed for extensions
-  const [videoOpenId, setVideoOpenId] = useState<string | null>(null);
+  const [presignedUrls, setPresignedUrls] = useState<Record<string, string>>({});
+  
+  // Drag to Scroll State
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   const handlePlayPause = useCallback(
     async (huelineId: string) => {
-      // If already playing this one, just stop
       if (playingId === huelineId) {
         setPlayingId(null);
         return;
       }
-
-      // If we already have a valid presigned URL, use it
       if (presignedUrls[huelineId]) {
         setPlayingId(huelineId);
         return;
       }
-
-      // Fetch a new presigned URL
       try {
         setIsLoadingAudio(huelineId);
         const response = await fetch(
           `/api/subdomain/${subdomain.slug}/call/last?huelineId=${huelineId}`,
         );
         const data = await response.json();
-
         if (data.url) {
           setPresignedUrls((prev) => ({ ...prev, [huelineId]: data.url }));
           setPlayingId(huelineId);
@@ -126,16 +113,11 @@ export default function ClientTable() {
   const tableData = useMemo(() => {
     if (!bookings) return [];
     return bookings.map((b) => {
-      // 1. Try to get the first Mockup URL
       let thumb = b.mockups?.[0]?.presignedUrl;
-
-      // 2. Fallback: If no mockup, use the first Original Image URL
       if (!thumb && b.originalImages && b.originalImages.length > 0) {
-        // Check if it's a full URL (presigned) or just a Key
         const img = b.originalImages[0];
         if (img.startsWith("http")) thumb = img;
       }
-
       return {
         ...b,
         thumbnailUrl: thumb || "",
@@ -157,7 +139,7 @@ export default function ClientTable() {
           const rawThumbnailUrl = info.row.original.thumbnailUrl;
           const thumbnailUrl = formatImageUrl(rawThumbnailUrl);
           return (
-            <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-100 border border-gray-200 relative flex items-center justify-center">
+            <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-100 border border-gray-200 relative flex items-center justify-center select-none pointer-events-none">
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
               ) : info.getValue() ? (
@@ -166,7 +148,7 @@ export default function ClientTable() {
                   alt="Room"
                   className="object-cover"
                   fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  sizes="48px"
                 />
               ) : (
                 <Camera className="w-6 h-6 text-gray-400" />
@@ -191,30 +173,21 @@ export default function ClientTable() {
             )}
           </button>
         ),
-       cell: (info) => {
-  const val = info.getValue() || info.row.original.createdAt;
-  const date = new Date(val);
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  
-  return (
-    <div className="text-sm font-medium text-gray-900">
-      {date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      })}
-      <div className="text-xs text-gray-500 font-normal">
-        {mounted ? date.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }) : "--:--"}
-      </div>
-    </div>
-  );
-},
+        cell: (info) => {
+          const val = info.getValue() || info.row.original.createdAt;
+          const date = new Date(val);
+          const [mounted, setMounted] = useState(false);
+          useEffect(() => setMounted(true), []);
+          
+          return (
+            <div className="text-sm font-medium text-gray-900">
+              {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              <div className="text-xs text-gray-500 font-normal">
+                {mounted ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}
+              </div>
+            </div>
+          );
+        },
       }),
 
       // Lead Details
@@ -241,25 +214,21 @@ export default function ClientTable() {
           const row = info.row.original;
           const anchor = formatCallReason(row.initialIntent || "NEW_PROJECT");
           const rawType = row.projectType || "RESIDENTIAL";
-          const typeLabel =
-            rawType === "COMMERCIAL" ? "Commercial" : "Residential";
+          const typeLabel = rawType === "COMMERCIAL" ? "Commercial" : "Residential";
           const TypeIcon = rawType === "COMMERCIAL" ? Building2 : Home;
           const lastInteraction = row.lastInteraction;
-
-          const scopeList =
-            row.projectScope && row.projectScope.length > 0
-              ? row.projectScope.join(", ")
-              : "General Scope";
+          const scopeList = row.projectScope && row.projectScope.length > 0
+              ? row.projectScope.join(", ") : "General Scope";
 
           return (
             <div className="flex flex-col py-1 max-w-[220px]">
               <div className="font-bold text-gray-900 text-sm">{anchor}</div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <TypeIcon className="size-3.5  shrink-0" />
-                <span className="font-medium ">{typeLabel}</span>
+                <TypeIcon className="size-3.5 shrink-0" />
+                <span className="font-medium">{typeLabel}</span>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-accent leading-snug break-words tracking-wide">
-                <Target className="size-3.5  shrink-0" />
+                <Target className="size-3.5 shrink-0" />
                 <span>{scopeList}</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -276,9 +245,7 @@ export default function ClientTable() {
         header: "Est. Value",
         cell: (info) => {
           const value = info.getValue() || 0;
-          if (value === 0) {
-            return <span className="text-gray-300 text-xs">-</span>;
-          }
+          if (value === 0) return <span className="text-gray-300 text-xs">-</span>;
           return (
             <div className="font-bold text-emerald-500 text-sm">
               +{getEstimatedValueRange(value)}
@@ -294,19 +261,20 @@ export default function ClientTable() {
         cell: (info) => {
           const row = info.row.original;
           const huelineId = row.huelineId;
-
           const audioUrl = row.lastCallAudioUrl;
           const firstRoom = row.rooms?.[0];
           const recordingUrl = firstRoom?.recordingUrl;
           const roomKey = firstRoom?.roomKey;
-
-          const baseButtonClass =
-            "w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-200";
+          const baseButtonClass = "w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-200";
 
           return (
-            <div className="flex items-center gap-2">
+            <div 
+              className="flex items-center gap-2"
+              // Stop propagation to prevent dragging when clicking buttons
+              onMouseDown={(e) => e.stopPropagation()} 
+            >
               {audioUrl ? (
-                <div className="w-8 h-8 flex items-center justify-center ">
+                <div className="w-8 h-8 flex items-center justify-center">
                   <AudioPlayer
                     url={presignedUrls[huelineId] || null}
                     isPlaying={playingId === huelineId}
@@ -315,10 +283,7 @@ export default function ClientTable() {
                   />
                 </div>
               ) : (
-                <div
-                  className={`${baseButtonClass} bg-gray-50 border-transparent text-gray-300 lowed`}
-                  title="No call recording"
-                >
+                <div className={`${baseButtonClass} bg-gray-50 border-transparent text-gray-300`} title="No call recording">
                   <Phone className="w-3.5 h-3.5" />
                 </div>
               )}
@@ -326,28 +291,19 @@ export default function ClientTable() {
               {recordingUrl && roomKey ? (
                 <Dialog>
                   <DialogTrigger asChild>
-                    <button
-                      className={`${baseButtonClass} bg-white border-accent/15 text-accent/50 hover:bg-primary/10 hover:border-primary/10 active:scale-95 cursor-pointer`}
-                      title="Watch Session Film"
-                    >
+                    <button className={`${baseButtonClass} bg-white border-accent/15 text-accent/50 hover:bg-primary/10 hover:border-primary/10 active:scale-95 cursor-pointer`}>
                       <Film className="w-3.5 h-3.5" />
                     </button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black border-zinc-800">
                     <DialogTitle sr-only="video" />
                     <div className="aspect-video w-full">
-                      <SecureVideoPlayer
-                        roomId={roomKey}
-                        className="w-full h-full rounded-none"
-                      />
+                      <SecureVideoPlayer roomId={roomKey} className="w-full h-full rounded-none" />
                     </div>
                   </DialogContent>
                 </Dialog>
               ) : (
-                <div
-                  className={`${baseButtonClass} bg-gray-50 border-transparent text-gray-300 `}
-                  title="No video recording"
-                >
+                <div className={`${baseButtonClass} bg-gray-50 border-transparent text-gray-300`}>
                   <Film className="w-3.5 h-3.5" />
                 </div>
               )}
@@ -355,43 +311,41 @@ export default function ClientTable() {
           );
         },
       }),
+
       // Palette
       columnHelper.accessor("paintColors", {
         header: "Palette",
         cell: (info) => (
-          <div className="flex -space-x-2 overflow-hidden">
-            {info
-              .getValue()
-              ?.slice(0, 3)
-              .map((color, idx) => (
-                <div
-                  key={idx}
-                  className="w-6 h-6 rounded-full border border-white"
-                  style={{ backgroundColor: color.hex }}
-                  title={color.name}
-                />
-              )) || <span className="text-xs text-gray-400">-</span>}
+          <div className="flex -space-x-2 overflow-hidden pointer-events-none">
+            {info.getValue()?.slice(0, 3).map((color, idx) => (
+              <div
+                key={idx}
+                className="w-6 h-6 rounded-full border border-white"
+                style={{ backgroundColor: color.hex }}
+              />
+            )) || <span className="text-xs text-gray-400">-</span>}
           </div>
         ),
       }),
 
-      // Link
+      // Link (Actions)
       columnHelper.accessor("huelineId", {
         header: "",
         cell: (info) => (
-          <div className="flex items-center justify-end gap-2">
+          <div 
+            className="flex items-center justify-end gap-2"
+            // Stop propagation so we can click buttons without dragging the table
+            onMouseDown={(e) => e.stopPropagation()} 
+          >
             <button
               onClick={() => openIntelligence(info.row.original)}
               className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-purple-100 bg-purple-50 text-purple-600 hover:bg-purple-100 transition-all group cursor-pointer"
-              title="View Intelligence & Logs"
             >
               <Database className="w-4 h-4 group-hover:scale-110 transition-transform" />
             </button>
-
             <Link
               href={`/j/${info.getValue()}`}
               className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all group"
-              title="Open Client Portal"
             >
               <Palette className="w-4 h-4 group-hover:scale-110 transition-transform" />
             </Link>
@@ -399,14 +353,7 @@ export default function ClientTable() {
         ),
       }),
     ],
-    [
-      isLoading,
-      openIntelligence,
-      playingId,
-      isLoadingAudio,
-      presignedUrls,
-      handlePlayPause,
-    ],
+    [isLoading, openIntelligence, playingId, isLoadingAudio, presignedUrls, handlePlayPause],
   );
 
   const table = useReactTable({
@@ -418,23 +365,45 @@ export default function ClientTable() {
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
+    initialState: { pagination: { pageSize: 10 } },
   });
+
+  // DRAG HANDLERS
+  const onMouseDown = (e: React.MouseEvent) => {
+    // Only drag if left mouse button
+    if (e.button !== 0) return;
+    
+    setIsDragging(true);
+    if(tableContainerRef.current) {
+        setStartX(e.pageX - tableContainerRef.current.offsetLeft);
+        setScrollLeft(tableContainerRef.current.scrollLeft);
+    }
+  };
+
+  const onMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const onMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !tableContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - tableContainerRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5; // Multiplier for faster/slower scroll
+    tableContainerRef.current.scrollLeft = scrollLeft - walk;
+  };
 
   return (
     <div className="container mx-auto max-w-7xl px-4 lg:px-0 my-8">
-      {/* Search Header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold text-gray-900">Lead Feed</h2>
-            {isLoading && (
-              <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-            )}
+            {isLoading && <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />}
           </div>
           <p className="text-sm text-gray-500">
             Real-time incoming calls and AI visualizations.
@@ -452,17 +421,26 @@ export default function ClientTable() {
         </div>
       </div>
 
-      {/* --- DESKTOP VIEW --- */}
+      {/* --- DESKTOP VIEW (DRAGGABLE) --- */}
       <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm mb-4">
-        <div className="overflow-x-auto w-full">
-          <table className="w-full">
+        {/* Scroll Container with Drag Logic */}
+        <div 
+          ref={tableContainerRef}
+          className={`overflow-x-auto w-full scrollbar-hide ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
+          onMouseDown={onMouseDown}
+          onMouseLeave={onMouseLeave}
+          onMouseUp={onMouseUp}
+          onMouseMove={onMouseMove}
+        >
+          {/* Minimum width ensures table doesn't collapse too small to scroll */}
+          <table className="w-full min-w-[1000px]">
             <thead className="bg-gray-50/50 border-b border-gray-200">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
-                      className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider select-none"
                     >
                       {flexRender(
                         header.column.columnDef.header,
@@ -475,10 +453,7 @@ export default function ClientTable() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="hover:bg-gray-50/80 transition-colors"
-                >
+                <tr key={row.id} className="hover:bg-gray-50/80 transition-colors">
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
                       {flexRender(
@@ -494,14 +469,14 @@ export default function ClientTable() {
         </div>
       </div>
 
-      {/* --- MOBILE VIEW COMPONENT --- */}
+      {/* --- MOBILE VIEW --- */}
       <ClientTableMobile
         table={table}
         formatImageUrl={formatImageUrl}
         openIntelligence={openIntelligence}
       />
 
-      {/* --- PAGINATION CONTROLS (Shared) --- */}
+      {/* --- PAGINATION --- */}
       <div className="flex items-center justify-between px-2">
         <div className="text-sm text-gray-500">
           Page {table.getState().pagination.pageIndex + 1} of{" "}
