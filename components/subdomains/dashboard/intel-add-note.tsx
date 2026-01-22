@@ -1,18 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Send, StickyNote, X } from "lucide-react";
+import { Loader2, Send, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createNoteLog } from "@/lib/prisma/mutations/logs/create-note-log";
 import { useSWRConfig } from "swr"; 
+import { toast } from "sonner";
 
 interface IntelAddNoteProps {
   huelineId: string;
   slug: string;
   onCancel: () => void;
+  onSuccess: () => void;
 }
 
-export function IntelAddNote({ huelineId, slug, onCancel }: IntelAddNoteProps) {
+export function IntelAddNote({ huelineId, slug, onCancel, onSuccess }: IntelAddNoteProps) {
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { mutate } = useSWRConfig();
@@ -21,14 +22,29 @@ export function IntelAddNote({ huelineId, slug, onCancel }: IntelAddNoteProps) {
     if (!note.trim()) return;
     setIsSubmitting(true);
 
-    await createNoteLog(huelineId, note);
+    try {
+      const response = await fetch(`/api/subdomain/${slug}/booking/${huelineId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: note }),
+      });
 
-    // ⚡️ Instant Refresh: Re-fetch the logs for this booking
-    await mutate(`/api/subdomain/${slug}/booking/${huelineId}/logs`);
-    
-    setNote("");
-    setIsSubmitting(false);
-    onCancel(); // Close input after sending
+      if (!response.ok) {
+        throw new Error("Failed to add note");
+      }
+
+      // ⚡️ Instant Refresh: Re-fetch the notes for this booking
+      await mutate(`/api/subdomain/${slug}/booking/${huelineId}/notes`);
+      
+      toast.success("Note added");
+      setNote("");
+      onSuccess();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to add note");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -59,7 +75,6 @@ export function IntelAddNote({ huelineId, slug, onCancel }: IntelAddNoteProps) {
                variant="ghost" 
                size="sm" 
                onClick={onCancel} 
-               className="text-slate-500 hover:text-slate-700 h-8"
              >
                Cancel
              </Button>
@@ -67,7 +82,7 @@ export function IntelAddNote({ huelineId, slug, onCancel }: IntelAddNoteProps) {
                size="sm" 
                onClick={handleSubmit} 
                disabled={isSubmitting || !note.trim()}
-               className="bg-amber-600 hover:bg-amber-700 text-white h-8 gap-2"
+               className="bg-amber-600 hover:bg-amber-700 text-white gap-2"
              >
                {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                Save Note

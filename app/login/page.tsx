@@ -4,7 +4,6 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image"; 
-// Make sure this path is correct for your project
 import Logo from "@/public/images/logo-2--increased-brightness.png"; 
 import { z } from "zod";
 import { Loader2, UserCircle, Building2 } from "lucide-react";
@@ -22,13 +21,10 @@ const clientSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
-  
-  // State
   const [loginMethod, setLoginMethod] = useState<"partner" | "client">("client");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   
-  // Form State
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -41,13 +37,32 @@ export default function LoginPage() {
     setError(""); 
   };
 
-  // --- 1. HANDLE PARTNER LOGIN (SaaS Owner) ---
+  /**
+   * Helper to handle cross-subdomain redirects
+   */
+  const performSubdomainRedirect = (slug: string, path: string) => {
+    const { hostname, protocol, port } = window.location;
+    
+    // 🔥 FIXED: Check for lvh.me instead of localhost
+    const isLocalhost = hostname.includes("lvh.me") || hostname.includes("localhost") || hostname.includes("127.0.0.1");
+    
+    if (isLocalhost) {
+      // 🔥 FIXED: Use lvh.me in development
+      const devDomain = hostname.includes("lvh.me") ? "lvh.me" : "localhost";
+      window.location.href = `${protocol}//${slug}.${devDomain}${port ? `:${port}` : ""}${path}`;
+    } else {
+      // In prod: redirects to https://slug.hue-line.com/path
+      const rootDomain = "hue-line.com";
+      window.location.href = `${protocol}//${slug}.${rootDomain}${path}`;
+    }
+  };
+
+  // --- 1. HANDLE PARTNER LOGIN ---
   async function handlePartnerLogin(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // 1. Validate Input
     const validation = partnerSchema.safeParse({ 
       email: formData.email, 
       password: formData.password 
@@ -60,7 +75,6 @@ export default function LoginPage() {
     }
 
     try {
-      // 2. Attempt Login
       const res = await signIn("saas-account", {
         email: formData.email,
         password: formData.password,
@@ -73,38 +87,16 @@ export default function LoginPage() {
         return;
       }
 
-      // 3. Login Successful - Now Determine Destination
-      // We need to fetch the session to know WHICH subdomain this user owns
+      // Fetch the updated session to get the subdomain slug
       const sessionReq = await fetch("/api/auth/session");
       const session = await sessionReq.json();
       const slug = session?.user?.subdomainSlug;
 
       if (slug) {
-        const protocol = window.location.protocol; // "http:" or "https:"
-        const host = window.location.host;         // "localhost:3000" or "app.hue-line.com"
-
-        // 🟢 LOCALHOST LOGIC
-        if (host.includes("localhost")) {
-          // Force redirect to: http://tesla.localhost:3000/
-          window.location.href = `${protocol}//${slug}.localhost:3000/`;
-        } 
-        // 🌍 PRODUCTION LOGIC
-        else {
-           // We need to get the "root" domain (hue-line.com) to append the slug
-           // This handles "app.hue-line.com" or just "hue-line.com"
-           const parts = host.split('.');
-           const rootDomain = parts.length >= 2 
-             ? parts.slice(-2).join('.')  // grab last two parts: "hue-line.com"
-             : host;
-             
-           // Force redirect to: https://tesla.hue-line.com/
-           window.location.href = `${protocol}//${slug}.${rootDomain}/my/dashboard`;
-        }
+        performSubdomainRedirect(slug, "/my/dashboard");
       } else {
-        // Fallback: If they are a Super Admin or have no subdomain, go to generic dashboard
-        router.push("/");
+        router.push("/dashboard");
       }
-
     } catch (err) {
       console.error("Login error:", err);
       setError("An unexpected error occurred.");
@@ -112,7 +104,7 @@ export default function LoginPage() {
     }
   }
 
-  // --- 2. HANDLE CLIENT LOGIN (Booking Portal) ---
+  // --- 2. HANDLE CLIENT LOGIN ---
   async function handleClientLogin(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
@@ -142,12 +134,19 @@ export default function LoginPage() {
         return;
       }
 
-      // Clients just go to the specific booking page
-      // Usually: /booking/[huelineId]
-      // Or if you use a generic dashboard for them:
-      router.push("/dashboard"); 
-      router.refresh();
+      // Fetch session to get subdomain
+      const sessionReq = await fetch("/api/auth/session");
+      const session = await sessionReq.json();
+      const slug = session?.user?.subdomainSlug;
 
+      if (slug) {
+        // Redirect client to their booking page on the correct subdomain
+        performSubdomainRedirect(slug, `/booking/${formData.huelineId}`);
+      } else {
+        // Fallback
+        router.push("/dashboard"); 
+        router.refresh();
+      }
     } catch (err) {
       console.error("Login error:", err);
       setError("An unexpected error occurred.");
@@ -157,7 +156,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-8 bg-gray-50 px-4">
-      {/* Ensure Logo is imported correctly */}
       <Image src={Logo} width={140} height={140} alt="Logo" priority className="opacity-90" />
       
       <div className="bg-white shadow-xl rounded-2xl w-full max-w-[400px] overflow-hidden border border-gray-100">

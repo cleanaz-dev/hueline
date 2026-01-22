@@ -7,29 +7,35 @@ export function proxy(request: NextRequest) {
   console.log('🔍 Hostname:', hostname);
   console.log('🔍 Pathname:', pathname);
 
-  // Handle BOTH domains
   let currentHost = hostname;
   
   if (process.env.NODE_ENV === 'production') {
-    // Try to remove both possible root domains
-    if (hostname.includes('.hue-line.com')) {
+    if (hostname.endsWith('.hue-line.com')) {
       currentHost = hostname.replace('.hue-line.com', '');
-    } else if (hostname.includes('.hueline.com')) {
+    } else if (hostname.endsWith('.hueline.com')) {
       currentHost = hostname.replace('.hueline.com', '');
     }
   } else {
-    currentHost = hostname.replace('.localhost:3000', '');
+    // Extract subdomain from lvh.me:PORT
+    const match = hostname.match(/^([^.]+)\.lvh\.me:\d+$/); // 🔥 CHANGED THIS LINE
+    if (match) {
+      currentHost = match[1];
+    } else {
+      currentHost = hostname;
+    }
   }
   
   console.log('🔍 Current Host:', currentHost);
   
   // Check if it's the main domain (not a subdomain)
-  if (
+  const isMainDomain = 
     currentHost === 'hue-line' ||
     currentHost === 'hueline' ||
     currentHost === 'www' ||
-    currentHost === 'localhost:3000'
-  ) {
+    currentHost.startsWith('localhost:') ||
+    currentHost.startsWith('lvh.me:'); // 🔥 ADDED THIS LINE
+  
+  if (isMainDomain) {
     return NextResponse.next();
   }
 

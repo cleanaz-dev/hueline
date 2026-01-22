@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -191,24 +191,30 @@ export default function ClientTable() {
             )}
           </button>
         ),
-        cell: (info) => {
-          const val = info.getValue() || info.row.original.createdAt;
-          const date = new Date(val);
-          return (
-            <div className="text-sm font-medium text-gray-900">
-              {date.toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              })}
-              <div className="text-xs text-gray-500 font-normal">
-                {date.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </div>
-            </div>
-          );
-        },
+       cell: (info) => {
+  const val = info.getValue() || info.row.original.createdAt;
+  const date = new Date(val);
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  return (
+    <div className="text-sm font-medium text-gray-900">
+      {date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })}
+      <div className="text-xs text-gray-500 font-normal">
+        {mounted ? date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }) : "--:--"}
+      </div>
+    </div>
+  );
+},
       }),
 
       // Lead Details

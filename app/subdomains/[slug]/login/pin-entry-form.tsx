@@ -49,6 +49,7 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
         huelineId: huelineId.toLowerCase(),
         pin: pinValue,
         redirect: false,
+        callbackUrl: window.location.origin + `/booking/${huelineId}`,
       });
 
       if (result?.error) {

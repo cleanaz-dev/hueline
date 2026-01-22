@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { useMemo, useState } from "react";
-import { X, Building2, Home, TrendingUp, Calendar, Activity, PenSquare } from "lucide-react";
+import { X, Building2, Home, TrendingUp, Calendar, Activity } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
 import { Button } from "@/components/ui/button";
 import { formatProjectScope, getEstimatedValueRange } from "@/lib/utils/dashboard-utils";
@@ -12,7 +12,6 @@ import { useOwner } from "@/context/owner-context";
 import { IntelRoom } from "./intel-room";
 import { IntelCall } from "./intel-call";
 import { IntelLogs } from "./intel-logs";
-import { IntelAddNote } from "./intel-add-note";
 
 interface IntelligenceDialogProps {
   isOpen: boolean;
@@ -30,13 +29,18 @@ export default function IntelligenceDialog({
   if (!isOpen) return null;
   const { subdomain } = useOwner();
   const slug = subdomain?.slug || "";
-  const [showNoteInput, setShowNoteInput] = useState(false);
 
-  // 1. Fetch Logs (Lightweight)
-  const { data: logs, isLoading: loadingLogs } = useSWR(
+  // 1. Fetch Logs (EXCLUDE NOTES)
+  const { data: allLogs, isLoading: loadingLogs } = useSWR(
     `/api/subdomain/${slug}/booking/${booking.huelineId}/logs`,
     fetcher,
     { revalidateOnFocus: false }
+  );
+
+  // 🔥 FILTER OUT NOTES FROM LOGS
+  const logs = useMemo(() => 
+    allLogs?.filter((log: any) => log.type !== "NOTE") || [],
+    [allLogs]
   );
 
   // 2. Fetch Rooms
@@ -91,65 +95,26 @@ export default function IntelligenceDialog({
           </div>
           
           <div className="flex items-center gap-2">
-             {/* Note Button */}
-             <Button
-                variant={showNoteInput ? "secondary" : "outline"}
-                size="sm"
-                onClick={() => setShowNoteInput(!showNoteInput)}
-                className="hidden sm:flex h-8 gap-2 text-xs font-semibold"
-             >
-                <PenSquare className="w-3.5 h-3.5" />
-                Add Note
-             </Button>
-             {/* Mobile Icon Button */}
-             <Button
-                variant={showNoteInput ? "secondary" : "outline"}
-                size="icon"
-                onClick={() => setShowNoteInput(!showNoteInput)}
-                className="sm:hidden h-9 w-9"
-             >
-                <PenSquare className="w-4 h-4" />
-             </Button>
-
-             <div className="h-6 w-px bg-slate-200 mx-1" />
-
              <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
                <X className="w-5 h-5" />
              </button>
           </div>
         </div>
 
-        {/* NOTE INPUT (Slides down) */}
-        {showNoteInput && (
-            <IntelAddNote 
-                huelineId={booking.huelineId} 
-                slug={slug} 
-                onCancel={() => setShowNoteInput(false)} 
-            />
-        )}
-
         {/* BODY */}
         <div className="flex-1 overflow-y-auto bg-slate-50/50 p-3 sm:p-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
           <div className="max-w-3xl mx-auto space-y-4">
             
-            {/* 1. LOGS & NOTES */}
-            {(hasLogs || loadingLogs) && (
-               <div>
-                  {/* Pass defaultExpanded={false} to keep it clean */}
-                  <IntelLogs logs={logs || []} defaultExpanded={false} />
-               </div>
-            )}
-
-            {/* 2. SITE SURVEY (Rooms) */}
+            {/* 1. SITE SURVEY (Rooms) */}
             {hasRooms && (
                <IntelRoom 
                   rooms={booking.rooms} 
                   presignedUrls={presignedUrls} 
-                  defaultExpanded={false} // Force clean start
+                  defaultExpanded={false}
                />
             )}
 
-            {/* 3. CALLS */}
+            {/* 2. CALLS */}
             {hasCalls && (
               <div className="space-y-3 pt-2">
                  <div className="flex items-center gap-2 mb-2 px-1">
@@ -160,17 +125,25 @@ export default function IntelligenceDialog({
               </div>
             )}
 
+            {/* 3. ACTIVITY HISTORY (Logs - No Notes) */}
+            {(hasLogs || loadingLogs) && (
+               <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-2 mb-2 px-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Activity History</span>
+                    <div className="h-px flex-1 bg-slate-200/60" />
+                 </div>
+                  <IntelLogs logs={logs || []} defaultExpanded={false} />
+               </div>
+            )}
+
             {/* EMPTY STATE */}
-            {!hasCalls && !hasRooms && !hasLogs && !loadingLogs && !showNoteInput && (
+            {!hasCalls && !hasRooms && !hasLogs && !loadingLogs && (
               <div className="flex flex-col items-center justify-center py-16 text-slate-400">
                 <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4 border border-slate-200">
                   <Calendar className="w-8 h-8 text-slate-300" />
                 </div>
                 <h4 className="font-semibold text-slate-900">No Activity Yet</h4>
-                <p className="text-sm mt-1 text-slate-500">Start by adding a note or waiting for a call.</p>
-                <Button variant="link" onClick={() => setShowNoteInput(true)} className="mt-2 text-indigo-600">
-                    Write first note
-                </Button>
+                <p className="text-sm mt-1 text-slate-500">No calls or activity recorded for this project.</p>
               </div>
             )}
           </div>
