@@ -11,17 +11,18 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
 
   // --- COOKIE OVERRIDE ---
-   cookies: {
+  cookies: {
     sessionToken: {
-      name: isProd ? `__Secure-next-auth.session-token` : `next-auth.session-token`,
+      name: isProd
+        ? `__Secure-next-auth.session-token`
+        : `next-auth.session-token`,
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
         secure: isProd,
-        // 🔥 FIX: Set to undefined in Dev. 
-        // Letting the browser handle the domain automatically prevents the loop.
-        domain: isProd ? ".hue-line.com" : undefined, 
+        // 🔥 FIX: Set to .lvh.me in dev so cookies work across subdomains
+        domain: isProd ? ".hue-line.com" : ".lvh.me",
       },
     },
     csrfToken: {
@@ -31,6 +32,8 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: isProd,
+        // 🔥 Add domain here too
+        domain: isProd ? ".hue-line.com" : ".lvh.me",
       },
     },
   },
@@ -47,16 +50,19 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
         const user = await prisma.subdomainUser.findUnique({
           where: { email: credentials.email },
-          include: { subdomain: true } 
+          include: { subdomain: true },
         });
         if (!user || !user.passwordHash) return null;
-        const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.passwordHash,
+        );
         if (!isValid) return null;
         return {
           id: user.id,
           name: user.name || user.email.split("@")[0],
           email: user.email,
-          role: user.role, 
+          role: user.role,
           subdomainSlug: user.subdomain?.slug,
         };
       },
@@ -70,17 +76,20 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         const dbBooking = await prisma.subBookingData.findFirst({
-          where: { huelineId: { equals: credentials?.huelineId, mode: "insensitive" } },
-          include: { subdomain: true }
+          where: {
+            huelineId: { equals: credentials?.huelineId, mode: "insensitive" },
+          },
+          include: { subdomain: true },
         });
-        if (!dbBooking || String(dbBooking.pin) !== String(credentials?.pin)) return null;
+        if (!dbBooking || String(dbBooking.pin) !== String(credentials?.pin))
+          return null;
         return {
           id: dbBooking.huelineId,
           role: "customer",
           subdomainSlug: dbBooking.subdomain?.slug,
         };
-      }
-    })
+      },
+    }),
   ],
 
   callbacks: {
@@ -97,7 +106,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.role = token.role as string;
         session.user.subdomainSlug = token.subdomainSlug as string;
-        
+
         // 🔥 ADD THIS LINE 🔥
         // We map the token ID to huelineId so your page logic works
         (session.user as any).huelineId = token.id as string;
