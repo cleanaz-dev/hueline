@@ -47,8 +47,8 @@ export const BookingCTA = () => {
               Schedule Demo
             </div>
 
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 tracking-tight">
-              See HueLine AI in Action
+            <h2 className="text-3xl md:text-4xl  text-gray-900 mb-3 tracking-tight">
+              See <span className="text-accent font-semibold">Hue-Line</span> in Action
             </h2>
             <p className="text-sm md:text-base text-gray-600 max-w-xl mx-auto font-medium">
               Book a live demo to see how our AI agent transforms property
