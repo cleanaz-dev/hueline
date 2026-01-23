@@ -84,7 +84,7 @@ export default function NavSection() {
         {/* Desktop CTA */}
         <div className="items-center gap-2 hidden lg:flex">
           <Button variant="outline" size="sm" asChild>
-            <Link href="/login">Partner Login</Link>
+            <Link href="/login?partner">Partner Login</Link>
           </Button>
           <Button size="sm" asChild>
             <Link href="/booking">Book a Call</Link>
@@ -131,7 +131,7 @@ export default function NavSection() {
                 <motion.div variants={itemVars}>
                   <SheetClose asChild>
                     <Button variant="outline" asChild>
-                      <Link href="/login">Partner Login</Link>
+                      <Link href="/login?partner">Partner Login</Link>
                     </Button>
                   </SheetClose>
                 </motion.div>

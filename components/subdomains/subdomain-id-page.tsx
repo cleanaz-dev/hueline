@@ -9,6 +9,7 @@ import SubDesignSummary from "./layout/sub-design-summary";
 import { SubCouponQuoteCards } from "./layout/sub-coupon-quote-card";
 import SubdomainNav from "./layout/subdomain-nav";
 import { BookingCTA } from "./layout/booking-cta";
+import { SurveyNudge } from "./layout/survey-nudge"; // <--- Import logic
 
 type Props = {
   booking: BookingData;
@@ -24,7 +25,7 @@ function formatTime(duration?: string | null): string {
 export default function SubDomainIdPage({ booking, subdomain }: Props) {
   
   return (
-    <ScrollArea>
+    <ScrollArea className="h-screen w-full">
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/25">
         
         {/* Navigation */}
@@ -41,18 +42,24 @@ export default function SubDomainIdPage({ booking, subdomain }: Props) {
           {/* Project Vision */}
           <SubProjectVision booking={booking} />
 
-          {/* Before & After Images - This will now only render when URLs are ready */}
+          {/* Transformation Gallery */}
           <SubTransformationGallery booking={booking} />
 
           {/* Design Summary */}
           <SubDesignSummary booking={booking} />
 
-          {/* Quote Cards */}
-          <SubCouponQuoteCards booking={booking} />
+          {/* Quote Cards (Added ID for the nudge to scroll to) */}
+          <div id="quote-survey-section" className="scroll-mt-24">
+            <SubCouponQuoteCards booking={booking} />
+          </div>
 
           {/* CTA */}
           <BookingCTA />
         </main>
+        
+        {/* The Nudge Widget (Fixed Position) */}
+        <SurveyNudge booking={booking} />
+        
       </div>
     </ScrollArea>
   );

@@ -1,8 +1,8 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image"; 
 import Logo from "@/public/images/logo-2--increased-brightness.png"; 
 import { z } from "zod";
@@ -21,6 +21,7 @@ const clientSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loginMethod, setLoginMethod] = useState<"partner" | "client">("client");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -31,6 +32,14 @@ export default function LoginPage() {
     huelineId: "",
     pin: "",
   });
+
+  // Check for 'partner' in URL search params
+  useEffect(() => {
+    const hasPartnerParam = searchParams.get("partner") !== null;
+    if (hasPartnerParam) {
+      setLoginMethod("partner");
+    }
+  }, [searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
