@@ -2,7 +2,9 @@
 export interface DashboardStats {
   callsThisWeek: number;
   callsThisWeekTrend: number;
-  peakHour: string;
   callsThisMonth: number;
   callsThisMonthTrend: number;
+  peakHour: string;
+  potentialValue: number;
+  pendingCount: number;
 }

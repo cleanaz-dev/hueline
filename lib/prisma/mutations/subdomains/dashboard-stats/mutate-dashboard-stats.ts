@@ -15,7 +15,9 @@ export async function mutateDashboardStats(slug: string): Promise<DashboardStats
     select: {
       bookings: {
         select: {
-          createdAt: true
+          createdAt: true,
+          status: true,
+          estimatedValue: true
         }
       }
     }
@@ -56,13 +58,11 @@ export async function mutateDashboardStats(slug: string): Promise<DashboardStats
     b => b.createdAt >= lastMonthStart && b.createdAt <= lastMonthEnd
   ).length;
 
-  // --- 3. Peak Hour Logic (FIXED) ---
-  // Get bookings from this month to find the busiest hour of day
+  // --- 3. Peak Hour Logic ---
   const thisMonthBookings = allBookings.filter(
     b => b.createdAt >= thisMonthStart
   );
 
-  // Count calls by hour of day (0-23) across all days this month
   const hourCounts: Record<number, number> = {};
   
   thisMonthBookings.forEach(booking => {
@@ -70,7 +70,6 @@ export async function mutateDashboardStats(slug: string): Promise<DashboardStats
     hourCounts[hour] = (hourCounts[hour] || 0) + 1;
   });
 
-  // Find the hour with the most calls
   let peakHourNum = 0;
   let maxCalls = 0;
 
@@ -81,20 +80,28 @@ export async function mutateDashboardStats(slug: string): Promise<DashboardStats
     }
   });
 
-  // Format the peak hour as an interval (e.g., "1 PM - 2 PM")
   let peakHour = "N/A";
   if (maxCalls > 0) {
     const startPeriod = peakHourNum >= 12 ? 'PM' : 'AM';
     const startDisplayHour = peakHourNum === 0 ? 12 : peakHourNum > 12 ? peakHourNum - 12 : peakHourNum;
     
-    const endHourNum = (peakHourNum + 1) % 24; // Next hour (wraps at midnight)
+    const endHourNum = (peakHourNum + 1) % 24;
     const endPeriod = endHourNum >= 12 ? 'PM' : 'AM';
     const endDisplayHour = endHourNum === 0 ? 12 : endHourNum > 12 ? endHourNum - 12 : endHourNum;
     
     peakHour = `${startDisplayHour} ${startPeriod} - ${endDisplayHour} ${endPeriod}`;
   }
 
-  // --- 4. Helper for Percentage Math ---
+  // --- 4. Potential Value from PENDING Bookings ---
+  const potentialValue = allBookings
+    .filter(b => b.status === 'PENDING')
+    .reduce((sum, booking) => {
+      return sum + (booking.estimatedValue || 0);
+    }, 0);
+
+  const pendingCount = allBookings.filter(b => b.status === 'PENDING').length;
+
+  // --- 5. Helper for Percentage Math ---
   const calculateTrend = (current: number, previous: number) => {
     if (previous === 0) {
       return current > 0 ? 100 : 0;
@@ -111,5 +118,8 @@ export async function mutateDashboardStats(slug: string): Promise<DashboardStats
     callsThisMonthTrend: calculateTrend(callsThisMonth, callsLastMonth),
     
     peakHour,
+    
+    potentialValue,
+    pendingCount,
   };
 }

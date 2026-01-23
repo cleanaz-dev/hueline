@@ -155,10 +155,11 @@ model SubdomainUser {
 }
 
 model SubBookingData {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  subdomainId String    @db.ObjectId
-  subdomain   Subdomain @relation(fields: [subdomainId], references: [id], onDelete: Cascade)
-  huelineId   String    @unique
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  subdomainId String         @db.ObjectId
+  subdomain   Subdomain      @relation(fields: [subdomainId], references: [id], onDelete: Cascade)
+  huelineId   String         @unique
+  status      BookingStatus? @default(PENDING)
 
   // ... Client Details ...
   name           String
@@ -186,9 +187,6 @@ model SubBookingData {
   lastInteraction     String? // The new "Pulse" headline
   selfServeCompletion Boolean?    @default(false)
 
-
-  
-
   // 3. STICKY / ACCUMULATIVE (Builds up over time)
   projectType    String? // e.g. "Residential"
   projectScope   String[] // ✅ Renamed & Array (e.g. ["Interior", "Cabinets"])
@@ -206,6 +204,12 @@ model SubBookingData {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum BookingStatus {
+  PENDING
+  CLOSED
+  LOST
 }
 
 model Room {

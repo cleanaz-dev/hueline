@@ -1,4 +1,4 @@
-import { Prisma, RoomType } from "@/app/generated/prisma";
+import { Prisma, RoomType, BookingStatus } from "@/app/generated/prisma";
 import { 
   CallReason, 
   CallOutcome, 
@@ -117,7 +117,7 @@ export interface BookingData {
   dateTime: Date | string;
   pin: string;
   expiresAt: number;
-  
+  status: BookingStatus | null;
   // --- PULSE / STATUS FIELDS ---
   
   // 1. Genesis

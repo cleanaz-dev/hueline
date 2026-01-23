@@ -1,5 +1,6 @@
 import { DashboardStats } from "@/types/dashboard-types";
-import { Phone, Clock, CalendarDays, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { getEstimatedValueRange } from "@/lib/utils/dashboard-utils";
+import { Phone, Clock, CalendarDays, TrendingUp, TrendingDown, Minus, DollarSign } from "lucide-react";
 
 
 export default function StatCards({
@@ -35,15 +36,23 @@ export default function StatCards({
   };
 
   const weekTrend = getTrendData(stats?.callsThisWeekTrend);
-  const monthTrend = getTrendData(stats?.callsThisMonthTrend);
+  // const monthTrend = getTrendData(stats?.callsThisMonthTrend);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
 
   const cardData = [
     {
       label: "Calls This Week",
       value: stats?.callsThisWeek || 0,
       icon: Phone,
-      color: "blue",
-      // Connect real data
+      color: "primary",
       trend: weekTrend.label,
       trendDirection: weekTrend.direction, 
       trendLabel: "vs last week",
@@ -53,20 +62,27 @@ export default function StatCards({
       value: stats?.peakHour || "N/A",
       icon: Clock,
       color: "purple",
-      // Peak hour usually doesn't have a % trend, keep neutral
       trend: "Avg",
       trendDirection: "neutral", 
       trendLabel: "Most active time",
     },
-    {
-      label: "Calls This Month",
-      value: stats?.callsThisMonth || 0,
-      icon: CalendarDays,
-      color: "emerald",
-      // Connect real data
-      trend: monthTrend.label,
-      trendDirection: monthTrend.direction,
-      trendLabel: "vs last month",
+    // {
+    //   label: "Calls This Month",
+    //   value: stats?.callsThisMonth || 0,
+    //   icon: CalendarDays,
+    //   color: "emerald",
+    //   trend: monthTrend.label,
+    //   trendDirection: monthTrend.direction,
+    //   trendLabel: "vs last month",
+    // },
+   {
+      label: "Potential Value",
+      value: getEstimatedValueRange(stats?.potentialValue || 0),
+      icon: DollarSign,
+      color: "green",
+      trend: `${stats?.pendingCount || 0} pending`,
+      trendDirection: "neutral",
+      trendLabel: "Active opportunities",
     },
   ];
 
@@ -76,9 +92,9 @@ export default function StatCards({
 
   const getColorClasses = (color: string) => {
     switch (color) {
-      case "blue": return { text: "text-blue-600", bg: "bg-blue-50", border: "border-blue-500" };
+      case "primary": return { text: "text-primary", bg: "bg-none", border: "border-primary" };
       case "purple": return { text: "text-purple-600", bg: "bg-purple-50", border: "border-purple-500" };
-      case "emerald": return { text: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-500" };
+      case "green": return { text: "text-green-600", bg: "bg-green-50", border: "border-green-500" };
       default: return { text: "text-gray-600", bg: "bg-gray-50", border: "border-gray-500" };
     }
   };
@@ -92,38 +108,43 @@ export default function StatCards({
           return (
             <div
               key={index}
-              className={`relative bg-white border border-gray-200/60 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 border-t-4 ${colors.border}`}
+              className={`flex flex-col justify-between relative bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-t-4 ${colors.border} overflow-hidden h-full`}
             >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-semibold text-gray-500 mb-1">
-                    {item.label}
-                  </p>
-                  <h3 className="text-3xl font-bold text-gray-900 tracking-tight">
-                    {item.value}
-                  </h3>
-                </div>
-                <div className={`p-3 rounded-lg ${colors.bg} ${colors.text} bg-opacity-50`}>
-                  <item.icon className="w-5 h-5" />
+              {/* Main Content - Flex Grow pushes footer down */}
+              <div className="p-6 flex-grow">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">
+                      {item.label}
+                    </p>
+                    <h3 className="text-3xl font-bold text-gray-900 tracking-tight mt-2">
+                      {item.value}
+                    </h3>
+                  </div>
+                  <div className={`p-3 rounded-xl ${colors.bg} ${colors.text} bg-opacity-50 ring-1 ring-inset ring-black/5`}>
+                    <item.icon className="w-6 h-6" />
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center text-sm">
-                <span className={`
-                  inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mr-2
-                  ${item.trendDirection === 'up' ? 'bg-green-100 text-green-700' : 
-                    item.trendDirection === 'down' ? 'bg-red-100 text-red-700' : 
-                    'bg-gray-100 text-gray-700'}
-                `}>
-                  {/* Dynamic Icons based on direction */}
-                  {item.trendDirection === 'up' && <TrendingUp className="w-3 h-3 mr-1" />}
-                  {item.trendDirection === 'down' && <TrendingDown className="w-3 h-3 mr-1" />}
-                  {item.trendDirection === 'neutral' && <Minus className="w-3 h-3 mr-1" />}
-                  {item.trend}
-                </span>
-                <span className="text-gray-400 text-xs">
-                  {item.trendLabel}
-                </span>
+              {/* Stats Footer - Distinct separation */}
+              <div className="border-t border-gray-100 bg-gray-50 px-6 py-4">
+                <div className="flex items-center text-sm">
+                  <span className={`
+                    inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-3
+                    ${item.trendDirection === 'up' ? 'bg-green-100 text-green-700' : 
+                      item.trendDirection === 'down' ? 'bg-red-100 text-red-700' : 
+                      'bg-gray-200 text-gray-700'}
+                  `}>
+                    {item.trendDirection === 'up' && <TrendingUp className="w-3 h-3 mr-1" />}
+                    {item.trendDirection === 'down' && <TrendingDown className="w-3 h-3 mr-1" />}
+                    {item.trendDirection === 'neutral' && <Minus className="w-3 h-3 mr-1" />}
+                    {item.trend}
+                  </span>
+                  <span className="text-gray-500 text-xs font-medium">
+                    {item.trendLabel}
+                  </span>
+                </div>
               </div>
             </div>
           );
