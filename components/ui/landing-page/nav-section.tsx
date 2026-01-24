@@ -19,8 +19,9 @@ import { motion, Variants } from "framer-motion";
 /* -------------------------------- data --------------------------------- */
 const nav = [
   { id: 1, title: "Solutions", hash: "solutions" },
-  { id: 2, title: "Features", hash: "features" },
-  { id: 3, title: "ROI", hash: "roi" },
+  { id: 2, title: "Self Survey", hash: "self-survey" },
+  { id: 3, title: "Features", hash: "features" },
+  { id: 4, title: "ROI", hash: "roi" },
 ];
 
 /* -------------------------------- component ---------------------------- */
@@ -57,14 +58,14 @@ export default function NavSection() {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <Link href="#hero">
-          <Image
-            src={Logo}
-            alt="logo"
-            height={100}
-            width={100}
-            className="object-contain"
-            priority
-          />
+            <Image
+              src={Logo}
+              alt="logo"
+              height={100}
+              width={100}
+              className="object-contain"
+              priority
+            />
           </Link>
         </div>
 

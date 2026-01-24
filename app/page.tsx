@@ -6,6 +6,7 @@ import FooterSection from "@/components/ui/landing-page/footer-section";
 import { HeroSection } from "@/components/ui/landing-page/hero-section";
 import LogoStroke from "@/components/ui/landing-page/logo-stroke";
 import NavSection from "@/components/ui/landing-page/nav-section";
+import SelfSurvey from "@/components/ui/landing-page/self-survey";
 
 export default function Home() {
   return (
@@ -17,6 +18,8 @@ export default function Home() {
         <HeroSection />
         <LogoStroke />
         <BusinessChallenges />
+        <LogoStroke />
+        <SelfSurvey />
         <LogoStroke />
         <FeatureSection />
         <LogoStroke />
