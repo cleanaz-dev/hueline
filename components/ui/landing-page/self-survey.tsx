@@ -22,7 +22,7 @@ const features = [
   },
   {
     id: 1,
-    title: "Auto-Capture Countdown",
+    title: "Auto-Capture", // Shortened slightly for mobile fitting
     description: "The app stabilizes the shot and handles the shutter so photos are never blurry.",
     icon: Camera,
     listItems: [
@@ -35,12 +35,12 @@ const features = [
   },
   {
     id: 2,
-    title: "Instant Scope Report",
+    title: "Instant Report", // Shortened slightly for mobile fitting
     description: "Finish the session and instantly view report before submitting.",
     icon: FileCheck,
     listItems: [
       "Photos sorted by room automatically",
-      "Video walkthroughs included (optional)",
+      "Video walkthroughs included",
       "Scope items identified by AI"
     ],
     image: "https://res.cloudinary.com/ddgo2mftc/image/upload/v1769277836/Generated_Image_January_24_2026_-_12_57PM_1_yyih98.png",
@@ -64,21 +64,40 @@ export default function SelfSurvey() {
   }, [isPaused]); 
 
   return (
-    <section className="py-24 overflow-visible bg-transparent" id="self-survey">
+    <section className="py-16 md:py-24 overflow-visible bg-transparent" id="self-survey">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-         <div className='header-section-div text-center mb-16'>
+         <div className='header-section-div text-center mb-10 md:mb-16'>
           <h1 className='section-badge'>AI Guided Self Survey</h1>
           <h2 className='section-header'>Save <span className="text-primary">Hours</span> with our AI Guided Self Surveys</h2>
         </div>
+
+        {/* --- MOBILE ONLY: TOP TAB BAR --- */}
+        {/* This replaces the vertical list on small screens */}
+        <div className="lg:hidden grid grid-cols-3 gap-2 mb-6 border-b border-gray-100">
+          {features.map((feature, index) => (
+            <button
+              key={feature.id}
+              onClick={() => setActiveTab(index)}
+              className={`text-sm font-bold pb-2 px-1 transition-colors relative ${
+                activeTab === index 
+                ? "text-primary border-b-2 border-primary" 
+                : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              {feature.title}
+            </button>
+          ))}
+        </div>
         
         <div 
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-stretch"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-stretch"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
           
-          {/* LEFT COLUMN: The Controller */}
-          <div className="space-y-8 order-2 lg:order-1 flex flex-col justify-center">
+          {/* LEFT COLUMN: DESKTOP ONLY Controller */}
+          {/* HIDDEN on Mobile (lg:flex) */}
+          <div className="hidden lg:flex space-y-8 order-2 lg:order-1 flex-col justify-center">
             
             <div className="space-y-4">
               {features.map((feature, index) => (
@@ -130,10 +149,10 @@ export default function SelfSurvey() {
             </div>
           </div>
 
-          {/* RIGHT COLUMN: VERTICAL STACK (Stroke -> Image -> Stroke) */}
+          {/* RIGHT COLUMN: Image Container */}
           <div className="order-1 lg:order-2 flex flex-col items-center h-full">
             
-            {/* 1. TOP STROKE (Hidden on Mobile) */}
+            {/* TOP STROKE (Hidden on Mobile) */}
             <div className="hidden lg:block relative w-48 h-16 opacity-30 grayscale mb-6 flex-shrink-0">
                <Image 
                   src={Stroke} 
@@ -143,7 +162,7 @@ export default function SelfSurvey() {
                />
             </div>
 
-            {/* 2. MAIN IMAGE CONTAINER */}
+            {/* MAIN IMAGE CONTAINER */}
             <div className="relative w-full rounded-3xl shadow-2xl bg-white flex-1 min-h-[300px] aspect-[16/10] lg:aspect-auto">
               
               {/* IMAGE SWITCHER LOGIC */}
@@ -169,7 +188,7 @@ export default function SelfSurvey() {
             
             </div>
 
-             {/* 3. BOTTOM STROKE (Hidden on Mobile) */}
+             {/* BOTTOM STROKE (Hidden on Mobile) */}
              <div className="hidden lg:block relative w-48 h-16 opacity-30 grayscale mt-6 flex-shrink-0">
                <Image 
                   src={Stroke} 
@@ -182,6 +201,32 @@ export default function SelfSurvey() {
           </div>
 
         </div>
+
+        {/* --- MOBILE ONLY: BOTTOM INFO CARD --- */}
+        {/* Shows the active text details UNDER the image */}
+        <div className="lg:hidden mt-8 bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
+           <div className="flex items-center gap-4 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center">
+                 {/* Render icon dynamically based on activeTab */}
+                 {React.createElement(features[activeTab].icon, { className: "w-5 h-5" })}
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">{features[activeTab].title}</h3>
+           </div>
+           
+           <p className="text-slate-600 mb-6 leading-relaxed">
+             {features[activeTab].description}
+           </p>
+
+           <ul className="space-y-3">
+             {features[activeTab].listItems.map((item, i) => (
+               <li key={i} className="flex items-center text-sm text-slate-700 font-medium">
+                 <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                 {item}
+               </li>
+             ))}
+           </ul>
+        </div>
+
       </div>
     </section>
   );
