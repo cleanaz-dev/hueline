@@ -119,7 +119,7 @@ export const BookingCTA = () => {
             {/* Calendly Embed */}
             <div className="flex-1 overflow-hidden">
               <iframe
-                src="https://calendly.com/care-hue-line/30min"
+                src="https://calendly.com/phendricks-proton/30min"
                 width="100%"
                 height="100%"
                 frameBorder="0"
