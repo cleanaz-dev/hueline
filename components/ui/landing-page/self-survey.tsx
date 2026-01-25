@@ -14,7 +14,7 @@ const features = [
     icon: Bot,
     listItems: [
       "Verbal turn-by-turn guidance",
-      "Ensures specific angles aren't missed",
+      "Ensures specific aren't missed",
       "Works for exterior and interior"
     ],
     image: "https://res.cloudinary.com/ddgo2mftc/image/upload/v1769277836/Generated_Image_January_24_2026_-_12_52PM_utbv6z.png", 
@@ -40,7 +40,7 @@ const features = [
     icon: FileCheck,
     listItems: [
       "Photos sorted by room automatically",
-      "Video walkthroughs included",
+      "Video walkthroughs included (Optional)",
       "Scope items identified by AI"
     ],
     image: "https://res.cloudinary.com/ddgo2mftc/image/upload/v1769277836/Generated_Image_January_24_2026_-_12_57PM_1_yyih98.png",
