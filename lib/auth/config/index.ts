@@ -11,7 +11,7 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
 
   // --- COOKIE OVERRIDE ---
-  cookies: {
+ cookies: {
     sessionToken: {
       name: isProd
         ? `__Secure-next-auth.session-token`
@@ -21,8 +21,9 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: isProd,
-        // 🔥 FIX: Set to .lvh.me in dev so cookies work across subdomains
-        domain: isProd ? ".hue-line.com" : ".lvh.me",
+        // 🛑 FIX: Don't force a domain in dev. Let the browser determine it.
+        // If undefined, it defaults to the current host (e.g., demo.lvh.me)
+        domain: isProd ? ".hue-line.com" : undefined, 
       },
     },
     csrfToken: {
@@ -32,8 +33,8 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: isProd,
-        // 🔥 Add domain here too
-        domain: isProd ? ".hue-line.com" : ".lvh.me",
+        // 🛑 FIX: Same here
+        domain: isProd ? ".hue-line.com" : undefined,
       },
     },
   },

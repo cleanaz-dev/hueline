@@ -105,7 +105,7 @@ export const SurveyNudge = ({ booking }: { booking: BookingData }) => {
               </div>
 
               <p className="text-[15px] text-gray-600 mb-6 leading-relaxed">
-                Complete your survey now to unlock your{" "}
+                Complete your pre-site survey now to unlock your{" "}
                 <span className="text-black font-bold underline decoration-gray-200 underline-offset-4">
                   15% discount
                 </span>{" "}
@@ -190,7 +190,7 @@ export const SurveyNudge = ({ booking }: { booking: BookingData }) => {
               >
                 <div className="pr-8 pl-2 flex flex-col items-start cursor-pointer">
                   <span className="text-sm font-black text-gray-900 tracking-tight leading-none mb-1 group-hover:underline">
-                    Complete Survey
+                    Complete Pre-Site Survey
                   </span>
                   <div className="flex items-center gap-1">
                     <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider group-hover:underline">
