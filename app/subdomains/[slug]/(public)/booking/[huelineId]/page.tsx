@@ -23,7 +23,7 @@ export default async function BookingPage({ params }: Props) {
 
   // Normalize to lowercase to fix case-sensitivity issues
   const urlId = huelineId.toLowerCase();
-  const sessionId = session?.user?.huelineId?.toLowerCase();
+  const sessionId = (session?.user as any)?.huelineId?.toLowerCase(); // Cast to any to ensure we log it even if types are off
   const urlSlug = slug.toLowerCase();
   const sessionSlug = session?.user?.subdomainSlug?.toLowerCase();
 
@@ -35,11 +35,36 @@ export default async function BookingPage({ params }: Props) {
 
   const isAuthorized = isAuthorizedGuest || isAccountOwner || isSuperAdmin;
 
+  // 🔍🔍🔍 DEBUG LOGGING START 🔍🔍🔍
+  console.log("\n========================================================");
+  console.log("🕵️‍♂️ [AUTH DEBUG] Checking Access for:", `/${slug}/booking/${huelineId}`);
+  console.log("========================================================");
+  
+  console.log("1. 📥 INPUTS:");
+  console.log(`   - URL Slug:       "${urlSlug}"`);
+  console.log(`   - URL HuelineID:  "${urlId}"`);
+
+  console.log("2. 🔑 SESSION:");
+  if (!session) {
+    console.log("   - ❌ Session is NULL/UNDEFINED. (Cookie missing or domain mismatch)");
+  } else {
+    console.log("   - ✅ Session found:", JSON.stringify(session.user, null, 2));
+    console.log(`   - Session ID:     "${sessionId}"`);
+    console.log(`   - Session Role:   "${session.role}"`);
+    console.log(`   - Session Slug:   "${sessionSlug}"`);
+  }
+
+  console.log("3. ⚖️ CHECKS:");
+  console.log(`   - isAuthorizedGuest (SessionID === URLID): ${isAuthorizedGuest ? "✅" : "❌"} ("${sessionId}" vs "${urlId}")`);
+  console.log(`   - isAccountOwner:                          ${isAccountOwner ? "✅" : "❌"}`);
+  console.log(`   - isSuperAdmin:                            ${isSuperAdmin ? "✅" : "❌"}`);
+  console.log(`   - 🏁 FINAL DECISION (isAuthorized):        ${isAuthorized ? "ALLOWED" : "DENIED"}`);
+  console.log("========================================================\n");
+  // 🔍🔍🔍 DEBUG LOGGING END 🔍🔍🔍
+
   if (!isAuthorized) {
+    console.log("🚫 [AUTH DEBUG] Redirecting to login...");
     // 🛑 CRITICAL FIX 🛑
-    // We use a RELATIVE path.
-    // If the user is at "demo.hue-line.com/booking/123",
-    // this sends them to "demo.hue-line.com/login?huelineId=123"
     redirect(`/login?huelineId=${huelineId}`);
   }
 

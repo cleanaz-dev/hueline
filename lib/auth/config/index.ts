@@ -26,13 +26,12 @@ export const authOptions: NextAuthOptions = {
       },
     },
     csrfToken: {
-      name: isProd ? `__Host-next-auth.csrf-token` : `next-auth.csrf-token`,
+      name: isProd ? `__Secure-next-auth.csrf-token` : `next-auth.csrf-token`, // Changed!
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
         secure: isProd,
-        // 🔥 Add domain here too
         domain: isProd ? ".hue-line.com" : ".lvh.me",
       },
     },
