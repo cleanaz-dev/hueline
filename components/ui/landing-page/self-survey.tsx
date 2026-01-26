@@ -14,7 +14,7 @@ const features = [
     icon: Bot,
     listItems: [
       "Verbal turn-by-turn guidance",
-      "Ensures specific aren't missed",
+      "Ensures specifics aren't missed",
       "Works for exterior and interior"
     ],
     image: "https://res.cloudinary.com/ddgo2mftc/image/upload/v1769277836/Generated_Image_January_24_2026_-_12_52PM_utbv6z.png", 
@@ -22,7 +22,7 @@ const features = [
   },
   {
     id: 1,
-    title: "Auto-Capture", // Shortened slightly for mobile fitting
+    title: "Auto-Capture", 
     description: "The app stabilizes the shot and handles the shutter so photos are never blurry.",
     icon: Camera,
     listItems: [
@@ -35,7 +35,7 @@ const features = [
   },
   {
     id: 2,
-    title: "Instant Report", // Shortened slightly for mobile fitting
+    title: "Instant Report", 
     description: "Finish the session and instantly view report before submitting.",
     icon: FileCheck,
     listItems: [
@@ -51,17 +51,23 @@ const features = [
 export default function SelfSurvey() {
   const [activeTab, setActiveTab] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isAutoPlay, setIsAutoPlay] = useState(true);
 
-  // --- TIMER LOGIC ---
+  // --- FIX: Added ': number' type here ---
+  const handleManualClick = (index: number) => {
+    setActiveTab(index);
+    setIsAutoPlay(false); 
+  };
+
   useEffect(() => {
-    if (isPaused) return;
+    if (!isAutoPlay || isPaused) return;
 
     const interval = setInterval(() => {
       setActiveTab((prev) => (prev + 1) % features.length);
-    }, 3000); // 3 Seconds
+    }, 3000); 
 
     return () => clearInterval(interval);
-  }, [isPaused]); 
+  }, [isPaused, isAutoPlay]); 
 
   return (
     <section className="py-16 md:py-24 overflow-visible bg-transparent" id="self-survey">
@@ -72,12 +78,11 @@ export default function SelfSurvey() {
         </div>
 
         {/* --- MOBILE ONLY: TOP TAB BAR --- */}
-        {/* This replaces the vertical list on small screens */}
         <div className="lg:hidden grid grid-cols-3 gap-2 mb-6 border-b border-gray-100">
           {features.map((feature, index) => (
             <button
               key={feature.id}
-              onClick={() => setActiveTab(index)}
+              onClick={() => handleManualClick(index)}
               className={`text-sm font-bold pb-2 px-1 transition-colors relative ${
                 activeTab === index 
                 ? "text-primary border-b-2 border-primary" 
@@ -96,14 +101,13 @@ export default function SelfSurvey() {
         >
           
           {/* LEFT COLUMN: DESKTOP ONLY Controller */}
-          {/* HIDDEN on Mobile (lg:flex) */}
           <div className="hidden lg:flex space-y-8 order-2 lg:order-1 flex-col justify-center">
             
             <div className="space-y-4">
               {features.map((feature, index) => (
                 <div 
                   key={feature.id}
-                  onClick={() => setActiveTab(index)}
+                  onClick={() => handleManualClick(index)}
                   className={`
                     group relative p-5 rounded-2xl transition-all duration-300 cursor-pointer border
                     ${activeTab === index 
@@ -152,7 +156,7 @@ export default function SelfSurvey() {
           {/* RIGHT COLUMN: Image Container */}
           <div className="order-1 lg:order-2 flex flex-col items-center h-full">
             
-            {/* TOP STROKE (Hidden on Mobile) */}
+            {/* TOP STROKE */}
             <div className="hidden lg:block relative w-48 h-16 opacity-30 grayscale mb-6 flex-shrink-0">
                <Image 
                   src={Stroke} 
@@ -188,7 +192,7 @@ export default function SelfSurvey() {
             
             </div>
 
-             {/* BOTTOM STROKE (Hidden on Mobile) */}
+             {/* BOTTOM STROKE */}
              <div className="hidden lg:block relative w-48 h-16 opacity-30 grayscale mt-6 flex-shrink-0">
                <Image 
                   src={Stroke} 
@@ -203,11 +207,9 @@ export default function SelfSurvey() {
         </div>
 
         {/* --- MOBILE ONLY: BOTTOM INFO CARD --- */}
-        {/* Shows the active text details UNDER the image */}
         <div className="lg:hidden mt-8 bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
            <div className="flex items-center gap-4 mb-4">
               <div className="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center">
-                 {/* Render icon dynamically based on activeTab */}
                  {React.createElement(features[activeTab].icon, { className: "w-5 h-5" })}
               </div>
               <h3 className="text-xl font-bold text-slate-900">{features[activeTab].title}</h3>
