@@ -9,7 +9,7 @@ import SubDesignSummary from "./layout/sub-design-summary";
 import { SubCouponQuoteCards } from "./layout/sub-coupon-quote-card";
 import SubdomainNav from "./layout/subdomain-nav";
 import { BookingCTA } from "./layout/booking-cta";
-import { SurveyNudge } from "./layout/survey-nudge"; // <--- Import logic
+import { SurveyNudge } from "./layout/survey-nudge"; 
 
 type Props = {
   booking: BookingData;
@@ -25,7 +25,7 @@ function formatTime(duration?: string | null): string {
 export default function SubDomainIdPage({ booking, subdomain }: Props) {
   
   return (
-    <ScrollArea className="h-screen w-full pb-12 md:pb-20">
+    <ScrollArea className="h-screen w-full">
       <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/25">
         
         {/* Navigation */}
