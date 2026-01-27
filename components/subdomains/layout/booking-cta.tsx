@@ -34,7 +34,7 @@ export const BookingCTA = () => {
   ];
 
   return (
-    <div className=" pb-14 md:pb-20">
+    <div className="pb-14 md:pb-20">
       <div className="w-full border-2 border-blue-600 rounded-3xl p-6 md:p-8 bg-gradient-to-br from-blue-50/50 to-white relative overflow-hidden">
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
