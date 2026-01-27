@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowRight, Calendar, Clock, Phone, Check } from "lucide-react";
+import { ArrowRight, Calendar, Clock, Phone, Check, Router } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useRouter, usePathname } from "next/navigation";
 
 interface FeedbackFormProps {
   companyName: string;
@@ -12,7 +13,8 @@ interface FeedbackFormProps {
 
 export function FeedbackForm({ companyName }: FeedbackFormProps) {
   const [selectedSlot, setSelectedSlot] = useState<string>("callback");
-
+  const router = useRouter()
+  const pathname = usePathname();
   // Faux schedule data
   const scheduleOptions = [
     {
@@ -34,6 +36,10 @@ export function FeedbackForm({ companyName }: FeedbackFormProps) {
       icon: Phone,
     },
   ];
+
+  const handleScheduling = () => {
+     router.push(`${pathname}/schedule`);
+  }
 
   return (
     <div className="bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden">
@@ -128,7 +134,10 @@ export function FeedbackForm({ companyName }: FeedbackFormProps) {
         <p className="text-xs text-zinc-500 text-center md:text-left">
           Updates will be sent to <span className="font-bold text-zinc-900">{companyName}</span> for final approval.
         </p>
-        <Button className="w-full md:w-auto bg-zinc-900 hover:bg-zinc-800 text-white rounded-md h-10 px-6 transition-transform active:scale-95">
+        <Button
+          onClick={handleScheduling} 
+          className="w-full md:w-auto bg-zinc-900 hover:bg-zinc-800 text-white rounded-md h-10 px-6 transition-transform active:scale-95"
+        >
           Confirm & Schedule
           <ArrowRight className="ml-2 w-4 h-4" />
         </Button>
