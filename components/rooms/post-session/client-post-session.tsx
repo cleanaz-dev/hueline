@@ -1,11 +1,13 @@
 "use client";
 
-import React from "react";
-import { Sparkles } from "lucide-react";
+import React, { useState } from "react";
+import { Sparkles, RefreshCw } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { BookingData, Room } from "@/types/subdomain-type";
 import { useBooking } from "@/context/booking-context";
 import { getPublicUrl } from "@/lib/aws/cdn";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 // Import separate components
 import { ProjectOverview } from "./project-overview";
@@ -26,16 +28,45 @@ export default function ClientPostSession({
 }: ClientPostSessionProps) {
   const { booking, room } = data;
   const { subdomain } = useBooking();
+  const router = useRouter();
+  const [isRetrying, setIsRetrying] = useState(false);
+
   const logoSrc = getPublicUrl(subdomain.logo) || "/placeholder-logo.png";
 
+  const handleRetry = async () => {
+    if (isRetrying) return;
+
+    setIsRetrying(true);
+    try {
+      const response = await fetch(
+        `/api/subdomain/${subdomain.slug}/booking/${booking.huelineId}/${room.id}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        router.push(`/booking/${booking.huelineId}`);
+      } else {
+        throw new Error(result.error || "Failed to delete scope analysis");
+      }
+    } catch (error) {
+      console.error("Error retrying scope analysis:", error);
+      alert("Failed to retry. Please try again.");
+      setIsRetrying(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 pb-20">
-      
       {/* --- 1. THE DREAM --- */}
-      <ProjectOverview 
-        booking={booking} 
-        logoSrc={logoSrc} 
-        presignedUrls={presignedUrls} 
+      <ProjectOverview
+        booking={booking}
+        logoSrc={logoSrc}
+        presignedUrls={presignedUrls}
+        onRetry={handleRetry}
+        isRetrying={isRetrying}
       />
 
       {/* --- SEPARATOR --- */}
@@ -54,19 +85,11 @@ export default function ClientPostSession({
 
       {/* --- CONTAINER FOR REALITY & FAITH --- */}
       <div className="max-w-3xl mx-auto px-4 md:px-6 space-y-8 animate-in slide-in-from-bottom-4 duration-700">
-        
         {/* --- 2. THE REALITY --- */}
-        <ScopeAnalysis 
-          room={room} 
-          presignedUrls={presignedUrls} 
-        />
+        <ScopeAnalysis room={room} presignedUrls={presignedUrls} />
 
         {/* --- 3. FAITH --- */}
-        <FeedbackForm 
-          // Fix: Provide a fallback string in case companyName is null
-          companyName={subdomain.companyName || "Our Team"} 
-        />
-        
+        <FeedbackForm companyName={subdomain.companyName || "Our Team"} />
       </div>
     </div>
   );

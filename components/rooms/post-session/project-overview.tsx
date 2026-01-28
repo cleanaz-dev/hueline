@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, Palette, Image as ImageIcon } from "lucide-react";
+import { CheckCircle2, Palette, Image as ImageIcon, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { BookingData } from "@/types/subdomain-type";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -12,9 +13,11 @@ interface ProjectOverviewProps {
   booking: BookingData;
   logoSrc: string;
   presignedUrls: Record<string, string>;
+  onRetry?: () => void;
+  isRetrying?: boolean;
 }
 
-export function ProjectOverview({ booking, logoSrc, presignedUrls }: ProjectOverviewProps) {
+export function ProjectOverview({ booking, logoSrc, presignedUrls, onRetry, isRetrying }: ProjectOverviewProps) {
   const validImages = booking.mockups
     ?.map((m) => ({
       id: m.id,
@@ -58,14 +61,21 @@ export function ProjectOverview({ booking, logoSrc, presignedUrls }: ProjectOver
               {""} project.
             </p>
           </div>
-          <div className="self-start sm:self-auto">
-            <Badge
-              variant="outline"
-              className="bg-green-50 text-green-700 border-green-200 px-3 py-1"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-              Session Complete
-            </Badge>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+           
+            
+            {/* Retry Button */}
+            {onRetry && (
+              <Button
+                onClick={onRetry}
+                disabled={isRetrying}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className={`w-3 h-3 mr-1.5 ${isRetrying ? "animate-spin" : ""}`} />
+                {isRetrying ? "Retrying..." : "Retry Analysis"}
+              </Button>
+            )}
           </div>
         </div>
 
