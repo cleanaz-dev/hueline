@@ -25,6 +25,7 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
     (async function () {
       const cal = await getCalApi();
       cal("ui", {
+        theme: "light", // <--- Forces light mode in the UI
         styles: { branding: { brandColor: "#2563eb" } },
         hideEventTypeDetails: false,
         layout: "month_view",
@@ -136,7 +137,7 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
             </div>
 
             {/* Official Cal.com React Embed */}
-            <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden md:overflow-hidden">
+            <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden md:overflow-hidden bg-white">
               <Cal
                 calLink={
                   process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"
@@ -147,7 +148,8 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
                 }}
                 config={{ 
                   layout: "month_view",
-                  ...(name ? { name } : {}) // Safely applies name ONLY if it's not undefined
+                  theme: "light", // <--- Forces light mode in the iframe config
+                  ...(name ? { name } : {})
                 }}
               />
             </div>
