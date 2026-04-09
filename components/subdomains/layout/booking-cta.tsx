@@ -14,17 +14,20 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export const BookingCTA = () => {
+interface BookingCTAProps {
+  name?: string;
+}
+
+export const BookingCTA = ({ name }: BookingCTAProps) => {
   const [showCalModal, setShowCalModal] = useState(false);
 
-  // Initialize Cal.com API on component mount
   useEffect(() => {
     (async function () {
       const cal = await getCalApi();
       cal("ui", {
-        styles: { branding: { brandColor: "#2563eb" } }, // Matches Tailwind blue-600
+        styles: { branding: { brandColor: "#2563eb" } },
         hideEventTypeDetails: false,
-        layout: "month_view", // "month_view" or "week_view"
+        layout: "month_view",
       });
     })();
   }, []);
@@ -111,10 +114,11 @@ export const BookingCTA = () => {
 
       {/* Cal.com Modal */}
       {showCalModal && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col">
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-0 md:p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-none md:rounded-3xl shadow-2xl w-full max-w-4xl h-[100dvh] md:h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col">
+            
             {/* Header */}
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-100 flex-shrink-0">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-100 flex-shrink-0 pt-safe">
               <div>
                 <h3 className="text-xl font-bold text-slate-900">
                   Schedule Your Demo
@@ -132,7 +136,7 @@ export const BookingCTA = () => {
             </div>
 
             {/* Official Cal.com React Embed */}
-            <div className="flex-1 min-h-0 w-full">
+            <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden md:overflow-hidden">
               <Cal
                 calLink={
                   process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"
@@ -140,15 +144,16 @@ export const BookingCTA = () => {
                 style={{
                   width: "100%",
                   height: "100%",
-                  minHeight: "600px",
-                  overflow: "scroll",
                 }}
-                config={{ layout: "month_view" }}
+                config={{ 
+                  layout: "month_view",
+                  ...(name ? { name } : {}) // Safely applies name ONLY if it's not undefined
+                }}
               />
             </div>
 
             {/* Footer Info */}
-            <div className="flex-shrink-0 bg-slate-50 border-t border-slate-100 p-4">
+            <div className="flex-shrink-0 bg-slate-50 border-t border-slate-100 p-4 pb-safe">
               <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-600">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={14} className="text-green-600" />

@@ -54,7 +54,7 @@ export default function SubDomainIdPage({ booking, subdomain }: Props) {
           </div>
 
           {/* CTA */}
-          <BookingCTA />
+          <BookingCTA name={booking.name}/>
         </main>
         
         {/* The Nudge Widget (Fixed Position) */}
