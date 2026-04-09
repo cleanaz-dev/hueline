@@ -21,17 +21,53 @@ interface BookingCTAProps {
 export const BookingCTA = ({ name }: BookingCTAProps) => {
   const [showCalModal, setShowCalModal] = useState(false);
 
+  // 1. Initialize Cal.com
   useEffect(() => {
     (async function () {
       const cal = await getCalApi();
       cal("ui", {
-        theme: "light", // <--- Forces light mode in the UI
+        theme: "light",
         styles: { branding: { brandColor: "#2563eb" } },
         hideEventTypeDetails: false,
         layout: "month_view",
       });
     })();
   }, []);
+
+  // 2. NEW: Dynamically disable zoom ONLY when modal is open
+  useEffect(() => {
+    // Find the viewport meta tag in the document head
+    let viewportMeta = document.querySelector('meta[name="viewport"]');
+    
+    // If it doesn't exist for some reason, create it
+    if (!viewportMeta) {
+      viewportMeta = document.createElement("meta");
+      viewportMeta.setAttribute("name", "viewport");
+      document.head.appendChild(viewportMeta);
+    }
+
+    if (showCalModal) {
+      // Lock zoom to prevent iOS Safari auto-zoom on iframe inputs
+      viewportMeta.setAttribute(
+        "content",
+        "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
+      );
+    } else {
+      // Re-enable zoom for accessibility when modal is closed
+      viewportMeta.setAttribute(
+        "content",
+        "width=device-width, initial-scale=1"
+      );
+    }
+
+    // Cleanup function in case the component unmounts while modal is open
+    return () => {
+      viewportMeta?.setAttribute(
+        "content",
+        "width=device-width, initial-scale=1"
+      );
+    };
+  }, [showCalModal]);
 
   const features = [
     {
@@ -148,7 +184,7 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
                 }}
                 config={{ 
                   layout: "month_view",
-                  theme: "light", // <--- Forces light mode in the iframe config
+                  theme: "light",
                   ...(name ? { name } : {})
                 }}
               />
