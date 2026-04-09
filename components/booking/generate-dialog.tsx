@@ -8,14 +8,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Zap, CheckCircle, Loader2, Sparkles } from "lucide-react";
+import { Zap, CheckCircle, Loader2 } from "lucide-react";
 
 type GenerateStatus = "idle" | "generating" | "success" | "error";
 
 interface Props {
   isOpen: boolean;
-  onClose: () => void; // Called when closing without success (e.g. error)
-  onConfirmComplete: () => void; // Called when user clicks "View Design"
+  onClose: () => void;
+  onConfirmComplete: () => void;
   status: GenerateStatus;
   selectedOption: string;
   removeFurniture: boolean;
@@ -71,24 +71,30 @@ export default function GenerateDialog({
           </AlertDialogTitle>
         </AlertDialogHeader>
 
+        {/* Custom style to loop RGB colors on the spinner stroke */}
+        <style>{`
+          @keyframes rgbColorCycle {
+            0% { color: #ef4444; }   /* Tailwind red-500 */
+            33% { color: #22c55e; }  /* Tailwind green-500 */
+            66% { color: #3b82f6; }  /* Tailwind blue-500 */
+            100% { color: #ef4444; } /* Tailwind red-500 */
+          }
+          .rgb-color-cycle {
+            animation: rgbColorCycle 3s ease-in-out infinite;
+          }
+        `}</style>
+
         <div className="space-y-6 py-4">
           {status === "generating" || (status === "success" && progress < 100) ? (
             /* ------------------- GENERATING STATE ------------------- */
             <div className="text-center space-y-4">
-              {/* Video Splash Screen */}
-              <div className="flex justify-center mb-4">
-                <div className="relative w-48 h-32 rounded-lg overflow-hidden bg-black shadow-md border border-gray-200">
-                  <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    poster="/videos/generate-thumbnail.png"
-                    className="w-full h-full object-cover opacity-80"
-                    src="/videos/booking-splash.mp4" 
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 text-white animate-spin drop-shadow-md" />
+              
+              {/* RGB Shadcn Spinner */}
+              <div className="flex justify-center mb-6 mt-4">
+                <div className="relative flex items-center justify-center w-24 h-24 bg-gray-50/50 rounded-full shadow-inner border border-gray-100">
+                  {/* The rgb-color-cycle class handles the color change, animate-spin handles the rotation */}
+                  <div className="rgb-color-cycle">
+                    <Loader2 className="h-14 w-14 animate-spin stroke-[2.5] drop-shadow-sm" />
                   </div>
                 </div>
               </div>
