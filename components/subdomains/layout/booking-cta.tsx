@@ -110,49 +110,59 @@ export const BookingCTA = () => {
       </div>
 
       {/* Cal.com Modal */}
-{showCalModal && (
-  <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col">
-      
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-100">
-        <div>
-          <h3 className="text-xl font-bold text-slate-900">Schedule Your Demo</h3>
-          <p className="text-sm text-slate-500 mt-0.5">Choose a time that works for you</p>
-        </div>
-        <button
-          onClick={() => setShowCalModal(false)}
-          className="bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition-colors"
-        >
-          <X size={20} className="text-slate-600" />
-        </button>
-      </div>
+      {showCalModal && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-100 flex-shrink-0">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">
+                  Schedule Your Demo
+                </h3>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  Choose a time that works for you
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCalModal(false)}
+                className="bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition-colors"
+              >
+                <X size={20} className="text-slate-600" />
+              </button>
+            </div>
 
-      {/* Cal embed — fixed height so no scrolling needed */}
-      <div style={{ height: "700px" }}>
-        <Cal
-          calLink={process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"}
-          style={{ width: "100%", height: "100%" }}
-          config={{ layout: "month_view" }}
-        />
-      </div>
+            {/* Official Cal.com React Embed */}
+            <div className="flex-1 min-h-0 w-full">
+              <Cal
+                calLink={
+                  process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"
+                }
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  minHeight: "600px",
+                  overflow: "scroll",
+                }}
+                config={{ layout: "month_view" }}
+              />
+            </div>
 
-      {/* Footer */}
-      <div className="bg-slate-50 border-t border-slate-100 p-4">
-        <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-600">
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 size={14} className="text-green-600" />
-            <span className="font-medium">30-minute session</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 size={14} className="text-green-600" />
-            <span className="font-medium">Live walkthrough</span>
+            {/* Footer Info */}
+            <div className="flex-shrink-0 bg-slate-50 border-t border-slate-100 p-4">
+              <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-600">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-green-600" />
+                  <span className="font-medium">30-minute session</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-green-600" />
+                  <span className="font-medium">Live walkthrough</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };
