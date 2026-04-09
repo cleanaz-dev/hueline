@@ -62,7 +62,8 @@ export const BookingCTA = () => {
             </div>
 
             <h2 className="text-3xl md:text-4xl text-gray-900 mb-3 tracking-tight">
-              See <span className="text-accent font-semibold">Hue-Line</span> in Action
+              See <span className="text-accent font-semibold">Hue-Line</span> in
+              Action
             </h2>
             <p className="text-sm md:text-base text-gray-600 max-w-xl mx-auto font-medium">
               Book a live demo to see how our AI agent transforms property
@@ -112,7 +113,6 @@ export const BookingCTA = () => {
       {showCalModal && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col">
-            
             {/* Header */}
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-100 flex-shrink-0">
               <div>
@@ -132,12 +132,18 @@ export const BookingCTA = () => {
             </div>
 
             {/* Official Cal.com React Embed */}
-            <div className="flex-1 overflow-y-auto w-full">
-              <Cal 
-                // Ensure your env variable looks like: NEXT_PUBLIC_CAL_LINK="your-username/30min"
-                calLink={process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"}
-                style={{ width: "100%", height: "100%", overflow: "scroll" }}
-                config={{ layout: "month_view" }}
+            <div className="flex-1 min-h-0 w-full">
+              <Cal
+                calLink={
+                  process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"
+                }
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  minHeight: "600px",
+                  overflow: "scroll",
+                }}
+                config={{ layout: "week_view" }}
               />
             </div>
 
