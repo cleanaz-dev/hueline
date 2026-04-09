@@ -12,6 +12,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.940.0",
     "@aws-sdk/s3-request-presigner": "^3.940.0",
+    "@calcom/embed-react": "^1.5.3",
     "@cloudinary/url-gen": "^1.22.0",
     "@deepgram/sdk": "^4.11.3",
     "@hookform/resolvers": "^5.2.2",
