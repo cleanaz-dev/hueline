@@ -31,7 +31,7 @@ export function HeroSection() {
 
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-8 text-slate-600 muted-foreground">
             Hue-Line: unlimited Intelligent visuals + 24/7
-            AI voice agent for <span className="font-bold">$799/mo. (founder pricing)</span>
+            AI voice agent for <span className="font-bold">$799/mo.</span>
           </p>
 
           <Button size="lg" className="bg-primary" asChild>
