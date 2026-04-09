@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { getCalApi } from "@calcom/embed-react";
-import Cal from "@calcom/embed-react";
 import {
   Calendar,
   Video,
   Sparkles,
   Globe,
-  X,
   ArrowRight,
-  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -19,8 +16,7 @@ interface BookingCTAProps {
 }
 
 export const BookingCTA = ({ name }: BookingCTAProps) => {
-  const [showCalModal, setShowCalModal] = useState(false);
-
+  // Initialize Cal.com API
   useEffect(() => {
     (async function () {
       const cal = await getCalApi();
@@ -58,6 +54,7 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
         <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
 
         <div className="relative z-10">
+          {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-4 shadow-lg shadow-blue-200">
               <Calendar className="w-3.5 h-3.5" />
@@ -74,6 +71,7 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
             </p>
           </div>
 
+          {/* Feature Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             {features.map((feature, idx) => {
               const Icon = feature.icon;
@@ -96,8 +94,14 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
             })}
           </div>
 
+          {/* CTA Button using Native Cal.com attributes */}
           <Button
-            onClick={() => setShowCalModal(true)}
+            data-cal-link={process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"}
+            data-cal-config={JSON.stringify({ 
+              name: name || "", 
+              theme: "light",
+              layout: "month_view"
+            })}
             className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all hover:shadow-xl group"
           >
             Book Your Live Demo
@@ -109,70 +113,6 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
           </p>
         </div>
       </div>
-
-      {/* Cal.com Modal */}
-      {showCalModal && (
-        // 1. Added `overscroll-none` to prevent pull-to-refresh gestures from messing with it
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center md:p-4 animate-in fade-in duration-300 overscroll-none">
-          
-          {/* 2. Changed mobile to `absolute inset-0` to decouple it from keyboard viewport height changes */}
-          <div className="bg-white absolute inset-0 md:relative md:inset-auto md:rounded-3xl shadow-2xl w-full max-w-4xl md:h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-100 flex-shrink-0 pt-safe">
-              <div>
-                <h3 className="text-xl font-bold text-slate-900">
-                  Schedule Your Demo
-                </h3>
-                <p className="text-sm text-slate-500 mt-0.5">
-                  Choose a time that works for you
-                </p>
-              </div>
-              <button
-                onClick={() => setShowCalModal(false)}
-                className="bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition-colors"
-              >
-                <X size={20} className="text-slate-600" />
-              </button>
-            </div>
-
-            {/* Official Cal.com React Embed Wrapper */}
-            <div className="flex-1 relative w-full bg-white">
-              {/* 3. Placed Cal inside an absolute container so it doesn't push the layout around */}
-              <div className="absolute inset-0 overflow-y-auto pb-8">
-                <Cal
-                  calLink={
-                    process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"
-                  }
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                  }}
-                  config={{ 
-                    layout: "month_view",
-                    theme: "light",
-                    ...(name ? { name } : {})
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Footer Info */}
-            <div className="flex-shrink-0 bg-slate-50 border-t border-slate-100 p-4 pb-safe hidden md:block">
-              <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-600">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 size={14} className="text-green-600" />
-                  <span className="font-medium">30-minute session</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 size={14} className="text-green-600" />
-                  <span className="font-medium">Live walkthrough</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

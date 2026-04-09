@@ -1,118 +1,66 @@
 "use client";
-
-import { useEffect } from "react";
-import { getCalApi } from "@calcom/embed-react";
-import {
-  Calendar,
-  Video,
-  Sparkles,
-  Globe,
-  ArrowRight,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Phone, Star } from "lucide-react";
+import videoThumbnail from "@/public/images/thumbnail-image-3.jpg";
+import Link from "next/link";
 
-interface BookingCTAProps {
-  name?: string;
-}
-
-export const BookingCTA = ({ name }: BookingCTAProps) => {
-  // Initialize Cal.com API
-  useEffect(() => {
-    (async function () {
-      const cal = await getCalApi();
-      cal("ui", {
-        theme: "light",
-        styles: { branding: { brandColor: "#2563eb" } },
-        hideEventTypeDetails: false,
-        layout: "month_view",
-      });
-    })();
-  }, []);
-
-  const features = [
-    {
-      icon: Sparkles,
-      title: "AI-Generated Mockups",
-      description: "Images created in real-time",
-    },
-    {
-      icon: Video,
-      title: "AI Video Survey",
-      description: "Automated property walkthroughs",
-    },
-    {
-      icon: Globe,
-      title: "Custom Subdomain",
-      description: "Your branded client portal",
-    },
-  ];
-
+export function HeroSection() {
   return (
-    <div className="pb-14 md:pb-20">
-      <div className="w-full border-2 border-blue-600 rounded-3xl p-6 md:p-8 bg-gradient-to-br from-blue-50/50 to-white relative overflow-hidden">
-        {/* Subtle Background Pattern */}
-        <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
-
-        <div className="relative z-10">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-4 shadow-lg shadow-blue-200">
-              <Calendar className="w-3.5 h-3.5" />
-              Schedule Demo
-            </div>
-
-            <h2 className="text-3xl md:text-4xl text-gray-900 mb-3 tracking-tight">
-              See <span className="text-accent font-semibold">Hue-Line</span> in
-              Action
-            </h2>
-            <p className="text-sm md:text-base text-gray-600 max-w-xl mx-auto font-medium">
-              Book a live demo to see how our AI agent transforms property
-              consultations into instant visual proposals.
-            </p>
-          </div>
-
-          {/* Feature Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            {features.map((feature, idx) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={idx}
-                  className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all hover:-translate-y-0.5 group text-center md:text-left"
-                >
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-100 transition-colors mx-auto md:mx-0">
-                    <Icon className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <h4 className="font-bold text-gray-900 text-sm mb-1">
-                    {feature.title}
-                  </h4>
-                  <p className="text-xs text-gray-500 font-medium">
-                    {feature.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* CTA Button using Native Cal.com attributes */}
-          <Button
-            data-cal-link={process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"}
-            data-cal-config={JSON.stringify({ 
-              name: name || "", 
-              theme: "light",
-              layout: "month_view"
-            })}
-            className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all hover:shadow-xl group"
-          >
-            Book Your Live Demo
-            <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-          </Button>
-
-          <p className="text-[10px] text-center text-gray-400 mt-3 font-medium">
-            30-minute demo • No commitment required
-          </p>
+    <section id="hero" className="relative h-screen sm:h-auto flex flex-col overflow-hidden mt-2 md:mt-6 pb-6 sm:pb-12">
+      {/* Ratings */}
+      <div className="flex flex-col md:flex-row text-center justify-center items-center gap-2 py-6 relative z-10">
+        <div className="flex items-center gap-1">
+          <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary text-primary" />
+          <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary text-primary" />
+          <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary text-primary" />
+          <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary text-primary" />
+          <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary text-primary" />
+          <span className="ml-1 text-xs md:text-sm text-slate-600">
+            4.9/5 rating
+          </span>
         </div>
       </div>
-    </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 flex flex-col items-center justify-center px-4 max-w-6xl mx-auto w-full">
+        {/* Text Content */}
+        <div className="text-center mb-8 md:mb-12">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-shadow-sm/50 text-shadow-primary text-balance mb-6 text-black">
+            AI answers, <span className="text-primary"> paints their room, </span>books the job—while you work.
+          </h1>
+
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-8 text-slate-600 muted-foreground">
+            Hue-Line: unlimited Intelligent visuals + 24/7
+            AI voice agent for <span className="font-bold">$799/mo.</span>
+          </p>
+
+          <Button size="lg" className="bg-primary" asChild>
+            <Link href="/booking">
+              <Phone className="mr-2 h-5 w-5" />
+              Book A Call Today!
+            </Link>
+          </Button>
+        </div>
+
+        {/* Video */}
+        <div className="w-full max-w-4xl">
+          <div className="relative w-full aspect-video rounded-lg overflow-hidden shadow-xl">
+            <video
+              className="w-full h-full rounded-lg object-cover"
+              controls
+              playsInline
+              preload="metadata"
+              poster={videoThumbnail.src}
+            >
+              <source
+                src="https://hue-line.s3.us-east-1.amazonaws.com/video.mp4"
+                type="video/mp4"
+              />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      </div>
+    </section>
   );
-};
+}
