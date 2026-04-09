@@ -21,7 +21,6 @@ interface BookingCTAProps {
 export const BookingCTA = ({ name }: BookingCTAProps) => {
   const [showCalModal, setShowCalModal] = useState(false);
 
-  // 1. Initialize Cal.com
   useEffect(() => {
     (async function () {
       const cal = await getCalApi();
@@ -33,41 +32,6 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
       });
     })();
   }, []);
-
-  // 2. NEW: Dynamically disable zoom ONLY when modal is open
-  useEffect(() => {
-    // Find the viewport meta tag in the document head
-    let viewportMeta = document.querySelector('meta[name="viewport"]');
-    
-    // If it doesn't exist for some reason, create it
-    if (!viewportMeta) {
-      viewportMeta = document.createElement("meta");
-      viewportMeta.setAttribute("name", "viewport");
-      document.head.appendChild(viewportMeta);
-    }
-
-    if (showCalModal) {
-      // Lock zoom to prevent iOS Safari auto-zoom on iframe inputs
-      viewportMeta.setAttribute(
-        "content",
-        "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
-      );
-    } else {
-      // Re-enable zoom for accessibility when modal is closed
-      viewportMeta.setAttribute(
-        "content",
-        "width=device-width, initial-scale=1"
-      );
-    }
-
-    // Cleanup function in case the component unmounts while modal is open
-    return () => {
-      viewportMeta?.setAttribute(
-        "content",
-        "width=device-width, initial-scale=1"
-      );
-    };
-  }, [showCalModal]);
 
   const features = [
     {
@@ -94,7 +58,6 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
         <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
 
         <div className="relative z-10">
-          {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-4 shadow-lg shadow-blue-200">
               <Calendar className="w-3.5 h-3.5" />
@@ -111,7 +74,6 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
             </p>
           </div>
 
-          {/* Feature Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             {features.map((feature, idx) => {
               const Icon = feature.icon;
@@ -134,7 +96,6 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
             })}
           </div>
 
-          {/* CTA Button */}
           <Button
             onClick={() => setShowCalModal(true)}
             className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all hover:shadow-xl group"
@@ -151,8 +112,11 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
 
       {/* Cal.com Modal */}
       {showCalModal && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-0 md:p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-none md:rounded-3xl shadow-2xl w-full max-w-4xl h-[100dvh] md:h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col">
+        // 1. Added `overscroll-none` to prevent pull-to-refresh gestures from messing with it
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center md:p-4 animate-in fade-in duration-300 overscroll-none">
+          
+          {/* 2. Changed mobile to `absolute inset-0` to decouple it from keyboard viewport height changes */}
+          <div className="bg-white absolute inset-0 md:relative md:inset-auto md:rounded-3xl shadow-2xl w-full max-w-4xl md:h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
             
             {/* Header */}
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-100 flex-shrink-0 pt-safe">
@@ -172,26 +136,29 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
               </button>
             </div>
 
-            {/* Official Cal.com React Embed */}
-            <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden md:overflow-hidden bg-white">
-              <Cal
-                calLink={
-                  process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"
-                }
-                style={{
-                  width: "100%",
-                  height: "100%",
-                }}
-                config={{ 
-                  layout: "month_view",
-                  theme: "light",
-                  ...(name ? { name } : {})
-                }}
-              />
+            {/* Official Cal.com React Embed Wrapper */}
+            <div className="flex-1 relative w-full bg-white">
+              {/* 3. Placed Cal inside an absolute container so it doesn't push the layout around */}
+              <div className="absolute inset-0 overflow-y-auto pb-8">
+                <Cal
+                  calLink={
+                    process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"
+                  }
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                  }}
+                  config={{ 
+                    layout: "month_view",
+                    theme: "light",
+                    ...(name ? { name } : {})
+                  }}
+                />
+              </div>
             </div>
 
             {/* Footer Info */}
-            <div className="flex-shrink-0 bg-slate-50 border-t border-slate-100 p-4 pb-safe">
+            <div className="flex-shrink-0 bg-slate-50 border-t border-slate-100 p-4 pb-safe hidden md:block">
               <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-600">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={14} className="text-green-600" />
