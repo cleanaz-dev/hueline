@@ -54,7 +54,7 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
       {/* --- 2. THE GRID --- */}
       <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
         {/* --- LEFT: THE OFFER (Ticket Style) --- */}
-        {/* <Card className="relative overflow-hidden border-0 bg-white shadow-xl shadow-blue-900/10 rounded-3xl flex flex-col h-full transform transition-all hover:translate-y-[-2px]">
+        <Card className="relative overflow-hidden border-0 bg-white shadow-xl shadow-blue-900/10 rounded-3xl flex flex-col h-full transform transition-all hover:translate-y-[-2px]">
 
 
           <div className="p-6 md:p-8 flex-1 flex flex-col">
@@ -130,7 +130,7 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
               </p>
             </div>
           </div>
-        </Card> */}
+        </Card>
 
         {/* --- RIGHT: THE QUOTE (Invoice Style) --- */}
 
