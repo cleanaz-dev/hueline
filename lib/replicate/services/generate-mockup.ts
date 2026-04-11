@@ -4,7 +4,9 @@ export async function generateMockup(
   colorPrompt: string,
   image_input: string,
   removeFurniture: boolean = false,
-  output_format: string = "jpg"
+  output_format: string = "jpg",
+  aspect_ratio: string = "match_input_image",
+  resolution: string = "1K"
 ) {
   console.log("🎨 Prompt:", colorPrompt);
 
@@ -22,9 +24,11 @@ export async function generateMockup(
       prompt: newPrompt,
       image_input: imageArray,    // ✅ NOW AN ARRAY
       output_format,
+      aspect_ratio,
+      resolution
     };
 
-    const output = await replicate.run(models.nanoBanana, { input });
+    const output = await replicate.run(models.nanoBanana2, { input });
     const firstOutput = Array.isArray(output) ? output[0] : output;
 
     return firstOutput.url().href;
