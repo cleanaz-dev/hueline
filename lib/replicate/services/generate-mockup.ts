@@ -16,7 +16,7 @@ export async function generateMockup(
     : [];                         // fallback to empty array (prevents errors)
 
   const newPrompt = removeFurniture
-    ? `${colorPrompt}. Remove ALL furniture, objects, and obstructions from the image. The scene must ONLY show clean, empty surfaces and walls, with no items, no chairs, no tables, no decorations, no clutter.`
+    ? `${colorPrompt}. AND Remove ALL furniture.`
     : `${colorPrompt}.`;
 
   try {
