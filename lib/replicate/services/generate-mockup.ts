@@ -17,7 +17,7 @@ export async function generateMockup(
 
   const newPrompt = removeFurniture
     ? `${colorPrompt}. AND Remove ALL furniture.`
-    : `${colorPrompt}.`;
+    : `${colorPrompt}. avoid door frames and window frames.`;
 
   try {
     const input = {
