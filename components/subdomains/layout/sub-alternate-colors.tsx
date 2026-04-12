@@ -182,7 +182,7 @@ export default function SubAlternateDesign({
       </div>
 
       {/* Preset Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-10 mb-4 flex-none">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-10 mb-4 flex-none">
         {options.map((option) => {
           const Icon = option.icon;
           const isSelected = selectedOption === option.id;
