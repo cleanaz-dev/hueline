@@ -8,15 +8,26 @@ import { moonshot } from "../config";
 import { getRalClassicColors } from "@/lib/utils/server";
 import { PaintColor } from "@/types/subdomain-type";
 
+const SHADE_TO_HUE: Record<string, string> = {
+  red: "red",
+  orange: "orange",
+  green: "green",
+  light_blue: "blue",
+  dark_blue: "blue",
+  brown: "brown",
+  grey: "grey",
+};
+
 export async function getNewMockUpColorMoonshot(
   color: PaintColor,
-  option: string
+  option: string,
+  targetShade?: string,
+  shadeLabel?: string
 ) {
   const mainHue = extractMainHue(color.name);
 
-
   let color_map = null;
-  // Determine which color map to use
+
   if (option === "trendy") {
     color_map = TRENDY_COLOR_MAP;
   } else if (option === "random") {
@@ -24,20 +35,34 @@ export async function getNewMockUpColorMoonshot(
   } else if (option === "brighter" || option === "darker") {
     const allColors = getRalClassicColors();
     color_map = mainHue ? filterColorsByHue(mainHue, allColors) : allColors;
+  } else if (option === "shade" && targetShade) {
+    const allColors = getRalClassicColors();
+    const hue = SHADE_TO_HUE[targetShade] ?? targetShade;
+    color_map = filterColorsByHue(hue, allColors);
   }
+
   try {
-    const userPrompt =
-      option === "brighter" || option === "darker"
-        ? `You are an experienced interior decorator. Current color: ${JSON.stringify(
-            color.hex
-          )}. Available colors: ${JSON.stringify(
-            color_map
-          )}. Select a RAL color that is noticeably ${option}  MUST BE SIMILAR RAL NAME. Return ONLY valid JSON: {"name":"Color Name","ral":"RAL XXXX","hex":"#XXXXXX"}`
-        : `You are an experienced interior decorator. Current color:  ${JSON.stringify(
-            color.hex
-          )}. Available colors: ${JSON.stringify(
-            color_map
-          )}. Select a ${option} RAL color that is NOT FROM THE RAL COLOR FAMILY OR CONTAIN THE SAME NAME OR COULD BE SIMIMLAR TO THE COLOR from the current color. Return ONLY valid JSON: {"name":"Color Name","ral":"RAL XXXX","hex":"#XXXXXX"}`;
+    let userPrompt: string;
+
+    if (option === "brighter" || option === "darker") {
+      userPrompt = `You are an experienced interior decorator. Current color: ${JSON.stringify(
+        color.hex
+      )}. Available colors: ${JSON.stringify(
+        color_map
+      )}. Select a RAL color that is noticeably ${option} MUST BE SIMILAR RAL NAME. Return ONLY valid JSON: {"name":"Color Name","ral":"RAL XXXX","hex":"#XXXXXX"}`;
+    } else if (option === "shade") {
+      userPrompt = `You are an experienced interior decorator. Current color: ${JSON.stringify(
+        color.hex
+      )}. Available colors: ${JSON.stringify(
+        color_map
+      )}. Select a RAL color from the ${shadeLabel} family. It must NOT be similar to the current color. Return ONLY valid JSON: {"name":"Color Name","ral":"RAL XXXX","hex":"#XXXXXX"}`;
+    } else {
+      userPrompt = `You are an experienced interior decorator. Current color: ${JSON.stringify(
+        color.hex
+      )}. Available colors: ${JSON.stringify(
+        color_map
+      )}. Select a ${option} RAL color that is NOT FROM THE RAL COLOR FAMILY OR CONTAIN THE SAME NAME OR COULD BE SIMILAR TO THE COLOR from the current color. Return ONLY valid JSON: {"name":"Color Name","ral":"RAL XXXX","hex":"#XXXXXX"}`;
+    }
 
     const response = await moonshot.chat.completions.create({
       model: "kimi-k2-turbo-preview",

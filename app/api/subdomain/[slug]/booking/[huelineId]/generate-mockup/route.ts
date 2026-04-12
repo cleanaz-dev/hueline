@@ -55,7 +55,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const subdomainId = subdomain.id;
 
-    const { option, currentColor, removeFurniture } = body;
+    const { option, currentColor, removeFurniture, targetShade, shadeLabel } = body;
     console.log("📦 Request body:", body);
 
     const color = currentColor[0];
@@ -75,7 +75,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const { colorPrompt, colorChoice, extractedNewColor } =
-      await getNewMockUpColorMoonshot(color, option);
+      await getNewMockUpColorMoonshot(color, option, targetShade, shadeLabel);
 
     // Generate mockup
     const mockupUrl = await generateMockup(
