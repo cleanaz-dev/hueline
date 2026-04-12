@@ -7,6 +7,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import useSWR from "swr";
 import type { Export } from "@/types/subdomain-type";
 import SubdomainNav from "./subdomain-nav";
+import { generateFreshDownloadLink } from "@/app/actions/download"; // <-- Import the new action
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -14,33 +15,49 @@ export default function ClientDownloadPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const { subdomain, booking, isLoading } = useBooking();
 
-  // SWR polling - only poll if there are processing exports
   const hasProcessingExports = booking?.exports?.some(
     (e) => e.status === "processing"
   );
 
   const { data: exportUpdates } = useSWR(
-   hasProcessingExports 
-  ? `/api/subdomain/${subdomain?.slug}/booking/${booking?.huelineId}/export` 
-  : null,
+    hasProcessingExports 
+      ? `/api/subdomain/${subdomain?.slug}/booking/${booking?.huelineId}/export` 
+      : null,
     fetcher,
     {
-      refreshInterval: 3000, // Poll every 3 seconds
+      refreshInterval: 3000,
       dedupingInterval: 2000,
       focusThrottleInterval: 5000,
     }
   );
 
-  // Merge SWR data with booking exports
   const exports: Export[] = exportUpdates?.exports || booking?.exports || [];
 
+  // UPDATED: Now fetches a fresh presigned URL before downloading
   const handleDownload = async (downloadUrl: string, exportId: string) => {
     if (!downloadUrl) return;
     setDownloadingId(exportId);
+    
     try {
-      window.location.href = downloadUrl;
+      // 1. Ask the server for a fresh 1-hour presigned URL
+      const secureUrl = await generateFreshDownloadLink(downloadUrl);
+      
+      // 2. 🔥 FIX: Use the HTML5 anchor method for downloading
+      const link = document.createElement("a");
+      link.href = secureUrl;
+      // Tells the browser to treat this as a download, not a page navigation
+      link.setAttribute("download", `export-${exportId}.zip`); 
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up the DOM
+      link.remove();
+      
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Failed to start download. Please try again.");
     } finally {
-      setTimeout(() => setDownloadingId(null), 2000);
+      setTimeout(() => setDownloadingId(null), 1500);
     }
   };
 
@@ -161,8 +178,7 @@ export default function ClientDownloadPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-gray-900 text-sm md:text-base">
-                          {exportItem.resolution?.toUpperCase() || "UNKNOWN"}{" "}
-                          Export
+                          {exportItem.resolution?.toUpperCase() || "UNKNOWN"} Export
                         </h3>
                         {exportItem.status && getStatusBadge(exportItem.status)}
                       </div>
@@ -190,19 +206,14 @@ export default function ClientDownloadPage() {
                   </div>
 
                   <div className="flex-shrink-0">
-                    {exportItem.status === "complete" &&
-                    exportItem.downloadUrl ? (
+                    {exportItem.status === "complete" && exportItem.downloadUrl ? (
                       <button
-                        onClick={() =>
-                          handleDownload(exportItem.downloadUrl!, exportItem.id)
-                        }
+                        onClick={() => handleDownload(exportItem.downloadUrl!, exportItem.id)}
                         disabled={downloadingId === exportItem.id}
                         className="w-full md:w-auto bg-black hover:bg-gray-800 text-white font-medium py-2.5 px-5 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm cursor-pointer"
                       >
                         <Download className="w-4 h-4" />
-                        {downloadingId === exportItem.id
-                          ? "Downloading..."
-                          : "Download"}
+                        {downloadingId === exportItem.id ? "Generating Link..." : "Download"}
                       </button>
                     ) : exportItem.status === "processing" ? (
                       <div className="flex items-center gap-2 text-sm text-blue-600 py-2.5 px-5">

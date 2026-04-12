@@ -9,14 +9,11 @@ interface PageProps {
     slug: string
     huelineId: string
   }>
-  searchParams: Promise<{
-    exportId?: string
-  }>
 }
 
-export default async function Page({ params, searchParams }: PageProps) {
+export default async function Page({ params }: PageProps) {
   const { slug, huelineId } = await params
-  const { exportId } = await searchParams
+
 
   if (!slug || !huelineId) return notFound()
 
