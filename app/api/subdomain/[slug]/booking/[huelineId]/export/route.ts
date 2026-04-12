@@ -1,5 +1,3 @@
-// app/api/subdomain/[slug]/booking/[huelineId]/export/route.ts
-
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
@@ -11,6 +9,31 @@ interface Params {
     huelineId: string;
     slug: string;
   }>;
+}
+
+// GET exports for SWR polling
+export async function GET(req: Request, { params }: Params) {
+  const { huelineId } = await params;
+
+  try {
+    const booking = await prisma.subBookingData.findUnique({
+      where: { huelineId },
+      select: {
+        exports: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!booking) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ exports: booking.exports });
+  } catch (error) {
+    console.error("Error fetching exports:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }
 
 // Create new export job
@@ -27,10 +50,7 @@ export async function POST(req: Request, { params }: Params) {
     const { imageKeys, resolution, phone } = body;
 
     if (!imageKeys?.length || !resolution || !phone) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const subdomain = await prisma.subdomain.findUnique({
@@ -42,13 +62,9 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     if (!subdomain) {
-      return NextResponse.json(
-        { error: "Invalid Data Request" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid Data Request" }, { status: 400 });
     }
 
-    // Get booking ID
     const booking = await prisma.subBookingData.findUnique({
       where: { huelineId },
       select: { id: true },
@@ -58,7 +74,6 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    // Call Lambda
     const lambdaResponse = await fetch(process.env.LAMBDA_EXPORT_URL!, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -79,7 +94,6 @@ export async function POST(req: Request, { params }: Params) {
 
     const { job_id } = await lambdaResponse.json();
 
-    // Create export record
     await prisma.export.create({
       data: {
         jobId: job_id,
@@ -97,10 +111,7 @@ export async function POST(req: Request, { params }: Params) {
     });
   } catch (error) {
     console.error("Export error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -130,9 +141,6 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ success: true, export: updatedExport });
   } catch (error) {
     console.error("Error updating export:", error);
-    return NextResponse.json(
-      { error: "Failed to update export" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to update export" }, { status: 500 });
   }
 }

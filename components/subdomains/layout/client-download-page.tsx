@@ -20,7 +20,9 @@ export default function ClientDownloadPage() {
   );
 
   const { data: exportUpdates } = useSWR(
-    hasProcessingExports ? `/api/exports/${booking?.id}` : null,
+   hasProcessingExports 
+  ? `/api/subdomain/${subdomain?.slug}/booking/${booking?.huelineId}/export` 
+  : null,
     fetcher,
     {
       refreshInterval: 3000, // Poll every 3 seconds
