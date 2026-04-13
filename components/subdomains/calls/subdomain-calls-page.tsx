@@ -114,7 +114,7 @@ export default function SubdomainCallsPage() {
             </div>
             <div className="text-xs text-gray-500 flex items-center gap-1 italic">
               <Hash className="size-3 opacity-70 text-gray-500" />
-              {row.original.intelligence.callId.slice(0, 8)}
+              {row.original.intelligence?.callId.slice(0, 8) || "N/A"}
             </div>
           </div>
         ),
@@ -222,7 +222,7 @@ export default function SubdomainCallsPage() {
                 onClick={() => handlePlayPause(call.callSid)}
                 disabled={isLoadingAudio === call.callSid}
                 className={cn(
-                  "flex items-center justify-center w-8 h-8 rounded-full border transition-all",
+                  "flex items-center justify-center w-8 h-8 rounded-full border transition-all hover:cursor-pointer",
                   playingId === call.callSid
                     ? "bg-blue-50 text-blue-600"
                     : "bg-white text-gray-400"
@@ -403,7 +403,7 @@ export default function SubdomainCallsPage() {
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="hover:bg-gray-50/80 transition-colors"
+                  className="hover:bg-gray-50/80 even:bg-blue-50/50 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => {
                     const metaClass =

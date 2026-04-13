@@ -246,8 +246,8 @@ export default function OwnerSidebar({
             </div>
           </div>
 
-          <div className="ml-auto flex items-center gap-2 md:gap-4">
-            {/* <div className="relative hidden sm:block">
+          {/* <div className="ml-auto flex items-center gap-2 md:gap-4">
+            <div className="relative hidden sm:block">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <input
                 placeholder="Search..."
@@ -258,13 +258,13 @@ export default function OwnerSidebar({
                   ⌘K
                 </span>
               </div>
-            </div> */}
+            </div>
 
             <button className="relative flex h-8 w-8 items-center justify-center rounded-full hover:bg-accent transition-colors group">
               <Bell className="h-4 w-4 text-muted-foreground group-hover:text-white" />
               <span className="absolute top-2 right-2.5 h-1.5 w-1.5 rounded-full bg-blue-600 ring-2 ring-background" />
             </button>
-          </div>
+          </div> */}
         </header>
 
         {/* Scrollable Content Area */}

@@ -426,10 +426,10 @@ export default function ClientTable() {
 
       // Link (Actions)
       columnHelper.accessor("huelineId", {
-        header: "",
+        header: "ACTION",
         cell: (info) => (
           <div
-            className="flex items-center justify-end gap-2"
+            className="flex gap-2"
             onMouseDown={(e) => e.stopPropagation()}
           >
             <button
