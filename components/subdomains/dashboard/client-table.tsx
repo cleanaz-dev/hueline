@@ -27,8 +27,8 @@ import {
   Film,
   Filter,
   CheckCircle2, // Added for CLOSED
-  XCircle,      // Added for LOST
-  Clock         // Added for PENDING
+  XCircle, // Added for LOST
+  Clock, // Added for PENDING
 } from "lucide-react";
 import { BookingData } from "@/types/subdomain-type";
 import { useDashboard } from "@/context/dashboard-context";
@@ -63,7 +63,7 @@ export const formatImageUrl = (url: string | null | undefined): string => {
 export type TableBooking = BookingData & {
   thumbnailUrl: string;
   totalHiddenValue: number;
-  status?: BookingStatus | null
+  status?: BookingStatus | null;
   rooms?: {
     roomKey: string;
     recordingUrl?: string | null;
@@ -75,23 +75,23 @@ const getStatusConfig = (status: string | undefined) => {
   const normalized = (status || "PENDING").toUpperCase();
   switch (normalized) {
     case "CLOSED":
-      return { 
-        label: "Closed", 
-        classes: "bg-emerald-50 text-emerald-700 border-emerald-200", 
-        icon: CheckCircle2 
+      return {
+        label: "Closed",
+        classes: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        icon: CheckCircle2,
       };
     case "LOST":
-      return { 
-        label: "Lost", 
-        classes: "bg-red-50 text-red-700 border-red-200", 
-        icon: XCircle 
+      return {
+        label: "Lost",
+        classes: "bg-red-50 text-red-700 border-red-200",
+        icon: XCircle,
       };
     case "PENDING":
     default:
-      return { 
-        label: "Pending", 
-        classes: "bg-amber-50 text-amber-700 border-amber-200", 
-        icon: Clock 
+      return {
+        label: "Pending",
+        classes: "bg-amber-50 text-amber-700 border-amber-200",
+        icon: Clock,
       };
   }
 };
@@ -105,8 +105,10 @@ export default function ClientTable() {
 
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState<string | null>(null);
-  const [presignedUrls, setPresignedUrls] = useState<Record<string, string>>({});
-  
+  const [presignedUrls, setPresignedUrls] = useState<Record<string, string>>(
+    {},
+  );
+
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -143,7 +145,7 @@ export default function ClientTable() {
 
   const tableData = useMemo(() => {
     if (!bookings) return [];
-    
+
     let data = bookings.map((b) => {
       let thumb = b.mockups?.[0]?.presignedUrl;
       if (!thumb && b.originalImages && b.originalImages.length > 0) {
@@ -221,12 +223,20 @@ export default function ClientTable() {
           const date = new Date(val);
           const [mounted, setMounted] = useState(false);
           useEffect(() => setMounted(true), []);
-          
+
           return (
             <div className="text-sm font-medium text-gray-900">
-              {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              {date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}
               <div className="text-xs text-gray-500 font-normal">
-                {mounted ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}
+                {mounted
+                  ? date.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "--:--"}
               </div>
             </div>
           );
@@ -253,30 +263,40 @@ export default function ClientTable() {
       columnHelper.display({
         id: "projectDetails",
         header: "Project Details",
+        size: 220, // This sets the width in pixels
         cell: (info) => {
           const row = info.row.original;
           const anchor = formatCallReason(row.initialIntent || "NEW_PROJECT");
           const rawType = row.projectType || "RESIDENTIAL";
-          const typeLabel = rawType === "COMMERCIAL" ? "Commercial" : "Residential";
+          const typeLabel =
+            rawType === "COMMERCIAL" ? "Commercial" : "Residential";
           const TypeIcon = rawType === "COMMERCIAL" ? Building2 : Home;
           const lastInteraction = row.lastInteraction;
-          const scopeList = row.projectScope && row.projectScope.length > 0
-              ? row.projectScope.join(", ") : "General Scope";
+          const scopeList =
+            row.projectScope && row.projectScope.length > 0
+              ? row.projectScope.join(", ")
+              : "General Scope";
 
           return (
-            <div className="flex flex-col py-1 max-w-[220px]">
-              <div className="font-bold text-gray-900 text-sm">{anchor}</div>
+            // Changed max-w-[220px] to w-full to fill the column space
+            <div className="flex flex-col py-1 w-full overflow-hidden">
+              <div className="font-bold text-gray-900 text-sm truncate">
+                {anchor}
+              </div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <TypeIcon className="size-3.5 shrink-0" />
                 <span className="font-medium">{typeLabel}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-accent leading-snug break-words tracking-wide">
+              {/* Added leading-tight and line-clamp to keep height consistent */}
+              <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-accent leading-tight tracking-wide">
                 <Target className="size-3.5 shrink-0" />
-                <span>{scopeList}</span>
+                <span className="line-clamp-1">{scopeList}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Bot className="size-3.5 text-purple-400 shrink-0" />
-                <p className="text-xs text-purple-400">{lastInteraction}</p>
+                <p className="text-xs text-purple-400 truncate">
+                  {lastInteraction}
+                </p>
               </div>
             </div>
           );
@@ -288,7 +308,8 @@ export default function ClientTable() {
         header: "Est. Value",
         cell: (info) => {
           const value = info.getValue() || 0;
-          if (value === 0) return <span className="text-gray-300 text-xs">-</span>;
+          if (value === 0)
+            return <span className="text-gray-300 text-xs">-</span>;
           return (
             <div className="font-bold text-emerald-500 text-sm">
               +{getEstimatedValueRange(value)}
@@ -304,9 +325,11 @@ export default function ClientTable() {
           const status = info.getValue();
           const config = getStatusConfig(status as BookingStatus);
           const Icon = config.icon;
-          
+
           return (
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-xs font-medium ${config.classes}`}>
+            <div
+              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-xs font-medium ${config.classes}`}
+            >
               <Icon className="w-3 h-3" />
               <span className="capitalize">{config.label}</span>
             </div>
@@ -325,12 +348,13 @@ export default function ClientTable() {
           const firstRoom = row.rooms?.[0];
           const recordingUrl = firstRoom?.recordingUrl;
           const roomKey = firstRoom?.roomKey;
-          const baseButtonClass = "w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-200";
+          const baseButtonClass =
+            "w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-200";
 
           return (
-            <div 
+            <div
               className="flex items-center gap-2"
-              onMouseDown={(e) => e.stopPropagation()} 
+              onMouseDown={(e) => e.stopPropagation()}
             >
               {audioUrl ? (
                 <div className="w-8 h-8 flex items-center justify-center">
@@ -342,7 +366,10 @@ export default function ClientTable() {
                   />
                 </div>
               ) : (
-                <div className={`${baseButtonClass} bg-gray-50 border-transparent text-gray-300`} title="No call recording">
+                <div
+                  className={`${baseButtonClass} bg-gray-50 border-transparent text-gray-300`}
+                  title="No call recording"
+                >
                   <Phone className="w-3.5 h-3.5" />
                 </div>
               )}
@@ -350,19 +377,26 @@ export default function ClientTable() {
               {recordingUrl && roomKey ? (
                 <Dialog>
                   <DialogTrigger asChild>
-                    <button className={`${baseButtonClass} bg-white border-accent/15 text-accent/50 hover:bg-primary/10 hover:border-primary/10 active:scale-95 cursor-pointer`}>
+                    <button
+                      className={`${baseButtonClass} bg-white border-accent/15 text-accent/50 hover:bg-primary/10 hover:border-primary/10 active:scale-95 cursor-pointer`}
+                    >
                       <Film className="w-3.5 h-3.5" />
                     </button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black border-zinc-800">
                     <DialogTitle sr-only="video" />
                     <div className="aspect-video w-full">
-                      <SecureVideoPlayer roomId={roomKey} className="w-full h-full rounded-none" />
+                      <SecureVideoPlayer
+                        roomId={roomKey}
+                        className="w-full h-full rounded-none"
+                      />
                     </div>
                   </DialogContent>
                 </Dialog>
               ) : (
-                <div className={`${baseButtonClass} bg-gray-50 border-transparent text-gray-300`}>
+                <div
+                  className={`${baseButtonClass} bg-gray-50 border-transparent text-gray-300`}
+                >
                   <Film className="w-3.5 h-3.5" />
                 </div>
               )}
@@ -376,13 +410,16 @@ export default function ClientTable() {
         header: "Palette",
         cell: (info) => (
           <div className="flex -space-x-2 overflow-hidden pointer-events-none">
-            {info.getValue()?.slice(0, 3).map((color, idx) => (
-              <div
-                key={idx}
-                className="w-6 h-6 rounded-full border border-white"
-                style={{ backgroundColor: color.hex }}
-              />
-            )) || <span className="text-xs text-gray-400">-</span>}
+            {info
+              .getValue()
+              ?.slice(0, 3)
+              .map((color, idx) => (
+                <div
+                  key={idx}
+                  className="w-6 h-6 rounded-full border border-white"
+                  style={{ backgroundColor: color.hex }}
+                />
+              )) || <span className="text-xs text-gray-400">-</span>}
           </div>
         ),
       }),
@@ -391,9 +428,9 @@ export default function ClientTable() {
       columnHelper.accessor("huelineId", {
         header: "",
         cell: (info) => (
-          <div 
+          <div
             className="flex items-center justify-end gap-2"
-            onMouseDown={(e) => e.stopPropagation()} 
+            onMouseDown={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => openIntelligence(info.row.original)}
@@ -411,7 +448,14 @@ export default function ClientTable() {
         ),
       }),
     ],
-    [isLoading, openIntelligence, playingId, isLoadingAudio, presignedUrls, handlePlayPause],
+    [
+      isLoading,
+      openIntelligence,
+      playingId,
+      isLoadingAudio,
+      presignedUrls,
+      handlePlayPause,
+    ],
   );
 
   const table = useReactTable({
@@ -429,9 +473,9 @@ export default function ClientTable() {
   const onMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     setIsDragging(true);
-    if(tableContainerRef.current) {
-        setStartX(e.pageX - tableContainerRef.current.offsetLeft);
-        setScrollLeft(tableContainerRef.current.scrollLeft);
+    if (tableContainerRef.current) {
+      setStartX(e.pageX - tableContainerRef.current.offsetLeft);
+      setScrollLeft(tableContainerRef.current.scrollLeft);
     }
   };
   const onMouseLeave = () => setIsDragging(false);
@@ -445,19 +489,21 @@ export default function ClientTable() {
   };
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 lg:px-0 my-8">
+    <div className="container mx-auto max-w-8xl px-4 lg:px-0 my-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold text-gray-900">Lead Feed</h2>
-            {isLoading && <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />}
+            {isLoading && (
+              <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+            )}
           </div>
           <p className="text-sm text-gray-500">
             Real-time incoming calls and AI visualizations.
           </p>
         </div>
-        
+
         {/* Actions Row */}
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           {/* --- CHANGE 4: Status Filter Dropdown (Matches Enum) --- */}
@@ -492,7 +538,7 @@ export default function ClientTable() {
 
       {/* --- DESKTOP VIEW --- */}
       <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm mb-4">
-        <div 
+        <div
           ref={tableContainerRef}
           className={`overflow-x-auto w-full scrollbar-hide ${isDragging ? "cursor-grabbing select-none" : "cursor-grab"}`}
           onMouseDown={onMouseDown}
@@ -500,13 +546,14 @@ export default function ClientTable() {
           onMouseUp={onMouseUp}
           onMouseMove={onMouseMove}
         >
-          <table className="w-full min-w-[1000px]">
+          <table className="w-full min-w-[1000px] table-fixed">
             <thead className="bg-gray-50/50 border-b border-gray-200">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
+                      style={{ width: header.getSize() }}
                       className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider select-none"
                     >
                       {flexRender(
@@ -521,9 +568,16 @@ export default function ClientTable() {
             <tbody className="divide-y divide-gray-100">
               {table.getRowModel().rows.length > 0 ? (
                 table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-gray-50/80 transition-colors">
+                  <tr
+                    key={row.id}
+                    className="even:bg-gray-50 hover:bg-blue-50/30 transition-colors"
+                  >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
+                      <td
+                        key={cell.id}
+                        className="px-6 py-4 overflow-hidden"
+                        style={{ width: cell.column.getSize() }}
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
@@ -534,7 +588,10 @@ export default function ClientTable() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={columns.length} className="px-6 py-12 text-center text-gray-500">
+                  <td
+                    colSpan={columns.length}
+                    className="px-6 py-12 text-center text-gray-500"
+                  >
                     No leads found matching your filters.
                   </td>
                 </tr>
@@ -582,13 +639,19 @@ export default function ClientTable() {
 
 function ChevronDownIcon({ className }: { className?: string }) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" height="24" viewBox="0 0 24 24" 
-      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
     >
-      <path d="m6 9 6 6 6-6"/>
+      <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }
