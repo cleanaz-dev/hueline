@@ -17,6 +17,7 @@ import {
   Cpu,
   Plus,
 } from "lucide-react";
+import LogoImage from "@/public/images/url-image.png";
 
 import {
   Sidebar,
@@ -49,6 +50,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useOwner } from "@/context/owner-context";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "../ui/button";
+import Image from "next/image";
 
 // Menu Configuration
 const navMain = [
@@ -89,6 +91,9 @@ function AppSidebar() {
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold tracking-tight">
                   {subdomain.companyName}
+                </span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                  Powered by Hue-Line
                 </span>
               </div>
             </SidebarMenuButton>
