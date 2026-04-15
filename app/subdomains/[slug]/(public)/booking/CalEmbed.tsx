@@ -1,4 +1,4 @@
-// app/booking/CalEmbed.tsx
+
 "use client";
 
 import { useEffect } from 'react';
@@ -7,11 +7,9 @@ import Cal, { getCalApi } from "@calcom/embed-react";
 interface CalEmbedProps {
   calLink: string;
   name: string;
-  email: string;
-  sessionId: string;
 }
 
-export default function CalEmbed({ calLink, name, email, sessionId }: CalEmbedProps) {
+export default function CalEmbed({ calLink, name }: CalEmbedProps) {
   useEffect(() => {
     (async function () {
       const cal = await getCalApi({});
@@ -33,10 +31,6 @@ export default function CalEmbed({ calLink, name, email, sessionId }: CalEmbedPr
         style={{ width: "100%", height: "100%" }}
         config={{
           name: name,
-          email: email,
-          metadata: {
-            userId: sessionId 
-          }
         }}
       />
     </div>

@@ -10,12 +10,15 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 interface BookingCTAProps {
   name?: string;
 }
 
 export const BookingCTA = ({ name }: BookingCTAProps) => {
+  const router = useRouter();
+
   // Initialize Cal.com API
   useEffect(() => {
     (async function () {
@@ -46,6 +49,14 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
       description: "Your branded client portal",
     },
   ];
+
+  const handleBookClick = () => {
+    const params = new URLSearchParams();
+    if (name) {
+      params.append("name", name);
+    }
+    router.push(`/booking${params.toString() ? `?${params.toString()}` : ""}`);
+  };
 
   return (
     <div className="pb-14 md:pb-20">
@@ -94,14 +105,9 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
             })}
           </div>
 
-          {/* CTA Button using Native Cal.com attributes */}
+          {/* CTA Button */}
           <Button
-            data-cal-link={process.env.NEXT_PUBLIC_CAL_LINK || "phendricks-proton/30min"}
-            data-cal-config={JSON.stringify({ 
-              name: name || "", 
-              theme: "light",
-              layout: "month_view"
-            })}
+            onClick={handleBookClick}
             className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all hover:shadow-xl group"
           >
             Book Your Live Demo
