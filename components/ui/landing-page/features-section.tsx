@@ -38,20 +38,6 @@ const features: Features[] = [
   },
   {
     id: 3,
-    image: OptionsImage,
-    title: "Multiple Premium Options",
-    description:
-      "Show clients different color combinations and finish options in their portal, helping them visualize premium possibilities.",
-  },
-  {
-    id: 4,
-    image: SharingImage,
-    title: "Premium Project Sharing",
-    description:
-      "Clients can share their project visualizations via email directly from the portal, making referrals and collaboration seamless.",
-  },
-  {
-    id: 5,
     image: CrmImage,
     title: "Exclusive CRM Integration",
     description:

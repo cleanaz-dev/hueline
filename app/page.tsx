@@ -1,5 +1,6 @@
 import BusinessChallenges from "@/components/ui/landing-page/business-challenges";
 import CalculateROI from "@/components/ui/landing-page/calculate-roi";
+import ClientPortal from "@/components/ui/landing-page/client-portal";
 import CTASection from "@/components/ui/landing-page/cta-section";
 import FeatureSection from "@/components/ui/landing-page/features-section";
 import FooterSection from "@/components/ui/landing-page/footer-section";
@@ -16,6 +17,8 @@ export default function Home() {
       </div>
       <div className="space-y-12 md:space-y-16">
         <HeroSection />
+        <LogoStroke />
+        <ClientPortal />
         <LogoStroke />
         <BusinessChallenges />
         <LogoStroke />
