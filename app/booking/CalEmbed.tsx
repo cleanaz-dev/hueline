@@ -6,12 +6,9 @@ import Cal, { getCalApi } from "@calcom/embed-react";
 
 interface CalEmbedProps {
   calLink: string;
-  name: string;
-  email: string;
-  sessionId: string;
 }
 
-export default function CalEmbed({ calLink, name, email, sessionId }: CalEmbedProps) {
+export default function CalEmbed({ calLink }: CalEmbedProps) {
   useEffect(() => {
     (async function () {
       const cal = await getCalApi({});
@@ -31,13 +28,6 @@ export default function CalEmbed({ calLink, name, email, sessionId }: CalEmbedPr
         calLink={calLink}
         // 2. Removed overflow: "scroll" to prevent the double scrollbar issue
         style={{ width: "100%", height: "100%" }}
-        config={{
-          name: name,
-          email: email,
-          metadata: {
-            userId: sessionId 
-          }
-        }}
       />
     </div>
   );
