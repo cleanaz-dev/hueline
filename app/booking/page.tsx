@@ -1,6 +1,5 @@
 // app/booking/page.tsx
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+
 import type { Viewport } from 'next'
 import CalEmbed from './CalEmbed';
 
@@ -13,11 +12,7 @@ export const viewport: Viewport = {
 }
 
 export default async function BookingPage() {
-  const session = await getServerSession(authOptions);
-  const sessionId = session?.user?.id || 'no-session';
-  const name = session?.user?.name || '';
-  const email = session?.user?.email || '';
-  
+ 
   // Get the raw link from ENV or fallback
   const rawLink = process.env.NEXT_PUBLIC_CAL_LINK || 'paul-bare-sales/hue-line';
   
@@ -40,9 +35,7 @@ export default async function BookingPage() {
         <div className=" overflow-hidden">
           <CalEmbed 
             calLink={cleanCalLink} // <-- Passes the cleaned link (e.g., 'paul-bare-sales/hue-line')
-            name={name}
-            email={email}
-            sessionId={sessionId}
+           
           />
         </div>
       </div>
