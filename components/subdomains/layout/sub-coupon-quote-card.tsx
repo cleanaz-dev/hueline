@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Sparkles,
   Gift,
+  PartyPopper,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,7 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
     navigator.clipboard.writeText(promoCode);
     setCopied(true);
     toast.success("Promo code copied!", {
-      description: "Use SAVE15NOW at checkout",
+      description: `Use ${promoCode} at checkout`,
       duration: 2000,
     });
     setTimeout(() => setCopied(false), 2000);
@@ -120,7 +121,7 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
                 </p>
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
                   {discountText}
-                  {offerClaimed && <Sparkles className="w-6 h-6 text-yellow-500" />}
+                 
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 font-medium">
                   {offerClaimed 
@@ -129,10 +130,19 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-1.5 rounded-full border border-red-100 shadow-sm">
-                <Clock className="w-3.5 h-3.5" />
+              {/* TIMER - Changes color and text when claimed */}
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-all duration-500 ${
+                offerClaimed 
+                  ? "bg-green-50 text-green-600 border-green-200" 
+                  : "bg-red-50 text-red-600 border-red-100"
+              }`}>
+                {offerClaimed ? (
+                  <PartyPopper className="w-3.5 h-3.5" />
+                ) : (
+                  <Clock className="w-3.5 h-3.5" />
+                )}
                 <span className="font-mono text-xs font-bold">
-                  {formatTime(timeLeft)}
+                  {offerClaimed ? "LOCKED IN ✓" : formatTime(timeLeft)}
                 </span>
               </div>
             </div>
@@ -198,8 +208,8 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
               </Button>
               <p className="text-[10px] text-center text-gray-400 mt-3 font-medium">
                 {offerClaimed 
-                  ? "✓ Discount applied to your booking" 
-                  : "Valid for residential projects over 500 sq ft."}
+                  ? "✓ Discount locked in for this booking" 
+                  : "Valid for residential projects over 300 sq ft."}
               </p>
             </div>
           </div>
