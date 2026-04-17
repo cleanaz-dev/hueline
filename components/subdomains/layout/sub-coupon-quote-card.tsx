@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Clock,
   Copy,
@@ -9,6 +9,9 @@ import {
   Sparkles,
   Gift,
   PartyPopper,
+  Lock,
+  Unlock,
+  Fingerprint,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,16 +22,28 @@ import { QuoteSurvey } from "./quote-survey";
 export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
   const [timeLeft, setTimeLeft] = useState(72 * 60 * 60);
   const [copied, setCopied] = useState(false);
-  const [offerClaimed, setOfferClaimed] = useState(false);
-  const [buttonText, setButtonText] = useState("Claim Offer");
-  const [discountText, setDiscountText] = useState("15% Off");
-  const [promoCode, setPromoCode] = useState("SAVE15NOW");
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [isHolding, setIsHolding] = useState(false);
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const PROMO_CODE = "WELCOME15"; // Single source of truth
+  const HOLD_DURATION = 5; // 5 seconds
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => {
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    };
   }, []);
 
   const formatTime = (seconds: number) => {
@@ -38,56 +53,76 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
     return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const startHold = () => {
+    if (isUnlocked) return;
+    
+    setIsHolding(true);
+    setHoldProgress(0);
+    
+    // Start progress increment
+    progressIntervalRef.current = setInterval(() => {
+      setHoldProgress((prev) => {
+        const newProgress = prev + (100 / (HOLD_DURATION * 10)); // Update every 100ms
+        if (newProgress >= 100) {
+          // Progress complete - unlock!
+          clearInterval(progressIntervalRef.current!);
+          clearTimeout(holdTimerRef.current!);
+          setIsUnlocked(true);
+          setIsHolding(false);
+          setHoldProgress(100);
+          
+          // Show success toast
+          toast.success("Offer Unlocked! 🎉", {
+            description: `Your code ${PROMO_CODE} is now available`,
+            duration: 4000,
+            icon: <Unlock className="w-4 h-4" />,
+          });
+          
+          return 100;
+        }
+        return newProgress;
+      });
+    }, 100);
+    
+    // Set safety timeout
+    holdTimerRef.current = setTimeout(() => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      setIsHolding(false);
+      setHoldProgress(0);
+    }, HOLD_DURATION * 1000);
+  };
+
+  const cancelHold = () => {
+    if (isUnlocked) return;
+    
+    setIsHolding(false);
+    setHoldProgress(0);
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+    }
+  };
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(promoCode);
+    if (!isUnlocked) {
+      toast.error("Locked", {
+        description: "Press and hold to unlock your promo code first",
+        duration: 2000,
+      });
+      return;
+    }
+    
+    navigator.clipboard.writeText(PROMO_CODE);
     setCopied(true);
     toast.success("Promo code copied!", {
-      description: `Use ${promoCode} at checkout`,
+      description: `Use ${PROMO_CODE} at checkout`,
       duration: 2000,
     });
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleClaimOffer = () => {
-    if (!offerClaimed) {
-      // Change the text and state
-      setOfferClaimed(true);
-      setButtonText("Offer Claimed! 🎉");
-      setDiscountText("Welcome Gift Unlocked!");
-      setPromoCode("WELCOME15");
-      
-      // Show success toast with Sonner
-      toast.success("Offer claimed successfully!", {
-        description: "Your 15% discount has been applied to this booking",
-        duration: 4000,
-        icon: <Gift className="w-4 h-4" />,
-      });
-      
-      // Optional: Show a second toast with next steps
-      setTimeout(() => {
-        toast("Next steps:", {
-          description: "Use code WELCOME15 at checkout or share your project details",
-          duration: 5000,
-          action: {
-            label: "Got it",
-            onClick: () => console.log("Dismissed"),
-          },
-        });
-      }, 1000);
-      
-      // Reset button text after 3 seconds (optional)
-      setTimeout(() => {
-        if (offerClaimed) {
-          setButtonText("✓ Offer Applied");
-        }
-      }, 3000);
-    } else {
-      // If already claimed, show info toast
-      toast.info("Offer already claimed", {
-        description: `Your discount code ${promoCode} is ready to use`,
-        duration: 2000,
-      });
-    }
   };
 
   return (
@@ -108,8 +143,7 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
       <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
         {/* --- LEFT: THE OFFER (Ticket Style) --- */}
         <Card className="relative overflow-hidden border-0 bg-white shadow-xl shadow-blue-900/10 rounded-3xl flex flex-col h-full transform transition-all hover:translate-y-[-2px]">
-          {/* Optional: Add a subtle animation when offer is claimed */}
-          {offerClaimed && (
+          {isUnlocked && (
             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-500 rounded-bl-3xl opacity-10" />
           )}
           
@@ -117,32 +151,36 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
             <div className="flex justify-between items-start mb-6">
               <div>
                 <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-1">
-                  {offerClaimed ? "✓ Claimed" : "Exclusive Offer"}
+                  {isUnlocked ? "✓ Unlocked" : "🔒 Locked Offer"}
                 </p>
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-                  {discountText}
-                 
+                  15% Off
+                  {!isUnlocked && (
+                    <span className="text-sm bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-xs font-medium">
+                      Hidden
+                    </span>
+                  )}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 font-medium">
-                  {offerClaimed 
-                    ? "Welcome to the family! 🎉" 
-                    : "First-time client discount"}
+                  {isUnlocked 
+                    ? "Ready to use! 🎉" 
+                    : "Press & hold to reveal your code"}
                 </p>
               </div>
 
-              {/* TIMER - Changes color and text when claimed */}
+              {/* TIMER */}
               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-all duration-500 ${
-                offerClaimed 
+                isUnlocked 
                   ? "bg-green-50 text-green-600 border-green-200" 
                   : "bg-red-50 text-red-600 border-red-100"
               }`}>
-                {offerClaimed ? (
+                {isUnlocked ? (
                   <PartyPopper className="w-3.5 h-3.5" />
                 ) : (
                   <Clock className="w-3.5 h-3.5" />
                 )}
                 <span className="font-mono text-xs font-bold">
-                  {offerClaimed ? "LOCKED IN ✓" : formatTime(timeLeft)}
+                  {isUnlocked ? "UNLOCKED ✓" : formatTime(timeLeft)}
                 </span>
               </div>
             </div>
@@ -162,54 +200,110 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
                     Status
                   </span>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
-                    offerClaimed 
+                    isUnlocked 
                       ? "text-green-700 bg-green-100" 
-                      : "text-yellow-700 bg-yellow-100"
+                      : "text-gray-500 bg-gray-100"
                   }`}>
-                    {offerClaimed ? "Claimed & Active" : "Ready to Claim"}
+                    {isUnlocked ? "Unlocked & Active" : "Awaiting Unlock"}
                   </span>
                 </div>
               </div>
 
+              {/* PRESS & HOLD TO REVEAL SECTION */}
               <div>
                 <label className="text-xs font-bold text-gray-900 mb-2 block uppercase tracking-wide">
                   Promo Code
                 </label>
-                <button
-                  onClick={handleCopy}
-                  className="w-full group flex items-center justify-between p-3 bg-white border-2 border-gray-100 rounded-xl hover:border-gray-300 transition-all active:scale-[0.99]"
-                >
-                  <span className="font-mono text-xl font-bold text-gray-800 tracking-widest pl-2">
-                    {promoCode}
-                  </span>
-                  <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 group-hover:text-gray-900 group-hover:bg-gray-200 transition-colors">
-                    {copied ? (
-                      <Check className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
+                
+                {!isUnlocked ? (
+                  // Locked state - press and hold to reveal
+                  <div className="relative">
+                    <button
+                      onMouseDown={startHold}
+                      onMouseUp={cancelHold}
+                      onMouseLeave={cancelHold}
+                      onTouchStart={startHold}
+                      onTouchEnd={cancelHold}
+                      onTouchCancel={cancelHold}
+                      className="w-full relative overflow-hidden group flex items-center justify-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl transition-all active:scale-[0.99] cursor-pointer"
+                      style={{ touchAction: 'none' }}
+                    >
+                      {/* Progress bar overlay */}
+                      <div 
+                        className="absolute left-0 top-0 h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-100"
+                        style={{ width: `${holdProgress}%`, opacity: 0.3 }}
+                      />
+                      
+                      <div className="relative z-10 flex flex-col items-center gap-2">
+                        {isHolding ? (
+                          <>
+                            <Fingerprint className="w-6 h-6 text-white animate-pulse" />
+                            <span className="text-white font-semibold text-sm">
+                              Hold for {Math.ceil((HOLD_DURATION * 100 - holdProgress * HOLD_DURATION) / 100)}s more...
+                            </span>
+                            <span className="text-white/60 text-xs">
+                              {Math.floor(holdProgress)}% unlocked
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-6 h-6 text-white/70 group-hover:text-white transition-colors" />
+                            <span className="text-white font-medium text-sm">
+                              Press & Hold to Reveal Code
+                            </span>
+                            <span className="text-white/50 text-xs">
+                              {HOLD_DURATION} second hold to unlock
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </button>
                   </div>
-                </button>
+                ) : (
+                  // Unlocked state - show code with copy button
+                  <button
+                    onClick={handleCopy}
+                    className="w-full group flex items-center justify-between p-3 bg-white border-2 border-green-200 rounded-xl hover:border-green-300 transition-all active:scale-[0.99] shadow-sm"
+                  >
+                    <span className="font-mono text-xl font-bold text-gray-800 tracking-widest pl-2">
+                      {PROMO_CODE}
+                    </span>
+                    <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-green-50 text-green-600 group-hover:bg-green-100 transition-colors">
+                      {copied ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </div>
+                  </button>
+                )}
               </div>
             </div>
 
             <div className="mt-8 pt-4">
               <Button 
-                onClick={handleClaimOffer}
-                className={`w-full h-12 rounded-xl font-semibold transition-all hover:shadow-xl ${
-                  offerClaimed
-                    ? "bg-green-600 hover:bg-green-700 text-white"
-                    : "bg-gray-900 hover:bg-gray-800 text-white"
-                }`}
-                disabled={offerClaimed}
+                className="w-full h-12 rounded-xl font-semibold bg-gray-900 hover:bg-gray-800 text-white transition-all hover:shadow-xl"
+                onClick={() => {
+                  if (isUnlocked) {
+                    handleCopy();
+                  } else {
+                    toast.info("Unlock first", {
+                      description: "Press and hold the button above to reveal your code",
+                      duration: 3000,
+                    });
+                  }
+                }}
               >
-                {buttonText} 
-                {!offerClaimed && <ArrowRight className="w-4 h-4 ml-2" />}
+                {isUnlocked ? (
+                  <>Copy & Continue <ArrowRight className="w-4 h-4 ml-2" /></>
+                ) : (
+                  <>Unlock to Continue <Lock className="w-4 h-4 ml-2" /></>
+                )}
               </Button>
               <p className="text-[10px] text-center text-gray-400 mt-3 font-medium">
-                {offerClaimed 
-                  ? "✓ Discount locked in for this booking" 
-                  : "Valid for residential projects over 300 sq ft."}
+                {isUnlocked 
+                  ? "✓ Code unlocked - valid for this booking" 
+                  : "Press and hold the button above for 5 seconds to unlock"}
               </p>
             </div>
           </div>
