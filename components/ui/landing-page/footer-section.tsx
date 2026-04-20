@@ -25,7 +25,7 @@ export default function FooterSection() {
           {/* Navigation Links */}
           <div className="flex flex-wrap justify-center gap-8 text-muted-foreground">
             <a href="#solutions" className="hover:text-primary transition-colors">
-              Solutions
+              Challenges
             </a>
             <a href="#features" className="hover:text-primary transition-colors">
               Features

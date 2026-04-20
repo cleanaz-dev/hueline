@@ -18,7 +18,8 @@ import { motion, Variants } from "framer-motion";
 
 /* -------------------------------- data --------------------------------- */
 const nav = [
-  { id: 1, title: "Solutions", hash: "solutions" },
+  // { id: 0, title: "Client Portal", hash: "client-portal" },
+  { id: 1, title: "Challenges", hash: "solutions" },
   { id: 2, title: "AI Self Survey", hash: "self-survey" },
   { id: 3, title: "Features", hash: "features" },
   { id: 4, title: "ROI", hash: "roi" },

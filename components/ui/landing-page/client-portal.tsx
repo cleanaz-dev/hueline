@@ -89,10 +89,7 @@ export default function ClientPortal() {
             Close More Jobs with a{" "}
             <span className="text-primary">Professional</span> Presentation
           </h2>
-          <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
-            Give your clients a premium experience. No more amateur JPEGs over
-            text.
-          </p>
+       
         </div>
 
         {/* --- MOBILE ONLY: TOP TAB BAR --- */}

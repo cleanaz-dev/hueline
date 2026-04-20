@@ -116,9 +116,9 @@ export default function BusinessChallenges() {
             . <br className="hidden md:block" />
             <span>Start closing with <span className="text-primary">clarity</span>.</span>
           </h2>
-          <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+          {/* <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
             Our specialized AI tools are engineered specifically to remove operational bottlenecks and accelerate your sales pipeline.
-          </p>
+          </p> */}
         </div>
         
         {/* Animated List */}
