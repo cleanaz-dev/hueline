@@ -22,11 +22,11 @@ const clientSchema = z.object({
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [loginMethod, setLoginMethod] = useState<"partner" | "client">("client");
+  const[loginMethod, setLoginMethod] = useState<"partner" | "client">("client");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   
-  const [formData, setFormData] = useState({
+  const[formData, setFormData] = useState({
     email: "",
     password: "",
     huelineId: "",
@@ -52,11 +52,11 @@ export default function LoginClient() {
   const performSubdomainRedirect = (slug: string, path: string) => {
     const { hostname, protocol, port } = window.location;
     
-    // 🔥 FIXED: Check for lvh.me instead of localhost
+    // Check for lvh.me instead of localhost
     const isLocalhost = hostname.includes("lvh.me") || hostname.includes("localhost") || hostname.includes("127.0.0.1");
     
     if (isLocalhost) {
-      // 🔥 FIXED: Use lvh.me in development
+      // Use lvh.me in development
       const devDomain = hostname.includes("lvh.me") ? "lvh.me" : "localhost";
       window.location.href = `${protocol}//${slug}.${devDomain}${port ? `:${port}` : ""}${path}`;
     } else {
@@ -96,11 +96,21 @@ export default function LoginClient() {
         return;
       }
 
-      // Fetch the updated session to get the subdomain slug
+      // Fetch the updated session to get the subdomain slug and role
       const sessionReq = await fetch("/api/auth/session");
       const session = await sessionReq.json();
+      
+      // Extract role and slug based on your authOptions mapping
+      const role = session?.role; 
       const slug = session?.user?.subdomainSlug;
 
+      // 🔥 Redirect SUPER_ADMIN to the admin subdomain
+      if (role === "SUPER_ADMIN") {
+        performSubdomainRedirect("admin", "/"); // redirects to admin.hue-line.com/ or admin.lvh.me/
+        return;
+      }
+
+      // Regular partner redirect
       if (slug) {
         performSubdomainRedirect(slug, "/my/dashboard");
       } else {
