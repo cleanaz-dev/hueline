@@ -7,6 +7,9 @@ import FooterSection from "@/components/ui/landing-page/footer-section";
 import { HeroSection } from "@/components/ui/landing-page/hero-section";
 import LogoStroke from "@/components/ui/landing-page/logo-stroke";
 import NavSection from "@/components/ui/landing-page/nav-section";
+import PaintColorsRAL from "@/components/ui/landing-page/paint-colors";
+import PaintColors from "@/components/ui/landing-page/paint-colors";
+import PaintColorPicker from "@/components/ui/landing-page/painter-colors-picker";
 import SelfSurvey from "@/components/ui/landing-page/self-survey";
 
 export default function Home() {
@@ -23,6 +26,8 @@ export default function Home() {
         <BusinessChallenges />
         <LogoStroke />
         <SelfSurvey />
+        <LogoStroke />
+        <PaintColorsRAL />
         <LogoStroke />
         <FeatureSection />
         <LogoStroke />
