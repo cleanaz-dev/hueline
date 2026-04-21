@@ -1,14 +1,17 @@
 // lib/handlers/client-intake-handlers.ts
-import { transporter } from "../mailer";
+import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { ClientIntakeEmail } from "../config/email-config";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface ClientConfig {
   twilioNumber?: string;
   transferNumber?: string;
   subDomain: string;
   voiceGender?: string;
-  voiceName?: string;[key: string]: any; // Changed to 'any' to accept the dynamic ...rest payload without TS errors
+  voiceName?: string;
+  [key: string]: any;
 }
 
 interface ClientIntakeData {
@@ -24,7 +27,6 @@ interface ClientIntakeData {
 
 export async function clientIntakeHandler(data: ClientIntakeData) {
   try {
-    // Render the email template
     const emailHtml = await render(
       ClientIntakeEmail({
         name: data.name,
@@ -38,17 +40,19 @@ export async function clientIntakeHandler(data: ClientIntakeData) {
       })
     );
 
-    // Send email to the client
-    await transporter.sendMail({
-      from: '"Hue-Line" <info@hue-line.com>',
+    const { error } = await resend.emails.send({
+      from: "Hue-Line <info@hue-line.com>",
       to: data.email,
       subject: `Thanks for meeting with us, ${data.name}!`,
       html: emailHtml,
     });
 
+    if (error) {
+      throw new Error(`Resend error: ${error.message}`);
+    }
+
     console.log(`✅ Client intake email sent to ${data.email}`);
 
-    // Return success (Subdomain DB creation is now handled safely in the route handler)
     return { success: true };
   } catch (error) {
     console.error("❌ Error in client intake handler:", error);
