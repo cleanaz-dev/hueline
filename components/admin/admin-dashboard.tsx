@@ -88,7 +88,7 @@ export default function AdminDashboard() {
                 SYSTEM_HEALTH === "healthy" ? "bg-green-500" : "bg-red-500"
               }`}
             />
-            Twilio Status
+            Twilio
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white border rounded-full text-xs font-medium text-gray-600 shadow-sm">
             <div
@@ -96,7 +96,7 @@ export default function AdminDashboard() {
                 SYSTEM_HEALTH === "healthy" ? "bg-green-500" : "bg-red-500"
               }`}
             />
-            LiveKit Status
+            LiveKit
           </div>
 
           <Button

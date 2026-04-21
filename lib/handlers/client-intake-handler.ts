@@ -1,16 +1,14 @@
-//lib/handlers/client-intake-handlers.ts
+// lib/handlers/client-intake-handlers.ts
 import { transporter } from "../mailer";
 import { render } from "@react-email/render";
 import { ClientIntakeEmail } from "../config/email-config";
-import { prisma } from "../prisma";
 
 interface ClientConfig {
   twilioNumber?: string;
   transferNumber?: string;
   subDomain: string;
   voiceGender?: string;
-  voiceName?: string;
-  [key: string]: string | undefined;
+  voiceName?: string;[key: string]: any; // Changed to 'any' to accept the dynamic ...rest payload without TS errors
 }
 
 interface ClientIntakeData {
@@ -50,17 +48,8 @@ export async function clientIntakeHandler(data: ClientIntakeData) {
 
     console.log(`✅ Client intake email sent to ${data.email}`);
 
-    // Create Sub Domain Data
-    const subdomain = await prisma.subdomain.create({
-      data: {
-        slug: data.config.subDomain,
-        companyName: data.company,
-      }
-    });
-    
-    console.log(`✅ Created subdomain: ${subdomain.slug}`);
-    
-    return { success: true, subdomain };
+    // Return success (Subdomain DB creation is now handled safely in the route handler)
+    return { success: true };
   } catch (error) {
     console.error("❌ Error in client intake handler:", error);
     throw new Error("Failed to process client intake");
