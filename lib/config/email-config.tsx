@@ -39,6 +39,7 @@ function LogoSection() {
     </Section>
   );
 }
+
 interface ClientConfig {
   twilioNumber?: string;
   crm?: string;
@@ -46,9 +47,8 @@ interface ClientConfig {
   subDomain?: string;
   voiceGender?: string;
   voiceName?: string;
-  [key: string]: string | undefined; // Add index signature
+  [key: string]: string | undefined;
 }
-
 
 interface OnboardingEmailProps {
   username: string;
@@ -79,6 +79,7 @@ interface SubscriptionLinkProps {
   company: string;
   email: string;
 }
+
 // After One-Time Setup Fee
 export function OnboardingEmail({
   username,
@@ -92,10 +93,8 @@ export function OnboardingEmail({
 
       <Body style={styles.body}>
         <Container style={styles.container}>
-          {/* ------ LOGO + COMPANY ------ */}
           <LogoSection />
 
-          {/* ------ BODY ------ */}
           <Heading style={styles.heading}>Welcome aboard, {username}!</Heading>
           <Text style={styles.text}>
             Thanks for completing your one-time setup with {useremail}. Your{" "}
@@ -108,7 +107,16 @@ export function OnboardingEmail({
             back—we&apos;re handling the setup for you.
           </Text>
 
-          {/* ------ EARLY CLIENT PERKS ------ */}
+          <Text style={styles.text}>
+            ⏱ Please allow up to <strong>7 business days</strong> for your setup to be completed.
+          </Text>
+
+          <Section style={styles.featureHighlight}>
+            <Text style={styles.text}>
+              📋 If you haven&apos;t completed your intake form yet, someone will reach out to you soon.
+            </Text>
+          </Section>
+
           <Section style={styles.perksSection}>
             <Heading as="h4" style={styles.subHeading}>
               🎁 Early Client Perks:
@@ -121,17 +129,16 @@ export function OnboardingEmail({
             </ul>
           </Section>
 
-          {/* ------ ID CARD ------ */}
           <Section style={styles.idCard}>
             <Img
               src={AVATAR_URL}
-              alt="Your Name"
+              alt="Paul Hendricks"
               width={80}
               height={80}
               style={styles.avatar}
             />
             <Text style={styles.name}>Paul Hendricks</Text>
-            <Text style={styles.title}> Hue-Line </Text>
+            <Text style={styles.title}>Hue-Line</Text>
 
             <Section style={styles.contactRow}>
               <Link href="tel:+12267902753" style={styles.contactLink}>
@@ -153,6 +160,7 @@ export function OnboardingEmail({
     </Html>
   );
 }
+
 // Subscription Fee Paid
 export function SubscriptionEmail({
   username,
@@ -168,10 +176,8 @@ export function SubscriptionEmail({
 
       <Body style={styles.body}>
         <Container style={styles.container}>
-          {/* ------  LOGO + COMPANY  ------ */}
           <LogoSection />
 
-          {/* ------  BODY CONTENT  ------ */}
           <Heading style={styles.heading}>
             You&apos;re all set, {username}! 🎉
           </Heading>
@@ -182,7 +188,6 @@ export function SubscriptionEmail({
             interruption.
           </Text>
 
-          {/* ------  CTA  ------ */}
           <Section style={styles.featureHighlight}>
             <Text style={styles.text}>
               💡 Bookmark this email! Use the link below anytime to manage your
@@ -207,6 +212,7 @@ export function SubscriptionEmail({
     </Html>
   );
 }
+
 // After Intake Form (Zoom)
 export function ClientIntakeEmail({
   name,
@@ -222,26 +228,23 @@ export function ClientIntakeEmail({
     <Html>
       <Head />
       <Preview>
-        Thanks for meeting with us, {name}! Here&apos;s what&apos;s next.
+        Thanks for meeting with us, {name}! Here&apos;s a recap of your setup.
       </Preview>
 
       <Body style={styles.body}>
         <Container style={styles.container}>
-          {/* ------ LOGO + COMPANY ------ */}
           <LogoSection />
 
-          {/* ------ BODY ------ */}
           <Heading style={styles.heading}>
             Thanks for meeting with us, {name}! 🎉
           </Heading>
 
           <Text style={styles.text}>
             It was great connecting with you and learning more about{" "}
-            <strong>{company}</strong>. Here&apos;s a quick recap of what we
-            discussed and what happens next.
+            <strong>{company}</strong>. Here&apos;s a quick recap of everything
+            we covered.
           </Text>
 
-          {/* ------ VOICE AI CONFIG ------ */}
           <Section style={styles.summarySection}>
             <Heading as="h4" style={styles.summaryHeading}>
               Voice AI Configuration
@@ -273,7 +276,7 @@ export function ClientIntakeEmail({
                 <strong>Subdomain:</strong> {config.subDomain}
               </li>
               <li>
-                <strong>CRM:</strong> {crm} {/* ← Changed from config.crm to crm prop */}
+                <strong>CRM:</strong> {crm}
               </li>
             </ul>
 
@@ -287,13 +290,11 @@ export function ClientIntakeEmail({
             )}
           </Section>
 
-          {/* ------ ADDITIONAL FEATURES ------ */}
           {features && features.length > 0 && (
             <Section style={styles.summarySection}>
               <Heading as="h4" style={styles.summaryHeading}>
                 Additional Features
               </Heading>
-
               <ul style={styles.intakeList}>
                 {features.map((feature, index) => (
                   <li key={index}>✅ {feature}</li>
@@ -302,7 +303,6 @@ export function ClientIntakeEmail({
             </Section>
           )}
 
-          {/* ------ CLIENT INFO RECAP ------ */}
           <Section style={{ marginTop: "24px" }}>
             <Heading as="h4" style={styles.subHeading}>
               Your Contact Info
@@ -316,52 +316,22 @@ export function ClientIntakeEmail({
               <br />
               <strong>Company:</strong> {company}
               <br />
-              <strong>CRM Platform:</strong> {crm} {/* ← Added CRM here too for clarity */}
-            </Text>
-          </Section>
-
-          {/* ------ SETUP FEE CTA ------ */}
-          <Section style={styles.featureHighlight}>
-            <Heading as="h4" style={styles.subHeading}>
-              🚀 Ready to Get Started?
-            </Heading>
-            <Text style={styles.text}>
-              To kick things off, complete your one-time setup payment below.
-              Once processed, we&apos;ll immediately begin building your custom
-              AI solution.
-            </Text>
-            <Link
-              href={`${
-                StripePaymentLinks.monthlyPlan
-              }?prefilled_email=${encodeURIComponent(email)}`}
-              style={styles.primaryButton}
-            >
-              Complete Setup Payment
-            </Link>
-            <Text
-              style={{
-                ...styles.text,
-                fontSize: "14px",
-                color: "#666",
-                marginTop: "12px",
-              }}
-            >
-              💳 Secure payment via Stripe • One-time setup fee
+              <strong>CRM Platform:</strong> {crm}
             </Text>
           </Section>
 
           <Hr style={styles.hr} />
 
           <Text style={styles.footerText}>
-            Questions before completing payment? Just hit reply or give me a
-            call—I&apos;m here to help. Looking forward to building something
-            amazing for {company}!
+            Questions? Just hit reply or give me a call—I&apos;m here to help.
+            Looking forward to building something amazing for {company}!
           </Text>
         </Container>
       </Body>
     </Html>
   );
 }
+
 // After Completing Working Voice Agent
 export function SubscriptionLink({
   name,
@@ -370,10 +340,10 @@ export function SubscriptionLink({
 }: SubscriptionLinkProps) {
   return (
     <Html>
-      <Head /> <Preview>Finalize your Hue-Line subscription 🎯</Preview>
+      <Head />
+      <Preview>Finalize your Hue-Line subscription 🎯</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
-          {/* ------ LOGO + COMPANY ------ */}
           <LogoSection />
 
           <Heading style={styles.heading}>You&apos;re almost live! 🚀</Heading>
@@ -391,9 +361,7 @@ export function SubscriptionLink({
               be pre-filled for a faster checkout.
             </Text>
             <Link
-              href={`${
-                StripePaymentLinks.monthlyPlan
-              }?prefilled_email=${encodeURIComponent(email)}`}
+              href={`${StripePaymentLinks.monthlyPlan}?prefilled_email=${encodeURIComponent(email)}`}
               style={styles.primaryButton}
             >
               Activate Subscription
