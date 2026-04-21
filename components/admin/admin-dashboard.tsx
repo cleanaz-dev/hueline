@@ -20,41 +20,6 @@ import { useSuperAdmin } from "@/context/super-admin-context";
 // --- MOCK DATA FOR VISUALIZATION ---
 const SYSTEM_HEALTH = "healthy"; // healthy, degraded, down
 
-const RECENT_ACTIVITY = [
-  {
-    id: 1,
-    client: "Prestige Painting",
-    action: "Call Received",
-    detail: "New Project • Interior (+$2,400)",
-    time: "2 min ago",
-    icon: PhoneIncoming,
-  },
-  {
-    id: 2,
-    client: "Elite Finishes",
-    action: "Mockup Generated",
-    detail: "Living Room • Hale Navy",
-    time: "15 min ago",
-    icon: ImageIcon,
-  },
-  {
-    id: 3,
-    client: "Color Masters",
-    action: "Warm Transfer",
-    detail: "Painter Joined Call",
-    time: "1 hour ago",
-    icon: Users,
-  },
-  {
-    id: 4,
-    client: "Pro Coats",
-    action: "Subscription",
-    detail: "Plan Upgrade ($2,500/mo)",
-    time: "2 hours ago",
-    icon: DollarSign,
-  },
-];
-
 export default function AdminDashboard() {
   const {
     isStatsLoading,
@@ -105,7 +70,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 mt-4 md:mt-0 p-4 md:p-8 rounded-2xl">
+    <div className="admin-first-div">
       {/* 1. HEADER & ACTIONS */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
@@ -313,7 +278,7 @@ export default function AdminDashboard() {
 
         {/* 4. LIVE INTELLIGENCE FEED (1/3 Width) */}
         <div className="space-y-6">
-          <Card className="border-gray-200 shadow-sm">
+          <Card className="border-gray-200 shadow-sm ">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <Activity className="w-5 h-5 text-blue-600" />
@@ -321,7 +286,7 @@ export default function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 overflow-y-auto h-125">
                 {isLogsLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
@@ -333,7 +298,7 @@ export default function AdminDashboard() {
                   logs.map((log) => (
                     <div
                       key={log.id}
-                      className="p-4 flex gap-3 hover:bg-gray-50/50 transition-colors"
+                      className="p-4 flex gap-3 hover:bg-gray-50/50 transition-colors "
                     >
                       <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
                         {/* Add your icon logic based on log.type */}
@@ -345,8 +310,8 @@ export default function AdminDashboard() {
                             {log.subdomain?.companyName || "Unknown Client"}
                           </p>
                          
-                          <span className="text-[10px] text-gray-400">
-                            {new Date(log.createdAt).toLocaleTimeString()}
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(log.createdAt).toLocaleString()}
                           </span>
                         </div>
                          <p className="text-sm font-medium text-gray-900">

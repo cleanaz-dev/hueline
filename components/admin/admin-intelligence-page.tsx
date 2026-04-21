@@ -201,7 +201,8 @@ export default function AdminIntelligencePage() {
   };
 
   return (
-    <div className="bg-zinc-100 font-sans text-zinc-900 h-screen flex flex-col relative">
+    <div className="admin-first-div">
+         
       <Toaster position="top-right" richColors />
       
       <AddIntelligenceModal 
@@ -221,12 +222,12 @@ export default function AdminIntelligencePage() {
       />
 
       {/* HEADER */}
-      <header className="bg-white border-b border-zinc-200 sticky top-0 z-30 shrink-0">
-        <div className="max-w-[1600px] mx-auto px-6 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-30 shrink-0">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center">
-                 <Bot className="w-5 h-5 text-white" />
+              <div className="size-8 bg-primary rounded-lg flex items-center justify-center">
+                 <Bot className="size-5 text-white" />
               </div>
               <span className="font-bold text-lg tracking-tight">Intelligence Architect</span>
             </div>
@@ -252,7 +253,7 @@ export default function AdminIntelligencePage() {
       </header>
 
       {/* MAIN LAYOUT */}
-      <main className="max-w-[1600px] mx-auto p-6 flex-1 w-full overflow-hidden">
+      <main className="max-w-400 mx-auto pt-6 flex-1 w-full overflow-hidden">
         <div className="grid grid-cols-12 gap-6 h-full">
           
           <IntelligenceSourcePanel 
@@ -271,6 +272,8 @@ export default function AdminIntelligencePage() {
 
         </div>
       </main>
+   
     </div>
+
   );
 }

@@ -197,3 +197,7 @@
   animation: rgbFlow 4s linear infinite;
   padding-bottom: 4px;
 }
+
+.admin-first-div {
+  @apply min-h-screen bg-gradient-to-br from-slate-50 to-blue-200 mt-4 md:mt-0 p-4 md:p-8 rounded-2xl;
+}

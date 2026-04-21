@@ -100,7 +100,7 @@ export default function SuperAdminSidebar() {
   );
 
   return (
-    <>
+    <div>
       {/* Mobile Navigation - Top Bar with Glassmorphism */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
         <div className="flex items-center justify-between px-4 py-3">
@@ -133,7 +133,7 @@ export default function SuperAdminSidebar() {
       </div>
 
       {/* Desktop Sidebar - Premium Dark Theme */}
-      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-64 bg-slate-950 border-r border-slate-800 shadow-2xl transition-all">
+      <aside className="hidden lg:flex lg:flex-col lg:fixed h-full lg:w-64 bg-slate-950 border-r border-slate-800 shadow-2xl transition-all">
         {/* Logo Section */}
         <div className="flex h-20 items-center gap-3 px-6 border-b border-slate-800/60 bg-slate-950/50">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
@@ -201,6 +201,6 @@ export default function SuperAdminSidebar() {
 
       {/* Spacer for mobile top bar (matches mobile header height) */}
       <div className="lg:hidden h-[65px]" />
-    </>
+    </div>
   );
 }

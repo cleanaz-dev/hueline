@@ -1,7 +1,7 @@
 // app/client-form/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { 
   useForm, 
@@ -149,7 +149,7 @@ export default function ClientFormPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-10 px-4">
+    <div className="admin-first-div">
       <div className="max-w-3xl mx-auto space-y-8">
         
         <div className="flex max-w-xl mx-auto justify-center ">
@@ -270,16 +270,136 @@ function StepOneProject({ form }: StepProps) {
   );
 }
 
-function StepTwoConfig({ form }: StepProps) {
-  const { register, control, formState: { errors } } = form;
+// function StepTwoConfig({ form }: StepProps) {
+//   const { register, control, formState: { errors } } = form;
   
-  // FIX: Explicitly pass <ClientFormData> to useFieldArray
-const { fields, append, remove } = useFieldArray({
-  control,
-  // Cast as never tells TS "Trust me, this works" effectively bypassing the strict check
-  // caused by the Zod intersection
-  name: "features" as never, 
-});
+//   // FIX: Explicitly pass <ClientFormData> to useFieldArray
+// const { fields, append, remove } = useFieldArray({
+//   control,
+//   // Cast as never tells TS "Trust me, this works" effectively bypassing the strict check
+//   // caused by the Zod intersection
+//   name: "features" as never, 
+// });
+
+//   return (
+//     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+//       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//         <FormField label="Twilio Number" error={errors.twilioNumber?.message}>
+//           <Input {...register("twilioNumber")} placeholder="+1..." />
+//         </FormField>
+
+//         <FormField label="CRM System" error={errors.crm?.message}>
+//            <div className="relative">
+//             <select 
+//                 {...register("crm")} 
+//                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+//             >
+//                 <option value="">Select CRM...</option>
+//                 <option value="salesforce">Salesforce</option>
+//                 <option value="hubspot">HubSpot</option>
+//                 <option value="gohighlevel">GoHighLevel</option>
+//                 <option value="other">Other</option>
+//             </select>
+//            </div>
+//         </FormField>
+
+//         <FormField label="Subdomain" error={errors.subDomain?.message}>
+//           <div className="flex items-center">
+//             <Input {...register("subDomain")} placeholder="my-client" className="rounded-r-none" />
+//             <div className="bg-slate-100 border border-l-0 border-slate-200 h-9 px-3 flex items-center text-sm text-slate-500 rounded-r-md text-nowrap">
+//               .hue-line.com
+//             </div>
+//           </div>
+//         </FormField>
+
+//         <FormField label="Transfer Number (Optional)" error={errors.transferNumber?.message}>
+//           <Input {...register("transferNumber")} placeholder="+1..." />
+//         </FormField>
+//       </div>
+
+//       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+//          <FormField label="Voice Gender" error={errors.voiceGender?.message}>
+//             <select 
+//                 {...register("voiceGender")}
+//                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+//             >
+//                 <option value="male">Male</option>
+//                 <option value="female">Female</option>
+//             </select>
+//          </FormField>
+//          <FormField label="Voice Name" error={errors.voiceName?.message}>
+//             <Input {...register("voiceName")} placeholder="e.g. Josh, Rachel" />
+//          </FormField>
+//       </div>
+
+//       {/* Dynamic Features Section */}
+//       <div className="space-y-4 pt-2">
+//         <div className="flex items-center justify-between">
+//             <Label className="text-base font-semibold text-slate-700">AI Capabilities</Label>
+//             <Button type="button" variant="outline" size="sm" onClick={() => append("")} className="h-8">
+//                 <Plus className="w-3 h-3 mr-1" /> Add Feature
+//             </Button>
+//         </div>
+        
+//         <div className="grid gap-3">
+//             {fields.map((field, index) => (
+//             <div key={field.id} className="flex gap-2">
+//                 <Input
+//                   {...register(`features.${index}` as const)}
+//                   placeholder="e.g. Appointment Booking"
+//                   className={errors.features?.[index] ? "border-red-500" : ""}
+//                 />
+//                 {fields.length > 1 && (
+//                 <Button 
+//                   type="button" 
+//                   variant="ghost" 
+//                   size="icon" 
+//                   onClick={() => remove(index)} 
+//                   className="text-red-500 hover:text-red-700 hover:bg-red-50"
+//                 >
+//                     <X className="w-4 h-4" />
+//                 </Button>
+//                 )}
+//             </div>
+//             ))}
+//             {errors.features && (
+//               <p className="text-xs text-red-500 font-medium">{errors.features.message}</p>
+//             )}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+function StepTwoConfig({ form }: StepProps) {
+  const { register, control, watch, formState: { errors } } = form;
+  const subDomain = watch("subDomain");
+  const [subdomainStatus, setSubdomainStatus] = useState<"idle" | "checking" | "taken" | "available">("idle");
+
+  useEffect(() => {
+    if (!subDomain || subDomain.length < 2) {
+      setSubdomainStatus("idle");
+      return;
+    }
+
+    setSubdomainStatus("checking");
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/check-subdomain?slug=${subDomain}`);
+        const data = await res.json();
+        setSubdomainStatus(data.available ? "available" : "taken");
+      } catch {
+        setSubdomainStatus("idle");
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [subDomain]);
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "features" as never,
+  });
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -289,18 +409,18 @@ const { fields, append, remove } = useFieldArray({
         </FormField>
 
         <FormField label="CRM System" error={errors.crm?.message}>
-           <div className="relative">
-            <select 
-                {...register("crm")} 
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          <div className="relative">
+            <select
+              {...register("crm")}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
-                <option value="">Select CRM...</option>
-                <option value="salesforce">Salesforce</option>
-                <option value="hubspot">HubSpot</option>
-                <option value="gohighlevel">GoHighLevel</option>
-                <option value="other">Other</option>
+              <option value="">Select CRM...</option>
+              <option value="salesforce">Salesforce</option>
+              <option value="hubspot">HubSpot</option>
+              <option value="gohighlevel">GoHighLevel</option>
+              <option value="other">Other</option>
             </select>
-           </div>
+          </div>
         </FormField>
 
         <FormField label="Subdomain" error={errors.subDomain?.message}>
@@ -310,6 +430,9 @@ const { fields, append, remove } = useFieldArray({
               .hue-line.com
             </div>
           </div>
+          {subdomainStatus === "checking" && <p className="text-xs text-slate-400 mt-1">Checking...</p>}
+          {subdomainStatus === "taken" && <p className="text-xs text-red-500 mt-1">Subdomain cannot be used</p>}
+          {subdomainStatus === "available" && <p className="text-xs text-green-500 mt-1">Available!</p>}
         </FormField>
 
         <FormField label="Transfer Number (Optional)" error={errors.transferNumber?.message}>
@@ -318,53 +441,53 @@ const { fields, append, remove } = useFieldArray({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
-         <FormField label="Voice Gender" error={errors.voiceGender?.message}>
-            <select 
-                {...register("voiceGender")}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-            </select>
-         </FormField>
-         <FormField label="Voice Name" error={errors.voiceName?.message}>
-            <Input {...register("voiceName")} placeholder="e.g. Josh, Rachel" />
-         </FormField>
+        <FormField label="Voice Gender" error={errors.voiceGender?.message}>
+          <select
+            {...register("voiceGender")}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </FormField>
+
+        <FormField label="Voice Name" error={errors.voiceName?.message}>
+          <Input {...register("voiceName")} placeholder="e.g. Josh, Rachel" />
+        </FormField>
       </div>
 
-      {/* Dynamic Features Section */}
       <div className="space-y-4 pt-2">
         <div className="flex items-center justify-between">
-            <Label className="text-base font-semibold text-slate-700">AI Capabilities</Label>
-            <Button type="button" variant="outline" size="sm" onClick={() => append("")} className="h-8">
-                <Plus className="w-3 h-3 mr-1" /> Add Feature
-            </Button>
+          <Label className="text-base font-semibold text-slate-700">AI Capabilities</Label>
+          <Button type="button" variant="outline" size="sm" onClick={() => append("")} className="h-8">
+            <Plus className="w-3 h-3 mr-1" /> Add Feature
+          </Button>
         </div>
-        
+
         <div className="grid gap-3">
-            {fields.map((field, index) => (
+          {fields.map((field, index) => (
             <div key={field.id} className="flex gap-2">
-                <Input
-                  {...register(`features.${index}` as const)}
-                  placeholder="e.g. Appointment Booking"
-                  className={errors.features?.[index] ? "border-red-500" : ""}
-                />
-                {fields.length > 1 && (
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => remove(index)} 
+              <Input
+                {...register(`features.${index}` as const)}
+                placeholder="e.g. Appointment Booking"
+                className={errors.features?.[index] ? "border-red-500" : ""}
+              />
+              {fields.length > 1 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => remove(index)}
                   className="text-red-500 hover:text-red-700 hover:bg-red-50"
                 >
-                    <X className="w-4 h-4" />
+                  <X className="w-4 h-4" />
                 </Button>
-                )}
+              )}
             </div>
-            ))}
-            {errors.features && (
-              <p className="text-xs text-red-500 font-medium">{errors.features.message}</p>
-            )}
+          ))}
+          {errors.features && (
+            <p className="text-xs text-red-500 font-medium">{errors.features.message}</p>
+          )}
         </div>
       </div>
     </div>

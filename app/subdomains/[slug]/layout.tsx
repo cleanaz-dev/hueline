@@ -53,13 +53,15 @@ export default async function SubDomainLayout({ children }: Props) {
 
   // REMOVED <NextAuthSessionProvider> WRAPPER HERE
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
       {isSuperAdmin ? (
         <SuperAdminProvider>
           <div className="relative">
             <SuperAdminSidebar />
-            <main className="lg:pl-64 min-w-0 w-full transition-all duration-300 overflow-x-hidden">
-              <div className="p-4 lg:p-6 w-full h-full">
+            {/* REMOVED: w-full and min-w-0 */}
+            <main className="lg:pl-64 transition-all duration-300 overflow-x-hidden">
+              {/* REMOVED: w-full */}
+              <div className="p-4 lg:p-6 h-full">
                 {children}
               </div>
             </main>

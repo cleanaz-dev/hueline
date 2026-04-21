@@ -20,7 +20,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Put all extra fields into config
     const config = Object.keys(rest).length > 0 ? rest : undefined;
 
     const form = await prisma.formData.upsert({
@@ -31,9 +30,6 @@ export async function POST(req: Request) {
 
     console.log("🔧 config:", config);
 
-    // return NextResponse.json({ message: "OK!" }, { status: 200 });
-
-    // Pass the structured data with config to the handler
     await clientIntakeHandler({
       email,
       company,
@@ -49,9 +45,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, data: form });
   } catch (err) {
-    console.error("❌ Error saving form:", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("❌ Error saving form:", message);
     return NextResponse.json(
-      { error: "Failed to save form", err },
+      { error: "Failed to save form", details: message },
       { status: 500 }
     );
   }
@@ -73,9 +70,9 @@ export async function GET(req: Request) {
         subdomain: {
           select: {
             logo: true,
-            splashScreen: true
-          }
-        }
+            splashScreen: true,
+          },
+        },
       },
     });
 
@@ -85,9 +82,10 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ success: true, data: form });
   } catch (err) {
-    console.error("❌ Error fetching form data:", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("❌ Error fetching form data:", message);
     return NextResponse.json(
-      { error: "Failed to fetch form data", err },
+      { error: "Failed to fetch form data", details: message },
       { status: 500 }
     );
   }
