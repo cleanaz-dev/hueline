@@ -17,9 +17,7 @@ export default function CTASection() {
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
-              </span>
-              Limited Founder Spots Available
-            </span>
+              </span>Limited Founder Spots Available</span>
           </h1>
           
           {/* Main Typography */}
