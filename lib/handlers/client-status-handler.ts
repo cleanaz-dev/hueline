@@ -75,6 +75,5 @@ export async function markJobCompleted(email: string) {
     },
   });
 
-
   return { success: true, message: "Job marked as completed" };
 }

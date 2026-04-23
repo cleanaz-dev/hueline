@@ -19,6 +19,7 @@ export async function getSuperAdminDashboardStats() {
         }
       },
       logs: true,
+      client: true,  // ← Include client data
     }
   });
 
@@ -35,9 +36,9 @@ export async function getSuperAdminDashboardStats() {
   // Change in active painters
   const activeChange = currentMonthActive - lastMonthActive;
 
-  // Calculate monthly revenue (sum of plan prices)
+  // Calculate monthly revenue (sum of plan prices from client)
   const monthlyRevenue = stats.reduce((sum, sub) => {
-    const price = parseFloat(sub.planPrice || '0');
+    const price = parseFloat(sub.client?.planPrice || '0');  // ← Access via client
     return sum + price;
   }, 0);
 
@@ -45,7 +46,7 @@ export async function getSuperAdminDashboardStats() {
   const lastMonthRevenue = stats
     .filter(sub => new Date(sub.createdAt) <= endOfLastMonth)
     .reduce((sum, sub) => {
-      const price = parseFloat(sub.planPrice || '0');
+      const price = parseFloat(sub.client?.planPrice || '0');  // ← Access via client
       return sum + price;
     }, 0);
 
