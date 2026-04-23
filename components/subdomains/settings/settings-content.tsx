@@ -42,7 +42,7 @@ export default function SettingsContent() {
       <div className="flex flex-col md:flex-row gap-6 md:gap-8">
         
         {/* --- MOBILE OPTIMIZED NAVIGATION --- */}
-        <nav className="w-full md:w-64 flex-shrink-0">
+        <nav className="w-full md:w-64 shrink-0">
           {/* TWEAK: -mx-4 allows tabs to scroll edge-to-edge on mobile while keeping container padding elsewhere */}
          <div className="grid grid-cols-4 md:flex md:flex-col gap-2 pb-4 md:pb-0 md:overflow-visible">
             <NavButton 
@@ -145,11 +145,11 @@ export default function SettingsContent() {
                 {/* TWEAK: Stack flex-col on mobile, align items start */}
                 <div className="mt-6 p-4 md:p-6 rounded-xl border border-gray-100 bg-gray-50 flex flex-col md:flex-row justify-between md:items-center gap-6">
                   <div className="flex items-start md:items-center gap-4">
-                    <div className={`h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center ${isPlanActive ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                    <div className={`h-12 w-12 rounded-full shrink-0 flex items-center justify-center ${isPlanActive ? 'bg-emerald-100' : 'bg-red-100'}`}>
                       {isPlanActive ? <CreditCard className="w-6 h-6 text-emerald-600" /> : <AlertCircle className="w-6 h-6 text-red-600" />}
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900 text-lg">{settings.planName || "Standard Plan"}</h4>
+                      <h4 className="font-semibold text-gray-900 text-lg">{settings.clients?.[0].planName || "Standard Plan"}</h4>
                       <p className="text-sm text-gray-500">
                         {isPlanActive ? "Active" : "Inactive"} 
                         {daysUntilRenewal !== null && ` • Renews in ${daysUntilRenewal} days`}
@@ -192,7 +192,7 @@ export default function SettingsContent() {
                      settings.users.map((user) => (
                        <div key={user.id} className="p-4 bg-white flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 transition-colors gap-3">
                           <div className="flex items-center">
-                             <div className="h-10 w-10 rounded-full flex-shrink-0 bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+                             <div className="h-10 w-10 rounded-full shrink-0 bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
                                {user.name ? user.name.substring(0,2).toUpperCase() : "U"}
                              </div>
                              <div className="ml-4 overflow-hidden">
@@ -332,7 +332,7 @@ function ReadOnlyField({ label, value, copyable, isLink }: { label: string, valu
         {copyable && value && (
           <button 
             onClick={handleCopy}
-            className="absolute right-2 flex-shrink-0 p-1.5 rounded-md hover:bg-white text-gray-400 hover:text-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+            className="absolute right-2 shrink-0 p-1.5 rounded-md hover:bg-white text-gray-400 hover:text-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
             title="Copy to clipboard"
           >
             {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
@@ -346,7 +346,7 @@ function ReadOnlyField({ label, value, copyable, isLink }: { label: string, valu
 function FeatureItem({ text }: { text: string }) {
   return (
     <li className="flex items-start md:items-center text-sm text-gray-600">
-      <Check className="w-4 h-4 text-emerald-500 mr-2 flex-shrink-0 mt-0.5 md:mt-0" />
+      <Check className="w-4 h-4 text-emerald-500 mr-2 shrink-0 mt-0.5 md:mt-0" />
       <span className="leading-tight">{text}</span>
     </li>
   )

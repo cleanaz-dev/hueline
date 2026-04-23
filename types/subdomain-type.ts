@@ -106,6 +106,7 @@ export interface Client {
   firstName: string | null;
   planPrice: string | null;
   planStatus: string;
+  planName: string | null;
   currentPeriodEnd: Date | string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;

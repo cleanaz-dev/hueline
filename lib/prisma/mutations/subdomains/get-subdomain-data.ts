@@ -65,6 +65,7 @@ export async function getSubDomainData(slug: string) {
           firstName: true,
           planPrice: true,
           planStatus: true,
+          planName: true,
           currentPeriodEnd: true,
           stripeCustomerId: true,
           stripeSubscriptionId: true,

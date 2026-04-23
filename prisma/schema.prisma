@@ -42,6 +42,7 @@ model Client {
   planStatus           String    @default("active")
   currentPeriodEnd     DateTime?
   planPrice            String?
+  planName             String?
 
   // company info
   company String?

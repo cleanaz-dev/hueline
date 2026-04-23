@@ -23,7 +23,7 @@ export default async function Page({ params }: PageProps) {
   const subDomainData = await getSubDomainData(slug);
   if (!subDomainData) notFound();
 
-  console.log("Domain Data:", JSON.stringify(subDomainData, null, 2));
+  // console.log("Domain Data:", JSON.stringify(subDomainData, null, 2));
   
 
   return (
