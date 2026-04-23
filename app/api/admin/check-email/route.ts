@@ -11,9 +11,9 @@ export async function GET(req: Request) {
     }
 
     // Check if a form data entry already exists with this email
-    const existingForm = await prisma.subdomainUser.findUnique({
-      where: { email },
-      select: { id: true }, // We only need the ID to verify existence
+    const existingForm = await prisma.subdomainUser.findFirst({
+      where: { email }, // findFirst works with non-unique fields
+      select: { id: true },
     });
 
     // If existingForm is null, it means the email is available
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     console.error("Error checking email:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
