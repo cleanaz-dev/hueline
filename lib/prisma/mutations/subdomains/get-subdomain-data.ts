@@ -59,7 +59,7 @@ export async function getSubDomainData(slug: string) {
           imageUrl: true,
         },
       },
-      clients: {
+      client: {
         select: {
           id: true,
           firstName: true,

@@ -85,7 +85,7 @@ export interface SubdomainAccountData {
 
   
   users: SubdomainUser[];
-  clients?: Client[];  // ✅ Add clients relation
+  client?: Client | null;  // ✅ Add clients relation
   
   // Call Flow
   callFlows?: CallFlow[];

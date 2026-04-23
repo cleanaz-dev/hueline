@@ -149,7 +149,7 @@ export default function SettingsContent() {
                       {isPlanActive ? <CreditCard className="w-6 h-6 text-emerald-600" /> : <AlertCircle className="w-6 h-6 text-red-600" />}
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900 text-lg">{settings.clients?.[0].planName || "Standard Plan"}</h4>
+                      <h4 className="font-semibold text-gray-900 text-lg">{settings.client?.planName || "Standard Plan"}</h4>
                       <p className="text-sm text-gray-500">
                         {isPlanActive ? "Active" : "Inactive"} 
                         {daysUntilRenewal !== null && ` • Renews in ${daysUntilRenewal} days`}
