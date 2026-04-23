@@ -43,13 +43,13 @@ export function SettingsProvider({ children, slug }: SettingsProviderProps) {
   );
 
   // Helper Logic
-  const isPlanActive = data?.planStatus === 'active' || data?.planStatus === 'trialing';
+  const isPlanActive = data?.client?.planStatus === 'active' || data?.client?.planStatus === 'trialing';
   
   const daysUntilRenewal = useMemo(() => {
-    if (!data?.currentPeriodEnd) return null;
+    if (!data?.client?.currentPeriodEnd) return null;
     
     const today = new Date();
-    const renewal = new Date(data.currentPeriodEnd);
+    const renewal = new Date(data.client.currentPeriodEnd);
     
     if (isNaN(renewal.getTime())) return null;
 
@@ -57,7 +57,7 @@ export function SettingsProvider({ children, slug }: SettingsProviderProps) {
     if (diffTime < 0) return 0; 
     
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-  }, [data?.currentPeriodEnd]);
+  }, [data?.client?.currentPeriodEnd]);
 
   // Invite User Function
   const inviteUser = async (email: string, role: "admin" | "member"): Promise<boolean> => {

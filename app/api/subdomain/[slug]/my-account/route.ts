@@ -23,7 +23,22 @@ export async function GET(req: Request, { params }: Params) {
             name: true,
             email: true,
             role: true,
-            // Add 'image' here if you add it to your schema later
+            client: {  // Fixed: Properly nest the client relation
+              select: {
+                firstName: true,
+                lastName: true,
+                company: true,
+                planName: true,
+                planPrice: true,
+                planStatus: true,
+                status: true,
+                setupFeePaid: true,
+                currentPeriodEnd: true,
+                stripeCustomerId: true,
+                crm: true,
+                email: true,
+              }
+            }
           },
           orderBy: {
             createdAt: 'asc' // Owners usually created first
