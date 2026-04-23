@@ -12,8 +12,7 @@ export async function GET(req: Request, { params }: Params) {
     // 1. Await the params (Next.js 15 Requirement)
     const { slug } = await params;
 
-    // 2. Fetch Subdomain + Team Members
-    // We strictly select user fields to avoid leaking passwordHash
+    // 2. Fetch Subdomain + Team Members + Client
     const subdomain = await prisma.subdomain.findUnique({
       where: { slug },
       include: {
@@ -23,25 +22,26 @@ export async function GET(req: Request, { params }: Params) {
             name: true,
             email: true,
             role: true,
-            client: {  // Fixed: Properly nest the client relation
-              select: {
-                firstName: true,
-                lastName: true,
-                company: true,
-                planName: true,
-                planPrice: true,
-                planStatus: true,
-                status: true,
-                setupFeePaid: true,
-                currentPeriodEnd: true,
-                stripeCustomerId: true,
-                crm: true,
-                email: true,
-              }
-            }
+            // Add 'image' here if you add it to your schema later
           },
           orderBy: {
             createdAt: 'asc' // Owners usually created first
+          }
+        },
+        client: {  // Client is likely on the subdomain model, not on users
+          select: {
+            firstName: true,
+            lastName: true,
+            company: true,
+            planName: true,
+            planPrice: true,
+            planStatus: true,
+            status: true,
+            setupFeePaid: true,
+            currentPeriodEnd: true,
+            stripeCustomerId: true,
+            crm: true,
+            email: true,
           }
         }
       }
@@ -53,7 +53,6 @@ export async function GET(req: Request, { params }: Params) {
     }
 
     // 4. Return Data
-    // The structure matches your SubdomainAccountData interface
     return NextResponse.json(subdomain);
 
   } catch (error) {
