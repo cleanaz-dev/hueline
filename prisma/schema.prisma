@@ -23,17 +23,17 @@ model SubdomainUser {
   subdomain   Subdomain @relation(fields: [subdomainId], references: [id])
   rooms       Room[]
 
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Client {
-  id    String      @id @default(auto()) @map("_id") @db.ObjectId
-  email String      @unique
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  email     String  @unique
   firstName String?
-  lastName String?
-  
-  stage ClientStage @default(PENDING_INTAKE)
+  lastName  String?
+
+  status ClientStatus @default(PENDING_INTAKE)
 
   // Stripe Data
   stripeCustomerId     String?   @unique
@@ -53,8 +53,9 @@ model Client {
   subdomain   Subdomain? @relation(fields: [subdomainId], references: [id])
   subdomainId String?    @db.ObjectId
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  formData  FormData?
 }
 
 model SubSettings {
@@ -80,22 +81,23 @@ model SubSettings {
 model FormData {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
   email    String   @unique
-  company  String
-  phone    String
+  company  String?
+  phone    String?
   features String[]
   config   Json?
-  hours    String
-  name     String
-  crm      String
+  hours    String?
+  name     String?
+  crm      String?
 
-  subdomainId String?        @unique @db.ObjectId
-  subdomain   Subdomain?     @relation(fields: [subdomainId], references: [id])
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  activities  FormActivity[]
+  subdomainId String?    @unique @db.ObjectId
+  subdomain   Subdomain? @relation(fields: [subdomainId], references: [id])
+  client      Client?    @relation(fields: [clientId], references: [id])
+  clientId    String?    @unique @db.ObjectId
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
-enum ClientStage {
+enum ClientStatus {
   PENDING_INTAKE
   INTAKE_FORM_COMPLETE
   SETUP_LINK_SENT
@@ -119,15 +121,6 @@ enum DemoStatus {
   CONTACT
   CLOSED
   LOST
-}
-
-model FormActivity {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  formId    String   @db.ObjectId
-  form      FormData @relation(fields: [formId], references: [id], onDelete: Cascade)
-  action    String
-  details   String?
-  createdAt DateTime @default(now())
 }
 
 model Subdomain {
@@ -162,9 +155,8 @@ model Subdomain {
   rooms        Room[]
   clients      Client[]
 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime?    @updatedAt
-  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
 }
 
 model RoomIntelligence {

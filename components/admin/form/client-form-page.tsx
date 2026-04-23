@@ -35,6 +35,7 @@ import { Label } from "@/components/ui/label";
 import { clientFormSchema, ClientFormData } from "@/lib/schema";
 
 import Logo from "@/public/images/logo-2--increased-brightness.png";
+import Link from "next/link";
 
 // ----------------------------------------------------------------------
 // Types & Constants
@@ -77,11 +78,16 @@ const STEPS: StepItem[] = [
 
 type StatusType = "idle" | "checking" | "taken" | "available";
 
+interface Props {
+  pendingCount: number
+}
+
+
 // ----------------------------------------------------------------------
 // Main Page Component
 // ----------------------------------------------------------------------
 
-export default function ClientFormPage() {
+export default function ClientFormPage({ pendingCount }: Props) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailStatus, setEmailStatus] = useState<StatusType>("idle");
@@ -184,6 +190,18 @@ export default function ClientFormPage() {
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="flex max-w-xl mx-auto justify-center ">
           <h1 className="text-xl md:text-3xl">Client Intake Form</h1>
+          <Button
+            variant="ghost"
+            disabled={!pendingCount}
+            size="sm"
+            asChild
+          >
+            <Link 
+              href={"/intake-form/pending"}
+            >
+            Pending {pendingCount}
+            </Link>
+          </Button>
         </div>
 
         <StepIndicator currentStep={currentStep} />
