@@ -222,7 +222,7 @@ export default function ClientFormPage({ pendingCount }: Props) {
               onKeyDown={handleKeyDown}
               className="space-y-6"
             >
-              <div className="min-h-[300px]">
+              <div className="min-h-75">
                 {currentStep === 1 && (
                   <StepOneProject
                     form={form}
@@ -258,7 +258,7 @@ export default function ClientFormPage({ pendingCount }: Props) {
                     type="button"
                     onClick={hookFormSubmit(onSubmit)}
                     disabled={isSubmitting}
-                    className="bg-green-600 hover:bg-green-700 min-w-[140px]"
+                    className="bg-green-600 hover:bg-green-700 min-w-35"
                   >
                     {isSubmitting ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
