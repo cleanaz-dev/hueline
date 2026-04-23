@@ -99,6 +99,7 @@ export interface SubdomainAccountData {
   createdAt: Date | string;
   updatedAt: Date | string | null;
   rooms: Room[];
+  bookings?: BookingData[];
 }
 
 // --- BOOKING DATA INTERFACE ---
