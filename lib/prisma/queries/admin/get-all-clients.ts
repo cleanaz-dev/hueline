@@ -1,17 +1,18 @@
 import { prisma } from "../../config";
 
 export async function getAllClients() {
-  const clients = await prisma.subdomain.findMany({
+  const subdomains = await prisma.subdomain.findMany({
     where: {
       slug: {
         not: "admin"
+      },
+      client: {
+        isNot: null
       }
     },
     select: {
       id: true,
       slug: true,
-      companyName: true,
-      planName: true,
       projectUrl: true,
       active: true,
       bookings: {
@@ -26,34 +27,68 @@ export async function getAllClients() {
             }
           }
         }
+      },
+      client: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          company: true,
+          phone: true,
+          hours: true,
+          crm: true,
+          status: true,
+          // Stripe
+          stripeCustomerId: true,
+          stripeSubscriptionId: true,
+          setupFeePaid: true,
+          planName: true,
+          planPrice: true,
+          planStatus: true,
+          currentPeriodEnd: true,
+        }
       }
     }
   });
 
-  // Transform the data to be more usable
-  return clients.map(client => {
-    // Calculate total calls across all bookings
-    const totalCalls = client.bookings.reduce((sum, booking) => {
+  return subdomains.map(subdomain => {
+    const { client } = subdomain;
+
+    const totalCalls = subdomain.bookings.reduce((sum, booking) => {
       return sum + booking.calls.length;
     }, 0);
 
-    // Calculate total value found across all call intelligence
-    const totalValueFound = client.bookings.reduce((sum, booking) => {
-      const bookingValue = booking.calls.reduce((callSum, call) => {
-        return callSum + (call.intelligence?.estimatedAdditionalValue || 0);
+    const totalValueFound = subdomain.bookings.reduce((sum, booking) => {
+      return sum + booking.calls.reduce((callSum, call) => {
+        return callSum + (call.intelligence?.estimatedAdditionalValue ?? 0);
       }, 0);
-      return sum + bookingValue;
     }, 0);
 
     return {
-      id: client.id,
-      slug: client.slug,
-      companyName: client.companyName,
-      planName: client.planName,
-      active: client.active,
+      id: subdomain.id,
+      slug: subdomain.slug,
+      active: subdomain.active,
+      projectUrl: subdomain.projectUrl,
+      // All account identity now comes from Client
+      companyName: client?.company ?? null,
+      planName: client?.planName ?? null,
+      planPrice: client?.planPrice ?? null,
+      planStatus: client?.planStatus ?? null,
+      currentPeriodEnd: client?.currentPeriodEnd ?? null,
+      setupFeePaid: client?.setupFeePaid ?? false,
       totalCalls,
       totalValueFound,
-      projectUrl: client.projectUrl
+      client: {
+        name: [client?.firstName, client?.lastName].filter(Boolean).join(" "),
+        email: client?.email ?? null,
+        phone: client?.phone ?? null,
+        company: client?.company ?? null,
+        hours: client?.hours ?? null,
+        crm: client?.crm ?? null,
+        status: client?.status ?? null,
+        stripeCustomerId: client?.stripeCustomerId ?? null,
+        stripeSubscriptionId: client?.stripeSubscriptionId ?? null,
+      }
     };
   });
 }
