@@ -39,7 +39,7 @@ export async function POST(req: Request, { params }: Params) {
     let userId: string | null = null;
 
     if (userEmail) {
-      const user = await prisma.subdomainUser.findUnique({
+      const user = await prisma.subdomainUser.findFirst({
         where: { email: userEmail },
         select: { id: true },
       });
