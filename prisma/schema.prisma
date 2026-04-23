@@ -13,7 +13,7 @@ datasource db {
 
 model SubdomainUser {
   id           String  @id @default(auto()) @map("_id") @db.ObjectId
-  email        String @unique
+  email        String  @unique
   name         String?
   passwordHash String
   imageUrl     String?
@@ -51,11 +51,9 @@ model Client {
   crm     String?
 
   // subdomain info
-  subdomain   Subdomain? @relation(fields: [subdomainId], references: [id])
-  subdomainId String?    @db.ObjectId
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  subdomain Subdomain?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   formData  FormData?
 }
 
@@ -108,7 +106,6 @@ enum ClientStatus {
   JOB_COMPLETED
 }
 
-
 model Subdomain {
   id                 String            @id @default(auto()) @map("_id") @db.ObjectId
   slug               String            @unique
@@ -139,7 +136,8 @@ model Subdomain {
   callFlows    CallFlow[] // Contains the history (versions)
   activeFlowId String?          @db.ObjectId // Points to the specific version currently "Live"
   rooms        Room[]
-  clients      Client[]
+  client       Client?          @relation(fields: [clientId], references: [id])
+  clientId     String?          @unique @db.ObjectId
 
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
