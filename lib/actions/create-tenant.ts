@@ -34,7 +34,7 @@ export async function createTenant(formData: FormData) {
     const existingSlug = await prisma.subdomain.findUnique({ where: { slug: data.slug } });
     if (existingSlug) return { error: "Subdomain Slug already taken." };
 
-    const existingUser = await prisma.subdomainUser.findUnique({ where: { email: data.email } });
+    const existingUser = await prisma.subdomainUser.findFirst({ where: { email: data.email } });
     if (existingUser) return { error: "User email already exists." };
 
     // 2. Hash Password
