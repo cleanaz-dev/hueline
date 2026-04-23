@@ -10,21 +10,13 @@ export async function markFeeAsPaid(email: string) {
   }
 
   // Update the client stage
-  await prisma.formData.update({
+  await prisma.client.update({
     where: { email },
     data: {
-      stage: "FEE_PAID",
+      status: "FEE_PAID",
     },
   });
 
-  // Create activity record
-  await prisma.formActivity.create({
-    data: {
-      formId: client.id,
-      action: "FEE_PAID",
-      details: `Setup fee payment received`,
-    },
-  });
 
   return { success: true, message: "Fee marked as paid" };
 }
@@ -38,18 +30,10 @@ export async function markWorkCompleted(email: string) {
     throw new Error("Client not found");
   }
 
-  await prisma.formData.update({
+  await prisma.client.update({
     where: { email },
     data: {
-      stage: "WORK_COMPLETED",
-    },
-  });
-
-  await prisma.formActivity.create({
-    data: {
-      formId: client.id,
-      action: "WORK_COMPLETED",
-      details: `Initial work completed`,
+      status: "WORK_COMPLETED",
     },
   });
 
@@ -65,18 +49,10 @@ export async function markDemoApproved(email: string) {
     throw new Error("Client not found");
   }
 
-  await prisma.formData.update({
+  await prisma.client.update({
     where: { email },
     data: {
-      stage: "DEMO_APPROVED",
-    },
-  });
-
-  await prisma.formActivity.create({
-    data: {
-      formId: client.id,
-      action: "DEMO_APPROVED",
-      details: `Client approved the demo`,
+      status: "DEMO_APPROVED",
     },
   });
 
@@ -92,20 +68,13 @@ export async function markJobCompleted(email: string) {
     throw new Error("Client not found");
   }
 
-  await prisma.formData.update({
+  await prisma.client.update({
     where: { email },
     data: {
-      stage: "JOB_COMPLETED",
+      status: "JOB_COMPLETED",
     },
   });
 
-  await prisma.formActivity.create({
-    data: {
-      formId: client.id,
-      action: "JOB_COMPLETED",
-      details: `Project completed successfully`,
-    },
-  });
 
   return { success: true, message: "Job marked as completed" };
 }
