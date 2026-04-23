@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clientIntakeHandler } from "@/lib/handlers/client-intake-handler";
-import { updateActivity } from "@/lib/prisma";
+
 
 export async function POST(req: Request) {
   try {
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
       },
     });
 
-    await updateActivity(email, "Completed Intake Form");
+    // add client activity logs
 
     return NextResponse.json({ success: true, data: form, subdomain });
   } catch (err) {
