@@ -17,10 +17,6 @@ export async function getSubDomainData(slug: string) {
 
       twilioPhoneNumber: true,
       forwardingNumber: true,
-      planStatus: true,
-      planName: true,
-      currentPeriodEnd: true,
-      stripeCustomerId: true,
 
       createdAt: true,
       updatedAt: true,
@@ -63,6 +59,17 @@ export async function getSubDomainData(slug: string) {
           imageUrl: true,
         },
       },
+      clients: {
+        select: {
+          id: true,
+          firstName: true,
+          planPrice: true,
+          planStatus: true,
+          currentPeriodEnd: true,
+          stripeCustomerId: true,
+          stripeSubscriptionId: true,
+        }
+      }
     },
   });
 }

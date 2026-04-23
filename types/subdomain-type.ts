@@ -82,12 +82,10 @@ export interface SubdomainAccountData {
   active: boolean;
   twilioPhoneNumber: string | null;
   forwardingNumber: string | null;
+
   
-  stripeCustomerId?: string | null;
-  planStatus: string;
-  planName: string;
-  currentPeriodEnd: Date | string | null;
   users: SubdomainUser[];
+  clients?: Client[];  // ✅ Add clients relation
   
   // Call Flow
   callFlows?: CallFlow[];
@@ -100,6 +98,17 @@ export interface SubdomainAccountData {
   updatedAt: Date | string | null;
   rooms: Room[];
   bookings?: BookingData[];
+}
+
+
+export interface Client {
+  id: string;
+  firstName: string | null;
+  planPrice: string | null;
+  planStatus: string;
+  currentPeriodEnd: Date | string | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
 }
 
 // --- BOOKING DATA INTERFACE ---
