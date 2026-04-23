@@ -7,7 +7,7 @@ import { annualSubscriptionHandler } from "@/lib/handlers/annual-subscription-ha
 export async function POST(req: Request) {
   // Initialize Stripe inside the function
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-10-29.clover",
+    apiVersion: "2026-03-25.dahlia",
   });
   
   // Use the correct webhook secret based on the mode

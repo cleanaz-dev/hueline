@@ -11,17 +11,83 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model SubdomainUser {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  email        String
+  name         String?
+  passwordHash String
+  imageUrl     String?
+  role         String  @default("MEMBER")
+
+  subdomainId String    @db.ObjectId
+  subdomain   Subdomain @relation(fields: [subdomainId], references: [id])
+  rooms       Room[]
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Client {
+  id    String      @id @default(auto()) @map("_id") @db.ObjectId
+  email String      @unique
+  firstName String?
+  lastName String?
+  
+  stage ClientStage @default(PENDING_INTAKE)
+
+  // Stripe Data
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?
+  setupFeePaid         Boolean   @default(false)
+  planStatus           String    @default("active")
+  currentPeriodEnd     DateTime?
+  planPrice            String?
+
+  // company info
+  company String?
+  phone   String?
+  hours   String?
+  crm     String?
+
+  // subdomain info
+  subdomain   Subdomain? @relation(fields: [subdomainId], references: [id])
+  subdomainId String?    @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SubSettings {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  subdomain   Subdomain? @relation(fields: [subdomainId], references: [id])
+  subdomainId String?    @unique @db.ObjectId
+
+  // settings
+  meta              Json?
+  logo              String?
+  logoWidth         Int?     @default(130)
+  logoHeight        Int?     @default(130)
+  splashScreen      String?
+  theme             Json?
+  twilioPhoneNumber String?
+  forwardingNumber  String?
+  features          String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model FormData {
-  id          String         @id @default(auto()) @map("_id") @db.ObjectId
-  email       String         @unique
-  company     String
-  phone       String
-  features    String[]
-  config      Json?
-  hours       String
-  name        String
-  crm         String
-  stage       ClientStage    @default(INTAKE_FORM_COMPLETE)
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  email    String   @unique
+  company  String
+  phone    String
+  features String[]
+  config   Json?
+  hours    String
+  name     String
+  crm      String
+
   subdomainId String?        @unique @db.ObjectId
   subdomain   Subdomain?     @relation(fields: [subdomainId], references: [id])
   createdAt   DateTime       @default(now())
@@ -30,6 +96,7 @@ model FormData {
 }
 
 enum ClientStage {
+  PENDING_INTAKE
   INTAKE_FORM_COMPLETE
   SETUP_LINK_SENT
   FEE_PAID
@@ -82,15 +149,8 @@ model Subdomain {
   twilioPhoneNumber String?
   forwardingNumber  String?
 
-  stripeCustomerId     String?
-  stripeSubscriptionId String?
-  planStatus           String    @default("active")
-  planName             String    @default("Professional")
-  currentPeriodEnd     DateTime?
-  planPrice            String?
+  subSettings SubSettings?
 
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime?        @updatedAt
   FormData     FormData?
   bookings     SubBookingData[]
   users        SubdomainUser[]
@@ -100,6 +160,11 @@ model Subdomain {
   callFlows    CallFlow[] // Contains the history (versions)
   activeFlowId String?          @db.ObjectId // Points to the specific version currently "Live"
   rooms        Room[]
+  clients      Client[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime?    @updatedAt
+  
 }
 
 model RoomIntelligence {
@@ -136,22 +201,6 @@ model CallFlow {
   createdAt   DateTime @default(now())
 
   @@index([subdomainId])
-}
-
-model SubdomainUser {
-  id           String  @id @default(auto()) @map("_id") @db.ObjectId
-  email        String  @unique
-  name         String?
-  passwordHash String
-  imageUrl     String?
-  role         String  @default("MEMBER")
-
-  subdomainId String    @db.ObjectId
-  subdomain   Subdomain @relation(fields: [subdomainId], references: [id])
-  rooms       Room[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model SubBookingData {

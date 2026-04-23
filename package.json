@@ -76,7 +76,7 @@
     "resend": "^6.1.2",
     "sharp": "^0.34.5",
     "sonner": "^2.0.7",
-    "stripe": "^19.0.0",
+    "stripe": "^22.0.2",
     "styled-components": "^6.1.19",
     "swr": "^2.3.6",
     "tailwind-merge": "^3.3.1",
