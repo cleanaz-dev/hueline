@@ -89,31 +89,28 @@ export function OnboardingEmail({
   return (
     <Html>
       <Head />
-      <Preview>You&apos;re all set! 🎉</Preview>
+      <Preview>Welcome to Hue-Line! You're all set! 🎉</Preview>
 
       <Body style={styles.body}>
         <Container style={styles.container}>
           <LogoSection />
 
-          <Heading style={styles.heading}>Welcome aboard, {username}!</Heading>
+          <Heading style={styles.heading}>Welcome aboard, {username}! 🚀</Heading>
           <Text style={styles.text}>
-            Thanks for completing your one-time setup with {useremail}. Your{" "}
-            <strong>{company}</strong> voice-AI instance is now in progress—
-            we&apos;ll let you know as soon as it&apos;s ready to review.
+            Thanks for completing your one-time setup fee for <strong>{company}</strong>. 
+            We are absolutely thrilled to welcome you to the Hue-Line family and can&apos;t wait to build your custom Voice AI.
           </Text>
           <Text style={styles.text}>
-            Once you&apos;re happy with how it works, that&apos;s when
-            we&apos;ll move into a simple monthly plan. Until then, just sit
-            back—we&apos;re handling the setup for you.
-          </Text>
-
-          <Text style={styles.text}>
-            ⏱ Please allow up to <strong>7 business days</strong> for your setup to be completed.
+            We build your AI specifically for your business. Once we have your requirements, we&apos;ll handle all the heavy lifting to build, train, and test it. You won&apos;t move into a monthly plan until you&apos;ve tested the final product and love it.
           </Text>
 
           <Section style={styles.featureHighlight}>
+            <Heading as="h4" style={styles.subHeading}>
+              📋 What&apos;s your next step?
+            </Heading>
             <Text style={styles.text}>
-              📋 If you haven&apos;t completed your intake form yet, someone will reach out to you soon.
+              To get the ball rolling, we need to know exactly how you want your AI to behave. 
+              <strong> If you haven&apos;t already, please complete your intake form or book your kickoff call with us.</strong>
             </Text>
           </Section>
 
@@ -228,7 +225,7 @@ export function ClientIntakeEmail({
     <Html>
       <Head />
       <Preview>
-        Thanks for meeting with us, {name}! Here&apos;s a recap of your setup.
+        Thanks for meeting with us, {name}! Here&apos;s your AI blueprint.
       </Preview>
 
       <Body style={styles.body}>
@@ -236,24 +233,31 @@ export function ClientIntakeEmail({
           <LogoSection />
 
           <Heading style={styles.heading}>
-            Thanks for meeting with us, {name}! 🎉
+            We have your blueprint, {name}! 🏗️
           </Heading>
 
           <Text style={styles.text}>
-            It was great connecting with you and learning more about{" "}
-            <strong>{company}</strong>. Here&apos;s a quick recap of everything
-            we covered.
+            It was great connecting with you and learning exactly how we can help{" "}
+            <strong>{company}</strong> grow. Here&apos;s a quick recap of everything
+            we covered for your Voice AI build.
           </Text>
+
+          <Section style={styles.featureHighlight}>
+            <Heading as="h4" style={styles.subHeading}>
+              What happens next? 🚀
+            </Heading>
+            <Text style={styles.text}>
+              Our team is officially getting to work! ⏱ Please allow up to <strong>7 business days</strong> for us to build, train, and rigorously test your custom Voice AI. 
+            </Text>
+            <Text style={styles.text}>
+              Once it&apos;s ready, we will send you a demo link to test it out yourself before we activate your monthly plan.
+            </Text>
+          </Section>
 
           <Section style={styles.summarySection}>
             <Heading as="h4" style={styles.summaryHeading}>
               Voice AI Configuration
             </Heading>
-
-            <Text style={styles.summaryText}>
-              Here&apos;s a quick recap of your AI setup for{" "}
-              <strong>{company}</strong>.
-            </Text>
 
             <Text style={styles.summaryText}>
               <strong>Voice Settings:</strong>

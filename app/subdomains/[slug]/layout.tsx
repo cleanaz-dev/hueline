@@ -53,7 +53,7 @@ export default async function SubDomainLayout({ children }: Props) {
 
   // REMOVED <NextAuthSessionProvider> WRAPPER HERE
   return (
-    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30">
+    <div className="min-h-screen overflow-x-hidden bg-linear-to-b from-primary/15 via-secondary/05 to-primary/30">
       {isSuperAdmin ? (
         <SuperAdminProvider>
           <div className="relative">
