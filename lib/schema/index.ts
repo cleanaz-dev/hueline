@@ -10,11 +10,15 @@ export const RESERVED_SUBDOMAINS = [
 ];
 
 export const clientInformationSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.email("Invalid email address"),
   company: z.string().min(2, "Company name is required"),
   phone: z.string().min(1, "Phone number is required"),
   hours: z.string().optional(),
+  country: z.enum(["Canada", "USA"]),
+  state: z.string().optional(),
+  city: z.string().optional()
 });
 
 export const featuresSchema = z.object({

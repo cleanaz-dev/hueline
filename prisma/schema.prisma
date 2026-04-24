@@ -32,6 +32,9 @@ model Client {
   email     String  @unique
   firstName String?
   lastName  String?
+  country   String?
+  city      String?
+  state     String?
 
   status ClientStatus @default(PENDING_INTAKE)
 
@@ -82,6 +85,9 @@ model FormData {
   email    String   @unique
   company  String?
   phone    String?
+  country  String?
+  city     String?
+  state    String?
   features String[]
   config   Json?
   hours    String?

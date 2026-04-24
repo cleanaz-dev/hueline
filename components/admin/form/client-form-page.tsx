@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
 import {
   useForm,
   useFieldArray,
@@ -33,10 +32,8 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { clientFormSchema, ClientFormData } from "@/lib/schema";
-
-import Logo from "@/public/images/logo-2--increased-brightness.png";
 import Link from "next/link";
-
+import { NORTH_AMERICA_REGIONS } from "@/lib/locations";
 // ----------------------------------------------------------------------
 // Types & Constants
 // ----------------------------------------------------------------------
@@ -53,11 +50,21 @@ const STEPS: StepItem[] = [
     id: 1,
     title: "Project Details",
     description: "Contact & Business Info",
-    fields: ["name", "email", "company", "phone", "hours"],
+    fields: [
+      "firstName",
+      "lastName",
+      "email",
+      "company",
+      "phone",
+      "country",
+      "state",
+      "city",
+      "hours",
+    ],
   },
   {
     id: 2,
-    title: "Voice AI Config",
+    title: "Voice AI",
     description: "Setup Assistant",
     fields: [
       "twilioNumber",
@@ -79,9 +86,8 @@ const STEPS: StepItem[] = [
 type StatusType = "idle" | "checking" | "taken" | "available";
 
 interface Props {
-  pendingCount: number
+  pendingCount: number;
 }
-
 
 // ----------------------------------------------------------------------
 // Main Page Component
@@ -96,18 +102,22 @@ export default function ClientFormPage({ pendingCount }: Props) {
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientFormSchema),
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       company: "",
       phone: "",
       hours: "",
+      country: "Canada",
+      state: "",
+      city: "",
       twilioNumber: "",
       crm: "",
       transferNumber: "",
       subDomain: "",
       voiceGender: "male",
       voiceName: "",
-      features: ["Call Screening"],
+      features: ["Live Transfer"],
     },
     mode: "onChange",
   });
@@ -188,20 +198,30 @@ export default function ClientFormPage({ pendingCount }: Props) {
   return (
     <div className="admin-first-div">
       <div className="max-w-3xl mx-auto space-y-8">
-        <div className="flex max-w-xl mx-auto justify-center ">
-          <h1 className="text-xl md:text-3xl">Client Intake Form</h1>
-          <Button
-            variant="ghost"
-            disabled={!pendingCount}
-            size="sm"
-            asChild
-          >
-            <Link 
-              href={"/intake-form/pending"}
-            >
-            Pending {pendingCount}
-            </Link>
-          </Button>
+        <div className="flex max-w-2xl mx-auto items-center ">
+          <div className="flex flex-1 justify-center">
+            {" "}
+            {/* wrap h1, add flex-1 justify-center */}
+            <h1 className="text-xl md:text-3xl">Client Intake Form</h1>
+          </div>
+          <div>
+            {pendingCount > 0 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary"
+                asChild
+              >
+                <Link href={"/intake-form/pending"}>
+                  Pending {pendingCount}
+                </Link>
+              </Button>
+            ) : (
+              <div className="text-muted-foreground text-xs">
+                No Pending Forms
+              </div>
+            )}
+          </div>
         </div>
 
         <StepIndicator currentStep={currentStep} />
@@ -295,11 +315,14 @@ function StepOneProject({ form, emailStatus, setEmailStatus }: StepOneProps) {
   const {
     register,
     watch,
+    setValue,
     setError,
     clearErrors,
     formState: { errors },
   } = form;
+
   const email = watch("email");
+  const selectedCountry = watch("country") as "Canada" | "USA";
 
   // Email Debounce Checker
   useEffect(() => {
@@ -337,8 +360,11 @@ function StepOneProject({ form, emailStatus, setEmailStatus }: StepOneProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4 duration-500">
-      <FormField label="Full Name" error={errors.name?.message}>
-        <Input {...register("name")} placeholder="John Doe" />
+      <FormField label="First Name" error={errors.firstName?.message}>
+        <Input {...register("firstName")} placeholder="John" />
+      </FormField>
+      <FormField label="Last Name" error={errors.lastName?.message}>
+        <Input {...register("lastName")} placeholder="Doe" />
       </FormField>
 
       <FormField label="Email Address" error={errors.email?.message}>
@@ -367,12 +393,51 @@ function StepOneProject({ form, emailStatus, setEmailStatus }: StepOneProps) {
         <Input {...register("phone")} placeholder="+1 (555) 000-0000" />
       </FormField>
 
-      <div className="md:col-span-2">
-        <FormField label="Business Hours" error={errors.hours?.message}>
+       <FormField label="Business Hours" error={errors.hours?.message}>
           <Input
             {...register("hours")}
             placeholder="e.g. Mon-Fri, 9AM - 5PM EST"
           />
+        </FormField>
+
+
+      <FormField label="Country" error={errors.country?.message}>
+        <select
+          {...register("country", {
+            // Reset the state field when the user switches countries
+            onChange: () => setValue("state", ""),
+          })}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <option value="USA">United States</option>
+          <option value="Canada">Canada</option>
+        </select>
+      </FormField>
+
+      <FormField
+        label={selectedCountry === "Canada" ? "Province" : "State"}
+        error={errors.state?.message}
+      >
+        <select
+          {...register("state")}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
+          disabled={!selectedCountry}
+        >
+          <option value="">
+            Select a {selectedCountry === "Canada" ? "Province" : "State"}...
+          </option>
+          {selectedCountry &&
+            NORTH_AMERICA_REGIONS[selectedCountry].map((region) => (
+              <option key={region} value={region}>
+                {region}
+              </option>
+            ))}
+        </select>
+      </FormField>
+
+      <div className="md:col-span-2">
+        <FormField label="City" error={errors.city?.message}>
+          <Input {...register("city")} placeholder="e.g. Toronto" />
         </FormField>
       </div>
     </div>
@@ -540,10 +605,14 @@ function StepThreeReview({ data }: { data: ClientFormData }) {
           <User className="w-4 h-4 mr-2 text-blue-600" /> Project Details
         </h3>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-sm">
-          <ReviewItem label="Name" value={data.name} />
+          <ReviewItem label="First Name" value={data.firstName} />
+          <ReviewItem label="Last Name" value={data.lastName} />
           <ReviewItem label="Company" value={data.company} />
           <ReviewItem label="Email" value={data.email} />
           <ReviewItem label="Phone" value={data.phone} />
+          <ReviewItem label="Country" value={data.country} />
+          <ReviewItem label="State"  value={data.state} />
+          <ReviewItem label="City" value={data?.city || "Add City"} />
           <div className="sm:col-span-2 border-t border-slate-200 pt-3 mt-1">
             <ReviewItem label="Business Hours" value={data.hours} />
           </div>

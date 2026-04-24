@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
     // 1. Destructure out specific fields so we can route them properly
     const { 
-      email, company, phone, features, hours, name, crm, 
+      email, company, phone, features, hours, name, crm, country, city, state,
       subDomain, twilioNumber, transferNumber, voiceGender, voiceName, 
       ...rest 
     } = body;
