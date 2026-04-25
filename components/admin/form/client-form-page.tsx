@@ -106,8 +106,8 @@ export default function ClientFormPage({ client }: Props) {
     resolver: zodResolver(clientFormSchema),
     defaultValues: {
       firstName: "",
-      lastName: client?.email || "",
-      email: "",
+      lastName: "",
+      email: client?.email || "",
       company: "",
       phone: "",
       hours: "",
