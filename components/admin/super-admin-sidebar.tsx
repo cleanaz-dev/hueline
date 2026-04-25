@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -20,16 +20,19 @@ import {
   Settings, 
   LogOut,
   ChevronRight,
+  ChevronDown, // <-- Added ChevronDown
   ShieldCheck,
   Route,
   BrainCircuit,
-  Cpu
+  Cpu,
+  CreditCard // <-- Added icon for Payment Links
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSuperAdmin } from "@/context/super-admin-context";
 import { signOut } from "next-auth/react";
 
-const navItems = [
+// 1. Updated Nav Items with subItems support
+const navItems =[
   {
     title: "Dashboard",
     href: "/",
@@ -39,6 +42,10 @@ const navItems = [
     title: "Intake Form",
     href: "/intake-form",
     icon: FileText,
+    subItems:[
+      { title: "Pending", href: "/intake-form/pending" },
+      { title: "Manual", href: "/intake-form/manual" },
+    ]
   },
   {
     title: "Logs",
@@ -58,42 +65,120 @@ const navItems = [
   {
     title: "Intelligence",
     href: "/intelligence",
-    icon:Cpu
+    icon: Cpu
+  },
+  // 2. Added Payment Links
+  {
+    title: "Payment Links",
+    href: "/payment-links",
+    icon: CreditCard
   }
 ];
 
 export default function SuperAdminSidebar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const { admin } = useSuperAdmin()
+  const { admin } = useSuperAdmin();
+
+  // 3. State to track expanded submenus
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+
+  // Auto-expand menu if a subitem is active on page load
+  useEffect(() => {
+    const activeParent = navItems.find(item => 
+      item.subItems?.some(sub => pathname.startsWith(sub.href))
+    );
+    if (activeParent && !expandedMenus.includes(activeParent.title)) {
+      setExpandedMenus(prev => [...prev, activeParent.title]);
+    }
+  }, [pathname]);
+
+  const toggleMenu = (title: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setExpandedMenus(prev => 
+      prev.includes(title) 
+        ? prev.filter(t => t !== title) 
+        : [...prev, title]
+    );
+  };
 
   const NavLinks = ({ isMobile = false }: { isMobile?: boolean }) => (
     <div className="flex flex-col gap-1">
       {navItems.map((item) => {
         const Icon = item.icon;
-        const isActive = pathname === item.href;
+        const hasSubItems = !!item.subItems?.length;
+        const isExpanded = expandedMenus.includes(item.title);
+        
+        // Check if main link is active OR any of its sub-items are active
+        const isActive = pathname === item.href || (hasSubItems && item.subItems!.some(sub => pathname === sub.href));
 
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() => setOpen(false)}
-            className={cn(
-              "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ease-in-out",
-              // Active State: Gradient background, white text, subtle shadow
-              isActive 
-                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20" 
-                : "text-slate-400 hover:bg-slate-800/50 hover:text-white",
+          <div key={item.title} className="flex flex-col">
+            {/* Main Nav Item */}
+            <Link
+              href={hasSubItems ? "#" : item.href}
+              onClick={(e) => {
+                if (hasSubItems) {
+                  toggleMenu(item.title, e);
+                } else {
+                  if (isMobile) setOpen(false);
+                }
+              }}
+              className={cn(
+                "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ease-in-out",
+                isActive && !hasSubItems
+                  ? "bg-linear-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20" 
+                  : isActive && hasSubItems 
+                  ? "text-white bg-slate-800/50" // Subtle highlight for parent when sub-item is active
+                  : "text-slate-400 hover:bg-slate-800/50 hover:text-white",
+              )}
+            >
+              <Icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive && !hasSubItems && "animate-pulse-once")} />
+              <span>{item.title}</span>
+              
+              {/* Conditional Chevrons */}
+              {hasSubItems ? (
+                 <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform duration-300", isExpanded && "rotate-180")} />
+              ) : isActive && !isMobile ? (
+                 <ChevronRight className="ml-auto h-4 w-4 opacity-50" />
+              ) : null}
+            </Link>
+
+            {/* Smooth Collapsible Submenu using CSS Grid */}
+            {hasSubItems && (
+              <div 
+                className={cn(
+                  "grid transition-all duration-700 ease-in-out",
+                  isExpanded ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"
+                )}
+              >
+                <div className="overflow-hidden">
+                  <div className="flex flex-col gap-1 pl-11 pr-2 pb-1 border-l border-slate-800 ml-6">
+                    {item.subItems!.map((subItem) => {
+                      const isSubActive = pathname === subItem.href;
+                      return (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.href}
+                          onClick={() => {
+                            if (isMobile) setOpen(false);
+                          }}
+                          className={cn(
+                            "py-2 px-3 rounded-lg text-sm font-medium transition-colors relative before:absolute before:left-4.25 before:top-1/2 before:h-px before:w-3 before:bg-slate-800",
+                            isSubActive 
+                              ? "text-blue-400 bg-blue-500/10 before:bg-blue-400" 
+                              : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                          )}
+                        >
+                          {subItem.title}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             )}
-          >
-            <Icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive && "animate-pulse-once")} />
-            <span>{item.title}</span>
-            
-            {/* Active Indicator for Desktop */}
-            {isActive && !isMobile && (
-               <ChevronRight className="ml-auto h-4 w-4 opacity-50" />
-            )}
-          </Link>
+          </div>
         );
       })}
     </div>
@@ -124,7 +209,7 @@ export default function SuperAdminSidebar() {
                   <span className="text-lg font-bold">Admin Portal</span>
                 </SheetTitle>
               </SheetHeader>
-              <nav className="flex-1 px-4 py-6">
+              <nav className="flex-1 px-4 py-6 overflow-y-auto">
                 <NavLinks isMobile />
               </nav>
             </SheetContent>
@@ -135,8 +220,8 @@ export default function SuperAdminSidebar() {
       {/* Desktop Sidebar - Premium Dark Theme */}
       <aside className="hidden lg:flex lg:flex-col lg:fixed h-full lg:w-64 bg-slate-950 border-r border-slate-800 shadow-2xl transition-all">
         {/* Logo Section */}
-        <div className="flex h-20 items-center gap-3 px-6 border-b border-slate-800/60 bg-slate-950/50">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
+        <div className="flex h-20 items-center gap-3 px-6 border-b border-slate-800/60 bg-slate-950/50 shrink-0">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div className="flex flex-col">
@@ -145,9 +230,9 @@ export default function SuperAdminSidebar() {
           </div>
         </div>
 
-        <div className="flex flex-col h-full justify-between">
+        <div className="flex flex-col h-full justify-between overflow-hidden">
           {/* Main Navigation */}
-          <nav className="flex-1 px-4 py-8 space-y-8 overflow-y-auto">
+          <nav className="flex-1 px-4 py-8 space-y-8 overflow-y-auto overflow-x-hidden no-scrollbar">
             <div>
               <p className="mb-4 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Menu
@@ -172,7 +257,7 @@ export default function SuperAdminSidebar() {
           </nav>
 
           {/* User Profile Footer */}
-          <div className="p-4 border-t border-slate-800/60 bg-slate-900/30">
+          <div className="p-4 border-t border-slate-800/60 bg-slate-900/30 shrink-0">
             <div className="flex items-center gap-3 rounded-xl bg-slate-900 p-3 shadow-inner ring-1 ring-inset ring-slate-800 transition-colors hover:bg-slate-800">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700 text-slate-300">
                 <span className="font-semibold">PH</span>
@@ -188,10 +273,9 @@ export default function SuperAdminSidebar() {
               <Button 
                 size="icon" 
                 variant="ghost" 
-                className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-950/30"
+                className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-950/30 shrink-0"
                 onClick={ async () => signOut({ callbackUrl: process.env.NEXTAUTH_URL })}
-                
-                >
+              >
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -200,7 +284,7 @@ export default function SuperAdminSidebar() {
       </aside>
 
       {/* Spacer for mobile top bar (matches mobile header height) */}
-      <div className="lg:hidden h-[65px]" />
+      <div className="lg:hidden h-16.25" />
     </div>
   );
 }

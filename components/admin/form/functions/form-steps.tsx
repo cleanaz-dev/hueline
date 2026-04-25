@@ -1,5 +1,4 @@
-"use client"
-
+"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -8,7 +7,6 @@ import {
   UseFormReturn,
   FieldPath,
 } from "react-hook-form";
-
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -71,10 +69,11 @@ function ReviewItem({
   );
 }
 
-
-
-
-export function StepOneProject({ form, emailStatus, setEmailStatus }: StepOneProps) {
+export function StepOneProject({
+  form,
+  emailStatus,
+  setEmailStatus,
+}: StepOneProps) {
   const {
     register,
     watch,
@@ -211,6 +210,7 @@ export function StepTwoConfig({ form }: StepProps) {
     register,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = form;
   const subDomain = watch("subDomain");
@@ -245,9 +245,21 @@ export function StepTwoConfig({ form }: StepProps) {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <TwilioNumberSelector onSelect={(num) => setTwilioRoutingNumber(num)} />
+        <div className="col-span-2">
+          <TwilioNumberSelector
+            onSelect={(num) => {
+              setTwilioRoutingNumber(num);
+              setValue("twilioNumber", num);
+            }}
+          />
+        </div>
+
         <FormField label="Twilio Number" error={errors.twilioNumber?.message}>
-          <Input {...register("twilioNumber")} placeholder="+1..." />
+          <Input
+            {...register("twilioNumber")}
+            readOnly
+            className="bg-slate-50 text-slate-500"
+          />
         </FormField>
 
         <FormField label="CRM System" error={errors.crm?.message}>

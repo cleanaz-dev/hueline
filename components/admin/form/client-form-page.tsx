@@ -30,9 +30,13 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { clientFormSchema, ClientFormData } from "@/lib/schema";
-import Link from "next/link";
 import { StepIndicator } from "./functions/step-indicator";
-import { StepOneProject, StepThreeReview, StepTwoConfig } from "./functions/form-steps";
+import {
+  StepOneProject,
+  StepThreeReview,
+  StepTwoConfig,
+} from "./functions/form-steps";
+import { Client } from "@/app/generated/prisma";
 // ----------------------------------------------------------------------
 // Types & Constants
 // ----------------------------------------------------------------------
@@ -85,14 +89,14 @@ const STEPS: StepItem[] = [
 type StatusType = "idle" | "checking" | "taken" | "available";
 
 interface Props {
-  pendingCount: number;
+  client?: Client;
 }
 
 // ----------------------------------------------------------------------
 // Main Page Component
 // ----------------------------------------------------------------------
 
-export default function ClientFormPage({ pendingCount }: Props) {
+export default function ClientFormPage({ client }: Props) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailStatus, setEmailStatus] = useState<StatusType>("idle");
@@ -102,7 +106,7 @@ export default function ClientFormPage({ pendingCount }: Props) {
     resolver: zodResolver(clientFormSchema),
     defaultValues: {
       firstName: "",
-      lastName: "",
+      lastName: client?.email || "",
       email: "",
       company: "",
       phone: "",
@@ -160,6 +164,7 @@ export default function ClientFormPage({ pendingCount }: Props) {
       const cleanedData = {
         ...data,
         features: data.features.filter((f) => f.trim() !== ""),
+        clientId: client?.id || undefined,
       };
 
       const res = await fetch("/api/admin/client-form", {
@@ -197,30 +202,24 @@ export default function ClientFormPage({ pendingCount }: Props) {
   return (
     <div className="admin-first-div">
       <div className="max-w-3xl mx-auto space-y-8">
-        <div className="flex max-w-2xl mx-auto items-center ">
-          <div className="flex flex-1 justify-center">
-            {" "}
-            {/* wrap h1, add flex-1 justify-center */}
-            <h1 className="text-xl md:text-3xl">Client Intake Form</h1>
-          </div>
-          <div>
-            {pendingCount > 0 ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-primary"
-                asChild
-              >
-                <Link href={"/intake-form/pending"}>
-                  Pending {pendingCount}
-                </Link>
-              </Button>
-            ) : (
-              <div className="text-muted-foreground text-xs">
-                No Pending Forms
-              </div>
-            )}
-          </div>
+        <div className="flex flex-col items-center max-w-2xl mx-auto text-center">
+          <h1 className="text-xl md:text-3xl">Client Intake Form</h1>
+
+          {client ? (
+            <div className="flex flex-col items-center mt-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 ring-1 ring-inset ring-blue-600/20">
+                <User className="h-4 w-4" />
+                {client.email}
+              </span>
+              <span className="text-xs text-slate-400 mt-1">
+                Stripe Verified
+              </span>
+            </div>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-800 ring-1 ring-inset ring-slate-500/20 mt-2">
+              Manual Entry
+            </span>
+          )}
         </div>
 
         <StepIndicator currentStep={currentStep} />
@@ -296,8 +295,3 @@ export default function ClientFormPage({ pendingCount }: Props) {
     </div>
   );
 }
-
-
-
-
-

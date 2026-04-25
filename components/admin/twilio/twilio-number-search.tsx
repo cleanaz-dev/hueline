@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 
 // The shape of the data we return from our API
@@ -14,10 +16,12 @@ interface TwilioNumberSelectorProps {
   onSelect: (phoneNumber: string) => void;
 }
 
-export default function TwilioNumberSelector({ onSelect }: TwilioNumberSelectorProps) {
-  const[areaCode, setAreaCode] = useState("");
+export default function TwilioNumberSelector({
+  onSelect,
+}: TwilioNumberSelectorProps) {
+  const [areaCode, setAreaCode] = useState("");
   const [country, setCountry] = useState("US");
-  const[isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [numbers, setNumbers] = useState<TwilioNumber[]>([]);
   const [error, setError] = useState("");
   const [selectedNumber, setSelectedNumber] = useState("");
@@ -36,7 +40,7 @@ export default function TwilioNumberSelector({ onSelect }: TwilioNumberSelectorP
 
     try {
       const res = await fetch(
-        `/api/admin/twilio/search?areaCode=${areaCode}&country=${country}`
+        `/api/admin/twilio/search?areaCode=${areaCode}&country=${country}`,
       );
       const data = await res.json();
 
@@ -78,25 +82,33 @@ export default function TwilioNumberSelector({ onSelect }: TwilioNumberSelectorP
           <option value="US">🇺🇸 US</option>
           <option value="CA">🇨🇦 CA</option>
         </select>
-        
+
         <input
           type="text"
           placeholder="Area Code (e.g. 416)"
           value={areaCode}
           // Forces only numbers, max 3 digits
-          onChange={(e) => setAreaCode(e.target.value.replace(/\D/g, "").slice(0, 3))}
+          onChange={(e) =>
+            setAreaCode(e.target.value.replace(/\D/g, "").slice(0, 3))
+          }
           className="border border-gray-300 p-2 rounded-md flex-1 focus:ring-2 focus:ring-blue-500 outline-none"
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSearch();
+            }
+          }}
         />
-        
-        <button
+
+        <Button
           type="button"
           onClick={handleSearch}
           disabled={isLoading || areaCode.length < 3}
-          className="bg-black text-white px-4 py-2 rounded-md font-medium disabled:opacity-50 hover:bg-gray-800 transition-colors"
+          variant="secondary"
+          size="lg"
         >
-          {isLoading ? "Searching..." : "Search"}
-        </button>
+          {isLoading ? <Spinner className="size-4 animate-spin " /> : "Search"}
+        </Button>
       </div>
 
       {/* ERROR MESSAGE */}
