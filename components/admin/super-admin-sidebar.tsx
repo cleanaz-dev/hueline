@@ -25,7 +25,8 @@ import {
   Route,
   BrainCircuit,
   Cpu,
-  CreditCard // <-- Added icon for Payment Links
+  CreditCard, // <-- Added icon for Payment Links
+  Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSuperAdmin } from "@/context/super-admin-context";
@@ -72,6 +73,11 @@ const navItems =[
     title: "Payment Links",
     href: "/payment-links",
     icon: CreditCard
+  },
+  {
+    title: "Calendar",
+    href: "/calendar",
+    icon: Calendar
   }
 ];
 
