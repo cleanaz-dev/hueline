@@ -2,15 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clientIntakeHandler } from "@/lib/handlers/client-intake-handler";
 
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // 1. Destructure out specific fields so we can route them properly
+    // 1. Destructure out specific fields
     const { 
       email, company, phone, features, hours, name, crm, country, city, state,
-      subDomain, twilioNumber, transferNumber, voiceGender, voiceName, 
+      subDomain, twilioNumber, transferNumber, voiceGender, voiceName, clientId,
       ...rest 
     } = body;
 
@@ -23,20 +22,24 @@ export async function POST(req: Request) {
       );
     }
 
+    // Clean up clientId so it's strictly a string OR undefined
+    const parsedClientId = clientId ? String(clientId) : undefined;
+
     // 2. Upsert Subdomain FIRST. 
-    // This creates it if it doesn't exist, or updates it if they resubmit.
     const subdomain = await prisma.subdomain.upsert({
       where: { slug: subDomain },
       update: {
         companyName: company,
         twilioPhoneNumber: twilioNumber || null,
         forwardingNumber: transferNumber || null,
+        clientId: parsedClientId, // Links to client if parsedClientId exists
       },
       create: {
         slug: subDomain,
         companyName: company,
         twilioPhoneNumber: twilioNumber || null,
         forwardingNumber: transferNumber || null,
+        clientId: parsedClientId, // Links to client if parsedClientId exists
       },
     });
 
@@ -47,22 +50,35 @@ export async function POST(req: Request) {
       ...rest,
     };
 
-    // 4. Upsert FormData and officially link it to the Subdomain via ID
+    // 4. Upsert FormData and officially link it to Subdomain AND Client
     const form = await prisma.formData.upsert({
       where: { email },
       update: { 
         company, phone, features, hours, name, crm, config,
-        subdomainId: subdomain.id // Establishing the 1-to-1 relationship
+        subdomainId: subdomain.id, 
+        clientId: parsedClientId, // Links to client if parsedClientId exists
       },
       create: { 
         email, company, phone, features, hours, name, crm, config,
-        subdomainId: subdomain.id // Establishing the 1-to-1 relationship
+        subdomainId: subdomain.id, 
+        clientId: parsedClientId, // Links to client if parsedClientId exists
       },
     });
 
     console.log("🔧 Linked Subdomain & Config saved");
 
-    // 5. Fire off the email handler with the full dataset
+    // 5. UPDATE CLIENT STATUS (If this was a paid Stripe client)
+    if (parsedClientId) {
+      await prisma.client.update({
+        where: { id: parsedClientId },
+        data: {
+          status: "INTAKE_FORM_COMPLETE",
+        },
+      });
+      console.log(`✅ Client ${parsedClientId} status updated to INTAKE_FORM_COMPLETE`);
+    }
+
+    // 6. Fire off the email handler
     await clientIntakeHandler({
       email,
       company,
@@ -80,8 +96,6 @@ export async function POST(req: Request) {
         ...rest,
       },
     });
-
-    // add client activity logs
 
     return NextResponse.json({ success: true, data: form, subdomain });
   } catch (err) {
