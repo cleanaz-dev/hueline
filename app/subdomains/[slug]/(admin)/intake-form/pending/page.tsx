@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { PendingFormTable } from "@/components/admin/form/pending-form-table";
+import { FileText, Folder } from "lucide-react";
 
 export default async function page() {
   const pendingForms = await prisma.formData.findMany({
@@ -22,8 +23,8 @@ export default async function page() {
     <div className="admin-first-div">
       <div className="max-w-8xl mx-auto">
         <header className="mb-4">
-          <h1 className="text-primary text-3xl">Pending Form Page</h1>
-          <p className="text-muted-foreground text-xs">
+          <h1 className="flex gap-2 text-primary text-3xl font-bold tracking-tight items-center"> Pending Form Page</h1>
+            <p className="text-gray-500 mt-1">
             Pending forms listed below
           </p>
         </header>

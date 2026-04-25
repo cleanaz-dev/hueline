@@ -144,8 +144,8 @@ export function PendingFormTable({ data }: PendingFormsTableProps) {
   // 4. Render the UI
   return (
     <div className="w-full">
-      <div className="rounded-md border-2">
-        <Table>
+      <div className="rounded-md border ">
+        <Table className="bg-white rounded-md">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

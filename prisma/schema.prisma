@@ -54,10 +54,11 @@ model Client {
   crm     String?
 
   // subdomain info
-  subdomain Subdomain?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  formData  FormData?
+  subdomain        Subdomain?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  formData         FormData?
+  clientActivities ClientActivity[]
 }
 
 model SubSettings {
@@ -110,6 +111,57 @@ enum ClientStatus {
   WORK_COMPLETED
   DEMO_APPROVED
   JOB_COMPLETED
+}
+
+enum ClientActivityType {
+  // Onboarding & Intake
+  CLIENT_CREATED
+  INTAKE_LINK_SENT
+  INTAKE_FORM_STARTED
+  INTAKE_FORM_COMPLETED
+  CLIENT_INFO_UPDATED
+
+  // Billing & Stripe
+  SETUP_LINK_SENT
+  SETUP_FEE_PAID
+  SUBSCRIPTION_STARTED
+  SUBSCRIPTION_UPDATED
+  PAYMENT_FAILED
+  SUBSCRIPTION_CANCELED
+
+  // Fulfillment & Lifecycle
+  WORK_STARTED
+  WORK_COMPLETED
+  DEMO_SENT
+  DEMO_APPROVED
+  JOB_COMPLETED
+
+  // System & Tech
+  SUBDOMAIN_PROVISIONED
+  INTEGRATION_CONNECTED
+  EMAIL_SENT
+}
+
+model ClientActivity {
+  id   String             @id @default(auto()) @map("_id") @db.ObjectId
+  type ClientActivityType
+
+  // A short, human-readable summary (e.g., "Paid $500 Setup Fee" or "Intake Form Completed")
+  title String?
+
+  // Longer description or automated system notes (e.g., "Stripe payment succeeded. SubId: sub_123")
+  description String?
+
+  // Store dynamic data like Stripe Session IDs, email payloads, or previous state values
+  metadata Json?
+
+  // Relations
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String @db.ObjectId
+
+  // Timeline stamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Subdomain {
