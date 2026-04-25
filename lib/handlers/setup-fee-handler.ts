@@ -71,6 +71,40 @@ export async function setupFeeHandler(
     });
 
     console.log(`📧 Onboarding email sent to ${customerEmail}`);
+// 🚀 BATCH CREATE LOGS WITH METADATA
+    await prisma.clientActivity.createMany({
+      data:[
+        {
+          clientId: client.id,
+          type: "CLIENT_CREATED",
+          title: "Client Account Registered",
+          description: `Account initialized via Stripe Checkout for ${customerEmail}.`,
+        },
+        {
+          clientId: client.id,
+          type: "SETUP_FEE_PAID",
+          title: "Setup Fee Paid",
+          description: "Successfully processed the initial setup fee payment.",
+          // Store the raw Stripe session ID for future debugging!
+          metadata: { 
+            stripeSessionId: session.id, 
+            amountTotal: session.amount_total 
+          } 
+        },
+        {
+          clientId: client.id,
+          type: "EMAIL_SENT",
+          title: "Onboarding Email Sent",
+          description: "Sent Client Onboarding Email after successful SETUP FEE PAID.",
+          metadata: { 
+            recipient: customerEmail,
+            subject: "Payment Received! Welcome to Hue-Line! 🎉"
+          }
+        }
+      ]
+    });
+
+    console.log(`📝 Activity logs created for ${customerEmail}.`);
 
   } catch (err) {
     console.error("❌ Error in setupFeeHandler:", err instanceof Error ? err.message : err);
