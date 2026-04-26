@@ -12,12 +12,12 @@ export default function CalendarPage() {
 
   const events = (data ?? []).map((b: any) => ({
     title: b.title,
-    start: new Date(b.startTime),
-    end: new Date(b.endTime),
+    start: new Date(b.start),
+    end: new Date(b.end),
   }))
 
   if (isLoading) return <p>Loading...</p>
-  if (error) return <p>Failed to load bookings.</p>
+  if (error) return <p>Failed to load.</p>
 
   return (
     <div style={{ height: "100vh", padding: "1rem" }}>
