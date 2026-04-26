@@ -22,7 +22,7 @@ const clientSchema = z.object({
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const[loginMethod, setLoginMethod] = useState<"partner" | "client">("client");
+  const[loginMethod, setLoginMethod] = useState<"partner" | "client">("partner");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   
@@ -177,7 +177,7 @@ export default function LoginClient() {
     <div className="min-h-screen flex flex-col items-center justify-center gap-8 bg-gray-50 px-4">
       <Image src={Logo} width={140} height={140} alt="Logo" priority className="opacity-90" />
       
-      <div className="bg-white shadow-xl rounded-2xl w-full max-w-[400px] overflow-hidden border border-gray-100">
+      <div className="bg-white shadow-xl rounded-2xl w-full max-w-100 overflow-hidden border border-gray-100">
         
         {/* Toggle Header */}
         <div className="flex border-b border-gray-100 bg-gray-50/50 p-1 m-2 rounded-xl">
