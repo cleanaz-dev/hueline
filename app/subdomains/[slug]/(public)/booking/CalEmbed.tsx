@@ -29,7 +29,7 @@ export default function CalEmbed({ calLink, name, phone, huelineId }: CalEmbedPr
         style={{ width: "100%", height: "100%" }}
         config={{
           name: name,
-          huelineID: huelineId,
+          huelineId: huelineId,
           attendeePhoneNumber: phone,
         }}
       />
