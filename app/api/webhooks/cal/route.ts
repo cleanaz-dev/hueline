@@ -1,23 +1,32 @@
-// app/api/webhooks/cal/route.ts
 import { NextResponse } from "next/server";
 import twilio from "twilio";
+import crypto from "crypto";
 
 const client = twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
 
-const SECRET_KEY = process.env.CAL_WEBHOOK_SECRET;
+function verifySignature(payload: string, signature: string, secret: string) {
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(payload)
+    .digest("hex");
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
 
 export async function POST(req: Request) {
-  // CHECK WEBHOOK SECRET
-  const authHeader = req.headers.get("authorization");
-  
-  if (!authHeader || authHeader !== `Bearer ${SECRET_KEY}`) {
+  const rawBody = await req.text();
+  const signature = req.headers.get("x-cal-signature-256");
+
+  if (!signature || !verifySignature(rawBody, signature, process.env.CAL_WEBHOOK_SECRET!)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
+  const body = JSON.parse(rawBody);
 
   if (body.triggerEvent !== "BOOKING_CREATED") {
     return NextResponse.json({ ok: true });
