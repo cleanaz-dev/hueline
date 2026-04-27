@@ -54,11 +54,12 @@ model Client {
   crm     String?
 
   // subdomain info
-  subdomain        Subdomain?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  formData         FormData?
-  clientActivities ClientActivity[]
+  subdomain            Subdomain?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  formData             FormData?
+  clientActivities     ClientActivity[]
+  clientCommunications ClientCommunication[]
 }
 
 model SubSettings {
@@ -285,8 +286,41 @@ model SubBookingData {
   logs            Logs[]
   rooms           Room[]
 
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  demoClient DemoClient?
+}
+
+model DemoClient {
+  id    String  @id @default(auto()) @map("_id") @db.ObjectId
+  name  String?
+  phone String?
+  email String?
+
+  subBookingData   SubBookingData? @relation(fields: [subBookingDataId], references: [id])
+  subBookingDataId String?         @unique @db.ObjectId
+
+  communication ClientCommunication[]
+}
+
+model ClientCommunication {
+  id           String            @id @default(auto()) @map("_id") @db.ObjectId
+  body         String
+  role         String
+  type         CommunicationType
+  demoClientId String?           @db.ObjectId
+  demoClient   DemoClient?       @relation(fields: [demoClientId], references: [id])
+
+  clientId String? @db.ObjectId
+  client   Client? @relation(fields: [clientId], references: [id])
+
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+}
+
+enum CommunicationType {
+  SMS
+  PHONE
+  MEETINGs
 }
 
 enum BookingStatus {
