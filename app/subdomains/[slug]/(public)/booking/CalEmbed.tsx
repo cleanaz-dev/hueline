@@ -28,7 +28,6 @@ export default function CalEmbed({ calLink, name, phone }: CalEmbedProps) {
         style={{ width: "100%", height: "100%" }}
         config={{
           name: name,
-          email: "",
           attendeePhoneNumber: phone,
         }}
       />

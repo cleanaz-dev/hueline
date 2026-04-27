@@ -1,7 +1,4 @@
 "use client";
-
-import { useEffect } from "react";
-import { getCalApi } from "@calcom/embed-react";
 import {
   Calendar,
   Video,
@@ -20,19 +17,6 @@ interface BookingCTAProps {
 
 export const BookingCTA = ({ name, phone }: BookingCTAProps) => {
   const router = useRouter();
-
-  // Initialize Cal.com API -- IS THIS EVEN USEFUL I DONT UNDERSTAND WHIY ITS ITS HERE
-  useEffect(() => {
-    (async function () {
-      const cal = await getCalApi();
-      cal("ui", {
-        theme: "light",
-        styles: { branding: { brandColor: "#2563eb" } },
-        hideEventTypeDetails: false,
-        layout: "month_view",
-      });
-    })();
-  }, []);
 
   const features = [
     {
