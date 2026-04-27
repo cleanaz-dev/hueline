@@ -29,7 +29,7 @@ export default function CalEmbed({ calLink, name, phone }: CalEmbedProps) {
         config={{
           name: name,
           email: "",
-          phone: phone,
+          attendeePhoneNumber: phone,
         }}
       />
     </div>

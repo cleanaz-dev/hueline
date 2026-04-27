@@ -21,7 +21,7 @@ interface BookingCTAProps {
 export const BookingCTA = ({ name, phone }: BookingCTAProps) => {
   const router = useRouter();
 
-  // Initialize Cal.com API
+  // Initialize Cal.com API -- IS THIS EVEN USEFUL I DONT UNDERSTAND WHIY ITS ITS HERE
   useEffect(() => {
     (async function () {
       const cal = await getCalApi();
