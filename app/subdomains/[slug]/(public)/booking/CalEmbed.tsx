@@ -29,10 +29,7 @@ export default function CalEmbed({ calLink, name, phone }: CalEmbedProps) {
         config={{
           name: name,
           email: "",
-          location: JSON.stringify({
-            value: "phone",
-            optionValue: phone,
-          }),
+          phone: phone,
         }}
       />
     </div>

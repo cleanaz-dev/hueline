@@ -14,9 +14,11 @@ import { useRouter } from "next/navigation";
 
 interface BookingCTAProps {
   name?: string;
+  phone?: string;
+
 }
 
-export const BookingCTA = ({ name }: BookingCTAProps) => {
+export const BookingCTA = ({ name, phone }: BookingCTAProps) => {
   const router = useRouter();
 
   // Initialize Cal.com API
@@ -54,6 +56,9 @@ export const BookingCTA = ({ name }: BookingCTAProps) => {
     const params = new URLSearchParams();
     if (name) {
       params.append("name", name);
+    }
+    if (phone) {
+      params.append("phone", phone)
     }
     router.push(`/booking${params.toString() ? `?${params.toString()}` : ""}`);
   };
