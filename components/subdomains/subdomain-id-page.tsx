@@ -9,7 +9,7 @@ import SubDesignSummary from "./layout/sub-design-summary";
 import { SubCouponQuoteCards } from "./layout/sub-coupon-quote-card";
 import SubdomainNav from "./layout/subdomain-nav";
 import { BookingCTA } from "./layout/booking-cta";
-import { SurveyNudge } from "./layout/survey-nudge"; 
+import { SurveyNudge } from "./layout/survey-nudge";
 
 type Props = {
   booking: BookingData;
@@ -23,20 +23,18 @@ function formatTime(duration?: string | null): string {
 }
 
 export default function SubDomainIdPage({ booking, subdomain }: Props) {
-  
   return (
     <ScrollArea className="h-screen w-full">
       <div className="min-h-screen bg-linear-to-b from-primary/15 via-secondary/05 to-primary/25">
-        
         {/* Navigation */}
         <SubdomainNav data={subdomain} miniNav={true} />
 
         <main className="max-w-6xl mx-auto px-2 md:px-12 space-y-12 py-4 md:py-8">
           {/* Hero Section */}
-          <SubBookingHero 
-            booking={booking} 
-            formatTime={formatTime} 
-            slug={subdomain.slug} 
+          <SubBookingHero
+            booking={booking}
+            formatTime={formatTime}
+            slug={subdomain.slug}
           />
 
           {/* Project Vision */}
@@ -54,12 +52,11 @@ export default function SubDomainIdPage({ booking, subdomain }: Props) {
           </div>
 
           {/* CTA */}
-          <BookingCTA name={booking.name}/>
+          <BookingCTA name={booking.name} phone={booking.phone} />
         </main>
-        
+
         {/* The Nudge Widget (Fixed Position) */}
         <SurveyNudge booking={booking} />
-        
       </div>
     </ScrollArea>
   );
