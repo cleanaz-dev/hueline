@@ -41,8 +41,7 @@ export default async function BookingPage({
           <CalEmbed 
             calLink={cleanCalLink}
             name={name}
-            phone={phone}
-            
+            phone={phone}        
           />
         </div>
       </div>
