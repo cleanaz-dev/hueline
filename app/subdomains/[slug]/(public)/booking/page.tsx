@@ -1,7 +1,6 @@
 import type { Viewport } from 'next'
 import CalEmbed from './CalEmbed';
 
-// 👇 THIS IS THE MAGIC FIX FOR THE iOS ZOOM ISSUE
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -16,13 +15,12 @@ export default async function BookingPage({
 }) {
   const params = await searchParams;
   const name = typeof params.name === 'string' ? params.name : '';
-  const phone = typeof params.phone === 'string' ? params.phone: '';
-  const huelineId = typeof params.huelineId === 'string' ? params.huelineId: '';
+  const phone = typeof params.phone === 'string' ? params.phone : '';
+  const huelineId = typeof params.huelineId === 'string' ? params.huelineId : '';
+  const direct = typeof params.direct === 'string' ? params.direct === 'true' : false;
   
-  // Get the raw link from ENV or fallback
   const rawLink = process.env.NEXT_PUBLIC_CAL_LINK || 'paul-bare-sales/hue-line';
-  
-  // This cleans the link! If it sees "cal.com/", it removes it automatically.
+  const directLink = 'paul-bare-sales/hue-line-direct';
   const cleanCalLink = rawLink.replace(/^(https?:\/\/)?(www\.)?cal\.com\//, '');
 
   return (
@@ -36,15 +34,17 @@ export default async function BookingPage({
             Select a time below to see HUE-LINE in action.
           </p>
         </div>
-
-        {/* The Client Component wrapper for Cal.com */}
         <div className="overflow-hidden">
-          <CalEmbed 
-            calLink={cleanCalLink}
-            name={name}
-            phone={phone} 
-            huelineId={huelineId}       
-          />
+          {direct ? (
+            <CalEmbed calLink={directLink} />
+          ) : (
+            <CalEmbed
+              calLink={cleanCalLink}
+              name={name}
+              phone={phone}
+              huelineId={huelineId}
+            />
+          )}
         </div>
       </div>
     </main>

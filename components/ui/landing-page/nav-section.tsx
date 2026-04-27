@@ -55,7 +55,7 @@ export default function NavSection() {
 
   return (
     <section className="backdrop-blur-lg max-w-7xl mx-auto">
-      <nav className="relative z-20 flex items-center text-muted-foreground justify-between px-3 md:px-6 py-2 md:py-2 backdrop-blur-sm flex-shrink-0 bg-white/50">
+      <nav className="relative z-20 flex items-center text-muted-foreground justify-between px-3 md:px-6 py-2 md:py-2 backdrop-blur-sm shrink-0 bg-white/50">
         {/* Logo */}
         <div className="flex items-center gap-2">
           <Link href="#hero">
@@ -89,7 +89,7 @@ export default function NavSection() {
             <Link href="/login?partner">Partner Login</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link href="/booking">Book a Call</Link>
+             <Link href="/booking?direct=true">Book a Call</Link>
           </Button>
         </div>
 

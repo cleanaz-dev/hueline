@@ -5,9 +5,9 @@ import Cal, { getCalApi } from "@calcom/embed-react";
 
 interface CalEmbedProps {
   calLink: string;
-  name: string;
-  phone: string;
-  huelineId: string;
+  name?: string;
+  phone?: string;
+  huelineId?: string;
 }
 
 export default function CalEmbed({ calLink, name, phone, huelineId }: CalEmbedProps) {
@@ -22,16 +22,18 @@ export default function CalEmbed({ calLink, name, phone, huelineId }: CalEmbedPr
     })();
   }, []);
 
+const config = name || phone || huelineId ? {
+    ...(name && { name }),
+    ...(huelineId && { huelineId }),
+    ...(phone && { attendeePhoneNumber: phone }),
+  } : undefined;
+
   return (
     <div className="">
       <Cal
         calLink={calLink}
         style={{ width: "100%", height: "100%" }}
-        config={{
-          name: name,
-          huelineId: huelineId,
-          attendeePhoneNumber: phone,
-        }}
+        config={config}
       />
     </div>
   );
