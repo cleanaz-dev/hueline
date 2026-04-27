@@ -16,6 +16,7 @@ export default async function BookingPage({
 }) {
   const params = await searchParams;
   const name = typeof params.name === 'string' ? params.name : '';
+  const phone = typeof params.phone === 'string' ? params.phone: '';
   
   // Get the raw link from ENV or fallback
   const rawLink = process.env.NEXT_PUBLIC_CAL_LINK || 'paul-bare-sales/hue-line';
@@ -40,6 +41,8 @@ export default async function BookingPage({
           <CalEmbed 
             calLink={cleanCalLink}
             name={name}
+            phone={phone}
+            
           />
         </div>
       </div>
