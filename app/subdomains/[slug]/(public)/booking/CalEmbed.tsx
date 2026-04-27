@@ -7,9 +7,10 @@ interface CalEmbedProps {
   calLink: string;
   name: string;
   phone: string;
+  huelineId: string;
 }
 
-export default function CalEmbed({ calLink, name, phone }: CalEmbedProps) {
+export default function CalEmbed({ calLink, name, phone, huelineId }: CalEmbedProps) {
   useEffect(() => {
     (async function () {
       const cal = await getCalApi({});
@@ -28,6 +29,7 @@ export default function CalEmbed({ calLink, name, phone }: CalEmbedProps) {
         style={{ width: "100%", height: "100%" }}
         config={{
           name: name,
+          huelineID: huelineId,
           attendeePhoneNumber: phone,
         }}
       />

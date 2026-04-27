@@ -286,16 +286,17 @@ model SubBookingData {
   logs            Logs[]
   rooms           Room[]
 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
   demoClient DemoClient?
 }
 
 model DemoClient {
-  id    String  @id @default(auto()) @map("_id") @db.ObjectId
-  name  String?
-  phone String?
-  email String?
+  id     String        @id @default(auto()) @map("_id") @db.ObjectId
+  name   String?
+  phone  String?
+  email  String?
+  status BookingStatus @default(PENDING)
 
   subBookingData   SubBookingData? @relation(fields: [subBookingDataId], references: [id])
   subBookingDataId String?         @unique @db.ObjectId
@@ -306,7 +307,7 @@ model DemoClient {
 model ClientCommunication {
   id           String            @id @default(auto()) @map("_id") @db.ObjectId
   body         String
-  role         String
+  role         CommunicationRole
   type         CommunicationType
   demoClientId String?           @db.ObjectId
   demoClient   DemoClient?       @relation(fields: [demoClientId], references: [id])
@@ -317,16 +318,26 @@ model ClientCommunication {
   createdAt DateTime @default(now())
 }
 
+enum CommunicationRole {
+  AI
+  CLIENT
+  USER
+}
+
 enum CommunicationType {
   SMS
   PHONE
-  MEETINGs
+  MEETING
+  DEMO
+  EMAIL
 }
 
 enum BookingStatus {
   PENDING
   CLOSED
   LOST
+  BOOKED
+  WON
 }
 
 model Room {

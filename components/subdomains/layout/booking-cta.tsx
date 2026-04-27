@@ -12,10 +12,11 @@ import { useRouter } from "next/navigation";
 interface BookingCTAProps {
   name?: string;
   phone?: string;
+  huelineId?: string;
 
 }
 
-export const BookingCTA = ({ name, phone }: BookingCTAProps) => {
+export const BookingCTA = ({ name, phone, huelineId }: BookingCTAProps) => {
   const router = useRouter();
 
   const features = [
@@ -43,6 +44,9 @@ export const BookingCTA = ({ name, phone }: BookingCTAProps) => {
     }
     if (phone) {
       params.append("phone", phone)
+    }
+    if (huelineId) {
+      params.append("huelineId", huelineId)
     }
     router.push(`/booking${params.toString() ? `?${params.toString()}` : ""}`);
   };

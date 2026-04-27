@@ -130,5 +130,21 @@ export async function createMockupBooking(payload: CreateMockupBookingPayload) {
     },
   });
 
+  await prisma.demoClient.create({
+    data: {
+      name: name,
+      phone: phone,
+      status: "PENDING",
+      communication: {
+        create: {
+          body: "Prospect Generated Full Demo",
+          role: "CLIENT",
+          type: "DEMO",
+        },
+      },
+      subBookingData: { connect: { id: booking.id } },
+    },
+  });
+
   return { booking };
 }

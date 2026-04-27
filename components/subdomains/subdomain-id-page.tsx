@@ -52,7 +52,7 @@ export default function SubDomainIdPage({ booking, subdomain }: Props) {
           </div>
 
           {/* CTA */}
-          <BookingCTA name={booking.name} phone={booking.phone} />
+          <BookingCTA name={booking.name} phone={booking.phone} huelineId={booking.huelineId}/>
         </main>
 
         {/* The Nudge Widget (Fixed Position) */}
