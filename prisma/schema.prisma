@@ -302,6 +302,9 @@ model DemoClient {
   subBookingDataId String?         @unique @db.ObjectId
 
   communication ClientCommunication[]
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
 }
 
 model ClientCommunication {
