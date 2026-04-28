@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import Cal, { getCalApi } from "@calcom/embed-react";
 
 interface CalEmbedProps {
@@ -11,17 +11,22 @@ interface CalEmbedProps {
 }
 
 export default function CalEmbed({ calLink, name, phone, huelineId }: CalEmbedProps) {
+  // 1. Create a unique namespace (e.g., 'paulbaresaleshuelinedirect') to prevent Cal.com cache collisions
+  const embedNamespace = useMemo(() => {
+    return calLink.replace(/[^a-zA-Z0-9]/g, '');
+  }, [calLink]);
+
   useEffect(() => {
     (async function () {
-      // 1. Give the API call a specific namespace to prevent React strict-mode double-firing bugs
-      const cal = await getCalApi({ namespace: "booking" });
+      // 2. Initialize using the unique dynamic namespace
+      const cal = await getCalApi({ namespace: embedNamespace });
       cal("ui", {
         styles: { branding: { brandColor: "#6366f1" } },
         hideEventTypeDetails: false,
         layout: "column_view"
       });
     })();
-  },[]);
+  }, [embedNamespace]); // 3. Re-run if the namespace ever changes
 
   const config = name || phone || huelineId ? {
     ...(name && { name }),
@@ -30,12 +35,10 @@ export default function CalEmbed({ calLink, name, phone, huelineId }: CalEmbedPr
   } : undefined;
 
   return (
-    // 2. Add a minimum height constraint so the wrapper doesn't collapse to 0px
     <div className="w-full min-h-150">
       <Cal
-        namespace="booking" // 3. Match the namespace here with the one in getCalApi
+        namespace={embedNamespace}
         calLink={calLink}
-        // 4. Remove `height: "100%"` and replace with `minHeight` so the iframe can dynamically size itself
         style={{ width: "100%", minHeight: "600px" }}
         config={config}
       />
