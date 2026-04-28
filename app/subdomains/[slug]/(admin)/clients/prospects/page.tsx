@@ -19,7 +19,7 @@ export default async function ProspectPage() {
     <div className="admin-first-div">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Prospects</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-primary decoration-1 decoration-muted">Prospects</h1>
           <p className="text-muted-foreground">
             Manage your demo clients and AI lead nurturing.
           </p>
