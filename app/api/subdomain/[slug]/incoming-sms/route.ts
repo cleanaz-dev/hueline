@@ -1,86 +1,96 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getRedisClient } from "@/lib/redis";
-import { GenerateSMS } from "@/lib/moonshot";
-import twilio from "twilio";
+import { twilioClient } from "@/lib/twilio/config";
+import { sendDynamicSms } from "@/lib/twilio/sms";
 
 const MAX_MESSAGES_PER_HOUR = 10;
 
 export async function POST(req: Request) {
   const redis = await getRedisClient();
+
   try {
-    const body = await req.json();
-    const incomingPhone = body.From;
-    const incomingMessage = body.Body;
+    // 1. TWILIO PARSING (Twilio sends form-data, not JSON)
+    const formData = await req.formData();
+    const incomingPhone = formData.get("From") as string;
+    const incomingMessage = formData.get("Body") as string;
 
-    // 1. RATE LIMIT CHECK VIA REDIS
-    const redisKey = `sms_limit:${incomingPhone}`;
-
-    // Increment the user's message count
-    const currentCount = await redis.incr(redisKey);
-
-    // If this is their first message this hour, set the key to expire in 3600 seconds (1 hour)
-    if (currentCount === 1) {
-      await redis.expire(redisKey, 3600);
+    if (!incomingPhone || !incomingMessage) {
+      return new Response("Missing Data", { status: 400 });
     }
 
-    // 2. ENFORCE THE LIMIT
-    if (currentCount > MAX_MESSAGES_PER_HOUR) {
-      console.log(`Rate limit exceeded for ${incomingPhone}. Message ignored.`);
+    // 2. RATE LIMITING
+    const redisKey = `sms_limit:${incomingPhone}`;
+    const currentCount = await redis.incr(redisKey);
+    if (currentCount === 1) await redis.expire(redisKey, 3600);
 
-      // OPTIONAL: Send a warning ONLY on the exact message that breaches the limit
+    if (currentCount > MAX_MESSAGES_PER_HOUR) {
       if (currentCount === MAX_MESSAGES_PER_HOUR + 1) {
-        const twilioClient = twilio(
-          process.env.TWILIO_SID,
-          process.env.TWILIO_AUTH_TOKEN,
-        );
         await twilioClient.messages.create({
-          body: "You've reached the temporary messaging limit. Please hold tight, or book a meeting to continue!",
+          body: "You've reached the messaging limit. Please hold tight, or book a meeting to continue!",
           from: process.env.TWILIO_PHONE_NUMBER,
           to: incomingPhone,
         });
       }
-
-      // Return 200 so Twilio is happy, but do NOT call Moonshot AI
       return NextResponse.json({ success: true });
     }
 
-    // 3. THE GATEKEEPER (Spam/Unknown number protection)
-    const user =
-      (await prisma.demoClient.findFirst({
-        where: { phone: incomingPhone },
-      })) ||
-      (await prisma.client.findFirst({
-        where: { phone: incomingPhone },
-      }))
+    // 3. USER IDENTIFICATION (Checking both DemoClient and Client)
+    const demoClient = await prisma.demoClient.findFirst({ where: { phone: incomingPhone } });
+    const regularClient = !demoClient ? await prisma.client.findFirst({ where: { phone: incomingPhone } }) : null;
+
+    const user = demoClient || regularClient;
 
     if (!user) {
-      return NextResponse.json({ success: true }); // Drop unknown numbers
+      console.log(`Unknown sender: ${incomingPhone}. Dropping.`);
+      return NextResponse.json({ success: true });
     }
 
-    const recipientName = (user as any).name || (user as any).firstName || "there";
+    // Helper flags for Type Safety
+    const isDemo = 'name' in user;
+    const recipientName = (isDemo ? user.name : user.firstName) || "there";
 
-    // 4. WE ARE SAFE: Call Moonshot and respond
-    const replyText = await GenerateSMS({
-      type: "Customer Support / General Reply",
-      recipientName: recipientName || "there",
-      context: `The user texted: "${incomingMessage}"`,
+    // 4. LOG INCOMING MESSAGE
+    // This allows the AI to "see" what the user just said in the next step
+    await prisma.clientCommunication.create({
+      data: {
+        body: incomingMessage,
+        role: "CLIENT",
+        type: "SMS",
+        ...(isDemo 
+          ? { demoClient: { connect: { id: user.id } } } 
+          : { client: { connect: { id: user.id } } }
+        ),
+      },
     });
 
-    const twilioClient = twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN,
-    );
-    await twilioClient.messages.create({
-    // If replyText is null, it sends the fallback string instead of crashing
-    body: replyText || "Sorry, we're unable to process your request right now. Please try again!",
-    from: process.env.TWILIO_PHONE_NUMBER,
-    to: incomingPhone,
-});
+    // 5. FETCH RECENT HISTORY
+    // We grab the last 5 messages to provide conversation context (Memory)
+    const previousMessages = await prisma.clientCommunication.findMany({
+      where: isDemo ? { demoClientId: user.id } : { clientId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+
+    const history = previousMessages.reverse().map((msg) => ({
+      role: msg.role === "AI" ? ("assistant" as const) : ("user" as const),
+      content: msg.body,
+    }));
+
+    // 6. EXECUTE THE BRAIN (Generate SMS + Send + Log Reply)
+    await sendDynamicSms({
+      to: incomingPhone,
+      recipientName: recipientName,
+      promptType: "CONVERSATION",
+      context: incomingMessage,
+      demoClientId: user.id, // The function expects an ID to link the communication
+      history: history,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error handling inbound SMS:", error);
-    return NextResponse.json({ success: false }, { status: 200 });
+    console.error("Inbound SMS Error:", error);
+    // Always return 200 Success to Twilio to stop them from retrying failed webhooks
+    return NextResponse.json({ success: false });
   }
 }
