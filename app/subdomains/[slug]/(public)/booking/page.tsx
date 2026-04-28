@@ -19,7 +19,7 @@ export default async function BookingPage({
   const huelineId =
     typeof params.huelineId === "string" ? params.huelineId : "";
   const direct =
-    typeof params.direct === "string" ? params.direct === "true" : false;
+    typeof params.direct === "string" ? params.direct : "";
 
   const rawLink =
     process.env.NEXT_PUBLIC_CAL_LINK || "paul-bare-sales/hue-line";
