@@ -89,7 +89,7 @@ export default function NavSection() {
             <Link href="/login?partner">Partner Login</Link>
           </Button>
           <Button size="sm" asChild>
-             <Link href="/booking/direct">Book a Call</Link>
+            <Link href="/booking?direct=true">Book a Call</Link>
           </Button>
         </div>
 

@@ -1,54 +1,46 @@
-// app/booking/CalEmbed.tsx
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import Cal, { getCalApi } from "@calcom/embed-react";
-import { useRouter } from 'next/navigation';
 
 interface CalEmbedProps {
   calLink: string;
+  name?: string;
+  phone?: string;
+  huelineId?: string;
 }
 
-export default function CalEmbed({ calLink }: CalEmbedProps) {
-  const router = useRouter();
+export default function CalEmbed({ calLink, name, phone, huelineId }: CalEmbedProps) {
+  // 1. Create a unique namespace (e.g., 'paulbaresaleshuelinedirect') to prevent Cal.com cache collisions
+  const embedNamespace = useMemo(() => {
+    return calLink.replace(/[^a-zA-Z0-9]/g, '');
+  }, [calLink]);
 
   useEffect(() => {
     (async function () {
-      const cal = await getCalApi({});
-      
+      // 2. Initialize using the unique dynamic namespace
+      const cal = await getCalApi({ namespace: embedNamespace });
       cal("ui", {
         styles: { branding: { brandColor: "#6366f1" } },
         hideEventTypeDetails: false,
         layout: "column_view"
       });
-
-      cal("on", {
-        action: "bookingSuccessful",
-        callback: (e) => {
-          // 1. Cast data to 'any' to bypass the TypeScript 'unknown' error
-          const data = e.detail.data as any;
-          
-          // 2. Safely extract the name from the booking object
-          const bookedName = 
-            data?.booking?.responses?.name || 
-            data?.booking?.attendees?.[0]?.name;
-          
-          if (bookedName) {
-             router.push(`/thank-you?name=${encodeURIComponent(bookedName)}`);
-          } else {
-             router.push('/thank-you');
-          }
-        }
-      });
-
     })();
-  }, [router]);
+  }, [embedNamespace]); // 3. Re-run if the namespace ever changes
+
+  const config = name || phone || huelineId ? {
+    ...(name && { name }),
+    ...(huelineId && { huelineId }),
+    ...(phone && { attendeePhoneNumber: phone }),
+  } : undefined;
 
   return (
-    <div className="">
-      <Cal 
+    <div className="w-full min-h-150">
+      <Cal
+        namespace={embedNamespace}
         calLink={calLink}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "100%", minHeight: "600px" }}
+        config={config}
       />
     </div>
   );

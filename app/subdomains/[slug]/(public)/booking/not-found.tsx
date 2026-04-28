@@ -17,7 +17,7 @@ export default async function BookingNotFound() {
   const companyName = subDomainData?.companyName || 'Company';
   
   return (
-    <div className="h-screen bg-gradient-to-b from-primary/15 via-secondary/05 to-primary/30 flex items-center justify-center">
+    <div className="h-screen bg-linear-to-b from-primary/15 via-secondary/05 to-primary/30 flex items-center justify-center">
       <main className="max-w-4xl mx-auto px-6">
         <div className="text-center space-y-8">
           <div className="flex justify-center">
