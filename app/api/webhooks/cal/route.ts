@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
-import twilio from "twilio";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-
-const client = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN,
-);
+import { EVENT_TYPES, sendSmsConfirmation } from "./config";
+import { format } from "date-fns";
 
 function verifySignature(payload: string, signature: string, secret: string) {
   const expected = crypto
@@ -28,7 +24,8 @@ export async function POST(req: Request) {
   }
 
   const body = JSON.parse(rawBody);
-  console.log("Cal WEBHOOK", body)
+  const eventTypeId = body.payload?.eventTypeId?.toString();
+  console.log("Cal WEBHOOK", body);
 
   if (body.triggerEvent !== "BOOKING_CREATED") {
     return NextResponse.json({ ok: true });
@@ -43,28 +40,48 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const formatted = start.toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const formatted = format(start, "EEE, MMM d, h:mm aa");
 
-  await client.messages.create({
-    to: attendee.phoneNumber,
-    from: process.env.TWILIO_PHONE_NUMBER!,
-    body: `Hi ${attendee.name}, your booking "${title}" is confirmed for ${formatted}. See you then!`,
-  });
+  await sendSmsConfirmation(
+    attendee.phoneNumber,
+    attendee.name,
+    title,
+    formatted,
+  );
 
-  if (huelineId) {
+  if (eventTypeId === EVENT_TYPES.LANDING_PAGE) {
+    // create new demo client
+    const newDemoClient = await prisma.demoClient.create({
+      data: {
+        name: attendee.name,
+        phone: attendee.phone,
+        email: attendee.email,
+      },
+    });
+    await prisma.clientCommunication.create({
+      data: {
+        body: "Potential Client booked meeting from Landing Page",
+        role: "CLIENT",
+        type: "MEETING",
+        demoClient: { connect: { id: newDemoClient.id } },
+      },
+    });
+    console.log("Booking from Landing Page");
+  }
+
+  if (eventTypeId === EVENT_TYPES.DEMO_PAGE && huelineId) {
     const demoClient = await prisma.demoClient.findFirst({
       where: { subBookingData: { huelineId } },
     });
 
+    if (!demoClient) {
+      console.error("No demoClient found for huelineId", huelineId);
+      return NextResponse.json({ ok: true });
+    }
+
     await Promise.all([
       prisma.demoClient.update({
-        where: { id: demoClient?.id },
+        where: { id: demoClient.id },
         data: { status: "BOOKED" },
       }),
       prisma.clientCommunication.create({
@@ -72,7 +89,7 @@ export async function POST(req: Request) {
           body: `Hi ${attendee.name}, your booking "${title}" is confirmed for ${formatted}. See you then!`,
           role: "AI",
           type: "SMS",
-          demoClient: { connect: { id: demoClient?.id } },
+          demoClient: { connect: { id: demoClient.id } },
         },
       }),
     ]);
