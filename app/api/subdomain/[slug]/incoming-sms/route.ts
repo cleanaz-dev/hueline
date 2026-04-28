@@ -6,26 +6,31 @@ import { sendDynamicSms } from "@/lib/twilio/sms";
 
 const MAX_MESSAGES_PER_HOUR = 10;
 
-export async function POST(req: Request) {
+interface Params {
+  params: Promise<{ slug: string }>
+}
+
+export async function POST(req: Request, { params }: Params) {
   const redis = await getRedisClient();
+  const { slug } = await params;
 
   try {
-    // 1. PARSE JSON (Standardizing the input)
+    // 1. PARSE JSON
     const { incomingPhone, incomingMessage, twilioId } = await req.json();
 
     if (!incomingPhone || !incomingMessage) {
-      return NextResponse.json({ error: "Missing incomingPhone or incomingMessage" }, { status: 400 });
+      return NextResponse.json({ error: "Missing data" }, { status: 400 });
     }
 
-    // 2. RATE LIMITING (Redis)
-    const redisKey = `sms_limit:${incomingPhone}`;
-    const currentCount = await redis.incr(redisKey);
-    if (currentCount === 1) await redis.expire(redisKey, 3600);
+    // 2. RATE LIMITING
+    const rateLimitKey = `sms_limit:${incomingPhone}`;
+    const currentCount = await redis.incr(rateLimitKey);
+    if (currentCount === 1) await redis.expire(rateLimitKey, 3600);
 
     if (currentCount > MAX_MESSAGES_PER_HOUR) {
       if (currentCount === MAX_MESSAGES_PER_HOUR + 1) {
         await twilioClient.messages.create({
-          body: "Rate limit reached. Please hold tight!",
+          body: "You've reached the messaging limit. Please book a meeting to continue!",
           from: process.env.TWILIO_PHONE_NUMBER,
           to: incomingPhone,
         });
@@ -33,7 +38,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, message: "Rate limited" });
     }
 
-    // 3. IDENTIFY USER (DemoClient or Client)
+    // 3. IDENTIFY USER
     const demoClient = await prisma.demoClient.findFirst({ where: { phone: incomingPhone } });
     const regularClient = !demoClient ? await prisma.client.findFirst({ where: { phone: incomingPhone } }) : null;
     const user = demoClient || regularClient;
@@ -45,11 +50,10 @@ export async function POST(req: Request) {
     const isDemo = 'name' in user;
     const recipientName = (isDemo ? user.name : user.firstName) || "there";
 
-    // 4. LOG INCOMING MESSAGE
-    // Note: We include the twilioId (SID) in the body or a metadata field if your schema allows
+    // 4. LOG INCOMING MESSAGE (Always log so the Operator sees it in the Chat Drawer)
     await prisma.clientCommunication.create({
       data: {
-        body: incomingMessage, // Optionally: `${incomingMessage} (Ref: ${twilioId})`
+        body: incomingMessage,
         role: "CLIENT",
         type: "SMS",
         ...(isDemo 
@@ -59,7 +63,17 @@ export async function POST(req: Request) {
       },
     });
 
-    // 5. GET RECENT HISTORY (Last 5 messages)
+    // 5. CHECK FOR AI PAUSE (The "Muzzle")
+    // If the operator recently sent a manual message, this key will exist in Redis.
+    const pauseKey = `ai_paused:${incomingPhone}`;
+    const isPaused = await redis.get(pauseKey);
+
+    if (isPaused) {
+      console.log(`[${slug}] AI is muzzled for ${incomingPhone}. Operator is in control.`);
+      return NextResponse.json({ success: true, message: "AI paused by operator" });
+    }
+
+    // 6. GET RECENT HISTORY (Last 5 messages for Kimi's context)
     const previousMessages = await prisma.clientCommunication.findMany({
       where: isDemo ? { demoClientId: user.id } : { clientId: user.id },
       orderBy: { createdAt: "desc" },
@@ -71,7 +85,7 @@ export async function POST(req: Request) {
       content: msg.body,
     }));
 
-    // 6. TRIGGER THE BRAIN
+    // 7. TRIGGER THE BRAIN
     await sendDynamicSms({
       to: incomingPhone,
       recipientName: recipientName,

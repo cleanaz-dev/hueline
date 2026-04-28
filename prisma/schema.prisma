@@ -325,6 +325,7 @@ enum CommunicationRole {
   AI
   CLIENT
   USER
+  OPERATOR
 }
 
 enum CommunicationType {
