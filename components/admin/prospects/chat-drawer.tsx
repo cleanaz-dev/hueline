@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, Send, ShieldAlert, UserRound, X } from "lucide-react";
-import { MOCK_PROSPECTS } from "./mock-data";
 import { ChatBubble } from "./chat-bubble";
+import { AdvancedChatInput } from "./advanced-chat-input";
 
 export function ChatDrawer({ prospect, isOpen, onClose }: any) {
   const [messages, setMessages] = React.useState<any[]>([]);
@@ -17,29 +17,20 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
   const [input, setInput] = React.useState("");
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
-const fetchMessages = async () => {
-  if (!prospect?.id) return;
-  setLoading(true);
-
-  try {
-    // 1. Try to get REAL data from the API we just built
-    const res = await fetch(`/api/admin/prospects/${prospect.id}/messages`);
-    const data = await res.json();
-
-    // 2. FALLBACK: If the DB returns nothing and we are in dev, use mock data
-    if (data.length === 0 && process.env.NODE_ENV === 'development') {
-      // Find the specific mock prospect's messages
-      const mock = MOCK_PROSPECTS.find(p => p.id === prospect.id);
-      setMessages(mock ? mock.communication : []);
-    } else {
+  const fetchMessages = async () => {
+    if (!prospect?.id) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/prospects/${prospect.id}/messages`);
+      const data = await res.json();
       setMessages(data);
+    } catch (err) {
+      console.error("Fetch error", err);
+      setMessages([]);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Fetch error", err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   React.useEffect(() => {
     if (isOpen) fetchMessages();
@@ -47,14 +38,19 @@ const fetchMessages = async () => {
 
   React.useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+      setTimeout(
+        () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+        50,
+      );
     }
   }, [messages]);
 
   // Lock body scroll when open
   React.useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isOpen]);
 
   const handleManualSend = async (e: React.FormEvent) => {
@@ -103,7 +99,7 @@ const fetchMessages = async () => {
             transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
             className="fixed inset-y-0 right-0 z-50 flex flex-col w-full sm:max-w-105 bg-background shadow-2xl border-l"
           >
-            {/* Header */}
+            {/* Header (Stays Fixed Top) */}
             <div className="flex items-center justify-between px-5 py-4 border-b bg-muted/30 shrink-0">
               <div className="flex items-center gap-3">
                 <Avatar className="h-9 w-9">
@@ -112,57 +108,86 @@ const fetchMessages = async () => {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-semibold leading-tight">{prospect.name}</p>
-                  <p className="text-xs text-muted-foreground">{prospect.phone}</p>
+                  <p className="text-sm font-semibold leading-tight">
+                    {prospect.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {prospect.phone}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-[10px] px-2 py-0.5 font-normal text-muted-foreground">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-2 py-0.5 font-normal text-muted-foreground"
+                >
                   {messages.length} messages
                 </Badge>
-                <Button variant="ghost" size="icon" onClick={fetchMessages} className="h-8 w-8">
-                  <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={fetchMessages}
+                  className="h-8 w-8"
+                >
+                  <RefreshCw
+                    size={15}
+                    className={loading ? "animate-spin" : ""}
+                  />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8"
+                >
                   <X size={15} />
                 </Button>
               </div>
             </div>
 
-            {/* Messages */}
-            <ScrollArea className="flex-1 px-4">
-              <div className="py-5 space-y-5">
-                {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
-                    <p className="text-sm">No messages yet</p>
-                  </div>
-                ) : (
-                  messages.map((msg: any) => (
-                    <ChatBubble key={msg.id} msg={msg} prospectName={prospect.name} />
-                  ))
-                )}
-                <div ref={bottomRef} />
-              </div>
-            </ScrollArea>
+            {/* Messages (Scrollable Area) */}
+            {/* THE FIX: Added flex-1 and min-h-0 wrapper here */}
+            <div className="flex-1 min-h-0 flex flex-col">
+              {/* THE FIX: Added h-full to the ScrollArea */}
+              <ScrollArea className="h-full px-4">
+                <div className="py-5 space-y-5">
+                  {messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
+                      <p className="text-sm">No messages yet</p>
+                    </div>
+                  ) : (
+                    messages.map((msg: any) => (
+                      <ChatBubble
+                        key={msg.id}
+                        msg={msg}
+                        prospectName={prospect.name}
+                      />
+                    ))
+                  )}
+                  <div ref={bottomRef} className="h-1" />
+                </div>
+              </ScrollArea>
+            </div>
 
-            {/* Input */}
-            <div className="px-4 pt-3 pb-4 border-t bg-background space-y-2.5 shrink-0">
-              <form className="flex gap-2" onSubmit={handleManualSend}>
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Type a manual reply..."
-                  className="flex-1 text-sm"
-                />
-                <Button type="submit" size="icon" disabled={!input.trim()} className="shrink-0">
-                  <Send size={16} />
-                </Button>
-              </form>
-              <div className="flex items-center gap-1.5 justify-center text-[10px] text-orange-500 font-medium">
-                <ShieldAlert size={11} />
-                Sending a manual reply pauses AI for 2 hours
-              </div>
+            {/* Input (Stays Fixed Bottom) */}
+            <div className="shrink-0">
+              <AdvancedChatInput
+                isLoading={loading}
+                onSend={async (message, channel) => {
+                  // NOTE: Here you will pass the channel up to your API so it knows to send an SMS or EMAIL
+                  await fetch("/api/admin/prospects/send-manual", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      prospectId: prospect?.id,
+                      phone: prospect?.phone,
+                      body: message,
+                      type: channel, // 'SMS' or 'EMAIL'
+                    }),
+                  });
+                  fetchMessages();
+                }}
+              />
             </div>
           </motion.div>
         </>

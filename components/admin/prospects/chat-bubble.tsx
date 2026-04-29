@@ -1,13 +1,27 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bot, UserRound } from "lucide-react";
+import {
+  Bot,
+  UserRound,
+  Headset,
+  Mail,
+  Phone,
+  MessageSquare,
+  Video,
+  Calendar,
+} from "lucide-react";
+import { InteractiveChatImage } from "./interactive-chat-image";
 import { cn } from "@/lib/utils";
+
+type Role = "CLIENT" | "AI" | "OPERATOR";
+type Type = "SMS" | "EMAIL" | "PHONE" | "DEMO" | "MEETING";
 
 interface ChatBubbleProps {
   msg: {
-    id: string;
-    role: "CLIENT" | "AI" | "OPERATOR";
     body: string;
-    createdAt: string;
+    role: Role;
+    type: Type;
+    createdAt: Date | string;
+    mediaUrl?: string | null; // <-- Added mediaUrl
   };
   prospectName?: string;
 }
@@ -15,69 +29,110 @@ interface ChatBubbleProps {
 const ROLE_CONFIG = {
   CLIENT: {
     label: "Client",
-    bubbleClass: "bg-muted text-foreground",
-    align: "justify-end",
-    avatarClass: "bg-zinc-200 dark:bg-zinc-700",
-    icon: <UserRound size={14} className="text-zinc-600 dark:text-zinc-300" />,
-    side: "right" as const,
+    side: "right",
+    bubble:
+      "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700",
+    icon: UserRound,
   },
   AI: {
-    label: "AI",
-    bubbleClass: "bg-blue-600 text-white",
-    align: "justify-start",
-    avatarClass: "bg-blue-100 dark:bg-blue-900",
-    icon: <Bot size={14} className="text-blue-600 dark:text-blue-300" />,
-    side: "left" as const,
+    label: "AI Assistant",
+    side: "left",
+    bubble:
+      "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-500/20",
+    icon: Bot,
   },
   OPERATOR: {
     label: "Operator",
-    bubbleClass: "bg-orange-500 text-white",
-    align: "justify-start",
-    avatarClass: "bg-orange-100 dark:bg-orange-900",
-    icon: <UserRound size={14} className="text-orange-600 dark:text-orange-300" />,
-    side: "left" as const,
+    side: "left",
+    bubble:
+      "bg-blue-50 dark:bg-blue-500/10 text-blue-900 dark:text-blue-200 border border-blue-100 dark:border-blue-500/20",
+    icon: Headset,
   },
 };
 
+const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
+  SMS: { icon: MessageSquare, label: "SMS" },
+  EMAIL: { icon: Mail, label: "Email" },
+  PHONE: { icon: Phone, label: "Call Log" },
+  DEMO: { icon: Video, label: "Demo" },
+  MEETING: { icon: Calendar, label: "Meeting" },
+};
+
 export function ChatBubble({ msg, prospectName }: ChatBubbleProps) {
-  const config = ROLE_CONFIG[msg.role] ?? ROLE_CONFIG.AI;
-  const isRight = config.side === "right";
+  const meta = ROLE_CONFIG[msg.role];
+  const isRight = meta.side === "right";
+  const typeInfo = TYPE_CONFIG[msg.type];
+  const TypeIcon = typeInfo.icon;
+
   const time = new Date(msg.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
 
-  const avatar = (
-    <Avatar className="h-7 w-7 shrink-0 mt-0.5">
-      <AvatarFallback className={cn("text-xs", config.avatarClass)}>
-        {config.icon}
-      </AvatarFallback>
-    </Avatar>
-  );
-
   return (
-    <div className={cn("flex gap-2.5 items-end", config.align)}>
-      {!isRight && avatar}
-
-      <div className={cn("flex flex-col gap-1", isRight ? "items-end" : "items-start")}>
-        <span className="text-[10px] font-medium text-muted-foreground px-1">
-          {isRight ? (prospectName ?? "Client") : config.label}
-        </span>
+    <div
+      className={cn(
+        "flex w-full mb-6",
+        isRight ? "justify-end" : "justify-start",
+      )}
+    >
+      <div
+        className={cn(
+          "flex gap-3 max-w-[85%] md:max-w-[90%]",
+          isRight ? "flex-row-reverse" : "flex-row",
+        )}
+      >
+        <div className="flex flex-col items-center shrink-0 mt-0.5">
+          <Avatar className="h-8 w-8 shadow-sm border border-zinc-200 dark:border-zinc-700">
+            <AvatarFallback
+              className={cn(
+                "bg-background",
+                msg.role === "AI" && "text-indigo-600 dark:text-indigo-400",
+                msg.role === "OPERATOR" && "text-blue-600 dark:text-blue-400",
+                msg.role === "CLIENT" && "text-zinc-600 dark:text-zinc-400",
+              )}
+            >
+              <meta.icon size={16} />
+            </AvatarFallback>
+          </Avatar>
+        </div>
 
         <div
           className={cn(
-            "px-4 py-2.5 rounded-2xl text-sm leading-relaxed max-w-[72%] shadow-sm",
-            config.bubbleClass,
-            isRight ? "rounded-br-sm" : "rounded-bl-sm"
+            "flex flex-col gap-1.5",
+            isRight ? "items-end" : "items-start",
           )}
         >
-          {msg.body}
+          <div className="flex items-baseline gap-2 px-1">
+            <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              {isRight ? (prospectName ?? "Client") : meta.label}
+            </span>
+            <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+              {time}
+            </span>
+          </div>
+
+          <div
+            className={cn(
+              "relative flex flex-col px-4 py-3 rounded-2xl text-[14px] leading-relaxed shadow-sm wrap-break-word",
+              meta.bubble,
+              isRight ? "rounded-tr-sm" : "rounded-tl-sm",
+            )}
+          >
+            <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-current/10 opacity-70">
+              <TypeIcon size={14} strokeWidth={2.5} />
+              <span className="text-[10px] uppercase tracking-widest font-bold">
+                {typeInfo.label}
+              </span>
+            </div>
+
+            {/* Render Image if mediaUrl exists */}
+            {msg.mediaUrl && <InteractiveChatImage mediaUrl={msg.mediaUrl} />}
+
+            <div className="whitespace-pre-wrap">{msg.body}</div>
+          </div>
         </div>
-
-        <span className="text-[10px] text-muted-foreground px-1">{time}</span>
       </div>
-
-      {isRight && avatar}
     </div>
   );
 }
