@@ -5,22 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ChevronLeft, Check, PaintRoller, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { COLOR_BRANDS } from "./color-brand-data";
 
-// --- Mock Data for Brands & Colors ---
-const COLOR_BRANDS = {
-  "Benjamin Moore":[
-    { name: "Swiss Coffee", hex: "#E5E4DE", id: "OC-45" },
-    { name: "Hale Navy", hex: "#3B444E", id: "HC-154" },
-    { name: "Revere Pewter", hex: "#CCC7B9", id: "HC-172" },
-    { name: "Caliente", hex: "#8B3A3A", id: "AF-290" },
-  ],
-  "RAL":[
-    { name: "Zinc Yellow", hex: "#F3E03B", id: "RAL 1018" },
-    { name: "Sapphire Blue", hex: "#2A3756", id: "RAL 5003" },
-    { name: "Dusty Grey", hex: "#7A898D", id: "RAL 7037" },
-    { name: "Carmine Red", hex: "#9B111E", id: "RAL 3002" },
-  ]
-};
+
 
 type Step = "IDLE" | "BRAND" | "COLOR" | "CONFIRM" | "LOADING" | "SUCCESS";
 
@@ -63,12 +50,12 @@ export function InteractiveChatImage({ mediaUrl }: InteractiveChatImageProps) {
   };
 
   return (
-    <div className="relative mb-3 group overflow-hidden rounded-lg border border-current/10 bg-zinc-100 dark:bg-zinc-900 min-h-[120px]">
+    <div className="relative mb-3 group overflow-hidden rounded-lg border border-current/10 bg-zinc-100 dark:bg-zinc-900 min-h-30">
       {/* The actual image */}
       <img 
         src={mediaUrl} 
         alt="Attachment" 
-        className="w-full h-auto max-h-[300px] object-cover transition-transform duration-500 group-hover:scale-[1.02]" 
+        className="w-full h-auto max-h-75 object-cover transition-transform duration-500 group-hover:scale-[1.02]" 
       />
 
       {/* OVERLAY UI */}
@@ -81,7 +68,7 @@ export function InteractiveChatImage({ mediaUrl }: InteractiveChatImageProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent flex justify-center"
+            className="absolute inset-x-0 bottom-0 p-3 bg-linear-to-t from-black/60 to-transparent flex justify-center"
           >
             <Button 
               size="sm" 
@@ -120,7 +107,7 @@ export function InteractiveChatImage({ mediaUrl }: InteractiveChatImageProps) {
                           key={brand} 
                           variant="outline" 
                           size="sm" 
-                          className="h-12 bg-background/50 hover:bg-background border-border/50 flex flex-col items-center justify-center gap-1"
+                          className="h-12 bg-background/50 hover:bg-background border-border/50 flex flex-col items-center justify-center gap-1 hover:text-accent"
                           onClick={() => {
                             setSelectedBrand(brand as keyof typeof COLOR_BRANDS);
                             setStep("COLOR");

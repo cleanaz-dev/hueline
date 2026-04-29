@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useState } from "react";
 import useSWR from "swr";
 import { Log } from "@/types/subdomain-type";
 
@@ -45,6 +45,12 @@ interface SuperAdminContextType {
 
   logs: Log[] |undefined
   isLogsLoading: boolean
+
+  // NEW: Prospect Communications
+  sendSMS: (prospectId: string, body: string) => Promise<boolean>;
+  sendEmail: (prospectId: string, body: string, subject?: string) => Promise<boolean>;
+  isSendingSMS: boolean;
+  isSendingEmail: boolean;
 }
 
 const SuperAdminContext = createContext<SuperAdminContextType | undefined>(
@@ -99,6 +105,52 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
     mutateClients();
   };
 
+  // --- NEW: Global Sending States ---
+  const[isSendingSMS, setIsSendingSMS] = useState(false);
+  const[isSendingEmail, setIsSendingEmail] = useState(false);
+
+   // --- NEW: Communication Handlers ---
+  const sendSMS = async (prospectId: string, body: string) => {
+    setIsSendingSMS(true);
+    try {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/send-sms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      });
+      if (!res.ok) throw new Error("Failed to send SMS");
+      
+      // Optional: Refresh global logs or stats if sending a message impacts them
+      // mutateLogs(); 
+      
+      return true;
+    } catch (error) {
+      console.error("SMS Error:", error);
+      return false;
+    } finally {
+      setIsSendingSMS(false);
+    }
+  };
+
+  const sendEmail = async (prospectId: string, body: string, subject = "Update from Your Painter") => {
+    setIsSendingEmail(true);
+    try {
+      const res = await fetch(`/api/admin/prospects/${prospectId}/send-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body, subject }),
+      });
+      if (!res.ok) throw new Error("Failed to send Email");
+      return true;
+    } catch (error) {
+      console.error("Email Error:", error);
+      return false;
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+
   return (
     <SuperAdminContext.Provider
       value={{
@@ -111,7 +163,13 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
         admin,
         isAdminLoading,
         logs,
-        isLogsLoading
+        isLogsLoading,
+
+        // New Communications
+        sendSMS,
+        sendEmail,
+        isSendingSMS,
+        isSendingEmail,
       }}
     >
       {children}

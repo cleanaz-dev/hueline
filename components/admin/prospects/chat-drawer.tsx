@@ -10,12 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { RefreshCw, Send, ShieldAlert, UserRound, X } from "lucide-react";
 import { ChatBubble } from "./chat-bubble";
 import { AdvancedChatInput } from "./advanced-chat-input";
+import { useSuperAdmin } from "@/context/super-admin-context";
 
 export function ChatDrawer({ prospect, isOpen, onClose }: any) {
   const [messages, setMessages] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [input, setInput] = React.useState("");
   const bottomRef = React.useRef<HTMLDivElement>(null);
+
+  const { sendSMS, sendEmail, isSendingSMS, isSendingEmail } = useSuperAdmin();
 
   const fetchMessages = async () => {
     if (!prospect?.id) return;
@@ -53,19 +56,25 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
     };
   }, [isOpen]);
 
-  const handleManualSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    await fetch("/api/admin/prospects/send-manual", {
-      method: "POST",
-      body: JSON.stringify({
-        prospectId: prospect?.id,
-        phone: prospect?.phone,
-        body: input,
-      }),
-    });
-    setInput("");
-    fetchMessages();
+  const handleSendMessage = async (
+    message: string,
+    channel: "SMS" | "EMAIL",
+  ) => {
+    let success = false;
+
+    if (channel === "SMS") {
+      success = await sendSMS(prospect.id, message);
+    } else {
+      success = await sendEmail(prospect.id, message, "Quote Update");
+    }
+
+    // 2. If the context says it successfully fired, fetch the new thread!
+    if (success) {
+      fetchMessages();
+    } else {
+      // You could trigger a toast notification here: toast.error("Failed to send message")
+      console.warn("Error Sending To Prospect");
+    }
   };
 
   const initials = prospect?.name
@@ -173,20 +182,8 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
             {/* Input (Stays Fixed Bottom) */}
             <div className="shrink-0">
               <AdvancedChatInput
-                isLoading={loading}
-                onSend={async (message, channel) => {
-                  // NOTE: Here you will pass the channel up to your API so it knows to send an SMS or EMAIL
-                  await fetch("/api/admin/prospects/send-manual", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      prospectId: prospect?.id,
-                      phone: prospect?.phone,
-                      body: message,
-                      type: channel, // 'SMS' or 'EMAIL'
-                    }),
-                  });
-                  fetchMessages();
-                }}
+                isLoading={isSendingSMS || isSendingEmail}
+                onSend={handleSendMessage}
               />
             </div>
           </motion.div>
