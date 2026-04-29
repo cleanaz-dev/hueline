@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 
 export const revalidate = 60; // cache for 60 seconds
