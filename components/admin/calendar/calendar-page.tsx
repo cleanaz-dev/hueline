@@ -27,7 +27,14 @@ const MONTHS = [
   "December",
 ];
 
-type Booking = { title: string; start: string; end: string; type?: string };
+type Booking = { 
+  title: string; 
+  start: string; 
+  end: string; 
+  type?: string;
+  meetingUrl?: string;
+  location?: string
+};
 
 const EVENT_COLORS: Record<string, string> = {
   urgent: "#ef4444",

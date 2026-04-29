@@ -1,11 +1,13 @@
 "use client";
-import { X, Clock } from "lucide-react";
+import { X, Clock, VideoIcon } from "lucide-react";
 
 type Booking = {
   title: string;
   start: string;
   end: string;
   type?: string;
+  meetingUrl?: string;
+  location?: string;
   attendees?: { name: string; email: string }[];
 };
 
@@ -21,7 +23,11 @@ interface CalendarDayModalProps {
   onClose: () => void;
 }
 
-export function CalendarDayModal({ date, events, onClose }: CalendarDayModalProps) {
+export function CalendarDayModal({
+  date,
+  events,
+  onClose,
+}: CalendarDayModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
@@ -38,7 +44,11 @@ export function CalendarDayModal({ date, events, onClose }: CalendarDayModalProp
               {date.toLocaleDateString("en-US", { weekday: "long" })}
             </p>
             <p className="text-lg font-semibold">
-              {date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+              {date.toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
             </p>
           </div>
           <button
@@ -52,7 +62,9 @@ export function CalendarDayModal({ date, events, onClose }: CalendarDayModalProp
         {/* Body */}
         <div className="px-5 py-4 max-h-[60vh] overflow-y-auto">
           {events.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No bookings for this day</p>
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No bookings for this day
+            </p>
           ) : (
             <div className="flex flex-col gap-3">
               {events.map((e, i) => (
@@ -62,22 +74,59 @@ export function CalendarDayModal({ date, events, onClose }: CalendarDayModalProp
                 >
                   <div
                     className="w-1 rounded-full shrink-0"
-                    style={{ backgroundColor: EVENT_COLORS[e.type ?? "default"] ?? EVENT_COLORS.default }}
+                    style={{
+                      backgroundColor:
+                        EVENT_COLORS[e.type ?? "default"] ??
+                        EVENT_COLORS.default,
+                    }}
                   />
                   <div className="flex flex-col gap-1 min-w-0">
                     <p className="text-sm font-medium truncate">{e.title}</p>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock className="size-3" />
                       <span>
-                        {new Date(e.start).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                        {new Date(e.start).toLocaleTimeString("en-US", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
                         {" — "}
-                        {new Date(e.end).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                        {new Date(e.end).toLocaleTimeString("en-US", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
                       </span>
                     </div>
+                    // Inside your CalendarDayModal or Event Detail popover
+                    {e.meetingUrl && (
+                      <a
+                        href={e.meetingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 mt-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                      >
+                        <VideoIcon className="w-4 h-4" />
+                        Join Zoom Meeting
+                      </a>
+                    )}
+                    {/* Fallback if Zoom saved it as the raw location string instead */}
+                    {!e.meetingUrl && e.location?.includes("http") && (
+                      <a
+                        href={e.location}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 mt-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                      >
+                        <VideoIcon className="w-4 h-4" />
+                        Join Meeting
+                      </a>
+                    )}
                     {e.attendees && e.attendees.length > 0 && (
                       <div className="flex flex-col gap-0.5 mt-1">
                         {e.attendees.map((a, j) => (
-                          <p key={j} className="text-xs text-muted-foreground truncate">
+                          <p
+                            key={j}
+                            className="text-xs text-muted-foreground truncate"
+                          >
                             {a.name} · {a.email}
                           </p>
                         ))}
