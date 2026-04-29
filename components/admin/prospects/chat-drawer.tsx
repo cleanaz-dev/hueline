@@ -17,13 +17,29 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
   const [input, setInput] = React.useState("");
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
-  const fetchMessages = () => {
-    if (!prospect?.id) return;
-    setLoading(true);
-    const mock = MOCK_PROSPECTS.find((p: any) => p.id === prospect.id);
-    setMessages(mock ? mock.communication : []);
+const fetchMessages = async () => {
+  if (!prospect?.id) return;
+  setLoading(true);
+
+  try {
+    // 1. Try to get REAL data from the API we just built
+    const res = await fetch(`/api/admin/prospects/${prospect.id}/messages`);
+    const data = await res.json();
+
+    // 2. FALLBACK: If the DB returns nothing and we are in dev, use mock data
+    if (data.length === 0 && process.env.NODE_ENV === 'development') {
+      // Find the specific mock prospect's messages
+      const mock = MOCK_PROSPECTS.find(p => p.id === prospect.id);
+      setMessages(mock ? mock.communication : []);
+    } else {
+      setMessages(data);
+    }
+  } catch (err) {
+    console.error("Fetch error", err);
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   React.useEffect(() => {
     if (isOpen) fetchMessages();
