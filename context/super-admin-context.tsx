@@ -51,6 +51,13 @@ interface SuperAdminContextType {
   sendEmail: (prospectId: string, body: string, subject?: string) => Promise<boolean>;
   isSendingSMS: boolean;
   isSendingEmail: boolean;
+  isGeneratingImage: boolean;
+  smsSuccess: string | null;
+  emailSuccess: string | null;
+  generateImage: (mediaUrl: string, body: string) => Promise<boolean>;
+  generateImageSuccess: string | null;
+  
+
 }
 
 const SuperAdminContext = createContext<SuperAdminContextType | undefined>(
@@ -108,6 +115,10 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
   // --- NEW: Global Sending States ---
   const[isSendingSMS, setIsSendingSMS] = useState(false);
   const[isSendingEmail, setIsSendingEmail] = useState(false);
+  const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
+  const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const [generateImageSuccess, setGenerateImageSuccess] = useState<string | null>(null)
 
    // --- NEW: Communication Handlers ---
   const sendSMS = async (prospectId: string, body: string) => {
@@ -116,9 +127,11 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
       const res = await fetch(`/api/admin/prospects/${prospectId}/send-sms`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body }),
+        body: JSON.stringify({ message: body }),
       });
       if (!res.ok) throw new Error("Failed to send SMS");
+      setSmsSuccess("✓ SMS sent successfully");
+      setTimeout(() => setSmsSuccess(null), 4000);
       
       // Optional: Refresh global logs or stats if sending a message impacts them
       // mutateLogs(); 
@@ -141,6 +154,8 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
         body: JSON.stringify({ body, subject }),
       });
       if (!res.ok) throw new Error("Failed to send Email");
+      setEmailSuccess("✓ Email sent successfully");
+      setTimeout(() => setEmailSuccess(null), 4000);
       return true;
     } catch (error) {
       console.error("Email Error:", error);
@@ -149,6 +164,25 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
       setIsSendingEmail(false);
     }
   };
+
+  const generateImage = async (mediaUrl: string, body: string) => {
+    setIsGeneratingImage(true);
+    try {
+      const res = await fetch("LAMBDA_URL", {
+        method: "POST",
+        headers: { "Content-Type": "application/json"},
+        body: JSON.stringify({ mediaUrl, body})
+      })
+      if (!res.ok) throw new Error("Failed to send Email");
+      setGenerateImageSuccess("✓ Email sent successfully");
+      return true
+    } catch (error) {
+      console.error("Generating Image Error:", error);
+      return false;      
+    } finally {
+      setIsGeneratingImage(false)
+    }
+  }
 
 
   return (
@@ -168,8 +202,14 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
         // New Communications
         sendSMS,
         sendEmail,
+        generateImage,
         isSendingSMS,
         isSendingEmail,
+        isGeneratingImage,
+
+        smsSuccess,
+        emailSuccess,
+        generateImageSuccess
       }}
     >
       {children}

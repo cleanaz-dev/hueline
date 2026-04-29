@@ -11,6 +11,7 @@ import { RefreshCw, Send, ShieldAlert, UserRound, X } from "lucide-react";
 import { ChatBubble } from "./chat-bubble";
 import { AdvancedChatInput } from "./advanced-chat-input";
 import { useSuperAdmin } from "@/context/super-admin-context";
+import { DrawerToast } from "./drawer-toast";
 
 export function ChatDrawer({ prospect, isOpen, onClose }: any) {
   const [messages, setMessages] = React.useState<any[]>([]);
@@ -18,7 +19,14 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
   const [input, setInput] = React.useState("");
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
-  const { sendSMS, sendEmail, isSendingSMS, isSendingEmail } = useSuperAdmin();
+  const {
+    sendSMS,
+    sendEmail,
+    isSendingSMS,
+    isSendingEmail,
+    smsSuccess,
+    emailSuccess,
+  } = useSuperAdmin();
 
   const fetchMessages = async () => {
     if (!prospect?.id) return;
@@ -186,6 +194,9 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
                 onSend={handleSendMessage}
               />
             </div>
+
+            {/* Toast */}
+            <DrawerToast message={smsSuccess ?? emailSuccess} />
           </motion.div>
         </>
       )}

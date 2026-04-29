@@ -5,12 +5,9 @@ import { Button } from "@/components/ui/button";
 import {
   Send,
   ShieldAlert,
-  Sparkles,
   MessageSquare,
   Mail,
-  CreditCard,
-  Calendar,
-  PaintRoller,
+  Loader2, // Add this import
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +19,7 @@ interface AdvancedChatInputProps {
 export function AdvancedChatInput({
   onSend,
   isLoading,
+
 }: AdvancedChatInputProps) {
   const [text, setText] = React.useState("");
   const [channel, setChannel] = React.useState<"SMS" | "EMAIL">("SMS");
@@ -74,7 +72,6 @@ export function AdvancedChatInput({
           {/* Will Inster Quick Actions Later */}
         </div>
       </div>
-
       {/* TEXT AREA */}
       <div
         className={cn(
@@ -90,20 +87,29 @@ export function AdvancedChatInput({
           onKeyDown={handleKeyDown}
           placeholder={channel === "SMS" ? "Text message..." : "Draft email..."}
           className="w-full min-h-20 max-h-50 p-3 text-sm bg-transparent resize-none focus:outline-none scrollbar-thin"
+          disabled={isLoading} // Disable textarea while loading
         />
 
         {/* Bottom Area inside Text Container */}
         <div className="flex justify-end p-2 pt-0 mt-1">
-
-          {/* Send Button */}
+          {/* Send Button with Spinner */}
           <Button
             onClick={handleSend}
             disabled={!text.trim() || isLoading}
             size="sm"
             className="h-8 gap-2 rounded-lg"
           >
-            <span>Send</span>
-            <Send size={14} />
+            {isLoading ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                <span>Sending...</span>
+              </>
+            ) : (
+              <>
+                <span>Send</span>
+                <Send size={14} />
+              </>
+            )}
           </Button>
         </div>
       </div>
