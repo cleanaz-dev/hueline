@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+interface Params {
+  params: Promise<{ id: string }>;
+}
+
+export async function GET(req: Request, { params }: Params) {
   try {
+    const { id } = await params;
+
     const messages = await prisma.clientCommunication.findMany({
-      where: { 
-        OR: [
-          { demoClientId: params.id },
-          { clientId: params.id }
-        ]
+      where: {
+        OR: [{ demoClientId: id }, { clientId: id }],
       },
       orderBy: { createdAt: "asc" }, // Ascending for chat order
     });
