@@ -15,10 +15,16 @@ interface ChatBubbleProps {
     role: Role;
     type: Type;
     createdAt: Date | string;
-    mediaUrl?: string | null;
+    mediaAttachments?: {
+      id: string;
+      filename: string;
+      mimeType: string;
+      mediaUrl: string;
+      mediaSource: string;
+    }[];
   };
   prospectName?: string;
-  isPending?: boolean; // <-- NEW PROP
+  isPending?: boolean;
 }
 
 const ROLE_CONFIG = {
@@ -112,9 +118,18 @@ export function ChatBubble({ msg, prospectName, isPending }: ChatBubbleProps) {
               </span>
             </div>
 
-            {msg.mediaUrl && (
-              <InteractiveChatImage mediaUrl={msg.mediaUrl} />
-            )}
+           {msg.mediaAttachments && msg.mediaAttachments.length > 0 && (
+  <div className="flex flex-col gap-2 mb-2">
+    {msg.mediaAttachments.map((attachment) => (
+      <InteractiveChatImage
+        key={attachment.id}
+        mediaUrl={attachment.mediaUrl}
+        filename={attachment.filename}
+        mimeType={attachment.mimeType}
+      />
+    ))}
+  </div>
+)}
 
             <div className="whitespace-pre-wrap">
               {msg.body}

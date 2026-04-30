@@ -4,7 +4,6 @@ import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, Send, ShieldAlert, UserRound, X } from "lucide-react";
@@ -16,7 +15,6 @@ import { DrawerToast } from "./drawer-toast";
 export function ChatDrawer({ prospect, isOpen, onClose }: any) {
   const [messages, setMessages] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
-  const [input, setInput] = React.useState("");
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
   const {
