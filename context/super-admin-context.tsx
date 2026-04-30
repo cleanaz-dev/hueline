@@ -4,6 +4,7 @@ import { createContext, useContext, ReactNode, useState } from "react";
 import useSWR from "swr";
 import { Log } from "@/types/subdomain-type";
 
+// ... [Keep your existing SuperAdminStats, Client, Admin interfaces] ...
 interface SuperAdminStats {
   totalActive: number;
   activeChange: string;
@@ -25,10 +26,21 @@ interface Client {
   totalValueFound: number;
   projectUrl: string;
 }
+
 interface Admin {
   name: string;
   email: string;
   imageUrl: string | undefined;
+}
+
+// NEW: Type for our optimistic global queue
+export interface PendingMessage {
+  id: string;
+  prospectId: string; // <-- Keeps track of who the message is for
+  body: string;
+  role: "OPERATOR";
+  type: "SMS" | "EMAIL";
+  createdAt: Date;
 }
 
 interface SuperAdminContextType {
@@ -43,86 +55,66 @@ interface SuperAdminContextType {
   admin: Admin | undefined;
   isAdminLoading: boolean;
 
-  logs: Log[] |undefined
-  isLogsLoading: boolean
+  logs: Log[] | undefined;
+  isLogsLoading: boolean;
 
-  // NEW: Prospect Communications
+  // Communications
   sendSMS: (prospectId: string, body: string) => Promise<boolean>;
   sendEmail: (prospectId: string, body: string, subject?: string) => Promise<boolean>;
   isSendingSMS: boolean;
   isSendingEmail: boolean;
+  
+  // Optimistic UI Queue
+  pendingMessages: PendingMessage[];
+
+  // Image Gen
+  generateImage: (mediaUrl: string, body: string) => Promise<boolean>;
   isGeneratingImage: boolean;
+
+  // Success States
   smsSuccess: string | null;
   emailSuccess: string | null;
-  generateImage: (mediaUrl: string, body: string) => Promise<boolean>;
   generateImageSuccess: string | null;
-  
-
 }
 
-const SuperAdminContext = createContext<SuperAdminContextType | undefined>(
-  undefined
-);
-
-interface SuperAdminProviderProps {
-  children: ReactNode;
-}
+const SuperAdminContext = createContext<SuperAdminContextType | undefined>(undefined);
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
-  // Fetch admin stats with SWR - NO auto-refresh
-  const {
-    data: statsData,
-    isLoading: isStatsLoading,
-    mutate: mutateStats,
-  } = useSWR<{ stats: SuperAdminStats }>("/api/admin/dashboard", fetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  });
+export function SuperAdminProvider({ children }: { children: ReactNode }) {
+  const { data: statsData, isLoading: isStatsLoading, mutate: mutateStats } = useSWR<{ stats: SuperAdminStats }>("/api/admin/dashboard", fetcher, { revalidateOnFocus: false, revalidateOnReconnect: false });
+  const { data: clientsData, isLoading: isClientsLoading, mutate: mutateClients } = useSWR<{ clients: Client[] }>("/api/admin/clients", fetcher, { revalidateOnFocus: false, revalidateOnReconnect: false });
+  const { data: adminData, isLoading: isAdminLoading } = useSWR<{ admin: Admin }>("/api/admin", fetcher);
+  const { data: logsData, isLoading: isLogsLoading } = useSWR<{ logs: Log[] }>("/api/admin/logs", fetcher);
 
-  // Fetch clients with SWR - NO auto-refresh
-  const {
-    data: clientsData,
-    isLoading: isClientsLoading,
-    mutate: mutateClients,
-  } = useSWR<{ clients: Client[] }>("/api/admin/clients", fetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  });
-
-  const { data: adminData, isLoading: isAdminLoading } = useSWR<{
-    admin: Admin;
-  }>("/api/admin", fetcher);
-
-  const { data: logsData, isLoading: isLogsLoading } = useSWR<{ logs: Log[] }>(
-    "/api/admin/logs",
-    fetcher
-  );
-  const logs = logsData?.logs
+  const logs = logsData?.logs;
   const admin = adminData?.admin;
   const stats = statsData?.stats;
   const clients = clientsData?.clients;
 
-  const refreshStats = () => {
-    mutateStats();
-  };
-
-  const refreshClients = () => {
-    mutateClients();
-  };
-
-  // --- NEW: Global Sending States ---
+  // Global Sending States
   const[isSendingSMS, setIsSendingSMS] = useState(false);
   const[isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  
+  // Global Success Messages
   const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
-  const [generateImageSuccess, setGenerateImageSuccess] = useState<string | null>(null)
+  const [generateImageSuccess, setGenerateImageSuccess] = useState<string | null>(null);
 
-   // --- NEW: Communication Handlers ---
+  // THE GLOBAL OPTIMISTIC QUEUE
+  const [pendingMessages, setPendingMessages] = useState<PendingMessage[]>([]);
+
+  // --- Communication Handlers ---
   const sendSMS = async (prospectId: string, body: string) => {
+    // 1. Create the ghost message
+    const tempId = `temp-${Date.now()}`;
+    const ghostMsg: PendingMessage = { id: tempId, prospectId, body, role: "OPERATOR", type: "SMS", createdAt: new Date() };
+    
+    // 2. Add to global queue
+    setPendingMessages((prev) => [...prev, ghostMsg]);
     setIsSendingSMS(true);
+    
     try {
       const res = await fetch(`/api/admin/prospects/${prospectId}/send-sms`, {
         method: "POST",
@@ -130,23 +122,29 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
         body: JSON.stringify({ message: body }),
       });
       if (!res.ok) throw new Error("Failed to send SMS");
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       setSmsSuccess("✓ SMS sent successfully");
       setTimeout(() => setSmsSuccess(null), 4000);
-      
-      // Optional: Refresh global logs or stats if sending a message impacts them
-      // mutateLogs(); 
-      
       return true;
     } catch (error) {
       console.error("SMS Error:", error);
       return false;
     } finally {
+      // 3. Remove from global queue when done (whether success or fail)
+      setPendingMessages((prev) => prev.filter((m) => m.id !== tempId));
       setIsSendingSMS(false);
     }
   };
 
   const sendEmail = async (prospectId: string, body: string, subject = "Update from Your Painter") => {
+    const tempId = `temp-${Date.now()}`;
+    const ghostMsg: PendingMessage = { id: tempId, prospectId, body, role: "OPERATOR", type: "EMAIL", createdAt: new Date() };
+    
+    setPendingMessages((prev) =>[...prev, ghostMsg]);
     setIsSendingEmail(true);
+    
     try {
       const res = await fetch(`/api/admin/prospects/${prospectId}/send-email`, {
         method: "POST",
@@ -154,6 +152,7 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
         body: JSON.stringify({ body, subject }),
       });
       if (!res.ok) throw new Error("Failed to send Email");
+      
       setEmailSuccess("✓ Email sent successfully");
       setTimeout(() => setEmailSuccess(null), 4000);
       return true;
@@ -161,6 +160,7 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
       console.error("Email Error:", error);
       return false;
     } finally {
+      setPendingMessages((prev) => prev.filter((m) => m.id !== tempId));
       setIsSendingEmail(false);
     }
   };
@@ -170,46 +170,34 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
     try {
       const res = await fetch("LAMBDA_URL", {
         method: "POST",
-        headers: { "Content-Type": "application/json"},
-        body: JSON.stringify({ mediaUrl, body})
-      })
-      if (!res.ok) throw new Error("Failed to send Email");
-      setGenerateImageSuccess("✓ Email sent successfully");
-      return true
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mediaUrl, body }),
+      });
+      if (!res.ok) throw new Error("Failed to generate Image");
+      
+      setGenerateImageSuccess("✓ Image Generated Successfully");
+      setTimeout(() => setGenerateImageSuccess(null), 4000); // Added timeout reset
+      return true;
     } catch (error) {
       console.error("Generating Image Error:", error);
-      return false;      
+      return false;
     } finally {
-      setIsGeneratingImage(false)
+      setIsGeneratingImage(false);
     }
-  }
-
+  };
 
   return (
     <SuperAdminContext.Provider
       value={{
-        stats,
-        isStatsLoading,
-        refreshStats,
-        clients,
-        isClientsLoading,
-        refreshClients,
-        admin,
-        isAdminLoading,
-        logs,
-        isLogsLoading,
-
-        // New Communications
-        sendSMS,
-        sendEmail,
-        generateImage,
-        isSendingSMS,
-        isSendingEmail,
-        isGeneratingImage,
-
-        smsSuccess,
-        emailSuccess,
-        generateImageSuccess
+        stats, isStatsLoading, refreshStats: mutateStats,
+        clients, isClientsLoading, refreshClients: mutateClients,
+        admin, isAdminLoading, logs, isLogsLoading,
+        
+        sendSMS, sendEmail, generateImage,
+        isSendingSMS, isSendingEmail, isGeneratingImage,
+        smsSuccess, emailSuccess, generateImageSuccess,
+        
+        pendingMessages, // Exposed!
       }}
     >
       {children}
@@ -219,8 +207,6 @@ export function SuperAdminProvider({ children }: SuperAdminProviderProps) {
 
 export function useSuperAdmin() {
   const context = useContext(SuperAdminContext);
-  if (context === undefined) {
-    throw new Error("useSuperAdmin must be used within a SuperAdminProvider");
-  }
+  if (context === undefined) throw new Error("useSuperAdmin must be used within a SuperAdminProvider");
   return context;
 }

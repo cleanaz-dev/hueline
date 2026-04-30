@@ -26,7 +26,10 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
     isSendingEmail,
     smsSuccess,
     emailSuccess,
+    pendingMessages
   } = useSuperAdmin();
+
+  const prospectPendingMessages = pendingMessages.filter((m) => m.prospectId === prospect?.id);
 
   const fetchMessages = async () => {
     if (!prospect?.id) return;
@@ -64,24 +67,19 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
     };
   }, [isOpen]);
 
-  const handleSendMessage = async (
-    message: string,
-    channel: "SMS" | "EMAIL",
-  ) => {
-    let success = false;
+   const handleSendMessage = async (message: string, channel: "SMS" | "EMAIL") => {
+    // Scroll instantly so the user sees the ghost message pop in
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
 
+    let success = false;
     if (channel === "SMS") {
       success = await sendSMS(prospect.id, message);
     } else {
       success = await sendEmail(prospect.id, message, "Quote Update");
     }
 
-    // 2. If the context says it successfully fired, fetch the new thread!
     if (success) {
-      fetchMessages();
-    } else {
-      // You could trigger a toast notification here: toast.error("Failed to send message")
-      console.warn("Error Sending To Prospect");
+      fetchMessages(); // Pull the real DB thread once the global Context says it's done
     }
   };
 
@@ -168,23 +166,27 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
             <div className="flex-1 min-h-0 flex flex-col">
               {/* THE FIX: Added h-full to the ScrollArea */}
               <ScrollArea className="h-full px-4">
-                <div className="py-5 space-y-5">
-                  {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
-                      <p className="text-sm">No messages yet</p>
-                    </div>
-                  ) : (
-                    messages.map((msg: any) => (
-                      <ChatBubble
-                        key={msg.id}
-                        msg={msg}
-                        prospectName={prospect.name}
-                      />
-                    ))
-                  )}
-                  <div ref={bottomRef} className="h-1" />
-                </div>
-              </ScrollArea>
+              <div className="py-5 space-y-5">
+                {messages.length === 0 && prospectPendingMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
+                    <p className="text-sm">No messages yet</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Render Real DB Messages */}
+                    {messages.map((msg: any) => (
+                      <ChatBubble key={msg.id} msg={msg} prospectName={prospect.name} />
+                    ))}
+                    
+                    {/* Render the Context's Global Pending Messages! */}
+                    {prospectPendingMessages.map((msg) => (
+                      <ChatBubble key={msg.id} msg={msg} isPending={true} />
+                    ))}
+                  </>
+                )}
+                <div ref={bottomRef} className="h-1" />
+              </div>
+            </ScrollArea>
             </div>
 
             {/* Input (Stays Fixed Bottom) */}
