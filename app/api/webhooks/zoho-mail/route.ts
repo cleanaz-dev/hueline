@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { extractEmail } from "./config";
 
 export async function POST(req: Request) {
   try {
@@ -15,12 +16,22 @@ export async function POST(req: Request) {
       size,
     } = body;
 
+    const email = extractEmail(toAddress);
+
     const isDomain = await prisma.subdomainUser.findFirst({
       where: {
+        subdomain: {
+            slug: "admin"
+        },
         email: {
-          contains: toAddress,
+          contains: email,
         },
       },
+      select: {
+        id: true,
+        subdomainId: true,
+        email: true,
+      }
     });
 
     if (!isDomain) {
@@ -29,7 +40,6 @@ export async function POST(req: Request) {
     }
 
     
-
     console.log("Zoho Mail Webhook:", body);
     return NextResponse.json({ message: "Success" }, { status: 200 });
   } catch (error) {
