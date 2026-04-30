@@ -60,7 +60,16 @@ export const MOCK_PROSPECTS = [
         body: "Virtual paint finish demo shared — client selected Eggshell White after viewing side-by-side samples.",
         role: "OPERATOR",
         type: "DEMO",
-        mediaUrl: "https://placehold.co/600x400?text=Paint+Finish+Demo",
+        mediaAttachments: [
+          {
+            id: "a1",
+            filename: "paint-finish-demo.jpg",
+            mimeType: "image/jpeg",
+            size: 102400,
+            mediaSource: "EXTERNAL",
+            mediaUrl: "https://placehold.co/600x400?text=Paint+Finish+Demo",
+          },
+        ],
         createdAt: new Date(Date.now() - 86400000 * 3),
       },
       // MEETING
@@ -103,7 +112,16 @@ export const MOCK_PROSPECTS = [
         body: "What's the difference?",
         role: "CLIENT",
         type: "SMS",
-        mediaUrl: "https://placehold.co/600x400?text=Room+Photo",
+        mediaAttachments: [
+          {
+            id: "a2",
+            filename: "room-photo.jpg",
+            mimeType: "image/jpeg",
+            size: 204800,
+            mediaSource: "EXTERNAL",
+            mediaUrl: "https://placehold.co/600x400?text=Room+Photo",
+          },
+        ],
         createdAt: new Date(Date.now() - 7000000),
       },
       {
@@ -282,7 +300,16 @@ export const MOCK_PROSPECTS = [
         body: "Hi Emily, thank you for choosing us! Invoice and warranty docs are attached. We'd love a review if you have a moment 🙏",
         role: "AI",
         type: "EMAIL",
-        mediaUrl: "https://placehold.co/600x400?text=Invoice+PDF",
+        mediaAttachments: [
+          {
+            id: "a3",
+            filename: "invoice.pdf",
+            mimeType: "application/pdf",
+            size: 51200,
+            mediaSource: "EXTERNAL",
+            mediaUrl: "https://placehold.co/600x400?text=Invoice+PDF",
+          },
+        ],
         createdAt: new Date(Date.now() - 86400000 * 8),
       },
       // MEETING
