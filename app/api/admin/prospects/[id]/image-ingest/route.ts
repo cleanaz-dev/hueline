@@ -11,16 +11,25 @@ export async function POST(req: Request, { params }: Params) {
   const { id } = await params;
 
   try {
-    const { s3Key } = await req.json();
+    const { s3Key, filename, mimeType, size } = await req.json();
 
     const communication = await prisma.clientCommunication.create({
       data: {
         body: "AI generated image",
         role: "AI",
         type: "IMAGEN",
-        mediaUrl: s3Key,
-        mediaSource: "S3",
         demoClientId: id,
+      },
+    });
+
+    await prisma.mediaAttachment.create({
+      data: {
+        filename,
+        mimeType,
+        size,
+        mediaSource: "S3",
+        mediaUrl: s3Key,
+        clientCommunicationId: communication.id,
       },
     });
 
