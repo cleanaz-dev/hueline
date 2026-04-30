@@ -308,17 +308,29 @@ model DemoClient {
 }
 
 model ClientCommunication {
-  id           String            @id @default(auto()) @map("_id") @db.ObjectId
-  body         String
-  role         CommunicationRole
-  type         CommunicationType
-  mediaUrl     String?
-  mediaSource  MediaSource?
-  demoClientId String?           @db.ObjectId
-  demoClient   DemoClient?       @relation(fields: [demoClientId], references: [id])
-  clientId     String?           @db.ObjectId
-  client       Client?           @relation(fields: [clientId], references: [id])
-  createdAt    DateTime          @default(now())
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  body             String
+  role             CommunicationRole
+  type             CommunicationType
+  demoClientId     String?           @db.ObjectId
+  demoClient       DemoClient?       @relation(fields: [demoClientId], references: [id])
+  clientId         String?           @db.ObjectId
+  client           Client?           @relation(fields: [clientId], references: [id])
+  createdAt        DateTime          @default(now())
+  mediaAttachments MediaAttachment[]
+}
+
+model MediaAttachment {
+  id                    String              @id @default(auto()) @map("_id") @db.ObjectId
+  filename              String
+  mimeType              String
+  size                  Int
+  mediaSource           MediaSource
+  mediaUrl              String
+  zohoAttachmentId      String?
+  clientCommunicationId String              @db.ObjectId
+  clientCommunication   ClientCommunication @relation(fields: [clientCommunicationId], references: [id])
+  createdAt             DateTime            @default(now())
 }
 
 enum MediaSource {

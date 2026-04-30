@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { extractEmail } from "./config";
+import { extractEmail, handleZohoAttachmentDownloadS3Upload } from "./config";
 
 export async function POST(req: Request) {
   try {
@@ -10,28 +10,19 @@ export async function POST(req: Request) {
       fromAddress,
       toAddress,
       summary,
-      subject,
       hasAttachment,
-      sender,
-      size,
+      messageId,
+      accountId,
     } = body;
 
     const email = extractEmail(toAddress);
 
     const isDomain = await prisma.subdomainUser.findFirst({
       where: {
-        subdomain: {
-            slug: "admin"
-        },
-        email: {
-          contains: email,
-        },
+        subdomain: { slug: "admin" },
+        email: { contains: email },
       },
-      select: {
-        id: true,
-        subdomainId: true,
-        email: true,
-      }
+      select: { id: true, subdomainId: true, email: true },
     });
 
     if (!isDomain) {
@@ -39,7 +30,45 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
-    
+    const existingClient = await prisma.demoClient.findFirst({
+      where: { email: fromAddress },
+      select: { id: true },
+    });
+
+    if (!existingClient) {
+      console.log("Create future function");
+    }
+
+    const communication = await prisma.clientCommunication.create({
+      data: {
+        body: summary,
+        role: "CLIENT",
+        type: "EMAIL",
+        demoClient: { connect: { id: existingClient?.id } },
+      },
+    });
+
+    if (hasAttachment) {
+      const attachmentResults = await handleZohoAttachmentDownloadS3Upload(
+        accountId,
+        messageId,
+      );
+
+      for (const attachment of attachmentResults) {
+        await prisma.mediaAttachment.create({
+          data: {
+            filename: attachment.filename,
+            mimeType: attachment.mimeType,
+            size: attachment.size,
+            mediaSource: "S3",
+            mediaUrl: attachment.s3Key,
+            zohoAttachmentId: attachment.attachmentId,
+            clientCommunication: { connect: { id: communication.id } },
+          },
+        });
+      }
+    }
+
     console.log("Zoho Mail Webhook:", body);
     return NextResponse.json({ message: "Success" }, { status: 200 });
   } catch (error) {
