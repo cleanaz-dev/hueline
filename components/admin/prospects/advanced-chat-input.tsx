@@ -2,100 +2,124 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Send,
-  ShieldAlert,
-  MessageSquare,
-  Mail,
-  Loader2, // Add this import
-} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Send, ShieldAlert, MessageSquare, Mail, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RichTextEditor } from "./rich-text-editor"; // Adjust path as needed
 
 interface AdvancedChatInputProps {
   onSend: (message: string, channel: "SMS" | "EMAIL") => void;
   isLoading?: boolean;
 }
 
-export function AdvancedChatInput({
-  onSend,
-  isLoading,
-
-}: AdvancedChatInputProps) {
+export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps) {
   const [text, setText] = React.useState("");
   const [channel, setChannel] = React.useState<"SMS" | "EMAIL">("SMS");
 
   const handleSend = () => {
-    if (!text.trim()) return;
+    // Strip HTML tags to check if it's purely empty space
+    const plainText = text.replace(/<[^>]*>?/gm, "").trim();
+    if (!plainText) return;
+    
     onSend(text, channel);
-    setText("");
+    setText(""); // The editor's useEffect will automatically clear it when this happens
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && channel === "SMS") {
       e.preventDefault();
       handleSend();
     }
   };
 
+  const handleSwitchChannel = (newChannel: "SMS" | "EMAIL") => {
+    if (channel !== newChannel) {
+      setChannel(newChannel);
+      setText("");
+    }
+  };
+
   return (
     <div className="p-4 bg-background border-t shadow-[0_-4px_15px_-5px_rgba(0,0,0,0.05)]">
-      {/* TOOLBAR */}
+      {/* CHANNEL TABS */}
       <div className="flex items-center justify-between mb-2">
-        {/* Channel Switcher */}
         <div className="flex bg-muted/50 p-1 rounded-lg">
           <button
-            onClick={() => setChannel("SMS")}
+            onClick={() => handleSwitchChannel("SMS")}
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
               channel === "SMS"
                 ? "bg-background shadow-sm text-foreground"
-                : "text-muted-foreground hover:text-foreground",
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <MessageSquare size={13} /> SMS
           </button>
           <button
-            onClick={() => setChannel("EMAIL")}
+            onClick={() => handleSwitchChannel("EMAIL")}
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
               channel === "EMAIL"
                 ? "bg-background shadow-sm text-foreground"
-                : "text-muted-foreground hover:text-foreground",
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Mail size={13} /> Email
           </button>
         </div>
-
-        {/* Quick Actions */}
-        <div className="flex items-center gap-1.5">
-          {/* Will Inster Quick Actions Later */}
-        </div>
       </div>
-      {/* TEXT AREA */}
-      <div
+
+      {/* INPUT AREA */}
+      <motion.div
+        layout
         className={cn(
-          "relative rounded-xl border bg-background transition-colors focus-within:ring-1 focus-within:ring-ring",
+          "relative flex flex-col rounded-xl border bg-background transition-colors focus-within:ring-1 focus-within:ring-ring overflow-hidden",
           channel === "EMAIL"
-            ? "border-blue-200 dark:border-blue-900"
-            : "border-zinc-200 dark:border-zinc-800",
+            ? "border-blue-200 dark:border-blue-900 shadow-sm"
+            : "border-zinc-200 dark:border-zinc-800"
         )}
       >
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={channel === "SMS" ? "Text message..." : "Draft email..."}
-          className="w-full min-h-20 max-h-50 p-3 text-sm bg-transparent resize-none focus:outline-none scrollbar-thin"
-          disabled={isLoading} // Disable textarea while loading
-        />
+        <AnimatePresence mode="wait">
+          {channel === "SMS" ? (
+            <motion.div
+              key="sms"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Text message..."
+                className="w-full min-h-20 max-h-50 p-3 text-sm bg-transparent resize-none focus:outline-none scrollbar-thin"
+                disabled={isLoading}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="email"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="flex flex-col w-full"
+            >
+              <RichTextEditor
+                value={text}
+                onChange={setText}
+                disabled={isLoading}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Bottom Area inside Text Container */}
-        <div className="flex justify-end p-2 pt-0 mt-1">
-          {/* Send Button with Spinner */}
+        {/* BOTTOM ACTION BAR */}
+        <motion.div layout className="flex justify-end p-2 pt-0 mt-1 bg-background shrink-0">
           <Button
             onClick={handleSend}
-            disabled={!text.trim() || isLoading}
+            disabled={!text.replace(/<[^>]*>?/gm, "").trim() || isLoading}
             size="sm"
             className="h-8 gap-2 rounded-lg"
           >
@@ -111,14 +135,8 @@ export function AdvancedChatInput({
               </>
             )}
           </Button>
-        </div>
-      </div>
-
-      {/* Warning Message */}
-      <div className="flex items-center justify-center gap-1.5 mt-3 text-[10px] text-orange-500 font-medium opacity-80">
-        <ShieldAlert size={12} />
-        Manual replies pause the AI bot for 2 hours
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

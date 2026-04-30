@@ -186,6 +186,7 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
               </div>
             </ScrollArea>
             </div>
+            {/* Rich Editior would be here, i think and push up the chat thread while keeping the text area the same size */}
 
             {/* Input (Stays Fixed Bottom) */}
             <div className="shrink-0">
