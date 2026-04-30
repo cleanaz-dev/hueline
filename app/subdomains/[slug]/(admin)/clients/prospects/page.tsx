@@ -18,7 +18,7 @@ export default async function ProspectPage() {
   const data = isDev ? MOCK_PROSPECTS : realProspects;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="admin-first-div">
       <header>
         <h1 className="text-4xl font-extrabold tracking-tight">Lead Command Center</h1>
         <p className="text-muted-foreground mt-2">

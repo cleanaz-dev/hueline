@@ -110,7 +110,7 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed inset-y-0 right-0 z-50 flex flex-col w-full sm:max-w-105 bg-background shadow-2xl border-l"
+            className="fixed inset-y-0 right-0 z-50 flex flex-col w-full sm:max-w-105 md:max-w-150 bg-background shadow-2xl border-l"
           >
             {/* Header (Stays Fixed Top) */}
             <div className="flex items-center justify-between px-5 py-4 border-b bg-muted/30 shrink-0">
