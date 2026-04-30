@@ -312,13 +312,18 @@ model ClientCommunication {
   body         String
   role         CommunicationRole
   type         CommunicationType
+  mediaUrl     String?
+  mediaSource  MediaSource?
   demoClientId String?           @db.ObjectId
   demoClient   DemoClient?       @relation(fields: [demoClientId], references: [id])
+  clientId     String?           @db.ObjectId
+  client       Client?           @relation(fields: [clientId], references: [id])
+  createdAt    DateTime          @default(now())
+}
 
-  clientId String? @db.ObjectId
-  client   Client? @relation(fields: [clientId], references: [id])
-
-  createdAt DateTime @default(now())
+enum MediaSource {
+  S3
+  EXTERNAL
 }
 
 enum CommunicationRole {
@@ -334,6 +339,7 @@ enum CommunicationType {
   MEETING
   DEMO
   EMAIL
+  IMAGEN
 }
 
 enum BookingStatus {
