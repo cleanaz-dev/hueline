@@ -10,12 +10,16 @@ import {
   Video,
   Calendar,
   Loader2,
+  Activity,
+  MousePointerClick,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { InteractiveChatImage } from "./interactive-chat-image";
+import { InteractiveChatImage } from "./interactive-chat-image"
+import { ChatAttachments } from "./chat-attachments";
 
-type Role = "CLIENT" | "AI" | "OPERATOR";
-type Type = "SMS" | "EMAIL" | "PHONE" | "DEMO" | "MEETING";
+
+type Role = "CLIENT" | "AI" | "OPERATOR" | "SYSTEM"
+type Type = "SMS" | "EMAIL" | "PHONE" | "DEMO" | "MEETING" | "ACTIVITY"
 
 interface ChatBubbleProps {
   msg: {
@@ -29,6 +33,7 @@ interface ChatBubbleProps {
       mimeType: string;
       mediaUrl: string;
       mediaSource: string;
+      size: number
     }[];
   };
   prospectName?: string;
@@ -57,6 +62,12 @@ const ROLE_CONFIG = {
       "bg-blue-50 dark:bg-blue-500/10 text-blue-900 dark:text-blue-200 border border-blue-100 dark:border-blue-500/20",
     icon: Headset,
   },
+  SYSTEM: {
+    label: "System",
+    side: "right",
+    bubble:"bg-muted text-muted-foreground border border-slate-400",
+    icon: MousePointerClick
+  }
 };
 
 const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
@@ -65,6 +76,7 @@ const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
   PHONE: { icon: Phone, label: "Call Log" },
   DEMO: { icon: Video, label: "Demo" },
   MEETING: { icon: Calendar, label: "Meeting" },
+  ACTIVITY: {icon: Activity, label: "Activity"}
 };
 
 export function ChatBubble({ msg, prospectName, isPending }: ChatBubbleProps) {
@@ -144,18 +156,7 @@ export function ChatBubble({ msg, prospectName, isPending }: ChatBubbleProps) {
               </span>
             </div>
 
-            {msg.mediaAttachments && msg.mediaAttachments.length > 0 && (
-              <div className="flex flex-col gap-2 mb-2">
-                {msg.mediaAttachments.map((attachment) => (
-                  <InteractiveChatImage
-                    key={attachment.id}
-                    mediaUrl={attachment.mediaUrl}
-                    filename={attachment.filename}
-                    mimeType={attachment.mimeType}
-                  />
-                ))}
-              </div>
-            )}
+            <ChatAttachments attachments={msg.mediaAttachments || []} />
 
             <div className="whitespace-pre-wrap">{msg.body}</div>
           </div>

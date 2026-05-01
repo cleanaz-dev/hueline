@@ -1,36 +1,48 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { MOCK_PROSPECTS } from "@/components/admin/prospects/mock-data";
 
-interface Params {
-  params: Promise<{
-    id: string
-  }>
-}
-
-export async function GET(req: Request, { params }: Params) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
 
-    // ✅ 1. DEV MODE FIRST
-    if (process.env.NODE_ENV === "development") {
-      const mock = MOCK_PROSPECTS.find(p => p.id === id);
-
-      if (mock) {
-        return NextResponse.json(mock.communication);
-      }
-    }
-
-    // ✅ 2. PROD / FALLBACK → DB
-    const messages = await prisma.clientCommunication.findMany({
+    // 1. Fetch Communications WITH their attachments
+    const communications = await prisma.clientCommunication.findMany({
       where: {
         OR: [{ demoClientId: id }, { clientId: id }],
       },
-      orderBy: { createdAt: "asc" },
+      include: {
+        mediaAttachments: true, // <-- THIS IS THE MAGIC KEY
+      }
     });
 
-    return NextResponse.json(messages);
+    // 2. Fetch Activities
+    const activities = await prisma.clientActivity.findMany({
+      where: {
+        OR:[{ demoClientId: id }, { clientId: id }],
+      },
+    });
+
+    // 3. Map Activities to match the Communication shape
+    const mappedActivities = activities.map((act) => ({
+      id: act.id,
+      role: "SYSTEM",
+      type: "ACTIVITY",
+      body: act.title || act.type.replace(/_/g, " "), 
+      createdAt: act.createdAt,
+      mediaAttachments:[], // Empty array so the frontend doesn't crash
+    }));
+
+    // 4. Merge and Sort chronologically
+    const timeline = [...communications, ...mappedActivities].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    return NextResponse.json(timeline);
   } catch (error) {
-    return NextResponse.json([], { status: 500 });
+    console.error("Error fetching timeline:", error);
+    return NextResponse.json(
+      {message: "Internal Server  Error:", error},
+      {status: 500},
+    )
   }
 }

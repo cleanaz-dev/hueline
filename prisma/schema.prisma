@@ -160,6 +160,9 @@ model ClientActivity {
   client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId String @db.ObjectId
 
+  demoClient   DemoClient? @relation(fields: [demoClientId], references: [id], onDelete: Cascade)
+  demoClientId String?     @db.ObjectId
+
   // Timeline stamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -303,8 +306,9 @@ model DemoClient {
 
   communication ClientCommunication[]
 
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @updatedAt
+  createdAt        DateTime?        @default(now())
+  updatedAt        DateTime?        @updatedAt
+  clientActivities ClientActivity[]
 }
 
 model ClientCommunication {
