@@ -322,6 +322,7 @@ model ClientCommunication {
   client           Client?           @relation(fields: [clientId], references: [id])
   createdAt        DateTime          @default(now())
   mediaAttachments MediaAttachment[]
+  metadata         Json?
 }
 
 model MediaAttachment {

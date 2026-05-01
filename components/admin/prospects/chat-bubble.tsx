@@ -14,12 +14,11 @@ import {
   MousePointerClick,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { InteractiveChatImage } from "./interactive-chat-image"
 import { ChatAttachments } from "./chat-attachments";
+import { SystemActivityPill } from "./system-activity-pill";
 
-
-type Role = "CLIENT" | "AI" | "OPERATOR" | "SYSTEM"
-type Type = "SMS" | "EMAIL" | "PHONE" | "DEMO" | "MEETING" | "ACTIVITY"
+type Role = "CLIENT" | "AI" | "OPERATOR" | "SYSTEM";
+type Type = "SMS" | "EMAIL" | "PHONE" | "DEMO" | "MEETING" | "ACTIVITY";
 
 interface ChatBubbleProps {
   msg: {
@@ -27,13 +26,14 @@ interface ChatBubbleProps {
     role: Role;
     type: Type;
     createdAt: Date | string;
+    metadata?: any; // <-- Added metadata for future clickable actions
     mediaAttachments?: {
       id: string;
       filename: string;
       mimeType: string;
       mediaUrl: string;
       mediaSource: string;
-      size: number
+      size: number;
     }[];
   };
   prospectName?: string;
@@ -57,17 +57,11 @@ const ROLE_CONFIG = {
   },
   OPERATOR: {
     label: "Operator",
-    side: "left", // We'll keep operator on the left, or you can switch it to 'right' if you prefer!
+    side: "left",
     bubble:
       "bg-blue-50 dark:bg-blue-500/10 text-blue-900 dark:text-blue-200 border border-blue-100 dark:border-blue-500/20",
     icon: Headset,
   },
-  SYSTEM: {
-    label: "System",
-    side: "right",
-    bubble:"bg-muted text-muted-foreground border border-slate-400",
-    icon: MousePointerClick
-  }
 };
 
 const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
@@ -76,26 +70,34 @@ const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
   PHONE: { icon: Phone, label: "Call Log" },
   DEMO: { icon: Video, label: "Demo" },
   MEETING: { icon: Calendar, label: "Meeting" },
-  ACTIVITY: {icon: Activity, label: "Activity"}
+  ACTIVITY: { icon: Activity, label: "Activity" },
 };
 
 export function ChatBubble({ msg, prospectName, isPending }: ChatBubbleProps) {
-  const meta = ROLE_CONFIG[msg.role];
-  const isRight = meta.side === "right";
-  const typeInfo = TYPE_CONFIG[msg.type];
-  const TypeIcon = typeInfo.icon;
-
   const time = new Date(msg.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  // ✅ 1. THE EARLY RETURN: Intercept SYSTEM messages and render the centered pill
+  if (msg.role === "SYSTEM") {
+    <SystemActivityPill msg={msg} />;
+  }
+
+  // ✅ 2. NORMAL CHAT BUBBLES
+  const meta = ROLE_CONFIG[msg.role as keyof typeof ROLE_CONFIG];
+  const isRight = meta.side === "right";
+  const typeInfo = TYPE_CONFIG[msg.type];
+  const TypeIcon = typeInfo.icon;
+
+  const displayName = isRight ? (prospectName ?? "Client") : meta.label;
 
   return (
     <div
       className={cn(
         "flex w-full mb-6 transition-all duration-300",
         isRight ? "justify-end" : "justify-start",
-        isPending && "opacity-60", // <-- Fades the bubble slightly while sending
+        isPending && "opacity-60",
       )}
     >
       <div
@@ -104,12 +106,13 @@ export function ChatBubble({ msg, prospectName, isPending }: ChatBubbleProps) {
           isRight ? "flex-row-reverse" : "flex-row",
         )}
       >
+        {/* Avatar */}
         <div className="flex flex-col items-center shrink-0 mt-0.5">
           <Avatar className="h-8 w-8 shadow-sm border border-zinc-200 dark:border-zinc-700">
             <AvatarFallback
               className={cn(
                 "bg-background",
-                msg.role === "AI" && "text-indigo-600 dark:text-indigo-400",
+                msg.role === "AI" && "text-indigo-800 dark:text-indigo-400",
                 msg.role === "OPERATOR" && "text-blue-600 dark:text-blue-400",
                 msg.role === "CLIENT" && "text-zinc-600 dark:text-zinc-400",
               )}
@@ -119,18 +122,18 @@ export function ChatBubble({ msg, prospectName, isPending }: ChatBubbleProps) {
           </Avatar>
         </div>
 
+        {/* Message Content */}
         <div
           className={cn(
             "flex flex-col gap-1.5",
             isRight ? "items-end" : "items-start",
           )}
         >
+          {/* Header */}
           <div className="flex items-baseline gap-2 px-1">
             <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              {isRight ? (prospectName ?? "Client") : meta.label}
+              {displayName}
             </span>
-
-            {/* Show Loading Spinner OR Time */}
             {isPending ? (
               <span className="flex items-center gap-1 text-[10px] font-medium text-blue-500 animate-pulse">
                 <Loader2 size={10} className="animate-spin" /> Sending...
@@ -142,6 +145,7 @@ export function ChatBubble({ msg, prospectName, isPending }: ChatBubbleProps) {
             )}
           </div>
 
+          {/* Bubble */}
           <div
             className={cn(
               "relative flex flex-col px-4 py-3 rounded-2xl text-[14px] leading-relaxed shadow-sm wrap-break-word",
@@ -156,8 +160,10 @@ export function ChatBubble({ msg, prospectName, isPending }: ChatBubbleProps) {
               </span>
             </div>
 
+            {/* Attachments */}
             <ChatAttachments attachments={msg.mediaAttachments || []} />
 
+            {/* Message Body */}
             <div className="whitespace-pre-wrap">{msg.body}</div>
           </div>
         </div>

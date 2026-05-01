@@ -44,6 +44,8 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
     }
   };
 
+  console.log("Messages:", messages)
+
   React.useEffect(() => {
     if (isOpen) fetchMessages();
   }, [isOpen, prospect?.id]);

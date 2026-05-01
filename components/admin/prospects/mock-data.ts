@@ -9,7 +9,51 @@ export const MOCK_PROSPECTS = [
     subBookingData: { huelineId: "cal_123", time: "2026-05-02T14:00:00Z" },
 
     communication: [
-      // SMS
+      // ── 6 days ago ──────────────────────────────────────────────────────────
+      {
+        id: "act1-1",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Client created",
+        activityType: "CLIENT_CREATED",
+        metadata: { source: "web-form" },
+        createdAt: new Date(Date.now() - 86400000 * 6),
+        mediaAttachments: [],
+      },
+      {
+        id: "act1-2",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Intake link sent",
+        activityType: "INTAKE_LINK_SENT",
+        metadata: { email: "john@example.com" },
+        createdAt: new Date(Date.now() - 86400000 * 6 + 300000),
+        mediaAttachments: [],
+      },
+      // ── 5 days ago ──────────────────────────────────────────────────────────
+      {
+        id: "act1-3",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Intake form started",
+        activityType: "INTAKE_FORM_STARTED",
+        createdAt: new Date(Date.now() - 86400000 * 5 - 3600000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act1-4",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Intake form completed",
+        activityType: "INTAKE_FORM_COMPLETED",
+        metadata: {
+          rooms: ["living room", "hallway"],
+          paintType: "interior",
+          sqft: 800,
+        },
+        createdAt: new Date(Date.now() - 86400000 * 5 - 1800000),
+        mediaAttachments: [],
+      },
       {
         id: "c1",
         body: "Hi John 👋 this is the AI assistant. Are you still looking for interior painting services?",
@@ -38,7 +82,17 @@ export const MOCK_PROSPECTS = [
         type: "SMS",
         createdAt: new Date(Date.now() - 86400000 * 5 + 180000),
       },
-      // EMAIL
+      {
+        id: "act1-5",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Setup link sent",
+        activityType: "SETUP_LINK_SENT",
+        metadata: { stripeSessionId: "cs_test_a1b2c3" },
+        createdAt: new Date(Date.now() - 86400000 * 5 + 900000),
+        mediaAttachments: [],
+      },
+      // ── 4 days ago ──────────────────────────────────────────────────────────
       {
         id: "c5",
         body: "Booked 👍 Friday 2PM confirmed. Calendar invite sent.",
@@ -46,15 +100,54 @@ export const MOCK_PROSPECTS = [
         type: "EMAIL",
         createdAt: new Date(Date.now() - 86400000 * 4),
       },
-      // PHONE
       {
-        id: "c6",
-        body: "On-site technician check-in logged.",
-        role: "OPERATOR",
-        type: "PHONE",
-        createdAt: new Date(Date.now() - 1800000),
+        id: "act1-6",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Paid $150 setup fee",
+        activityType: "SETUP_FEE_PAID",
+        metadata: {
+          stripePaymentIntentId: "pi_3ABC123",
+          amount: 150,
+          currency: "usd",
+        },
+        createdAt: new Date(Date.now() - 86400000 * 4 + 1800000),
+        mediaAttachments: [],
       },
-      // DEMO
+      {
+        id: "act1-7",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Subscription started",
+        activityType: "SUBSCRIPTION_STARTED",
+        metadata: { stripeSubscriptionId: "sub_xYz789", plan: "standard" },
+        createdAt: new Date(Date.now() - 86400000 * 4 + 1860000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act1-11",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Subdomain provisioned",
+        activityType: "SUBDOMAIN_PROVISIONED",
+        metadata: { subdomain: "john-smith.clientportal.example.com" },
+        createdAt: new Date(Date.now() - 86400000 * 4 + 1900000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act1-12",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Booking confirmation email sent",
+        activityType: "EMAIL_SENT",
+        metadata: {
+          subject: "Your estimate call is confirmed — Friday 2PM",
+          to: "john@example.com",
+        },
+        createdAt: new Date(Date.now() - 86400000 * 4 + 7200000),
+        mediaAttachments: [],
+      },
+      // ── 3 days ago ──────────────────────────────────────────────────────────
       {
         id: "c7",
         body: "Virtual paint finish demo shared — client selected Eggshell White after viewing side-by-side samples.",
@@ -72,7 +165,27 @@ export const MOCK_PROSPECTS = [
         ],
         createdAt: new Date(Date.now() - 86400000 * 3),
       },
-      // MEETING
+      {
+        id: "act1-8",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Demo sent",
+        activityType: "DEMO_SENT",
+        metadata: { demoUrl: "https://demo.example.com/john-smith" },
+        createdAt: new Date(Date.now() - 86400000 * 3 + 3600000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act1-9",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Demo approved — Eggshell White selected",
+        activityType: "DEMO_APPROVED",
+        metadata: { selectedFinish: "Eggshell White", approvedBy: "client" },
+        createdAt: new Date(Date.now() - 86400000 * 3 + 7200000),
+        mediaAttachments: [],
+      },
+      // ── 2 days ago ──────────────────────────────────────────────────────────
       {
         id: "c8",
         body: "On-site walkthrough completed. Reviewed wall condition, confirmed colour selection. Client signed scope of work.",
@@ -80,9 +193,28 @@ export const MOCK_PROSPECTS = [
         type: "MEETING",
         createdAt: new Date(Date.now() - 86400000 * 2),
       },
+      {
+        id: "act1-10",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Work started",
+        activityType: "WORK_STARTED",
+        metadata: { technicianId: "tech_007", scheduledDate: "2026-04-29" },
+        createdAt: new Date(Date.now() - 86400000 * 2 + 28800000),
+        mediaAttachments: [],
+      },
+      // ── 30 min ago ──────────────────────────────────────────────────────────
+      {
+        id: "c6",
+        body: "On-site technician check-in logged.",
+        role: "OPERATOR",
+        type: "PHONE",
+        createdAt: new Date(Date.now() - 1800000),
+      },
     ],
   },
 
+  // ───────────────────────────────────────────────────────────────────────────
   {
     id: "2",
     name: "Sarah Miller",
@@ -92,7 +224,61 @@ export const MOCK_PROSPECTS = [
     createdAt: new Date(Date.now() - 86400000 * 2),
 
     communication: [
-      // SMS
+      // ── 2 days ago ──────────────────────────────────────────────────────────
+      {
+        id: "act2-1",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Client created",
+        activityType: "CLIENT_CREATED",
+        metadata: { source: "inbound-sms" },
+        createdAt: new Date(Date.now() - 86400000 * 2),
+        mediaAttachments: [],
+      },
+      {
+        id: "act2-2",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Intake link sent",
+        activityType: "INTAKE_LINK_SENT",
+        metadata: { email: "sarah@outlook.com" },
+        createdAt: new Date(Date.now() - 86400000 * 2 + 600000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act2-7",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Subdomain provisioned",
+        activityType: "SUBDOMAIN_PROVISIONED",
+        metadata: { subdomain: "sarah-miller.clientportal.example.com" },
+        createdAt: new Date(Date.now() - 86400000 * 2 + 700000),
+        mediaAttachments: [],
+      },
+      // ── ~2 hrs ago ──────────────────────────────────────────────────────────
+      {
+        id: "act2-3",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Intake form started",
+        activityType: "INTAKE_FORM_STARTED",
+        createdAt: new Date(Date.now() - 7200000 - 900000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act2-4",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Intake form completed — 2-bedroom apartment, premium finish interest",
+        activityType: "INTAKE_FORM_COMPLETED",
+        metadata: {
+          rooms: ["bedroom 1", "bedroom 2", "living room"],
+          finishPreference: "premium",
+          sqft: 950,
+        },
+        createdAt: new Date(Date.now() - 7200000 - 300000),
+        mediaAttachments: [],
+      },
       {
         id: "c9",
         body: "Hi! I'm looking for a quote for a 2-bedroom apartment repaint.",
@@ -132,13 +318,15 @@ export const MOCK_PROSPECTS = [
         createdAt: new Date(Date.now() - 6900000),
       },
       {
-        id: "c13",
-        body: "Yes please — I want to see pricing options.",
-        role: "CLIENT",
-        type: "SMS",
-        createdAt: new Date(Date.now() - 600000),
+        id: "act2-5",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Client info updated — phone verified",
+        activityType: "CLIENT_INFO_UPDATED",
+        metadata: { field: "phone", verified: true },
+        createdAt: new Date(Date.now() - 6800000),
+        mediaAttachments: [],
       },
-      // EMAIL
       {
         id: "c14",
         body: "We can schedule a demo walkthrough if you'd like a precise quote.",
@@ -146,7 +334,20 @@ export const MOCK_PROSPECTS = [
         type: "EMAIL",
         createdAt: new Date(Date.now() - 6800000),
       },
-      // PHONE
+      {
+        id: "act2-8",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Pricing overview email sent",
+        activityType: "EMAIL_SENT",
+        metadata: {
+          subject: "Your Painting Quote Options — Standard & Premium",
+          to: "sarah@outlook.com",
+        },
+        createdAt: new Date(Date.now() - 6800000 + 60000),
+        mediaAttachments: [],
+      },
+      // ── ~1 hr ago ────────────────────────────────────────────────────────────
       {
         id: "c15",
         body: "Outbound call placed — left voicemail with pricing overview and next steps.",
@@ -154,7 +355,16 @@ export const MOCK_PROSPECTS = [
         type: "PHONE",
         createdAt: new Date(Date.now() - 3600000),
       },
-      // DEMO
+      {
+        id: "act2-6",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Demo sent — standard vs premium finish comparison",
+        activityType: "DEMO_SENT",
+        metadata: { demoUrl: "https://demo.example.com/sarah-miller" },
+        createdAt: new Date(Date.now() - 2700000),
+        mediaAttachments: [],
+      },
       {
         id: "c16",
         body: "Virtual demo completed. Showed standard vs premium finish on sample walls. Sarah leaning towards premium.",
@@ -162,7 +372,6 @@ export const MOCK_PROSPECTS = [
         type: "DEMO",
         createdAt: new Date(Date.now() - 1800000),
       },
-      // MEETING
       {
         id: "c17",
         body: "In-person meeting scheduled for Monday to walk through the apartment and finalise quote.",
@@ -170,9 +379,17 @@ export const MOCK_PROSPECTS = [
         type: "MEETING",
         createdAt: new Date(Date.now() - 900000),
       },
+      {
+        id: "c13",
+        body: "Yes please — I want to see pricing options.",
+        role: "CLIENT",
+        type: "SMS",
+        createdAt: new Date(Date.now() - 600000),
+      },
     ],
   },
 
+  // ───────────────────────────────────────────────────────────────────────────
   {
     id: "3",
     name: "David Chen",
@@ -182,7 +399,86 @@ export const MOCK_PROSPECTS = [
     createdAt: new Date(Date.now() - 86400000 * 10),
 
     communication: [
-      // SMS
+      // ── 10 days ago ─────────────────────────────────────────────────────────
+      {
+        id: "act3-1",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Client created",
+        activityType: "CLIENT_CREATED",
+        metadata: { source: "web-form" },
+        createdAt: new Date(Date.now() - 86400000 * 10),
+        mediaAttachments: [],
+      },
+      {
+        id: "act3-2",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Intake link sent",
+        activityType: "INTAKE_LINK_SENT",
+        metadata: { email: "david.chen@gmail.com" },
+        createdAt: new Date(Date.now() - 86400000 * 10 + 600000),
+        mediaAttachments: [],
+      },
+      // ── 9 days ago ──────────────────────────────────────────────────────────
+      {
+        id: "act3-3",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Intake form completed — kitchen repaint, budget-sensitive",
+        activityType: "INTAKE_FORM_COMPLETED",
+        metadata: {
+          rooms: ["kitchen"],
+          budgetNote: "price-sensitive",
+          sqft: 200,
+        },
+        createdAt: new Date(Date.now() - 86400000 * 9 - 10800000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act3-4",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Subdomain provisioned",
+        activityType: "SUBDOMAIN_PROVISIONED",
+        metadata: { subdomain: "david-chen.clientportal.example.com" },
+        createdAt: new Date(Date.now() - 86400000 * 9 - 9000000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act3-5",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Demo sent — kitchen colour options",
+        activityType: "DEMO_SENT",
+        metadata: { demoUrl: "https://demo.example.com/david-chen" },
+        createdAt: new Date(Date.now() - 86400000 * 9 - 7200000),
+        mediaAttachments: [],
+      },
+      {
+        id: "c24",
+        body: "Early-stage demo of kitchen colour options shared before lead went cold. No feedback received.",
+        role: "OPERATOR",
+        type: "DEMO",
+        createdAt: new Date(Date.now() - 86400000 * 9 - 7200000),
+      },
+      {
+        id: "act3-6",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Setup link sent",
+        activityType: "SETUP_LINK_SENT",
+        metadata: { stripeSessionId: "cs_test_d4e5f6" },
+        createdAt: new Date(Date.now() - 86400000 * 9 - 3600000),
+        mediaAttachments: [],
+      },
+      {
+        id: "c23",
+        body: "Brief in-person consultation at property. David mentioned budget concerns — competitor offered a lower flat rate.",
+        role: "OPERATOR",
+        type: "MEETING",
+        createdAt: new Date(Date.now() - 86400000 * 9 - 3600000),
+      },
       {
         id: "c18",
         body: "Hey David, following up on your kitchen repaint inquiry.",
@@ -204,7 +500,7 @@ export const MOCK_PROSPECTS = [
         type: "SMS",
         createdAt: new Date(Date.now() - 86400000 * 9 + 240000),
       },
-      // PHONE
+      // ── 8 days ago ──────────────────────────────────────────────────────────
       {
         id: "c21",
         body: "Lead marked as lost due to competitor pricing.",
@@ -212,7 +508,20 @@ export const MOCK_PROSPECTS = [
         type: "PHONE",
         createdAt: new Date(Date.now() - 86400000 * 8),
       },
-      // EMAIL
+      {
+        id: "act3-7",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Payment failed — setup fee not completed",
+        activityType: "PAYMENT_FAILED",
+        metadata: {
+          stripeSessionId: "cs_test_d4e5f6",
+          reason: "session_expired",
+        },
+        createdAt: new Date(Date.now() - 86400000 * 8 + 3600000),
+        mediaAttachments: [],
+      },
+      // ── 7 days ago ──────────────────────────────────────────────────────────
       {
         id: "c22",
         body: "Sorry to hear we couldn't work together this time, David. Here's a 10% discount code for any future inquiry.",
@@ -220,25 +529,24 @@ export const MOCK_PROSPECTS = [
         type: "EMAIL",
         createdAt: new Date(Date.now() - 86400000 * 7),
       },
-      // DEMO
       {
-        id: "c23",
-        body: "Early-stage demo of kitchen colour options shared before lead went cold. No feedback received.",
-        role: "OPERATOR",
-        type: "DEMO",
-        createdAt: new Date(Date.now() - 86400000 * 9 - 3600000),
-      },
-      // MEETING
-      {
-        id: "c24",
-        body: "Brief in-person consultation at property. David mentioned budget concerns — competitor offered a lower flat rate.",
-        role: "OPERATOR",
-        type: "MEETING",
-        createdAt: new Date(Date.now() - 86400000 * 9 - 7200000),
+        id: "act3-8",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Win-back discount email sent — 10% off future inquiry",
+        activityType: "EMAIL_SENT",
+        metadata: {
+          subject: "We'd love another chance — 10% off for you, David",
+          to: "david.chen@gmail.com",
+          discountCode: "COMEBACK10",
+        },
+        createdAt: new Date(Date.now() - 86400000 * 7 + 3600000),
+        mediaAttachments: [],
       },
     ],
   },
 
+  // ───────────────────────────────────────────────────────────────────────────
   {
     id: "4",
     name: "Emily Rodriguez",
@@ -249,7 +557,52 @@ export const MOCK_PROSPECTS = [
     subBookingData: { huelineId: "cal_999", completed: true },
 
     communication: [
-      // SMS
+      // ── 12 days ago ─────────────────────────────────────────────────────────
+      {
+        id: "act4-1",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Client created",
+        activityType: "CLIENT_CREATED",
+        metadata: { source: "inbound-sms", priority: "fast-track" },
+        createdAt: new Date(Date.now() - 86400000 * 12),
+        mediaAttachments: [],
+      },
+      {
+        id: "act4-2",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Intake link sent",
+        activityType: "INTAKE_LINK_SENT",
+        metadata: { email: "emily@gmail.com" },
+        createdAt: new Date(Date.now() - 86400000 * 12 + 300000),
+        mediaAttachments: [],
+      },
+      // ── 11 days ago ─────────────────────────────────────────────────────────
+      {
+        id: "act4-3",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Intake form completed — full apartment, urgent timeline",
+        activityType: "INTAKE_FORM_COMPLETED",
+        metadata: {
+          rooms: ["living room", "bedroom 1", "bedroom 2", "kitchen", "hallway"],
+          deadline: "Friday",
+          sqft: 1100,
+        },
+        createdAt: new Date(Date.now() - 86400000 * 11 - 3600000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act4-4",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Subdomain provisioned",
+        activityType: "SUBDOMAIN_PROVISIONED",
+        metadata: { subdomain: "emily-rodriguez.clientportal.example.com" },
+        createdAt: new Date(Date.now() - 86400000 * 11 - 1800000),
+        mediaAttachments: [],
+      },
       {
         id: "c25",
         body: "I need a full apartment repaint ASAP.",
@@ -272,21 +625,40 @@ export const MOCK_PROSPECTS = [
         createdAt: new Date(Date.now() - 86400000 * 11 + 120000),
       },
       {
-        id: "c28",
-        body: "Thank you so much — looks amazing!",
-        role: "CLIENT",
-        type: "SMS",
-        createdAt: new Date(Date.now() - 86400000 * 9 + 300000),
+        id: "act4-5",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Setup link sent",
+        activityType: "SETUP_LINK_SENT",
+        metadata: { stripeSessionId: "cs_test_g7h8i9" },
+        createdAt: new Date(Date.now() - 86400000 * 11 + 180000),
+        mediaAttachments: [],
       },
-      // PHONE
       {
-        id: "c29",
-        body: "Job completed successfully. Final payment collected on-site.",
-        role: "OPERATOR",
-        type: "PHONE",
-        createdAt: new Date(Date.now() - 86400000 * 9),
+        id: "act4-6",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Paid $150 setup fee",
+        activityType: "SETUP_FEE_PAID",
+        metadata: {
+          stripePaymentIntentId: "pi_4GHI456",
+          amount: 150,
+          currency: "usd",
+        },
+        createdAt: new Date(Date.now() - 86400000 * 11 + 900000),
+        mediaAttachments: [],
       },
-      // DEMO
+      {
+        id: "act4-7",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Subscription started — full apartment plan",
+        activityType: "SUBSCRIPTION_STARTED",
+        metadata: { stripeSubscriptionId: "sub_aBc123", plan: "full-apartment" },
+        createdAt: new Date(Date.now() - 86400000 * 11 + 960000),
+        mediaAttachments: [],
+      },
+      // ── 10 days ago ─────────────────────────────────────────────────────────
       {
         id: "c30",
         body: "Demo completed + quote approved.",
@@ -294,7 +666,80 @@ export const MOCK_PROSPECTS = [
         type: "DEMO",
         createdAt: new Date(Date.now() - 86400000 * 10),
       },
-      // EMAIL
+      {
+        id: "act4-8",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Demo sent — colour palette & finish options",
+        activityType: "DEMO_SENT",
+        metadata: { demoUrl: "https://demo.example.com/emily-rodriguez" },
+        createdAt: new Date(Date.now() - 86400000 * 10 + 3600000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act4-9",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Demo approved — palette confirmed",
+        activityType: "DEMO_APPROVED",
+        metadata: { selectedPalette: "Warm Neutral", approvedBy: "client" },
+        createdAt: new Date(Date.now() - 86400000 * 10 + 7200000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act4-10",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Work started — fast-track crew dispatched",
+        activityType: "WORK_STARTED",
+        metadata: {
+          technicianId: "tech_012",
+          crewSize: 3,
+          scheduledDate: "2026-04-22",
+        },
+        createdAt: new Date(Date.now() - 86400000 * 10 + 28800000),
+        mediaAttachments: [],
+      },
+      // ── 9 days ago ──────────────────────────────────────────────────────────
+      {
+        id: "c29",
+        body: "Job completed successfully. Final payment collected on-site.",
+        role: "OPERATOR",
+        type: "PHONE",
+        createdAt: new Date(Date.now() - 86400000 * 9),
+      },
+      {
+        id: "c28",
+        body: "Thank you so much — looks amazing!",
+        role: "CLIENT",
+        type: "SMS",
+        createdAt: new Date(Date.now() - 86400000 * 9 + 300000),
+      },
+      {
+        id: "act4-11",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Work completed — all rooms painted and signed off",
+        activityType: "WORK_COMPLETED",
+        metadata: { completionNotes: "Minor hallway touch-up done on-site" },
+        createdAt: new Date(Date.now() - 86400000 * 9 + 57600000),
+        mediaAttachments: [],
+      },
+      {
+        id: "act4-12",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Job completed — final payment collected",
+        activityType: "JOB_COMPLETED",
+        metadata: {
+          stripePaymentIntentId: "pi_4JKL789",
+          finalAmount: 2400,
+          currency: "usd",
+        },
+        createdAt: new Date(Date.now() - 86400000 * 9 + 61200000),
+        mediaAttachments: [],
+      },
+      // ── 8 days ago ──────────────────────────────────────────────────────────
       {
         id: "c31",
         body: "Hi Emily, thank you for choosing us! Invoice and warranty docs are attached. We'd love a review if you have a moment 🙏",
@@ -312,13 +757,36 @@ export const MOCK_PROSPECTS = [
         ],
         createdAt: new Date(Date.now() - 86400000 * 8),
       },
-      // MEETING
+      {
+        id: "act4-13",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Invoice & warranty email sent",
+        activityType: "EMAIL_SENT",
+        metadata: {
+          subject: "Thank you Emily — Invoice & Warranty Docs Enclosed",
+          to: "emily@gmail.com",
+          attachments: ["invoice.pdf", "warranty.pdf"],
+        },
+        createdAt: new Date(Date.now() - 86400000 * 8 + 3600000),
+        mediaAttachments: [],
+      },
       {
         id: "c32",
         body: "Post-job walkthrough completed with Emily. All rooms signed off. Minor touch-up on hallway trim done on the spot.",
         role: "OPERATOR",
         type: "MEETING",
         createdAt: new Date(Date.now() - 86400000 * 8 + 3600000),
+      },
+      {
+        id: "act4-14",
+        role: "SYSTEM",
+        type: "ACTIVITY",
+        body: "Integration connected — Google review request triggered",
+        activityType: "INTEGRATION_CONNECTED",
+        metadata: { integration: "google-reviews", triggeredAt: new Date(Date.now() - 86400000 * 8 + 7200000) },
+        createdAt: new Date(Date.now() - 86400000 * 8 + 7200000),
+        mediaAttachments: [],
       },
     ],
   },
