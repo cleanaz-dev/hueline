@@ -8,21 +8,28 @@ import { cn } from "@/lib/utils";
 import { RichTextEditor } from "./rich-text-editor";
 
 interface AdvancedChatInputProps {
-  onSend: (message: string, channel: "SMS" | "EMAIL") => void;
+  onSend: (message: string, channel: "SMS" | "EMAIL", subject?: string) => void;
   isLoading?: boolean;
 }
 
-export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps) {
+export function AdvancedChatInput({
+  onSend,
+  isLoading,
+}: AdvancedChatInputProps) {
   const [text, setText] = React.useState("");
+  const [subject, setSubject] = React.useState("");
   const [channel, setChannel] = React.useState<"SMS" | "EMAIL">("SMS");
   const [isUndocked, setIsUndocked] = React.useState(false);
+
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const handleSend = () => {
     const plainText = text.replace(/<[^>]*>?/gm, "").trim();
     if (!plainText) return;
-    onSend(text, channel);
+    onSend(text, channel, channel === "EMAIL" ? subject : undefined);
     setText("");
-    setIsUndocked(false); // collapse back after sending
+    setSubject("");
+    setIsUndocked(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -36,11 +43,28 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
     if (channel !== newChannel) {
       setChannel(newChannel);
       setText("");
+      setSubject("");
       setIsUndocked(false);
     }
   };
-
   const isEmpty = !text.replace(/<[^>]*>?/gm, "").trim();
+
+  // ─── Subject field (shared between docked + undocked) ─────────────────────
+  const SubjectField = () => (
+    <div className="flex items-center border-t border-border/50">
+      <span className="text-xs text-muted-foreground px-3 border-r border-border/50 h-9 flex items-center shrink-0">
+        Subject
+      </span>
+      <input
+        type="text"
+        value={subject}
+        onChange={(e) => setSubject(e.target.value)}
+        placeholder="Add a subject…"
+        disabled={isLoading}
+        className="flex-1 h-9 px-3 text-sm bg-transparent focus:outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+      />
+    </div>
+  );
 
   // ─── Send button (shared) ──────────────────────────────────────────────────
   const SendButton = () => (
@@ -70,7 +94,6 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
       <AnimatePresence>
         {isUndocked && channel === "EMAIL" && (
           <>
-            {/* Backdrop */}
             <motion.div
               key="email-backdrop"
               initial={{ opacity: 0 }}
@@ -81,7 +104,6 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
               onClick={() => setIsUndocked(false)}
             />
 
-            {/* Floating composer panel */}
             <motion.div
               key="email-composer"
               initial={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -90,7 +112,6 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
               transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
               className="fixed z-61 hidden md:flex flex-col"
               style={{
-                // Centered, with a max width, sitting above the drawer area
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
@@ -98,7 +119,6 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
               }}
             >
               <div className="flex flex-col rounded-2xl border bg-background shadow-2xl overflow-hidden">
-                {/* Composer header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
                   <div className="flex items-center gap-2">
                     <Mail size={14} className="text-muted-foreground" />
@@ -115,7 +135,6 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
                   </Button>
                 </div>
 
-                {/* Rich editor — expanded */}
                 <RichTextEditor
                   value={text}
                   onChange={setText}
@@ -124,7 +143,9 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
                   onDock={() => setIsUndocked(false)}
                 />
 
-                {/* Footer */}
+                {/* Subject sits flush below the editor */}
+                <SubjectField />
+
                 <div className="flex justify-end px-3 py-2.5 border-t bg-muted/20">
                   <SendButton />
                 </div>
@@ -136,7 +157,6 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
 
       {/* ─── Docked input (always visible) ───────────────────────────────── */}
       <div className="p-4 bg-background border-t shadow-[0_-4px_15px_-5px_rgba(0,0,0,0.05)]">
-        {/* Channel tabs */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex bg-muted/50 p-1 rounded-lg">
             <button
@@ -145,7 +165,7 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                 channel === "SMS"
                   ? "bg-background shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <MessageSquare size={13} /> SMS
@@ -156,7 +176,7 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                 channel === "EMAIL"
                   ? "bg-background shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <Mail size={13} /> Email
@@ -164,14 +184,13 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
           </div>
         </div>
 
-        {/* Input area */}
         <motion.div
           layout
           className={cn(
             "relative flex flex-col rounded-xl border bg-background transition-colors focus-within:ring-1 focus-within:ring-ring overflow-hidden",
             channel === "EMAIL"
               ? "border-blue-200 dark:border-blue-900 shadow-sm"
-              : "border-zinc-200 dark:border-zinc-800"
+              : "border-zinc-200 dark:border-zinc-800",
           )}
         >
           <AnimatePresence mode="wait">
@@ -201,20 +220,24 @@ export function AdvancedChatInput({ onSend, isLoading }: AdvancedChatInputProps)
                 transition={{ duration: 0.15 }}
                 className="flex flex-col w-full"
               >
-                {/* Docked editor — compact, no expanded toolbar */}
                 <RichTextEditor
                   value={text}
                   onChange={setText}
-                  disabled={isLoading || isUndocked} // disable when undocked so focus stays in modal
+                  disabled={isLoading || isUndocked}
                   isUndocked={false}
                   onUndock={() => setIsUndocked(true)}
                 />
+
+                {/* Subject sits flush below the editor, above the send bar */}
+                <SubjectField />
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Bottom action bar */}
-          <motion.div layout className="flex justify-end p-2 pt-0 mt-1 bg-background shrink-0">
+          <motion.div
+            layout
+            className="flex justify-end p-2 pt-0 mt-1 bg-background shrink-0"
+          >
             <SendButton />
           </motion.div>
         </motion.div>

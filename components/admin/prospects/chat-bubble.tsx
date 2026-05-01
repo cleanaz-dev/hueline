@@ -11,7 +11,6 @@ import {
   Calendar,
   Loader2,
   Activity,
-  MousePointerClick,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatAttachments } from "./chat-attachments";
@@ -81,7 +80,7 @@ export function ChatBubble({ msg, prospectName, isPending }: ChatBubbleProps) {
 
   // ✅ 1. THE EARLY RETURN: Intercept SYSTEM messages and render the centered pill
   if (msg.role === "SYSTEM") {
-    <SystemActivityPill msg={msg} />;
+    return <SystemActivityPill msg={msg} />;
   }
 
   // ✅ 2. NORMAL CHAT BUBBLES
