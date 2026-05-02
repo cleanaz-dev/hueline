@@ -8,40 +8,71 @@ import {
   Check,
   PaintRoller,
   Loader2,
+  Mail,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { COLOR_BRANDS } from "./color-brand-data";
+import { useSuperAdmin } from "@/context/super-admin-context";
 
 type Step = "IDLE" | "BRAND" | "COLOR" | "CONFIRM" | "LOADING" | "SUCCESS";
+type DeliveryMethod = "email" | "sms";
 
 interface InteractiveChatImageProps {
   mediaUrl: string;
   filename?: string;
   mimeType?: string;
+  // Triggered when user confirms, pass this to your webhook
+  onGenerate?: (payload: {
+    brand: keyof typeof COLOR_BRANDS;
+    color: any;
+    deliveryMethod: DeliveryMethod;
+  }) => void;
 }
 
 export function InteractiveChatImage({
   mediaUrl,
   filename,
   mimeType,
+  onGenerate,
 }: InteractiveChatImageProps) {
-  const [step, setStep] = React.useState<Step>("IDLE");
+  
+
+  const[step, setStep] = React.useState<Step>("IDLE");
   const [selectedBrand, setSelectedBrand] = React.useState<
     keyof typeof COLOR_BRANDS | null
   >(null);
-  const [selectedColor, setSelectedColor] = React.useState<any>(null);
+  const[selectedColor, setSelectedColor] = React.useState<any>(null);
+  const [deliveryMethod, setDeliveryMethod] =
+    React.useState<DeliveryMethod>("email");
+
+  
 
   const handleCancel = () => {
     setStep("IDLE");
     setSelectedBrand(null);
     setSelectedColor(null);
+    setDeliveryMethod("email"); // Reset to default
   };
 
   const handleConfirm = async () => {
+    if (!selectedBrand || !selectedColor) return;
+
+    // Call your webhook / parent function here with the selected delivery method
+    if (onGenerate) {
+      onGenerate({
+        brand: selectedBrand,
+        color: selectedColor,
+        deliveryMethod: deliveryMethod,
+      });
+    }
+
     setStep("LOADING");
+    // Simulate generation delay
     await new Promise((resolve) => setTimeout(resolve, 2000));
     setStep("SUCCESS");
+    
     setTimeout(() => {
       handleCancel();
     }, 2500);
@@ -134,7 +165,7 @@ export function InteractiveChatImage({
                               className="h-12 bg-background/50 hover:bg-background border-border/50 flex flex-col items-center justify-center gap-1 hover:text-accent"
                               onClick={() => {
                                 setSelectedBrand(
-                                  brand as keyof typeof COLOR_BRANDS,
+                                  brand as keyof typeof COLOR_BRANDS
                                 );
                                 setStep("COLOR");
                               }}
@@ -201,21 +232,54 @@ export function InteractiveChatImage({
                         animate="center"
                         exit="exit"
                         transition={{ duration: 0.2 }}
-                        className="flex flex-col items-center text-center"
+                        className="flex flex-col items-center text-center px-2"
                       >
-                        <div
-                          className="w-12 h-12 rounded-full border-2 shadow-md mb-2"
-                          style={{
-                            backgroundColor: selectedColor.hex,
-                            borderColor: "rgba(0,0,0,0.1)",
-                          }}
-                        />
-                        <p className="text-sm font-semibold mb-1">
-                          Apply {selectedColor.name}?
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mb-4">
-                          ID: {selectedColor.id}
-                        </p>
+                        <div className="flex items-center gap-3 mb-3">
+                          <div
+                            className="w-10 h-10 rounded-full border-2 shadow-md"
+                            style={{
+                              backgroundColor: selectedColor.hex,
+                              borderColor: "rgba(0,0,0,0.1)",
+                            }}
+                          />
+                          <div className="text-left">
+                            <p className="text-sm font-semibold leading-none mb-1">
+                              {selectedColor.name}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground leading-none">
+                              ID: {selectedColor.id}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* DELIVERY METHOD TOGGLE */}
+                        <div className="w-full bg-muted/50 p-1 rounded-lg flex items-center mb-4 border border-border/50">
+                          <button
+                            onClick={() => setDeliveryMethod("email")}
+                            className={cn(
+                              "flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-md transition-all duration-200",
+                              deliveryMethod === "email"
+                                ? "bg-background shadow-sm text-foreground font-medium"
+                                : "text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            <Mail size={13} />
+                            Email Mockup
+                          </button>
+                          <button
+                            onClick={() => setDeliveryMethod("sms")}
+                            className={cn(
+                              "flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-md transition-all duration-200",
+                              deliveryMethod === "sms"
+                                ? "bg-background shadow-sm text-foreground font-medium"
+                                : "text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            <Smartphone size={13} />
+                            SMS Mockup
+                          </button>
+                        </div>
+
                         <div className="flex gap-2 w-full">
                           <Button
                             variant="outline"
@@ -230,7 +294,7 @@ export function InteractiveChatImage({
                             className="flex-1 h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-1"
                             onClick={handleConfirm}
                           >
-                            <Check size={13} /> Confirm
+                            <Check size={13} /> Generate
                           </Button>
                         </div>
                       </motion.div>
@@ -264,13 +328,20 @@ export function InteractiveChatImage({
                         animate="center"
                         exit="exit"
                         transition={{ duration: 0.2 }}
-                        className="flex flex-col items-center justify-center py-6"
+                        className="flex flex-col items-center justify-center py-5"
                       >
                         <div className="w-10 h-10 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center mb-2">
                           <Check size={20} />
                         </div>
-                        <p className="text-xs font-semibold">
+                        <p className="text-sm font-semibold mb-1">
                           Mockup Requested!
+                        </p>
+                        <p className="text-[11px] text-muted-foreground text-center">
+                          You will receive it via{" "}
+                          <span className="font-medium text-foreground capitalize">
+                            {deliveryMethod}
+                          </span>{" "}
+                          shortly.
                         </p>
                       </motion.div>
                     )}

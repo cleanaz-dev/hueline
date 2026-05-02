@@ -175,7 +175,7 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
                   <>
                     {/* Render Real DB Messages */}
                     {messages.map((msg: any) => (
-                      <ChatBubble key={msg.id} msg={msg} prospectName={prospect.name} />
+                      <ChatBubble key={msg.id} msg={msg} prospectName={prospect.name} prospectId={prospect.id} />
                     ))}
                     
                     {/* Render the Context's Global Pending Messages! */}

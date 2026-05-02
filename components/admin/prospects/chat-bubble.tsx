@@ -36,6 +36,7 @@ interface ChatBubbleProps {
     }[];
   };
   prospectName?: string;
+  prospectId?: string;
   isPending?: boolean;
 }
 
@@ -72,7 +73,7 @@ const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
   ACTIVITY: { icon: Activity, label: "Activity" },
 };
 
-export function ChatBubble({ msg, prospectName, isPending }: ChatBubbleProps) {
+export function ChatBubble({ msg, prospectName, isPending, prospectId }: ChatBubbleProps) {
   const time = new Date(msg.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
@@ -160,8 +161,7 @@ export function ChatBubble({ msg, prospectName, isPending }: ChatBubbleProps) {
             </div>
 
             {/* Attachments */}
-            <ChatAttachments attachments={msg.mediaAttachments || []} />
-
+            <ChatAttachments attachments={msg.mediaAttachments || []} prospectId={prospectId} />
             {/* Message Body */}
             <div className="whitespace-pre-wrap">{msg.body}</div>
           </div>

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { FileText, Download, FileArchive } from "lucide-react";
 import { InteractiveChatImage } from "./interactive-chat-image";
+import { useSuperAdmin } from "@/context/super-admin-context";
 
 interface Attachment {
   id: string;
@@ -14,6 +15,7 @@ interface Attachment {
 
 interface ChatAttachmentsProps {
   attachments?: Attachment[];
+  prospectId?: string; // <-- 1. ADDED THIS: We need to know which prospect to generate this for
 }
 
 // Helper to make file sizes readable (e.g., "2.4 MB")
@@ -21,12 +23,14 @@ function formatBytes(bytes: number, decimals = 1) {
   if (!+bytes) return "0 Bytes";
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const sizes =["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
-export function ChatAttachments({ attachments }: ChatAttachmentsProps) {
+export function ChatAttachments({ attachments, prospectId }: ChatAttachmentsProps) {
+  const { generateImage } = useSuperAdmin(); // Context hooked up!
+  
   if (!attachments || attachments.length === 0) return null;
 
   return (
@@ -36,10 +40,17 @@ export function ChatAttachments({ attachments }: ChatAttachmentsProps) {
         const isPDF = file.mimeType === "application/pdf";
 
         // ✅ ROUTE 1: IMAGES (Uses your magical Interactive UI)
-        if (isImage) {
+        if (isImage && prospectId) {
           return (
             <div key={file.id} className="w-full">
-              <InteractiveChatImage mediaUrl={file.mediaUrl} />
+              <InteractiveChatImage 
+                mediaUrl={file.mediaUrl} 
+                filename={file.filename}
+                // 2. ADDED THIS: Wire up the onGenerate hook to your context!
+                onGenerate={(payload) => {
+                  generateImage(prospectId, file.mediaUrl, payload);
+                }}
+              />
             </div>
           );
         }

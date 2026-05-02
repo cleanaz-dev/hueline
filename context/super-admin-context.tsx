@@ -60,15 +60,23 @@ interface SuperAdminContextType {
 
   // Communications
   sendSMS: (prospectId: string, body: string) => Promise<boolean>;
-  sendEmail: (prospectId: string, body: string, subject?: string) => Promise<boolean>;
+  sendEmail: (
+    prospectId: string,
+    body: string,
+    subject?: string,
+  ) => Promise<boolean>;
   isSendingSMS: boolean;
   isSendingEmail: boolean;
-  
+
   // Optimistic UI Queue
   pendingMessages: PendingMessage[];
 
   // Image Gen
-  generateImage: (mediaUrl: string, body: string) => Promise<boolean>;
+  generateImage: (
+    prospectId: string,
+    mediaUrl: string,
+    payload: { brand: string; color: any; deliveryMethod: "email" | "sms" },
+  ) => Promise<boolean>;
   isGeneratingImage: boolean;
 
   // Success States
@@ -77,15 +85,36 @@ interface SuperAdminContextType {
   generateImageSuccess: string | null;
 }
 
-const SuperAdminContext = createContext<SuperAdminContextType | undefined>(undefined);
+const SuperAdminContext = createContext<SuperAdminContextType | undefined>(
+  undefined,
+);
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function SuperAdminProvider({ children }: { children: ReactNode }) {
-  const { data: statsData, isLoading: isStatsLoading, mutate: mutateStats } = useSWR<{ stats: SuperAdminStats }>("/api/admin/dashboard", fetcher, { revalidateOnFocus: false, revalidateOnReconnect: false });
-  const { data: clientsData, isLoading: isClientsLoading, mutate: mutateClients } = useSWR<{ clients: Client[] }>("/api/admin/clients", fetcher, { revalidateOnFocus: false, revalidateOnReconnect: false });
-  const { data: adminData, isLoading: isAdminLoading } = useSWR<{ admin: Admin }>("/api/admin", fetcher);
-  const { data: logsData, isLoading: isLogsLoading } = useSWR<{ logs: Log[] }>("/api/admin/logs", fetcher);
+  const {
+    data: statsData,
+    isLoading: isStatsLoading,
+    mutate: mutateStats,
+  } = useSWR<{ stats: SuperAdminStats }>("/api/admin/dashboard", fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
+  const {
+    data: clientsData,
+    isLoading: isClientsLoading,
+    mutate: mutateClients,
+  } = useSWR<{ clients: Client[] }>("/api/admin/clients", fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
+  const { data: adminData, isLoading: isAdminLoading } = useSWR<{
+    admin: Admin;
+  }>("/api/admin", fetcher);
+  const { data: logsData, isLoading: isLogsLoading } = useSWR<{ logs: Log[] }>(
+    "/api/admin/logs",
+    fetcher,
+  );
 
   const logs = logsData?.logs;
   const admin = adminData?.admin;
@@ -93,14 +122,16 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
   const clients = clientsData?.clients;
 
   // Global Sending States
-  const[isSendingSMS, setIsSendingSMS] = useState(false);
-  const[isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isSendingSMS, setIsSendingSMS] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  
+
   // Global Success Messages
   const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
-  const [generateImageSuccess, setGenerateImageSuccess] = useState<string | null>(null);
+  const [generateImageSuccess, setGenerateImageSuccess] = useState<
+    string | null
+  >(null);
 
   // THE GLOBAL OPTIMISTIC QUEUE
   const [pendingMessages, setPendingMessages] = useState<PendingMessage[]>([]);
@@ -109,12 +140,19 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
   const sendSMS = async (prospectId: string, body: string) => {
     // 1. Create the ghost message
     const tempId = `temp-${Date.now()}`;
-    const ghostMsg: PendingMessage = { id: tempId, prospectId, body, role: "OPERATOR", type: "SMS", createdAt: new Date() };
-    
+    const ghostMsg: PendingMessage = {
+      id: tempId,
+      prospectId,
+      body,
+      role: "OPERATOR",
+      type: "SMS",
+      createdAt: new Date(),
+    };
+
     // 2. Add to global queue
     setPendingMessages((prev) => [...prev, ghostMsg]);
     setIsSendingSMS(true);
-    
+
     try {
       const res = await fetch(`/api/admin/prospects/${prospectId}/send-sms`, {
         method: "POST",
@@ -123,8 +161,8 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
       });
       if (!res.ok) throw new Error("Failed to send SMS");
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       setSmsSuccess("✓ SMS sent successfully");
       setTimeout(() => setSmsSuccess(null), 4000);
       return true;
@@ -138,13 +176,24 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const sendEmail = async (prospectId: string, body: string, subject = "Update from Your Painter") => {
+  const sendEmail = async (
+    prospectId: string,
+    body: string,
+    subject = "Update from Your Painter",
+  ) => {
     const tempId = `temp-${Date.now()}`;
-    const ghostMsg: PendingMessage = { id: tempId, prospectId, body, role: "OPERATOR", type: "EMAIL", createdAt: new Date() };
-    
-    setPendingMessages((prev) =>[...prev, ghostMsg]);
+    const ghostMsg: PendingMessage = {
+      id: tempId,
+      prospectId,
+      body,
+      role: "OPERATOR",
+      type: "EMAIL",
+      createdAt: new Date(),
+    };
+
+    setPendingMessages((prev) => [...prev, ghostMsg]);
     setIsSendingEmail(true);
-    
+
     try {
       const res = await fetch(`/api/admin/prospects/${prospectId}/send-email`, {
         method: "POST",
@@ -152,7 +201,7 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ body, subject }),
       });
       if (!res.ok) throw new Error("Failed to send Email");
-      
+
       setEmailSuccess("✓ Email sent successfully");
       setTimeout(() => setEmailSuccess(null), 4000);
       return true;
@@ -165,18 +214,33 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const generateImage = async (mediaUrl: string, body: string) => {
+  const generateImage = async (
+    prospectId: string,
+    mediaUrl: string,
+    payload: { brand: string; color: any; deliveryMethod: "email" | "sms" },
+  ) => {
     setIsGeneratingImage(true);
     try {
-      const res = await fetch("LAMBDA_URL", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mediaUrl, body }),
-      });
+      const res = await fetch(
+        `/api/admin/prospects/${prospectId}/chat-imagen`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // Send the mediaUrl alongside the brand, color, and delivery choice
+          body: JSON.stringify({
+            mediaUrl,
+            brand: payload.brand,
+            color: payload.color,
+            deliveryMethod: payload.deliveryMethod,
+          }),
+        },
+      );
       if (!res.ok) throw new Error("Failed to generate Image");
-      
-      setGenerateImageSuccess("✓ Image Generated Successfully");
-      setTimeout(() => setGenerateImageSuccess(null), 4000); // Added timeout reset
+
+      setGenerateImageSuccess(
+        `✓ Image Generating! Will send via ${payload.deliveryMethod}`,
+      );
+      setTimeout(() => setGenerateImageSuccess(null), 4000);
       return true;
     } catch (error) {
       console.error("Generating Image Error:", error);
@@ -189,14 +253,27 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
   return (
     <SuperAdminContext.Provider
       value={{
-        stats, isStatsLoading, refreshStats: mutateStats,
-        clients, isClientsLoading, refreshClients: mutateClients,
-        admin, isAdminLoading, logs, isLogsLoading,
-        
-        sendSMS, sendEmail, generateImage,
-        isSendingSMS, isSendingEmail, isGeneratingImage,
-        smsSuccess, emailSuccess, generateImageSuccess,
-        
+        stats,
+        isStatsLoading,
+        refreshStats: mutateStats,
+        clients,
+        isClientsLoading,
+        refreshClients: mutateClients,
+        admin,
+        isAdminLoading,
+        logs,
+        isLogsLoading,
+
+        sendSMS,
+        sendEmail,
+        generateImage,
+        isSendingSMS,
+        isSendingEmail,
+        isGeneratingImage,
+        smsSuccess,
+        emailSuccess,
+        generateImageSuccess,
+
         pendingMessages, // Exposed!
       }}
     >
@@ -207,6 +284,7 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
 
 export function useSuperAdmin() {
   const context = useContext(SuperAdminContext);
-  if (context === undefined) throw new Error("useSuperAdmin must be used within a SuperAdminProvider");
+  if (context === undefined)
+    throw new Error("useSuperAdmin must be used within a SuperAdminProvider");
   return context;
 }
