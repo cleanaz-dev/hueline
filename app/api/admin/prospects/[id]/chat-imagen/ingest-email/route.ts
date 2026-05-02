@@ -1,0 +1,78 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+interface Params {
+  params: Promise<{ id: string }>;
+}
+
+export async function POST(req: Request, { params }: Params) {
+  const { id } = await params;
+
+  try {
+    // 1. Security Check: Validate the secret header
+    const authHeader = req.headers.get("x-webhook-secret");
+    if (authHeader !== process.env.LAMBDA_WEBHOOK_SECRET) {
+      console.warn(`Unauthorized webhook attempt for prospect: ${id}`);
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. Parse the body from your Lambda response
+    const { generatedImageUrl, brand, colorName } = await req.json();
+
+    if (!generatedImageUrl) {
+      return NextResponse.json(
+        { message: "Missing generatedImageUrl" },
+        { status: 400 }
+      );
+    }
+
+    // 3. Verify the prospect exists
+    const demoClient = await prisma.demoClient.findUnique({
+      where: { id: id },
+    });
+
+    if (!demoClient) {
+      return NextResponse.json({ message: "Prospect not found" }, { status: 404 });
+    }
+
+    // 4. Save the new message & attachment to the database
+    const newMessage = await prisma.clientCommunication.create({
+      data: {
+        demoClientId: id, // or whatever your foreign key is named
+        role: "OPERATOR",
+        type: "EMAIL",
+        body: `Here is your new mockup featuring the ${brand} palette in ${colorName || "your selected color"}!`,
+        // Assuming you have an attachments relation based on your previous UI component
+        attachments: {
+          create: {
+            mediaUrl: generatedImageUrl,
+            mimeType: "image/jpeg", // or png based on what Imagen outputs
+            filename: `${brand}-mockup.jpg`,
+            size: 0, // optional: depending on if your schema requires this
+          }
+        }
+      }
+    });
+
+    // 5. TODO: Trigger your actual Email logic here (Resend / SendGrid)
+    // Example:
+    // await sendEmail({
+    //   to: demoClient.email,
+    //   subject: "Your New House Mockup is Ready!",
+    //   text: newMessage.body,
+    //   imageUrl: generatedImageUrl
+    // });
+
+    return NextResponse.json(
+      { message: "Email mockup ingested successfully" },
+      { status: 200 }
+    );
+
+  } catch (error: any) {
+    console.error(`Ingest Email Error for ${id}:`, error.message || error);
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
