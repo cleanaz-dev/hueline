@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const body = await req.json();
 
   const authHeaders = req.headers.get("x-api-key");
-  if (authHeaders || !apiKey) {
+  if (!authHeaders || authHeaders !== apiKey) {
     return NextResponse.json(
       { message: "Unauthorized Request" },
       { status: 401 },
