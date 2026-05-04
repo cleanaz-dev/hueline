@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { extractDomainFromEmail, handleZohoAttachmentDownloadS3Upload } from "./config";
+import {
+  extractDomainFromEmail,
+  handleZohoAttachmentDownloadS3Upload,
+} from "./config";
 
 export async function POST(req: Request) {
   try {
@@ -25,21 +28,22 @@ export async function POST(req: Request) {
     });
 
     if (!isDomain) {
-      console.log("Not Admin Domain");
-      return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
+      console.warn("Not Admin Domain");
+      return NextResponse.json({ message: "Not admin domain" }, { status: 200 });
     }
 
     const existingClient = await prisma.demoClient.findFirst({
-      where: { 
+      where: {
         email: fromAddress,
-        subdomainId: isDomain.id
-       },
-      select: { id: true },
+      },
+      select: {
+        id: true,
+      },
     });
 
     if (!existingClient) {
-      console.log("Create future function");
-      return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
+      console.warn("Not a client")
+      return NextResponse.json({ message: "Not a client" }, { status: 200 });
     }
 
     const communication = await prisma.clientCommunication.create({
@@ -47,7 +51,7 @@ export async function POST(req: Request) {
         body: summary,
         role: "CLIENT",
         type: "EMAIL",
-        demoClient: { connect: { id: existingClient?.id } },
+        demoClient: { connect: { id: existingClient.id } },
       },
     });
 
