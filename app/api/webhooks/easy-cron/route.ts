@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import axios from "axios";
-import { pickColor } from "@/lib/moonshot/services/pick-color"; // Adjust import path to where you saved the Moonshot function
+import { pickColor } from "@/lib/moonshot/services/pick-color";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const LAMBDA_URL = process.env.LAMBDA_FOLLOWUP_URL!;
 const apiKey = process.env.INTERNAL_API_KEY!;
 
-// 1. Initialize S3 Client once outside the handler for performance
 const s3 = new S3Client({
   region: process.env.AWS_REGION!,
   credentials: {
@@ -18,22 +17,16 @@ const s3 = new S3Client({
 });
 
 export async function POST(req: Request) {
-  // auth check
   const authHeaders = req.headers.get("x-api-key");
   if (!authHeaders || authHeaders !== apiKey) {
-    return NextResponse.json(
-      { message: "Unauthorized Request" },
-      { status: 401 },
-    );
+    return NextResponse.json({ message: "Unauthorized Request" }, { status: 401 });
   }
 
   try {
-    // 2. Exact 24 - 48 hour window
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
-    // 3. Fetch targets, including the LATEST mockup
     const followUps = await prisma.demoClient.findMany({
       where: {
         createdAt: { lte: twentyFourHoursAgo, gte: fortyEightHoursAgo },
@@ -44,8 +37,8 @@ export async function POST(req: Request) {
           include: {
             paintColors: true,
             mockups: {
-              orderBy: { createdAt: "desc" }, // Grabs the newest one first
-              take: 1, // We only need the latest image
+              orderBy: { createdAt: "desc" },
+              take: 1,
             },
           },
         },
@@ -58,52 +51,50 @@ export async function POST(req: Request) {
 
     let successCount = 0;
 
-    // 4. Loop through and process
     for (const client of followUps) {
       const subData = client.subBookingData;
       if (!subData) continue;
 
-      const latestMockup = subData.mockups[0];
-      if (!latestMockup?.s3Key) {
-        console.warn(`Skipping client ${client.id}: No S3 Key found.`);
-        continue; // Cannot generate a mockup without a source image
+      if (!subData.originalImages) {
+        console.warn(`Skipping client ${client.id}: No original image found.`);
+        continue;
       }
 
       try {
-        // --- A: Generate the Presigned URL (Valid for 1 Hour) ---
+        // --- A: Generate Presigned URL from originalImages s3Key ---
         const command = new GetObjectCommand({
           Bucket: process.env.AWS_S3_BUCKET_NAME!,
-          Key: latestMockup.s3Key,
+          Key: subData.originalImages,
         });
         const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
 
-        // --- B: Ask Moonshot AI for the perfect pivot color ---
-        const usedColors = subData.paintColors.map((pc: any) => ({
-          name: pc.name,
-          hex: pc.hex,
-        }));
+        // --- B: Build color list from ALL sources and pick smart color ---
+        const usedColors = [
+          ...subData.paintColors.map((pc: any) => ({ name: pc.name, hex: pc.hex })),
+          ...subData.mockups.map((m: any) => ({ name: m.colorName, hex: m.colorHex })),
+        ];
 
         let smartColor = await pickColor(usedColors);
         if (!smartColor) {
-           // Fallback if AI times out
           smartColor = { name: "Hale Navy", code: "HC-154", hex: "#3b444b" };
         }
 
-        // --- C: Build the Payload ---
+        // --- C: Build Payload ---
         const payload = {
           action: "followUp",
           clientId: client.id,
           huelineId: subData.huelineId,
-          imageUrl: presignedUrl, // <--- Sent to Lambda!
+          roomType: subData.roomType,
+          imageUrl: presignedUrl,
           deliveryMethod: "SMS",
           targetColor: smartColor,
-          body: `Hey! It's been 24 hours since you tested our demo!. Based on the colors you tried earlier, our AI design assistant thought Benjamin Moore ${smartColor.name} (${smartColor.code}) would look incredible in your space. What do you think?`,
+          body: `Hey! It's been 24 hours since you tested our demo! Based on the colors you tried earlier, our AI design assistant thought Benjamin Moore ${smartColor.name} (${smartColor.code}) would look incredible in your space. What do you think?`,
         };
 
         // --- D: Fire Lambda ---
         const res = await axios.post(LAMBDA_URL, payload);
 
-        // --- E: If successful, update the DB ---
+        // --- E: Update DB ---
         if (res.status === 200) {
           await prisma.demoClient.update({
             where: { id: client.id },
@@ -119,7 +110,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       attempted: followUps.length,
-      successful: successCount
+      successful: successCount,
     });
 
   } catch (error) {

@@ -46,12 +46,12 @@ Return exactly this JSON format:
 
   try {
     const response = await moonshot.chat.completions.create({
-      model: "kimi-k2.6",
+      model: "kimi-k2-thinking-turbo",
       messages:[
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      max_tokens: 150, // JSON is short, don't need many tokens
+      max_tokens: 1000, // JSON is short, don't need many tokens
       temperature: 0.7, // A little creativity
     });
 
