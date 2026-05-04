@@ -22,7 +22,7 @@ export async function POST(req: Request, { params }: Params) {
     if (!generatedImageUrl) {
       return NextResponse.json(
         { message: "Missing generatedImageUrl" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -32,26 +32,29 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     if (!demoClient) {
-      return NextResponse.json({ message: "Prospect not found" }, { status: 404 });
+      return NextResponse.json(
+        { message: "Prospect not found" },
+        { status: 404 },
+      );
     }
 
     // 4. Save the new message & attachment to the database
     const newMessage = await prisma.clientCommunication.create({
       data: {
-        demoClientId: id, // or whatever your foreign key is named
+        demoClientId: id,
         role: "OPERATOR",
         type: "EMAIL",
         body: `Here is your new mockup featuring the ${brand} palette in ${colorName || "your selected color"}!`,
-        // Assuming you have an attachments relation based on your previous UI component
-        attachments: {
+        mediaAttachments: {
           create: {
             mediaUrl: generatedImageUrl,
-            mimeType: "image/jpeg", // or png based on what Imagen outputs
+            mimeType: "image/jpeg",
             filename: `${brand}-mockup.jpg`,
-            size: 0, // optional: depending on if your schema requires this
-          }
-        }
-      }
+            size: 0,
+            mediaSource: "S3", // ← set this to the correct MediaSource enum value
+          },
+        },
+      },
     });
 
     // 5. TODO: Trigger your actual Email logic here (Resend / SendGrid)
@@ -65,14 +68,13 @@ export async function POST(req: Request, { params }: Params) {
 
     return NextResponse.json(
       { message: "Email mockup ingested successfully" },
-      { status: 200 }
+      { status: 200 },
     );
-
   } catch (error: any) {
     console.error(`Ingest Email Error for ${id}:`, error.message || error);
     return NextResponse.json(
       { message: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
