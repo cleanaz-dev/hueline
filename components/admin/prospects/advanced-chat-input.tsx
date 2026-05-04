@@ -6,20 +6,31 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Send, MessageSquare, Mail, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "./rich-text-editor";
+import { AiActionDock } from "./ai-action-dock";
+import { useSuperAdmin } from "@/context/super-admin-context";
 
 interface AdvancedChatInputProps {
+  clientId: string; // <-- Added this so we can fetch the AI suggestion
   onSend: (message: string, channel: "SMS" | "EMAIL", subject?: string) => void;
   isLoading?: boolean;
 }
 
 export function AdvancedChatInput({
+  clientId,
   onSend,
   isLoading,
 }: AdvancedChatInputProps) {
-  const [text, setText] = React.useState("");
+  const[text, setText] = React.useState("");
   const [subject, setSubject] = React.useState("");
   const [channel, setChannel] = React.useState<"SMS" | "EMAIL">("SMS");
   const [isUndocked, setIsUndocked] = React.useState(false);
+  
+  const {
+    AiSuggestion,
+    fetchAiSuggestion,
+    clearAiSuggestion, // <-- Ensure this is in your SuperAdmin context provider
+    isAiLoading
+  } = useSuperAdmin();
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -42,6 +53,8 @@ export function AdvancedChatInput({
   const handleSwitchChannel = (newChannel: "SMS" | "EMAIL") => {
     if (channel !== newChannel) {
       setChannel(newChannel);
+      // Note: This clears text naturally when manual clicking, 
+      // which is why we don't use this function for the AI button clicks.
       setText("");
       setSubject("");
       setIsUndocked(false);
@@ -93,6 +106,7 @@ export function AdvancedChatInput({
       {/* ─── Undocked overlay — md+ only ─────────────────────────────────── */}
       <AnimatePresence>
         {isUndocked && channel === "EMAIL" && (
+          // ... [Keeping your exact email modal code untouched] ...
           <>
             <motion.div
               key="email-backdrop"
@@ -109,7 +123,7 @@ export function AdvancedChatInput({
               initial={{ opacity: 0, scale: 0.96, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 16 }}
-              transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+              transition={{ duration: 0.22, ease:[0.32, 0.72, 0, 1] }}
               className="fixed z-61 hidden md:flex flex-col"
               style={{
                 top: "50%",
@@ -143,7 +157,6 @@ export function AdvancedChatInput({
                   onDock={() => setIsUndocked(false)}
                 />
 
-                {/* Subject sits flush below the editor */}
                 <SubjectField />
 
                 <div className="flex justify-end px-3 py-2.5 border-t bg-muted/20">
@@ -157,6 +170,30 @@ export function AdvancedChatInput({
 
       {/* ─── Docked input (always visible) ───────────────────────────────── */}
       <div className="p-4 bg-background border-t shadow-[0_-4px_15px_-5px_rgba(0,0,0,0.05)]">
+        
+        {/* ─── AI ACTION DOCK LIVES HERE ─────────────────────────────────── */}
+        <AiActionDock 
+          isLoading={isAiLoading}
+          suggestion={AiSuggestion}
+          onAnalyze={() => fetchAiSuggestion(clientId)}
+          onClear={clearAiSuggestion}
+          onUseSms={(aiText) => {
+            setChannel("SMS");
+            setSubject("");
+            setText(aiText);
+            setIsUndocked(false);
+            
+          }}
+          onUseEmail={(aiSubject, aiBody) => {
+            setChannel("EMAIL");
+            setSubject(aiSubject);
+            setText(aiBody);
+            setIsUndocked(false); // Optional: Set to true if you want AI to auto-pop the big modal
+         
+          }}
+        />
+
+        {/* Channel Switcher */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex bg-muted/50 p-1 rounded-lg">
             <button
@@ -184,6 +221,7 @@ export function AdvancedChatInput({
           </div>
         </div>
 
+        {/* Input Area */}
         <motion.div
           layout
           className={cn(
@@ -228,7 +266,6 @@ export function AdvancedChatInput({
                   onUndock={() => setIsUndocked(true)}
                 />
 
-                {/* Subject sits flush below the editor, above the send bar */}
                 <SubjectField />
               </motion.div>
             )}

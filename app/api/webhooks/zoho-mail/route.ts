@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { extractEmail, handleZohoAttachmentDownloadS3Upload } from "./config";
+import { extractDomainFromEmail, handleZohoAttachmentDownloadS3Upload } from "./config";
 
 export async function POST(req: Request) {
   try {
@@ -15,14 +15,13 @@ export async function POST(req: Request) {
       accountId,
     } = body;
 
-    const email = extractEmail(toAddress);
+    const domain = extractDomainFromEmail(toAddress);
 
-    const isDomain = await prisma.subdomainUser.findFirst({
+    const isDomain = await prisma.subdomain.findFirst({
       where: {
-        subdomain: { slug: "admin" },
-        email: { contains: email },
+        domain: domain,
       },
-      select: { id: true, subdomainId: true, email: true },
+      select: { id: true, subdomainId: true },
     });
 
     if (!isDomain) {
@@ -31,12 +30,16 @@ export async function POST(req: Request) {
     }
 
     const existingClient = await prisma.demoClient.findFirst({
-      where: { email: fromAddress },
+      where: { 
+        email: fromAddress,
+        subdomainId: isDomain.subdomainId
+       },
       select: { id: true },
     });
 
     if (!existingClient) {
       console.log("Create future function");
+      return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
     const communication = await prisma.clientCommunication.create({

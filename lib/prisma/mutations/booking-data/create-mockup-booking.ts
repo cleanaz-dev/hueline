@@ -143,6 +143,7 @@ export async function createMockupBooking(payload: CreateMockupBookingPayload) {
         },
       },
       subBookingData: { connect: { id: booking.id } },
+      subdomain: { connect: { id: booking.subdomainId } },
     },
   });
 

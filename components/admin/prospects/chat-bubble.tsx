@@ -14,18 +14,22 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatAttachments } from "./chat-attachments";
-import { SystemActivityPill } from "./system-activity-pill";
+import { SystemActivityEvent } from "./system-activity-event";
+
 
 type Role = "CLIENT" | "AI" | "OPERATOR" | "SYSTEM";
 type Type = "SMS" | "EMAIL" | "PHONE" | "DEMO" | "MEETING" | "ACTIVITY";
 
 interface ChatBubbleProps {
   msg: {
+    id: string; // <-- Added ID (required for React keys and the Event component)
     body: string;
+    description?: string; // <-- Added for system notes
+    activityType?: string; // <-- Added for the Icon logic (e.g., SETUP_FEE_PAID)
     role: Role;
     type: Type;
     createdAt: Date | string;
-    metadata?: any; // <-- Added metadata for future clickable actions
+    metadata?: any;
     mediaAttachments?: {
       id: string;
       filename: string;
@@ -81,7 +85,7 @@ export function ChatBubble({ msg, prospectName, isPending, prospectId }: ChatBub
 
   // ✅ 1. THE EARLY RETURN: Intercept SYSTEM messages and render the centered pill
   if (msg.role === "SYSTEM") {
-    return <SystemActivityPill msg={msg} />;
+    return <SystemActivityEvent msg={msg} />;
   }
 
   // ✅ 2. NORMAL CHAT BUBBLES

@@ -8,9 +8,10 @@ type AttachmentResult = {
   attachmentId: string;
 };
 
-export function extractEmail(address: string): string {
+export function extractDomainFromEmail(address: string): string {
   const match = address.match(/<([^>]+)>/);
-  return match ? match[1] : address.trim();
+  const email = match ? match[1] : address.trim();
+  return email.split('@')[1] ?? email;
 }
 
 export async function getZohoAccessToken(): Promise<string> {

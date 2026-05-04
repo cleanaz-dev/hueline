@@ -39,7 +39,10 @@ export async function GET(
       id: act.id,
       role: "SYSTEM",
       type: "ACTIVITY",
+      activityType: act.type, // <-- CRITICAL: Tells UI which icon/card to use (e.g., SETUP_FEE_PAID)
       body: act.title || act.type.replace(/_/g, " "),
+      description: act.description, // <-- CRITICAL: Passes the longer system notes
+      metadata: act.metadata, // <-- CRITICAL: Passes the Stripe/Form JSON data!
       createdAt: act.createdAt,
       mediaAttachments: [], // Empty array so the frontend doesn't crash
     }));

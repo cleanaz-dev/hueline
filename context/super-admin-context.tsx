@@ -3,6 +3,7 @@
 import { createContext, useContext, ReactNode, useState } from "react";
 import useSWR from "swr";
 import { Log } from "@/types/subdomain-type";
+import { AiSuggestionData } from "@/components/admin/prospects/ai-action-dock";
 
 // ... [Keep your existing SuperAdminStats, Client, Admin interfaces] ...
 interface SuperAdminStats {
@@ -65,8 +66,12 @@ interface SuperAdminContextType {
     body: string,
     subject?: string,
   ) => Promise<boolean>;
+  fetchAiSuggestion: (clientId: string) => Promise<void>
   isSendingSMS: boolean;
   isSendingEmail: boolean;
+  isAiLoading: boolean;
+  AiSuggestion: AiSuggestionData | null;  // was: string | null
+  clearAiSuggestion: () => void;           // was: missing entirely
 
   // Optimistic UI Queue
   pendingMessages: PendingMessage[];
@@ -125,6 +130,7 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
   const [isSendingSMS, setIsSendingSMS] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   // Global Success Messages
   const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
@@ -135,6 +141,9 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
 
   // THE GLOBAL OPTIMISTIC QUEUE
   const [pendingMessages, setPendingMessages] = useState<PendingMessage[]>([]);
+
+  // ??
+  const [AiSuggestion, setAiSuggestion] = useState<AiSuggestionData | null>(null);
 
   // --- Communication Handlers ---
   const sendSMS = async (prospectId: string, body: string) => {
@@ -214,6 +223,26 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const fetchAiSuggestion = async (clientId: string) => {
+    setIsAiLoading(true);
+    try {
+      const res = await fetch(
+        `/api/admin/prospects/${clientId}/ai-chat-suggestions`,
+      );
+      const data = await res.json();
+
+      // Save this to state so your UI can render the shiny new box!
+      setAiSuggestion(data);
+    } catch (error) {
+      console.error("Failed to fetch suggestion", error);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  // In SuperAdminProvider, next to the other handlers
+  const clearAiSuggestion = () => setAiSuggestion(null);
+
   const generateImage = async (
     prospectId: string,
     mediaUrl: string,
@@ -267,12 +296,16 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
         sendSMS,
         sendEmail,
         generateImage,
+        fetchAiSuggestion,
+        clearAiSuggestion,
+        isAiLoading,
         isSendingSMS,
         isSendingEmail,
         isGeneratingImage,
         smsSuccess,
         emailSuccess,
         generateImageSuccess,
+        AiSuggestion,
 
         pendingMessages, // Exposed!
       }}

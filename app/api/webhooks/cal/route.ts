@@ -12,6 +12,8 @@ function verifySignature(payload: string, signature: string, secret: string) {
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
 
+const adminSubdomainId = process.env.ADMIN_SUBDOMAIN_ID;
+
 export async function POST(req: Request) {
   const rawBody = await req.text();
   const signature = req.headers.get("x-cal-signature-256");
@@ -56,6 +58,7 @@ export async function POST(req: Request) {
         name: attendee.name,
         phone: attendee.phone,
         email: attendee.email,
+        subdomain: { connect: { id: adminSubdomainId } },
       },
     });
     await prisma.clientCommunication.create({

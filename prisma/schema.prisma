@@ -171,6 +171,7 @@ model ClientActivity {
 model Subdomain {
   id                 String            @id @default(auto()) @map("_id") @db.ObjectId
   slug               String            @unique
+  domain             String?
   companyName        String?
   projectUrl         String?
   logo               String?
@@ -201,8 +202,9 @@ model Subdomain {
   client       Client?          @relation(fields: [clientId], references: [id])
   clientId     String?          @unique @db.ObjectId
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime?    @updatedAt
+  demoClients DemoClient[]
 }
 
 model RoomIntelligence {
@@ -295,12 +297,15 @@ model SubBookingData {
 }
 
 model DemoClient {
-  id     String        @id @default(auto()) @map("_id") @db.ObjectId
-  name   String?
-  phone  String?
-  email  String?
-  status BookingStatus @default(PENDING)
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  name            String?
+  phone           String?
+  email           String?
+  initialFollowUp Boolean?       @default(false)
+  status          BookingStatus @default(PENDING)
 
+  subdomain        Subdomain?      @relation(fields: [subdomainId], references: [id])
+  subdomainId      String?         @db.ObjectId
   subBookingData   SubBookingData? @relation(fields: [subBookingDataId], references: [id])
   subBookingDataId String?         @unique @db.ObjectId
 
@@ -357,6 +362,7 @@ enum CommunicationType {
   DEMO
   EMAIL
   IMAGEN
+  AI_SUGESSTION
 }
 
 enum BookingStatus {

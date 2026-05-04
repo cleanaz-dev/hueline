@@ -195,6 +195,7 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
               <AdvancedChatInput
                 isLoading={isSendingSMS || isSendingEmail}
                 onSend={handleSendMessage}
+                clientId={prospect.id}
               />
             </div>
 
