@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       where: {
         domain: domain,
       },
-      select: { id: true, subdomainId: true },
+      select: { id: true },
     });
 
     if (!isDomain) {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     const existingClient = await prisma.demoClient.findFirst({
       where: { 
         email: fromAddress,
-        subdomainId: isDomain.subdomainId
+        subdomainId: isDomain.id
        },
       select: { id: true },
     });
