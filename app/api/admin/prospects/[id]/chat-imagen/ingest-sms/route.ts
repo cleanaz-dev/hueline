@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { SendImageSMS } from "@/lib/twilio/twilio-send-image";
+import { getPresignedUrl } from "@/lib/aws/s3";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -17,16 +19,19 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // 2. Parse the body from your Lambda response
-    const { generatedImageUrl, brand, colorName } = await req.json();
+    const { s3Key, brand, colorName, action, smsBody } = await req.json();
 
-    if (!generatedImageUrl) {
+    if (!s3Key) {
       return NextResponse.json(
-        { message: "Missing generatedImageUrl" },
+        { message: "Missing s3Key" },
         { status: 400 },
       );
     }
 
-    // 3. Verify the prospect exists
+    // 3. Generate a presigned URL from the s3Key
+    const presignedUrl = await getPresignedUrl(s3Key);
+
+    // 4. Verify the prospect exists
     const demoClient = await prisma.demoClient.findUnique({
       where: { id: id },
     });
@@ -38,35 +43,65 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    // 4. Save the new message & attachment to the database
-    const newMessage = await prisma.clientCommunication.create({
+    if (!demoClient.phone) {
+      return NextResponse.json(
+        { message: "Prospect has no phone number" },
+        { status: 400 },
+      );
+    }
+
+    if (action === "followUp") {
+      await prisma.clientCommunication.create({
+        data: {
+          demoClientId: id,
+          role: "OPERATOR",
+          type: "SMS",
+          body: smsBody,
+          mediaAttachments: {
+            create: {
+              mediaUrl: s3Key,
+              mimeType: "image/jpeg",
+              filename: `${brand}-mockup.jpg`,
+              size: 0,
+              mediaSource: "S3",
+            },
+          },
+        },
+      });
+
+      await SendImageSMS({
+        to: demoClient.phone,
+        body: smsBody,
+        imageUrl: [presignedUrl],
+      });
+
+      return NextResponse.json({ message: "Success" }, { status: 200 });
+    }
+
+    // 5. Save the new message & attachment to the database
+    const communication = await prisma.clientCommunication.create({
       data: {
         demoClientId: id,
         role: "OPERATOR",
-        type: "EMAIL",
+        type: "SMS",
         body: `Here is your new mockup featuring the ${brand} palette in ${colorName || "your selected color"}!`,
         mediaAttachments: {
           create: {
-            mediaUrl: generatedImageUrl,
+            mediaUrl: s3Key,
             mimeType: "image/jpeg",
             filename: `${brand}-mockup.jpg`,
             size: 0,
-            mediaSource: "S3", // ← set this to the correct MediaSource enum value
+            mediaSource: "S3",
           },
         },
       },
     });
 
-    // 5. TODO: Trigger your actual SMS logic here (Twilio, Vonage, Plivo, etc.)
-    // Example (Twilio):
-    // import twilio from "twilio";
-    // const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    // await client.messages.create({
-    //   body: newMessage.body,
-    //   from: process.env.TWILIO_PHONE_NUMBER,
-    //   to: demoClient.phone, // Assuming your schema has a phone field
-    //   mediaUrl: [generatedImageUrl] // Twilio natively supports sending MMS images via an array of URLs!
-    // });
+    await SendImageSMS({
+      to: demoClient.phone,
+      body: communication.body,
+      imageUrl: [presignedUrl],
+    });
 
     return NextResponse.json(
       { message: "SMS mockup ingested successfully" },
