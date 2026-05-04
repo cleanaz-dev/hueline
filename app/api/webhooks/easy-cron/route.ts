@@ -6,6 +6,7 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const LAMBDA_URL = process.env.LAMBDA_FOLLOWUP_URL!;
+const apiKey = process.env.INTERNAL_API_KEY!;
 
 // 1. Initialize S3 Client once outside the handler for performance
 const s3 = new S3Client({
@@ -17,11 +18,18 @@ const s3 = new S3Client({
 });
 
 export async function POST(req: Request) {
+  const body = await req.json();
 
-  const body = await req.json()
-  console.log("Body:", body)
+  const authHeaders = req.headers.get("x-api-key");
+  if (authHeaders || !apiKey) {
+    return NextResponse.json(
+      { message: "Unauthorized Request" },
+      { status: 401 },
+    );
+  }
+  console.log("Body:", body);
 
-  return NextResponse.json({message: "ok"}, {status: 200})
+  return NextResponse.json({ message: "ok" }, { status: 200 });
   // try {
   //   // 2. Exact 24 - 48 hour window
   //   const now = new Date();
@@ -77,7 +85,7 @@ export async function POST(req: Request) {
   //         name: pc.name,
   //         hex: pc.hex,
   //       }));
-        
+
   //       let smartColor = await pickColor(usedColors);
   //       if (!smartColor) {
   //          // Fallback if AI times out
@@ -111,10 +119,10 @@ export async function POST(req: Request) {
   //     }
   //   }
 
-  //   return NextResponse.json({ 
-  //     success: true, 
-  //     attempted: followUps.length, 
-  //     successful: successCount 
+  //   return NextResponse.json({
+  //     success: true,
+  //     attempted: followUps.length,
+  //     successful: successCount
   //   });
 
   // } catch (error) {
