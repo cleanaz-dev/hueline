@@ -1,7 +1,7 @@
 // lib/handlers/client-intake-handlers.ts
 import { Resend } from "resend";
 import { render } from "@react-email/render";
-import { ClientIntakeEmail } from "../config/email-config";
+import { ClientIntakeEmail, sendEmail } from "../resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -27,8 +27,11 @@ interface ClientIntakeData {
 
 export async function clientIntakeHandler(data: ClientIntakeData) {
   try {
-    const emailHtml = await render(
-      ClientIntakeEmail({
+
+    await sendEmail({
+      to: data.email,
+      subject: `Thanks for meeting with us, ${data.name}!`,
+      template: ClientIntakeEmail({
         name: data.name,
         email: data.email,
         company: data.company,
@@ -38,18 +41,26 @@ export async function clientIntakeHandler(data: ClientIntakeData) {
         crm: data.crm || "",
         config: data.config,
       })
-    );
+    })
+    // const emailHtml = await render(
+    //   ClientIntakeEmail({
+    //     name: data.name,
+    //     email: data.email,
+    //     company: data.company,
+    //     phone: data.phone || "",
+    //     features: data.features,
+    //     hours: data.hours || "",
+    //     crm: data.crm || "",
+    //     config: data.config,
+    //   })
+    // );
 
-    const { error } = await resend.emails.send({
-      from: "Hue-Line <info@hue-line.com>",
-      to: data.email,
-      subject: `Thanks for meeting with us, ${data.name}!`,
-      html: emailHtml,
-    });
-
-    if (error) {
-      throw new Error(`Resend error: ${error.message}`);
-    }
+    // const { error } = await resend.emails.send({
+    //   from: "Hue-Line <info@hue-line.com>",
+    //   to: data.email,
+    //   subject: `Thanks for meeting with us, ${data.name}!`,
+    //   html: emailHtml,
+    // });
 
     console.log(`✅ Client intake email sent to ${data.email}`);
 

@@ -1,7 +1,8 @@
 import Stripe from 'stripe';
 import { transporter } from '@/lib/mailer';
 import { render } from '@react-email/render';
-import { SubscriptionEmail } from '@/lib/config/email-config';
+import { SubscriptionEmail } from '../resend';
+import { sendEmail } from '../resend/send-email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-03-25.dahlia',
@@ -50,22 +51,33 @@ export async function annualSubscriptionHandler(session: Stripe.Checkout.Session
     console.log(`👤 Existing Stripe customer found: ${customer.id}`);
   }
 
-  // ✅ Send subscription confirmation email
-  const emailHtml = await render(
-    SubscriptionEmail({
+  await sendEmail({
+    to: customerEmail,
+    subject: "Your Hue-Line Annual Subscription is Active!",
+    template: SubscriptionEmail({
       username: customerName || 'there',
       useremail: customerEmail,
       company,
-      plan: 'Annual',
+      plan: 'Annual'
     })
-  );
+  })
 
-  await transporter.sendMail({
-    from: '"Hue-Line" <info@hue-line.com>',
-    to: customerEmail,
-    subject: 'Your Hue-Line Annual Subscription is Active!',
-    html: emailHtml,
-  });
+  // // ✅ Send subscription confirmation email
+  // const emailHtml = await render(
+  //   SubscriptionEmail({
+  //     username: customerName || 'there',
+  //     useremail: customerEmail,
+  //     company,
+  //     plan: 'Annual',
+  //   })
+  // );
+
+  // await transporter.sendMail({
+  //   from: '"Hue-Line" <info@hue-line.com>',
+  //   to: customerEmail,
+  //   subject: 'Your Hue-Line Annual Subscription is Active!',
+  //   html: emailHtml,
+  // });
 
   console.log(`📧 Annual subscription email sent to ${customerEmail}`);
 }
