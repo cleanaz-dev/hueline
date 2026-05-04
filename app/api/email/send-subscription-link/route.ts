@@ -1,26 +1,26 @@
 import { transporter } from "@/lib/mailer";
 import { render } from "@react-email/render";
-import { SubscriptionLink } from "@/lib/config/email-config";
-
+import { ActivateSubscriptionLink } from "@/lib/resend";
+import { sendEmail } from "@/lib/resend/send-email";
 
 export async function POST(req: Request) {
   try {
     const { email, name, company } = await req.json();
 
-    const emailHtml = await render(
-      SubscriptionLink({
-        name,
-        company,
-        email,
-    })
-  )
-
-    await transporter.sendMail({
-      from: '"Hue-Line" <info@hue-line.com>',
+    await sendEmail({
       to: email,
       subject: "Your Subscription Link",
-      html: emailHtml,
-    });
+      template: ActivateSubscriptionLink({
+        name, company, email
+      })
+    })
+
+    // await transporter.sendMail({
+    //   from: '"Hue-Line" <info@hue-line.com>',
+    //   to: email,
+    //   subject: "Your Subscription Link",
+    //   html: emailHtml,
+    // });
 
 
     return Response.json({ success: true });
