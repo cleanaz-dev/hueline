@@ -16,104 +16,109 @@ const s3 = new S3Client({
   },
 });
 
-export async function GET(req: Request) {
-  try {
-    // 2. Exact 24 - 48 hour window
-    const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+export async function POST(req: Request) {
 
-    // 3. Fetch targets, including the LATEST mockup
-    const followUps = await prisma.demoClient.findMany({
-      where: {
-        createdAt: { lte: twentyFourHoursAgo, gte: fortyEightHoursAgo },
-        initialFollowUp: false,
-      },
-      include: {
-        subBookingData: {
-          include: {
-            paintColors: true,
-            mockups: {
-              orderBy: { createdAt: "desc" }, // Grabs the newest one first
-              take: 1, // We only need the latest image
-            },
-          },
-        },
-      },
-    });
+  const body = await req.json()
+  console.log("Body:", body)
 
-    if (followUps.length === 0) {
-      return NextResponse.json({ message: "No pending follow-ups." });
-    }
+  return NextResponse.json({message: "ok"}, {status: 200})
+  // try {
+  //   // 2. Exact 24 - 48 hour window
+  //   const now = new Date();
+  //   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  //   const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
-    let successCount = 0;
+  //   // 3. Fetch targets, including the LATEST mockup
+  //   const followUps = await prisma.demoClient.findMany({
+  //     where: {
+  //       createdAt: { lte: twentyFourHoursAgo, gte: fortyEightHoursAgo },
+  //       initialFollowUp: false,
+  //     },
+  //     include: {
+  //       subBookingData: {
+  //         include: {
+  //           paintColors: true,
+  //           mockups: {
+  //             orderBy: { createdAt: "desc" }, // Grabs the newest one first
+  //             take: 1, // We only need the latest image
+  //           },
+  //         },
+  //       },
+  //     },
+  //   });
 
-    // 4. Loop through and process
-    for (const client of followUps) {
-      const subData = client.subBookingData;
-      if (!subData) continue;
+  //   if (followUps.length === 0) {
+  //     return NextResponse.json({ message: "No pending follow-ups." });
+  //   }
 
-      const latestMockup = subData.mockups[0];
-      if (!latestMockup?.s3Key) {
-        console.warn(`Skipping client ${client.id}: No S3 Key found.`);
-        continue; // Cannot generate a mockup without a source image
-      }
+  //   let successCount = 0;
 
-      try {
-        // --- A: Generate the Presigned URL (Valid for 1 Hour) ---
-        const command = new GetObjectCommand({
-          Bucket: process.env.AWS_S3_BUCKET_NAME!,
-          Key: latestMockup.s3Key,
-        });
-        const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+  //   // 4. Loop through and process
+  //   for (const client of followUps) {
+  //     const subData = client.subBookingData;
+  //     if (!subData) continue;
 
-        // --- B: Ask Moonshot AI for the perfect pivot color ---
-        const usedColors = subData.paintColors.map((pc: any) => ({
-          name: pc.name,
-          hex: pc.hex,
-        }));
+  //     const latestMockup = subData.mockups[0];
+  //     if (!latestMockup?.s3Key) {
+  //       console.warn(`Skipping client ${client.id}: No S3 Key found.`);
+  //       continue; // Cannot generate a mockup without a source image
+  //     }
+
+  //     try {
+  //       // --- A: Generate the Presigned URL (Valid for 1 Hour) ---
+  //       const command = new GetObjectCommand({
+  //         Bucket: process.env.AWS_S3_BUCKET_NAME!,
+  //         Key: latestMockup.s3Key,
+  //       });
+  //       const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+
+  //       // --- B: Ask Moonshot AI for the perfect pivot color ---
+  //       const usedColors = subData.paintColors.map((pc: any) => ({
+  //         name: pc.name,
+  //         hex: pc.hex,
+  //       }));
         
-        let smartColor = await pickColor(usedColors);
-        if (!smartColor) {
-           // Fallback if AI times out
-          smartColor = { name: "Hale Navy", code: "HC-154", hex: "#3b444b" };
-        }
+  //       let smartColor = await pickColor(usedColors);
+  //       if (!smartColor) {
+  //          // Fallback if AI times out
+  //         smartColor = { name: "Hale Navy", code: "HC-154", hex: "#3b444b" };
+  //       }
 
-        // --- C: Build the Payload ---
-        const payload = {
-          action: "followUp",
-          clientId: client.id,
-          huelineId: subData.huelineId,
-          imageUrl: presignedUrl, // <--- Sent to Lambda!
-          deliveryMethod: "SMS",
-          targetColor: smartColor,
-          body: `Hey! It's been 24 hours since you tested the AI. Based on the colors you tried earlier, our AI design assistant thought Benjamin Moore ${smartColor.name} (${smartColor.code}) would look incredible in your space. What do you think?`,
-        };
+  //       // --- C: Build the Payload ---
+  //       const payload = {
+  //         action: "followUp",
+  //         clientId: client.id,
+  //         huelineId: subData.huelineId,
+  //         imageUrl: presignedUrl, // <--- Sent to Lambda!
+  //         deliveryMethod: "SMS",
+  //         targetColor: smartColor,
+  //         body: `Hey! It's been 24 hours since you tested the AI. Based on the colors you tried earlier, our AI design assistant thought Benjamin Moore ${smartColor.name} (${smartColor.code}) would look incredible in your space. What do you think?`,
+  //       };
 
-        // --- D: Fire Lambda ---
-        const res = await axios.post(LAMBDA_URL, payload);
+  //       // --- D: Fire Lambda ---
+  //       const res = await axios.post(LAMBDA_URL, payload);
 
-        // --- E: If successful, update the DB ---
-        if (res.status === 200) {
-          await prisma.demoClient.update({
-            where: { id: client.id },
-            data: { initialFollowUp: true },
-          });
-          successCount++;
-        }
-      } catch (err) {
-        console.error(`Failed to process Client ${client.id}:`, err);
-      }
-    }
+  //       // --- E: If successful, update the DB ---
+  //       if (res.status === 200) {
+  //         await prisma.demoClient.update({
+  //           where: { id: client.id },
+  //           data: { initialFollowUp: true },
+  //         });
+  //         successCount++;
+  //       }
+  //     } catch (err) {
+  //       console.error(`Failed to process Client ${client.id}:`, err);
+  //     }
+  //   }
 
-    return NextResponse.json({ 
-      success: true, 
-      attempted: followUps.length, 
-      successful: successCount 
-    });
+  //   return NextResponse.json({ 
+  //     success: true, 
+  //     attempted: followUps.length, 
+  //     successful: successCount 
+  //   });
 
-  } catch (error) {
-    console.error("CRON Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
+  // } catch (error) {
+  //   console.error("CRON Error:", error);
+  //   return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  // }
 }
