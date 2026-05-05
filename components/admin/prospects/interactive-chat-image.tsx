@@ -204,7 +204,7 @@ export function InteractiveChatImage({
                         <div className="grid grid-cols-4 gap-2">
                           {COLOR_BRANDS[selectedBrand].map((color) => (
                             <button
-                              key={color.id}
+                              key={color.code}
                               onClick={() => {
                                 setSelectedColor(color);
                                 setStep("CONFIRM");
@@ -247,7 +247,7 @@ export function InteractiveChatImage({
                               {selectedColor.name}
                             </p>
                             <p className="text-[10px] text-muted-foreground leading-none">
-                              ID: {selectedColor.id}
+                              ID: {selectedColor.code}
                             </p>
                           </div>
                         </div>
