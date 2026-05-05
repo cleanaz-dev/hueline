@@ -162,7 +162,7 @@ export default function SubComparisonSlider({
         {/* Watermark Overlay */}
         {showWatermark && (
           <div
-            className="absolute inset-0 pointer-events-none z-[5] rounded-lg sm:rounded-xl"
+            className="absolute inset-0 pointer-events-none z-5 rounded-lg sm:rounded-xl"
             style={{
               backgroundImage: `url(${watermarkUrl})`,
               backgroundSize: "cover",

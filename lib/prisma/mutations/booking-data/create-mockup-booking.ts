@@ -1,14 +1,17 @@
-//lib/prisma/mutations/booking-data/create-mockup-booking.ts
 import { prisma } from "../../config";
+
+interface MockupColor {
+  ral: string;
+  hex: string;
+  name: string;
+  brand?: string;
+  code?: string;
+}
 
 interface MockupUrl {
   s3_key: string;
   room_type: string;
-  color: {
-    ral: string;
-    hex: string;
-    name: string;
-  };
+  color: MockupColor;
   presigned_url: string;
 }
 
@@ -16,6 +19,8 @@ interface PaintColor {
   ral: string;
   hex: string;
   name: string;
+  brand?: string;
+  code?: string;
 }
 
 interface CreateMockupBookingPayload {
@@ -38,6 +43,21 @@ interface CreateMockupBookingPayload {
   call_sid: string;
 }
 
+async function fetchS3Metadata(presignedUrl: string) {
+  const res = await fetch(presignedUrl, { method: 'HEAD' });
+  return {
+    mimeType: res.headers.get('content-type') ?? 'image/jpeg',
+    size: parseInt(res.headers.get('content-length') ?? '0'),
+  };
+}
+
+function parseColorCode(color: MockupColor | PaintColor) {
+  return {
+    brand: color.brand ?? 'RAL',
+    code: color.code ?? color.ral.replace(/^RAL\s*/i, '').trim(),
+  }
+}
+
 export async function createMockupBooking(payload: CreateMockupBookingPayload) {
   const {
     hueline_id,
@@ -57,8 +77,22 @@ export async function createMockupBooking(payload: CreateMockupBookingPayload) {
 
   console.log("Creating Mockup Booking for:", payload);
 
-  // Calculate expires at (3 days from now in seconds)
   const expiresAt = Math.floor(Date.now() / 1000) + 259200;
+
+  const mockupData = mockup_urls.map((mockup) => ({
+    s3Key: mockup.s3_key,
+    roomType: mockup.room_type,
+    presignedUrl: mockup.presigned_url,
+    name: mockup.color.name,
+    hex: mockup.color.hex,
+    ...parseColorCode(mockup.color),
+  }));
+
+  const paintColorData = paint_colors.map((color) => ({
+    name: color.name,
+    hex: color.hex,
+    ...parseColorCode(color),
+  }));
 
   const booking = await prisma.subBookingData.upsert({
     where: { huelineId: hueline_id },
@@ -71,34 +105,19 @@ export async function createMockupBooking(payload: CreateMockupBookingPayload) {
       summary,
       dimensions,
       dateTime: new Date(date_time),
-      pin: pin,
-      // Update mockups (delete old ones and create new)
+      pin,
       mockups: {
         deleteMany: {},
-        create: mockup_urls.map((mockup) => ({
-          s3Key: mockup.s3_key,
-          roomType: mockup.room_type,
-          presignedUrl: mockup.presigned_url,
-          colorRal: mockup.color.ral,
-          colorName: mockup.color.name,
-          colorHex: mockup.color.hex,
-        })),
+        create: mockupData,
       },
-      // Update paint colors
       paintColors: {
         deleteMany: {},
-        create: paint_colors.map((color) => ({
-          ral: color.ral,
-          name: color.name,
-          hex: color.hex,
-        })),
+        create: paintColorData,
       },
     },
     create: {
       huelineId: hueline_id,
-      subdomain: {
-        connect: { id: subdomain_id },
-      },
+      subdomain: { connect: { id: subdomain_id } },
       name,
       phone,
       roomType: room_type,
@@ -107,39 +126,38 @@ export async function createMockupBooking(payload: CreateMockupBookingPayload) {
       summary,
       dimensions,
       dateTime: new Date(date_time),
-      pin: pin,
+      pin,
       expiresAt,
       initialIntent: "NEW_PROJECT",
-      mockups: {
-        create: mockup_urls.map((mockup) => ({
-          s3Key: mockup.s3_key,
-          roomType: mockup.room_type,
-          presignedUrl: mockup.presigned_url,
-          colorRal: mockup.color.ral,
-          colorName: mockup.color.name,
-          colorHex: mockup.color.hex,
-        })),
-      },
-      paintColors: {
-        create: paint_colors.map((color) => ({
-          ral: color.ral,
-          name: color.name,
-          hex: color.hex,
-        })),
-      },
+      mockups: { create: mockupData },
+      paintColors: { create: paintColorData },
     },
   });
 
+  const mediaAttachments = await Promise.all(
+    mockup_urls.map(async (mockup) => {
+      const { mimeType, size } = await fetchS3Metadata(mockup.presigned_url);
+      return {
+        filename: mockup.s3_key.split('/').pop() ?? mockup.s3_key,
+        mimeType,
+        size,
+        mediaSource: 'S3' as const,
+        mediaUrl: mockup.s3_key,
+      };
+    })
+  );
+
   await prisma.demoClient.create({
     data: {
-      name: name,
-      phone: phone,
+      name,
+      phone,
       status: "PENDING",
       communication: {
         create: {
           body: "Prospect Generated Full Demo",
           role: "CLIENT",
           type: "DEMO",
+          mediaAttachments: { create: mediaAttachments },
         },
       },
       subBookingData: { connect: { id: booking.id } },

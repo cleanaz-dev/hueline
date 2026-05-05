@@ -1,3 +1,5 @@
+//api/subdomain/[slug]/ingest/mockup
+
 import { NextResponse } from "next/server";
 import { createMockupBooking } from "@/lib/prisma/mutations/booking-data/create-mockup-booking";
 

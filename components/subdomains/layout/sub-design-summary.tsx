@@ -77,7 +77,7 @@ export default function SubDesignSummary({
     <section className="w-full max-w-5xl mx-auto">
       <div className="group relative overflow-hidden bg-white rounded-3xl  border border-gray-100">
         
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20" />
+        <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20" />
         
         <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
            <Quote size={120} />
@@ -132,10 +132,10 @@ export default function SubDesignSummary({
                 first-letter:font-serif 
                 first-letter:font-bold 
                 first-letter:mr-4 
-                first-letter:mt-[-6px]
+                first-letter:mt-1.5
                 first-letter:text-transparent 
                 first-letter:bg-clip-text 
-                first-letter:bg-gradient-to-br 
+                first-letter:bg-linear-to-br 
                 first-letter:from-gray-900 
                 first-letter:to-gray-500
               ">

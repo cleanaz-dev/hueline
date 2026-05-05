@@ -39,7 +39,7 @@ export default function VisionTab({ selectedMockup }: VisionTabProps) {
         </GlareHover>
 
         {/* Meta Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-12 flex justify-between items-end text-white">
+        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-6 pt-12 flex justify-between items-end text-white">
           <div>
             <p className="text-xs font-medium uppercase tracking-widest text-white/70 mb-1">
               Color Palette
@@ -48,14 +48,14 @@ export default function VisionTab({ selectedMockup }: VisionTabProps) {
             <div className="flex items-center gap-3">
               <div
                 className="w-4 h-4 rounded-full border border-white"
-                style={{ background: selectedMockup?.colorHex }}
+                style={{ background: selectedMockup?.hex}}
               />
-              <p className="text-lg font-bold">{selectedMockup?.colorName}</p>
+              <p className="text-lg font-bold">{selectedMockup?.name}</p>
               <Badge
                 variant="secondary"
                 className="bg-white/20 text-white hover:bg-white/30 border-0"
               >
-                {selectedMockup?.colorRal}
+                {selectedMockup?.brand} {selectedMockup?.code}
               </Badge>
             </div>
           </div>

@@ -104,12 +104,12 @@ export default function SubAlternateDesign({
   // --- LOCKED & COMPLETED VIEWS REMAIN UNCHANGED ---
   if (!hasSharedAccess) {
     return (
-      <div className="relative h-full min-h-[250px] bg-gray-50 rounded-xl border border-gray-100 overflow-hidden flex flex-col items-center justify-center p-6 text-center">
+      <div className="relative h-full min-h-62.5 bg-gray-50 rounded-xl border border-gray-100 overflow-hidden flex flex-col items-center justify-center p-6 text-center">
         <div className="bg-white p-4 rounded-full shadow-sm mb-4">
           <Lock className="w-6 h-6 text-gray-400" />
         </div>
         <h3 className="font-semibold text-gray-900 mb-1">Unlock AI Variations</h3>
-        <p className="text-sm text-gray-500 mb-6 max-w-[200px]">
+        <p className="text-sm text-gray-500 mb-6 max-w-50">
           Share this project to generate alternate color options.
         </p>
         <Button 
@@ -126,7 +126,7 @@ export default function SubAlternateDesign({
 
   if (hasGeneratedImage) {
     return (
-      <div className="h-full min-h-[200px] bg-card rounded-xl border border-green-100 flex flex-col items-center justify-center p-6 text-center">
+      <div className="h-full min-h-50 bg-card rounded-xl border border-green-100 flex flex-col items-center justify-center p-6 text-center">
         <div className="bg-white p-3 rounded-full shadow-sm mb-3">
           <CheckCircle2 className="w-8 h-8 text-green-600" />
         </div>

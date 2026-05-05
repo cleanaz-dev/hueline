@@ -52,7 +52,7 @@ export default function MiniThumbnails({
                 />
                 <div
                   className="absolute bottom-0 inset-x-0 h-1.5"
-                  style={{ background: mockup.colorHex }}
+                  style={{ background: mockup.hex }}
                 />
               </button>
             ))}

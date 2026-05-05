@@ -301,7 +301,7 @@ model DemoClient {
   name            String?
   phone           String?
   email           String?
-  initialFollowUp Boolean?       @default(false)
+  initialFollowUp Boolean?      @default(false)
   status          BookingStatus @default(PENDING)
 
   subdomain        Subdomain?      @relation(fields: [subdomainId], references: [id])
@@ -479,9 +479,20 @@ model Mockup {
   s3Key        String
   roomType     String
   presignedUrl String?
-  colorRal     String
-  colorName    String
-  colorHex     String
+
+  // --- NEW FIELDS ---
+  colorBrand String? // Made optional temporarily for migration
+  colorCode  String? // Made optional temporarily for migration
+  colorName  String?
+  colorHex   String?
+
+  brand String
+  code  String
+  name  String
+  hex   String
+
+  // --- OLD FIELDS (To be deleted after step 2) ---
+  colorRal String?
 
   createdAt DateTime @default(now())
 
@@ -493,14 +504,22 @@ model PaintColor {
   bookingDataId String         @db.ObjectId
   bookingData   SubBookingData @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
 
-  ral  String
-  name String
-  hex  String
+  // --- NEW FIELDS ---
+  brand String // Optional temporarily
+  code  String // Optional temporarily
+  name  String
+  hex   String
+
+  // --- OLD FIELDS ---
+  ral String?
 
   createdAt DateTime @default(now())
 
   @@index([bookingDataId])
 }
+
+// 🚨 DON'T FORGET: You have AlternateColor in your SubBookingData model! 
+// It probably needs this exact same update.
 
 model AlternateColor {
   id            String         @id @default(auto()) @map("_id") @db.ObjectId

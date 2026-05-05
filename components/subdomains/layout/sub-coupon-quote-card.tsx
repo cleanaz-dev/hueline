@@ -21,27 +21,28 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
   const [timeLeft, setTimeLeft] = useState(72 * 60 * 60);
   const [copied, setCopied] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const[holdProgress, setHoldProgress] = useState(0);
+  const [holdProgress, setHoldProgress] = useState(0);
   const [isHolding, setIsHolding] = useState(false);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
-  const PROMO_CODE = "WELCOME15"; 
-  const HOLD_DURATION = 5; 
+
+  const PROMO_CODE = "WELCOME15";
+  const HOLD_DURATION = 5;
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  },[]);
+  }, []);
 
   useEffect(() => {
     return () => {
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      if (progressIntervalRef.current)
+        clearInterval(progressIntervalRef.current);
     };
-  },[]);
+  }, []);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -52,32 +53,32 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
 
   const startHold = () => {
     if (isUnlocked) return;
-    
+
     setIsHolding(true);
     setHoldProgress(0);
-    
+
     progressIntervalRef.current = setInterval(() => {
       setHoldProgress((prev) => {
-        const newProgress = prev + (100 / (HOLD_DURATION * 10)); 
+        const newProgress = prev + 100 / (HOLD_DURATION * 10);
         if (newProgress >= 100) {
           clearInterval(progressIntervalRef.current!);
           clearTimeout(holdTimerRef.current!);
           setIsUnlocked(true);
           setIsHolding(false);
           setHoldProgress(100);
-          
+
           toast.success("Offer Unlocked! 🎉", {
             description: `Your code ${PROMO_CODE} is now available`,
             duration: 4000,
             icon: <Unlock className="w-4 h-4" />,
           });
-          
+
           return 100;
         }
         return newProgress;
       });
     }, 100);
-    
+
     holdTimerRef.current = setTimeout(() => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -89,7 +90,7 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
 
   const cancelHold = () => {
     if (isUnlocked) return;
-    
+
     setIsHolding(false);
     setHoldProgress(0);
     if (progressIntervalRef.current) {
@@ -108,8 +109,18 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
       });
       return;
     }
-    
-    navigator.clipboard.writeText(PROMO_CODE);
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(PROMO_CODE);
+    } else {
+      const el = document.createElement("textarea");
+      el.value = PROMO_CODE;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    }
+
     setCopied(true);
     toast.success("Promo code copied!", {
       description: `Use ${PROMO_CODE} at checkout`,
@@ -135,13 +146,15 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
         {/* --- LEFT: THE OFFER --- */}
         <Card className="relative overflow-hidden border border-gray-200 bg-white shadow-xl shadow-blue-900/5 rounded-3xl flex flex-col h-full transform transition-all hover:-translate-y-1">
           {isUnlocked && (
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-400 to-emerald-500 rounded-bl-full opacity-10" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-green-400 to-emerald-500 rounded-bl-full opacity-10" />
           )}
-          
+
           <div className="p-6 md:p-8 flex-1 flex flex-col">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <p className={`text-xs font-bold tracking-widest uppercase mb-1 ${isUnlocked ? 'text-green-600' : 'text-gray-400'}`}>
+                <p
+                  className={`text-xs font-bold tracking-widest uppercase mb-1 ${isUnlocked ? "text-green-600" : "text-gray-400"}`}
+                >
                   {isUnlocked ? "✓ Unlocked" : "🔒 Locked Offer"}
                 </p>
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
@@ -153,18 +166,20 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
                   )}
                 </h2>
                 <p className="text-sm text-gray-500 mt-2 font-medium">
-                  {isUnlocked 
-                    ? "Ready to use! 🎉" 
+                  {isUnlocked
+                    ? "Ready to use! 🎉"
                     : "Unlock this offer to reveal your code"}
                 </p>
               </div>
 
               {/* TIMER */}
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-all duration-500 ${
-                isUnlocked 
-                  ? "bg-green-50 text-green-600 border-green-200" 
-                  : "bg-red-50 text-red-600 border-red-100"
-              }`}>
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-all duration-500 ${
+                  isUnlocked
+                    ? "bg-green-50 text-green-600 border-green-200"
+                    : "bg-red-50 text-red-600 border-red-100"
+                }`}
+              >
                 {isUnlocked ? (
                   <PartyPopper className="w-3.5 h-3.5" />
                 ) : (
@@ -190,11 +205,13 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
                   <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
                     Status
                   </span>
-                  <span className={`text-xs font-bold px-2 py-1 rounded-md ${
-                    isUnlocked 
-                      ? "text-green-700 bg-green-100" 
-                      : "text-amber-700 bg-amber-100"
-                  }`}>
+                  <span
+                    className={`text-xs font-bold px-2 py-1 rounded-md ${
+                      isUnlocked
+                        ? "text-green-700 bg-green-100"
+                        : "text-amber-700 bg-amber-100"
+                    }`}
+                  >
                     {isUnlocked ? "Unlocked & Active" : "Awaiting Unlock"}
                   </span>
                 </div>
@@ -205,7 +222,7 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
                 <label className="text-xs font-bold text-gray-900 mb-2 block uppercase tracking-wide">
                   Promo Code
                 </label>
-                
+
                 {!isUnlocked ? (
                   // Locked state - Improved UI with distinct colors and clearer instructions
                   <div className="relative">
@@ -218,21 +235,27 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
                       onTouchCancel={cancelHold}
                       // Added select-none to prevent text highlighting while holding
                       // Changed background to blue/indigo gradient to distinct it from standard buttons
-                      className={`w-full relative overflow-hidden select-none group flex items-center justify-center p-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl transition-all cursor-pointer shadow-md ${isHolding ? 'scale-[0.98]' : 'hover:scale-[1.01] hover:shadow-lg'}`}
-                      style={{ touchAction: 'none' }}
+                      className={`w-full relative overflow-hidden select-none group flex items-center justify-center p-5 bg-linear-to-r from-blue-600 to-indigo-600 rounded-xl transition-all cursor-pointer shadow-md ${isHolding ? "scale-[0.98]" : "hover:scale-[1.01] hover:shadow-lg"}`}
+                      style={{ touchAction: "none" }}
                     >
                       {/* Bright, distinct progress bar overlay */}
-                      <div 
-                        className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-400 to-green-500 transition-all duration-100 ease-linear"
+                      <div
+                        className="absolute left-0 top-0 h-full bg-linear-to-r from-emerald-400 to-green-500 transition-all duration-100 ease-linear"
                         style={{ width: `${holdProgress}%`, opacity: 0.85 }}
                       />
-                      
+
                       <div className="relative z-10 flex flex-col items-center gap-1.5">
                         {isHolding ? (
                           <>
                             <Fingerprint className="w-7 h-7 text-white animate-pulse drop-shadow-md" />
                             <span className="text-white font-bold text-sm tracking-wide drop-shadow-md">
-                              Keep holding... {Math.ceil((HOLD_DURATION * 100 - holdProgress * HOLD_DURATION) / 100)}s
+                              Keep holding...{" "}
+                              {Math.ceil(
+                                (HOLD_DURATION * 100 -
+                                  holdProgress * HOLD_DURATION) /
+                                  100,
+                              )}
+                              s
                             </span>
                           </>
                         ) : (
@@ -258,7 +281,9 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
                     <span className="font-mono text-2xl font-black text-gray-800 tracking-widest pl-2">
                       {PROMO_CODE}
                     </span>
-                    <div className={`h-10 w-10 flex items-center justify-center rounded-lg transition-colors ${copied ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700'}`}>
+                    <div
+                      className={`h-10 w-10 flex items-center justify-center rounded-lg transition-colors ${copied ? "bg-green-500 text-white" : "bg-green-100 text-green-700"}`}
+                    >
                       {copied ? (
                         <Check className="w-5 h-5" />
                       ) : (
@@ -271,32 +296,22 @@ export const SubCouponQuoteCards = ({ booking }: { booking: BookingData }) => {
             </div>
 
             {/* BOTTOM BUTTON */}
-            <div className="pt-2">
-              <Button 
-                // Style as disabled/inactive when locked so it doesn't look like a primary action
-                className={`w-full h-12 rounded-xl font-semibold transition-all duration-300 ${
-                  isUnlocked 
-                    ? 'bg-gray-900 hover:bg-gray-800 text-white hover:shadow-xl shadow-md'
-                    : 'bg-gray-100 text-gray-400 border border-gray-200 hover:bg-gray-100 shadow-none'
-                }`}
-                onClick={() => {
-                  if (isUnlocked) {
-                    handleCopy();
-                  } else {
-                    toast.info("Action Required", {
-                      description: "Please press and hold the blue button to unlock your code.",
-                      duration: 3000,
-                    });
-                  }
-                }}
-              >
-                {isUnlocked ? (
-                  <>Copy Code & Continue <ArrowRight className="w-4 h-4 ml-2" /></>
-                ) : (
-                  <>Awaiting Unlock... <Lock className="w-4 h-4 ml-2" /></>
-                )}
-              </Button>
-            </div>
+            {isUnlocked && (
+              <div className="pt-2">
+                <Button
+                  className="w-full h-12 rounded-xl font-semibold bg-gray-900 hover:bg-gray-800 text-white hover:shadow-xl shadow-md transition-all duration-300"
+                  onClick={handleCopy}
+                >
+                  Copy Code & Continue <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            )}
+             <p className="text-[10px] text-center text-gray-400 mt-3 font-medium">
+              {isUnlocked
+                ? "Code UNLOCKED!" 
+                : "Unlock to get PROMO Code"
+              }
+            </p>
           </div>
         </Card>
 

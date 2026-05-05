@@ -37,8 +37,8 @@ export default function CompareTab({
                 ? "border-primary scale-110 shadow-lg"
                 : "border-white shadow-sm hover:scale-105"
             }`}
-            style={{ backgroundColor: mockup.colorHex }}
-            title={`${mockup.colorName} - ${mockup.colorRal}`}
+            style={{ backgroundColor: mockup.hex }}
+            title={`${mockup.name} - ${mockup.code}`}
           >
             {selectedDesignImage === index && (
               <span className="absolute -top-1 -right-1 flex size-3">

@@ -1,12 +1,12 @@
 import { Prisma, RoomType, BookingStatus } from "@/app/generated/prisma";
-import { 
-  CallReason, 
-  CallOutcome, 
-  LogType, 
+import {
+  CallReason,
+  CallOutcome,
+  LogType,
   LogActor,
   RoomStatus,
   Subdomain,
-  RoomIntelligence
+  RoomIntelligence,
 } from "@/app/generated/prisma";
 
 // --- INTELLIGENCE INTERFACES ---
@@ -42,27 +42,27 @@ export interface CallIntelligence {
 export interface Room {
   id: string;
   roomKey: string;
-  
+
   clientName?: string | null;
   clientPhone?: string | null;
   status: RoomStatus;
-  
+
   creatorId: string | null;
   creator?: SubdomainUser | null;
   bookingId?: string | null;
   booking?: BookingData | null;
   domainId: string;
   domain?: Subdomain | null;
-  sessionType?: RoomType | null;  // ✅ Changed from `| undefined` to `| null`
-  isProcessing?: boolean | null;   // ✅ Changed from `| null | undefined` to `| null`
+  sessionType?: RoomType | null; // ✅ Changed from `| undefined` to `| null`
+  isProcessing?: boolean | null; // ✅ Changed from `| null | undefined` to `| null`
   agentDispatched?: boolean | null; // ✅ Add if missing
 
-  scopeData?: Prisma.JsonValue | null;  // ✅ Add | null
+  scopeData?: Prisma.JsonValue | null; // ✅ Add | null
 
   recordingUrl?: string | null;
   transcript?: string | null;
   endedAt?: Date | string | null;
-  
+
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -83,23 +83,21 @@ export interface SubdomainAccountData {
   twilioPhoneNumber: string | null;
   forwardingNumber: string | null;
 
-  
   users: SubdomainUser[];
-  client?: Client | null;  // ✅ Add clients relation
-  
+  client?: Client | null; // ✅ Add clients relation
+
   // Call Flow
   callFlows?: CallFlow[];
   activeFlowId?: string | null;
-  
+
   intelligence?: Intelligence | null;
-  roomIntelligence?: RoomIntelligence | null
-  
+  roomIntelligence?: RoomIntelligence | null;
+
   createdAt: Date | string;
   updatedAt: Date | string | null;
   rooms: Room[];
   bookings?: BookingData[];
 }
-
 
 export interface Client {
   id: string;
@@ -130,7 +128,7 @@ export interface BookingData {
   expiresAt: number;
   status: BookingStatus | null;
   // --- PULSE / STATUS FIELDS ---
-  
+
   // 1. Genesis
   initialIntent: CallReason;
 
@@ -139,17 +137,17 @@ export interface BookingData {
   lastCallAt?: Date | string | null;
   lastCallAudioUrl?: string | null;
   lastInteraction?: string | null; // ✅ The new headline field
-  lastVideoUrl?:     string | null;
-  lastVideoAt? :     string | null;
+  lastVideoUrl?: string | null;
+  lastVideoAt?: string | null;
   selfServeCompletion?: boolean | null | undefined;
 
   // 3. Cumulative / Sticky (Profile Info)
   projectType?: string | null;
   estimatedValue?: number | null;
-  
+
   // ✅ FIXED: Renamed & Changed to Array
   // Was: currentProjectScope?: string | null;
-  projectScope?: string[]; 
+  projectScope?: string[];
 
   // --- RELATIONS ---
   // These are optional because Prisma doesn't fetch them by default
@@ -171,7 +169,7 @@ export interface BookingData {
 export interface Call {
   id: string;
   bookingDataId: string | null;
-  bookingData?: BookingData | null; 
+  bookingData?: BookingData | null;
   callSid: string;
   recordingSid: string | null;
   audioUrl: string | null;
@@ -213,20 +211,26 @@ export interface Mockup {
   s3Key: string;
   roomType: string;
   presignedUrl: string | null;
-  colorRal: string;
-  colorName: string;
-  colorHex: string;
+  // old
+  colorRal: string | null;
+  colorName: string | null;
+  colorHex: string | null;
+  // new
+  brand: string
+  code: string
+  name: string
+  hex: string
   createdAt: Date | string;
 }
-
 export interface PaintColor {
   id: string;
-  ral: string;
+  ral: string | null;
+  brand: string;
+  code: string;
   name: string;
   hex: string;
   createdAt: Date | string;
 }
-
 export interface AlternateColor {
   id: string;
   ral: string;
@@ -259,7 +263,7 @@ export interface Log {
   actor: LogActor;
   title: string;
   description: string | null;
-  metadata?: Prisma.JsonValue | null; 
+  metadata?: Prisma.JsonValue | null;
   createdAt: Date | string;
   updatedAt: Date | string;
   subdomain?: {
