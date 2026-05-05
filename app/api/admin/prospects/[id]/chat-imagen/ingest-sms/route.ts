@@ -19,7 +19,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // 2. Parse body
-    const { s3Key, brand, colorName, targetColor, roomType, action, smsBody, huelineId } = await req.json();
+    const { s3Key, brand, color, targetColor, roomType, action, smsBody, huelineId } = await req.json();
 
     if (!s3Key) {
       return NextResponse.json({ message: "Missing s3Key" }, { status: 400 });
@@ -42,7 +42,6 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     if (action === "followUp") {
-      // Update SubBookingData with new mockup and paint color
       const subBookingData = await prisma.subBookingData.update({
         where: { huelineId },
         include: { subdomain: true },
@@ -51,14 +50,16 @@ export async function POST(req: Request, { params }: Params) {
             create: {
               s3Key,
               roomType,
-              colorRal: targetColor.code,
-              colorName: targetColor.name,
-              colorHex: targetColor.hex,
+              brand: targetColor.brand ?? 'RAL',
+              code: targetColor.code,
+              name: targetColor.name,
+              hex: targetColor.hex,
             },
           },
           paintColors: {
             create: {
-              ral: targetColor.code,
+              brand: targetColor.brand ?? 'RAL',
+              code: targetColor.code,
               name: targetColor.name,
               hex: targetColor.hex,
             },
@@ -102,7 +103,7 @@ export async function POST(req: Request, { params }: Params) {
         demoClientId: id,
         role: "OPERATOR",
         type: "SMS",
-        body: `Here is your new mockup featuring the ${brand} palette in ${colorName || "your selected color"}!`,
+        body: `Here is your new mockup featuring the ${brand} palette in ${color?.name || "your selected color"}!`,
         mediaAttachments: {
           create: {
             mediaUrl: s3Key,
