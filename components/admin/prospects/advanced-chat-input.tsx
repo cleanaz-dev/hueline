@@ -26,13 +26,16 @@ export function AdvancedChatInput({
   const [isUndocked, setIsUndocked] = React.useState(false);
   
   const {
-    AiSuggestion,
+    aiSuggestions,
     fetchAiSuggestion,
     clearAiSuggestion, // <-- Ensure this is in your SuperAdmin context provider
     isAiLoading
   } = useSuperAdmin();
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const currentSuggestion = aiSuggestions[clientId] || null;
+
 
   const handleSend = () => {
     const plainText = text.replace(/<[^>]*>?/gm, "").trim();
@@ -174,9 +177,9 @@ export function AdvancedChatInput({
         {/* ─── AI ACTION DOCK LIVES HERE ─────────────────────────────────── */}
         <AiActionDock 
           isLoading={isAiLoading}
-          suggestion={AiSuggestion}
+          suggestion={currentSuggestion}
           onAnalyze={() => fetchAiSuggestion(clientId)}
-          onClear={clearAiSuggestion}
+          onClear={() => clearAiSuggestion(clientId)}
           onUseSms={(aiText) => {
             setChannel("SMS");
             setSubject("");
