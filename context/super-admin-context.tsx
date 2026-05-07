@@ -70,8 +70,8 @@ interface SuperAdminContextType {
   isSendingSMS: boolean;
   isSendingEmail: boolean;
   isAiLoading: boolean;
-  AiSuggestion: AiSuggestionData | null;  // was: string | null
-  clearAiSuggestion: () => void;           // was: missing entirely
+  aiSuggestions: Record<string, AiSuggestionData>; 
+  clearAiSuggestion: (clientId: string) => void;       // was: missing entirely
 
   // Optimistic UI Queue
   pendingMessages: PendingMessage[];
@@ -143,7 +143,7 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
   const [pendingMessages, setPendingMessages] = useState<PendingMessage[]>([]);
 
   // ??
-  const [AiSuggestion, setAiSuggestion] = useState<AiSuggestionData | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<Record<string, AiSuggestionData>>({});
 
   // --- Communication Handlers ---
   const sendSMS = async (prospectId: string, body: string) => {
@@ -223,16 +223,14 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const fetchAiSuggestion = async (clientId: string) => {
+const fetchAiSuggestion = async (clientId: string) => {
     setIsAiLoading(true);
     try {
-      const res = await fetch(
-        `/api/admin/prospects/${clientId}/ai-chat-suggestions`,
-      );
+      const res = await fetch(`/api/admin/prospects/${clientId}/ai-chat-suggestions`);
       const data = await res.json();
 
-      // Save this to state so your UI can render the shiny new box!
-      setAiSuggestion(data);
+      // THE FIX: Save it specifically to THIS client's ID
+      setAiSuggestions((prev) => ({ ...prev, [clientId]: data }));
     } catch (error) {
       console.error("Failed to fetch suggestion", error);
     } finally {
@@ -240,8 +238,14 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // In SuperAdminProvider, next to the other handlers
-  const clearAiSuggestion = () => setAiSuggestion(null);
+  // THE FIX: Only clear the suggestion for the specific client
+  const clearAiSuggestion = (clientId: string) => {
+    setAiSuggestions((prev) => {
+      const newState = { ...prev };
+      delete newState[clientId];
+      return newState;
+    });
+  };
 
   const generateImage = async (
     prospectId: string,
@@ -305,7 +309,7 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
         smsSuccess,
         emailSuccess,
         generateImageSuccess,
-        AiSuggestion,
+        aiSuggestions,
 
         pendingMessages, // Exposed!
       }}

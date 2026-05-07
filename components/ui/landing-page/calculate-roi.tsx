@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,11 +10,20 @@ export default function CalculateROI() {
   const [monthlyCalls, setMonthlyCalls] = useState(15);
   const [conversionRate, setConversionRate] = useState(20);
   const [averageJob, setAverageJob] = useState(5000);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const monthlyRevenue = Math.round(
     monthlyCalls * (conversionRate / 100) * averageJob
   );
   const yearlyRevenue = monthlyRevenue * 12;
+
+  const displayMonthly = isMounted ? `$${monthlyRevenue.toLocaleString()}` : "$0";
+  const displayYearly = isMounted ? `$${yearlyRevenue.toLocaleString()}` : "$0";
+  const displayConverted = isMounted ? Math.round(monthlyCalls * (conversionRate / 100)) : 0;
 
   return (
     <section id="roi" className="py-20">
@@ -34,8 +43,8 @@ export default function CalculateROI() {
         <div className="flex justify-center">
           <Card className="p-4 md:p-8 w-full max-w-4xl rounded-2xl shadow-lg border-2 border-gray-100 bg-gradient-to-br from-white to-gray-50">
             <CardContent className="space-y-10 p-0">
-              {/* INPUTS — grid layout */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* INPUTS */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6" suppressHydrationWarning>
                 <div className="space-y-3">
                   <Label htmlFor="monthly-calls" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <PhoneOff className="w-4 h-4 text-primary" />
@@ -85,7 +94,6 @@ export default function CalculateROI() {
 
               {/* RESULTS SECTION */}
               <div className="space-y-6">
-                {/* Monthly Revenue */}
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-primary rounded-xl p-8 text-center transform transition-all hover:shadow-md">
                   <div className="flex items-center justify-center gap-2 mb-3">
                     <TrendingUp className="hidden md:block w-6 h-6 text-primary" />
@@ -93,21 +101,18 @@ export default function CalculateROI() {
                       Monthly Revenue Potential
                     </h3>
                   </div>
-                  
                   <div className="text-4xl md:text-6xl font-extrabold md:font-bold text-primary mb-3 tracking-tight">
-                    ${monthlyRevenue.toLocaleString()}
+                    {displayMonthly}
                   </div>
-                  
                   <p className="text-gray-700 text-base">
-                    from {Math.round(monthlyCalls * (conversionRate / 100))} converted call(s) per month
+                    from {displayConverted} converted call(s) per month
                   </p>
                 </div>
 
-                {/* Yearly Projection */}
                 <div className="bg-gradient-to-br from-green-50 to-emerald-100/50 border-2 border-green-500 rounded-xl p-6 text-center">
                   <p className="text-sm font-semibold text-gray-700 mb-2">Annual Revenue Potential</p>
                   <div className="text-4xl font-bold text-green-600">
-                    ${yearlyRevenue.toLocaleString()}
+                    {displayYearly}
                   </div>
                 </div>
               </div>

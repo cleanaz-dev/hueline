@@ -6,16 +6,18 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Send, ShieldAlert, UserRound, X } from "lucide-react";
+import { RefreshCw, UserRound, X } from "lucide-react";
 import { ChatBubble } from "./chat-bubble";
 import { AdvancedChatInput } from "./advanced-chat-input";
 import { useSuperAdmin } from "@/context/super-admin-context";
 import { DrawerToast } from "./drawer-toast";
 
 export function ChatDrawer({ prospect, isOpen, onClose }: any) {
-  const [messages, setMessages] = React.useState<any[]>([]);
+  const[messages, setMessages] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
+  
   const bottomRef = React.useRef<HTMLDivElement>(null);
+  const prevMessageCount = React.useRef(0); // Protects against annoying auto-scrolls during polling
 
   const {
     sendSMS,
@@ -29,46 +31,59 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
 
   const prospectPendingMessages = pendingMessages.filter((m) => m.prospectId === prospect?.id);
 
-  const fetchMessages = async () => {
+  // ─── FETCH & POLLING ────────────────────────────────────────────────────────
+  const fetchMessages = async (isBackgroundPoll = false) => {
     if (!prospect?.id) return;
-    setLoading(true);
+    if (!isBackgroundPoll) setLoading(true); // Only show spinner on manual button click
+
     try {
       const res = await fetch(`/api/admin/prospects/${prospect.id}/messages`);
       const data = await res.json();
       setMessages(data);
     } catch (err) {
       console.error("Fetch error", err);
-      setMessages([]);
     } finally {
       setLoading(false);
     }
   };
 
-  console.log("Messages:", messages)
+  React.useEffect(() => {
+    if (!isOpen || !prospect?.id) return;
+
+    fetchMessages();
+
+    // The temporary MVP polling (we will replace this with Pusher/Redis later)
+    const pollInterval = setInterval(() => {
+      fetchMessages(true);
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  },[isOpen, prospect?.id]);
+
+  // ─── COMBINE & SCROLL ───────────────────────────────────────────────────────
+  const combinedMessages = React.useMemo(() => {
+    return[
+      ...messages,
+      ...prospectPendingMessages.map(m => ({ ...m, isPending: true }))
+    ];
+  },[messages, prospectPendingMessages]);
 
   React.useEffect(() => {
-    if (isOpen) fetchMessages();
-  }, [isOpen, prospect?.id]);
-
-  React.useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(
-        () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
-        50,
-      );
+    // ONLY scroll down if the actual length of the chat grew
+    if (combinedMessages.length > prevMessageCount.current) {
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
-  }, [messages]);
+    prevMessageCount.current = combinedMessages.length;
+  }, [combinedMessages.length]);
 
-  // Lock body scroll when open
   React.useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
-   const handleSendMessage = async (message: string, channel: "SMS" | "EMAIL") => {
-    // Scroll instantly so the user sees the ghost message pop in
+  // ─── SEND LOGIC ─────────────────────────────────────────────────────────────
+  const handleSendMessage = async (message: string, channel: "SMS" | "EMAIL") => {
+    // Instantly force scroll so they see their pending message pop in
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
 
     let success = false;
@@ -79,7 +94,7 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
     }
 
     if (success) {
-      fetchMessages(); // Pull the real DB thread once the global Context says it's done
+      fetchMessages(); 
     }
   };
 
@@ -94,7 +109,6 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
     <AnimatePresence>
       {isOpen && prospect && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
@@ -105,16 +119,15 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
             onClick={onClose}
           />
 
-          {/* Drawer panel */}
           <motion.div
             key="drawer"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed inset-y-0 right-0 z-50 flex flex-col w-full sm:max-w-105 md:max-w-150 bg-background shadow-2xl border-l"
+            transition={{ duration: 0.35, ease:[0.32, 0.72, 0, 1] }}
+            className="fixed inset-y-0 right-0 z-50 flex flex-col w-full sm:max-w-[420px] md:max-w-[480px] bg-background shadow-2xl border-l"
           >
-            {/* Header (Stays Fixed Top) */}
+            {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b bg-muted/30 shrink-0">
               <div className="flex items-center gap-3">
                 <Avatar className="h-9 w-9">
@@ -133,64 +146,65 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
               </div>
 
               <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="text-[10px] px-2 py-0.5 font-normal text-muted-foreground"
-                >
+                <Badge variant="outline" className="text-[10px] px-2 py-0.5 font-normal text-muted-foreground">
                   {messages.length} messages
                 </Badge>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={fetchMessages}
-                  className="h-8 w-8"
-                >
-                  <RefreshCw
-                    size={15}
-                    className={loading ? "animate-spin" : ""}
-                  />
+                <Button variant="ghost" size="icon" onClick={() => fetchMessages()} className="h-8 w-8">
+                  <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="h-8 w-8"
-                >
+                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
                   <X size={15} />
                 </Button>
               </div>
             </div>
 
-            {/* Messages (Scrollable Area) */}
-            {/* THE FIX: Added flex-1 and min-h-0 wrapper here */}
+            {/* Chat Area */}
             <div className="flex-1 min-h-0 flex flex-col">
-              {/* THE FIX: Added h-full to the ScrollArea */}
               <ScrollArea className="h-full px-4">
-              <div className="py-5 space-y-5">
-                {messages.length === 0 && prospectPendingMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
-                    <p className="text-sm">No messages yet</p>
-                  </div>
-                ) : (
-                  <>
-                    {/* Render Real DB Messages */}
-                    {messages.map((msg: any) => (
-                      <ChatBubble key={msg.id} msg={msg} prospectName={prospect.name} prospectId={prospect.id} />
-                    ))}
-                    
-                    {/* Render the Context's Global Pending Messages! */}
-                    {prospectPendingMessages.map((msg) => (
-                      <ChatBubble key={msg.id} msg={msg} isPending={true} />
-                    ))}
-                  </>
-                )}
-                <div ref={bottomRef} className="h-1" />
-              </div>
-            </ScrollArea>
-            </div>
-            {/* Rich Editior would be here, i think and push up the chat thread while keeping the text area the same size */}
+                <div className="py-5 space-y-1"> {/* Reduced space-y since margins are handled in the bubble */}
+                  {combinedMessages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
+                      <p className="text-sm">No messages yet</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* 🔥 THE GROUPING LOGIC IN THE MAP 🔥 */}
+                      {combinedMessages.map((msg: any, index: number) => {
+                        const prevMsg = combinedMessages[index - 1];
+                        const nextMsg = combinedMessages[index + 1];
 
-            {/* Input (Stays Fixed Bottom) */}
+                        // Starts group if it's the first message, a new sender, or a new medium (SMS vs Email)
+                        const isGroupStart = 
+                          !prevMsg || 
+                          prevMsg.role !== msg.role || 
+                          prevMsg.type !== msg.type;
+
+                        // Ends group if it's the last message, or the next message breaks the chain
+                        const isGroupEnd = 
+                          !nextMsg || 
+                          nextMsg.role !== msg.role || 
+                          nextMsg.type !== msg.type;
+
+                        return (
+                          <ChatBubble 
+                            key={msg.id || index} 
+                            msg={msg} 
+                            prospectName={prospect.name} 
+                            prospectId={prospect.id}
+                            isPending={msg.isPending}
+                            isGroupStart={isGroupStart}
+                            isGroupEnd={isGroupEnd}
+                          />
+                        );
+                      })}
+                    </>
+                  )}
+                  <div ref={bottomRef} className="h-2" />
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Input Area */}
             <div className="shrink-0">
               <AdvancedChatInput
                 isLoading={isSendingSMS || isSendingEmail}
@@ -199,7 +213,6 @@ export function ChatDrawer({ prospect, isOpen, onClose }: any) {
               />
             </div>
 
-            {/* Toast */}
             <DrawerToast message={smsSuccess ?? emailSuccess} />
           </motion.div>
         </>

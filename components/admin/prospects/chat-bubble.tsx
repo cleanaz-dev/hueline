@@ -16,16 +16,15 @@ import { cn } from "@/lib/utils";
 import { ChatAttachments } from "./chat-attachments";
 import { SystemActivityEvent } from "./system-activity-event";
 
-
 type Role = "CLIENT" | "AI" | "OPERATOR" | "SYSTEM";
 type Type = "SMS" | "EMAIL" | "PHONE" | "DEMO" | "MEETING" | "ACTIVITY";
 
 interface ChatBubbleProps {
   msg: {
-    id: string; // <-- Added ID (required for React keys and the Event component)
+    id: string; 
     body: string;
-    description?: string; // <-- Added for system notes
-    activityType?: string; // <-- Added for the Icon logic (e.g., SETUP_FEE_PAID)
+    description?: string; 
+    activityType?: string; 
     role: Role;
     type: Type;
     createdAt: Date | string;
@@ -42,6 +41,8 @@ interface ChatBubbleProps {
   prospectName?: string;
   prospectId?: string;
   isPending?: boolean;
+  isGroupStart?: boolean; 
+  isGroupEnd?: boolean;
 }
 
 const ROLE_CONFIG = {
@@ -77,18 +78,24 @@ const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
   ACTIVITY: { icon: Activity, label: "Activity" },
 };
 
-export function ChatBubble({ msg, prospectName, isPending, prospectId }: ChatBubbleProps) {
+export function ChatBubble({ 
+  msg, 
+  prospectName, 
+  isPending, 
+  prospectId,
+  isGroupStart = true, 
+  isGroupEnd = true 
+}: ChatBubbleProps) {
+  
   const time = new Date(msg.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
 
-  // ✅ 1. THE EARLY RETURN: Intercept SYSTEM messages and render the centered pill
   if (msg.role === "SYSTEM") {
     return <SystemActivityEvent msg={msg} />;
   }
 
-  // ✅ 2. NORMAL CHAT BUBBLES
   const meta = ROLE_CONFIG[msg.role as keyof typeof ROLE_CONFIG];
   const isRight = meta.side === "right";
   const typeInfo = TYPE_CONFIG[msg.type];
@@ -99,64 +106,73 @@ export function ChatBubble({ msg, prospectName, isPending, prospectId }: ChatBub
   return (
     <div
       className={cn(
-        "flex w-full mb-6 transition-all duration-300",
+        "flex w-full transition-all duration-300",
         isRight ? "justify-end" : "justify-start",
+        isGroupEnd ? "mb-6" : "mb-2", // Tight gap for grouped, large gap for new senders
         isPending && "opacity-60",
       )}
     >
       <div
         className={cn(
-          "flex gap-3 max-w-[85%] md:max-w-[95%]",
+          "flex max-w-[85%] md:max-w-[95%]", // Kept your original wide widths
           isRight ? "flex-row-reverse" : "flex-row",
         )}
       >
-        {/* Avatar */}
-        <div className="flex flex-col items-center shrink-0 mt-0.5">
-          <Avatar className="h-8 w-8 shadow-sm border border-zinc-200 dark:border-zinc-700">
-            <AvatarFallback
-              className={cn(
-                "bg-background",
-                msg.role === "AI" && "text-indigo-800 dark:text-indigo-400",
-                msg.role === "OPERATOR" && "text-blue-600 dark:text-blue-400",
-                msg.role === "CLIENT" && "text-zinc-600 dark:text-zinc-400",
-              )}
-            >
-              <meta.icon size={16} />
-            </AvatarFallback>
-          </Avatar>
+        {/* Avatar Column - Fixed width to keep bubbles aligned even if avatar is hidden */}
+        <div className="flex flex-col items-center shrink-0 w-8 mx-3 mt-0.5">
+          {isGroupStart && (
+            <Avatar className="h-8 w-8 shadow-sm border border-zinc-200 dark:border-zinc-700">
+              <AvatarFallback
+                className={cn(
+                  "bg-background",
+                  msg.role === "AI" && "text-indigo-800 dark:text-indigo-400",
+                  msg.role === "OPERATOR" && "text-blue-600 dark:text-blue-400",
+                  msg.role === "CLIENT" && "text-zinc-600 dark:text-zinc-400",
+                )}
+              >
+                <meta.icon size={16} />
+              </AvatarFallback>
+            </Avatar>
+          )}
         </div>
 
         {/* Message Content */}
         <div
           className={cn(
-            "flex flex-col gap-1.5",
+            "flex flex-col gap-1.5 min-w-0",
             isRight ? "items-end" : "items-start",
           )}
         >
-          {/* Header */}
-          <div className="flex items-baseline gap-2 px-1">
-            <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              {displayName}
-            </span>
-            {isPending ? (
-              <span className="flex items-center gap-1 text-[10px] font-medium text-blue-500 animate-pulse">
-                <Loader2 size={10} className="animate-spin" /> Sending...
+          {/* Header - Only show Name and Time on the first message of a group */}
+          {isGroupStart && (
+            <div className="flex items-baseline gap-2 px-1">
+              <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                {displayName}
               </span>
-            ) : (
-              <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
-                {time}
-              </span>
-            )}
-          </div>
+              {isPending ? (
+                <span className="flex items-center gap-1 text-[10px] font-medium text-blue-500 animate-pulse">
+                  <Loader2 size={10} className="animate-spin" /> Sending...
+                </span>
+              ) : (
+                <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+                  {time}
+                </span>
+              )}
+            </div>
+          )}
 
-          {/* Bubble */}
+          {/* Bubble - Kept your exact styling, borders, and inner labels */}
           <div
             className={cn(
-              "relative flex flex-col px-4 py-3 rounded-2xl text-[14px] leading-relaxed shadow-sm wrap-break-word",
+              "relative flex flex-col px-4 py-3 rounded-2xl text-[14px] leading-relaxed shadow-sm break-words w-full",
               meta.bubble,
-              isRight ? "rounded-tr-sm" : "rounded-tl-sm",
+              // Tweak corners slightly to show grouping, but keep your heavy borders
+              isRight 
+                ? cn(isGroupStart ? "rounded-tr-sm" : "rounded-tr-xl") 
+                : cn(isGroupStart ? "rounded-tl-sm" : "rounded-tl-xl")
             )}
           >
+            {/* The inner label you wanted to keep */}
             <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-current/10 opacity-70">
               <TypeIcon size={14} strokeWidth={2.5} />
               <span className="text-[10px] uppercase tracking-widest font-bold">
