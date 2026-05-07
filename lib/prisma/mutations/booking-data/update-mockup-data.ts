@@ -4,7 +4,7 @@ interface ColorParams {
   name: string;
   hex: string;
   ral: string;
-  brand: string | null
+  brand: string | undefined
 }
 
 export async function updateMockupData(

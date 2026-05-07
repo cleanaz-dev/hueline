@@ -6,6 +6,11 @@ import { createMockupLog } from "@/lib/prisma/mutations/logs/create-mockup-log";
 import { getOriginalImageUrl } from "@/lib/prisma/mutations/s3key";
 import { generateMockup } from "@/lib/replicate";
 import { getColorMatch } from "@/lib/utils/color-match-lambda";
+import {
+  CurrentColor,
+  TargetColor,
+  MoonShotColorChoice,
+} from "@/types/paint-types";
 import { NextResponse } from "next/server";
 
 interface Params {
@@ -21,6 +26,37 @@ export async function POST(req: Request, { params }: Params) {
   try {
     // Need to await the JSON parsing
     const body = await req.json();
+    const {
+      option,
+      currentColor,
+      removeFurniture,
+      targetColor,
+    }: {
+      option: string;
+      currentColor: CurrentColor[];
+      removeFurniture: boolean;
+      targetColor?: TargetColor;
+    } = body;
+    console.log("📦 Request body:", body);
+
+    // if (body) {
+    //   return NextResponse.json({ message: "ok" }, { status: 200 });
+    // }
+
+    // const generationPayload = {
+    //   option: selectedOption,
+    //   removeFurniture,
+    //   currentColor: booking.paintColors,
+    //   originalImageS3Key: booking.originalImages,
+    //   // Only populated for "shade"; brighter/darker/trendy leave these undefined
+    //   ...(selectedOption === "shade" && {
+    //     targetBrand: selectedBrand,
+    //     targetBrandLabel: BRAND_LABELS[selectedBrand],
+    //     targetColorName: selectedColor.name,
+    //     targetColorCode: selectedColor.code,
+    //     targetColorHex: selectedColor.hex,
+    //   }),
+    // };
 
     const subdomain = await prisma.subdomain.findUnique({
       where: {
@@ -49,14 +85,11 @@ export async function POST(req: Request, { params }: Params) {
         {
           message: "Missing required data",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const subdomainId = subdomain.id;
-
-    const { option, currentColor, removeFurniture, targetShade, shadeLabel } = body;
-    console.log("📦 Request body:", body);
 
     const color = currentColor[0];
 
@@ -65,7 +98,7 @@ export async function POST(req: Request, { params }: Params) {
         {
           message: "Missing required fields",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const { originalImageUrl, roomType } = await getOriginalImageUrl(huelineId);
@@ -74,72 +107,78 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
-    const { colorPrompt, colorChoice, extractedNewColor } =
-      await getNewMockUpColorMoonshot(color, option, targetShade, shadeLabel);
-
-    // Generate mockup
-    const mockupUrl = await generateMockup(
-      colorPrompt,
-      originalImageUrl,
-      removeFurniture
+    const newColor = await getNewMockUpColorMoonshot(
+      color,
+      option,
+      targetColor,
     );
 
-    const anchorHex = colorChoice.hex;
+    console.log("New Color by Moonshot", newColor);
+    return NextResponse.json({ message: "ok" }, { status: 200 });
 
-    const safeMockupUrl = String(mockupUrl);
+    // // Generate mockup
+    // const mockupUrl = await generateMockup(
 
-    console.log(
-      "📦 Data for Color Match:",
-      safeMockupUrl,
-      anchorHex,
-      extractedNewColor
-    );
+    //   originalImageUrl,
+    //   removeFurniture,
+    // );
 
-    const { ral, name, hex, brand } = await getColorMatch(
-      safeMockupUrl,
-      anchorHex,
-      extractedNewColor
-    );
+    // const anchorHex = colorChoice.hex;
 
-    const s3key = await handleNewS3Key({
-      url: mockupUrl,
-      huelineId,
-      subdomainId,
-      isMockup: true,
-    });
+    // const safeMockupUrl = String(mockupUrl);
 
-    const newColorChoice = {
-      ral,
-      name,
-      hex,
-      brand
-    };
+    // console.log(
+    //   "📦 Data for Color Match:",
+    //   safeMockupUrl,
+    //   anchorHex,
+    //   extractedNewColor,
+    // );
 
-    const newMockupData = await updateMockupData(
-      huelineId,
-      s3key,
-      newColorChoice,
-      roomType
-    );
+    // const { ral, name, hex, brand } = await getColorMatch(
+    //   safeMockupUrl,
+    //   anchorHex,
+    //   extractedNewColor,
+    // );
 
-    console.log("Updated Booking:", newMockupData);
+    // const s3key = await handleNewS3Key({
+    //   url: mockupUrl,
+    //   huelineId,
+    //   subdomainId,
+    //   isMockup: true,
+    // });
 
-    // CREATE THE MOCKUP LOG
-    await createMockupLog({
-      bookingDataId: booking.id,
-      subdomainId: subdomainId,
-      roomType: roomType,
-      color: newColorChoice,
-      option: option,
-      removeFurniture: removeFurniture || false,
-      s3Key: s3key, // Include the s3Key - good for debugging/tracking
-    });
+    // const newColorChoice = {
+    //   ral,
+    //   name,
+    //   hex,
+    //   brand,
+    // };
+
+    // const newMockupData = await updateMockupData(
+    //   huelineId,
+    //   s3key,
+    //   newColorChoice,
+    //   roomType,
+    // );
+
+    // console.log("Updated Booking:", newMockupData);
+
+    // // CREATE THE MOCKUP LOG
+    // await createMockupLog({
+    //   bookingDataId: booking.id,
+    //   subdomainId: subdomainId,
+    //   roomType: roomType,
+    //   color: newColorChoice,
+    //   option: option,
+    //   removeFurniture: removeFurniture || false,
+    //   s3Key: s3key, // Include the s3Key - good for debugging/tracking
+    // });
 
     return NextResponse.json(
       {
         message: "success",
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error in color generation:", error);
@@ -148,7 +187,7 @@ export async function POST(req: Request, { params }: Params) {
         message: "Error Generating New Mockup",
         error: String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

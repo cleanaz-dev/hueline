@@ -1,93 +1,93 @@
 import {
-  filterColorsByHue,
-  RANDOM_COLOR_MAP,
-  TRENDY_COLOR_MAP,
-  extractMainHue,
-} from "@/lib/utils";
+  MAIN_COLOR_SHADES,
+  TRENDING_COLOR_SHADES,
+  BrandId,
+  PaintColor,
+} from "@/lib/config/paint-config";
+import { CurrentColor, TargetColor } from "@/types/paint-types";
 import { moonshot } from "../config";
-import { getRalClassicColors } from "@/lib/utils/server";
-import { PaintColor } from "@/types/subdomain-type";
 
-const SHADE_TO_HUE: Record<string, string> = {
-  red: "red",
-  orange: "orange",
-  green: "green",
-  light_blue: "blue",
-  dark_blue: "blue",
-  brown: "brown",
-  grey: "grey",
-};
+function getMainColors(brand?: string): PaintColor[] {
+  if (brand && MAIN_COLOR_SHADES[brand as BrandId]) {
+    return MAIN_COLOR_SHADES[brand as BrandId];
+  }
+  return Object.values(MAIN_COLOR_SHADES).flat();
+}
+
+function filterByFamily(colors: PaintColor[], family?: string): PaintColor[] {
+  if (!family) return colors;
+  const filtered = colors.filter((c) => c.family === family);
+  return filtered.length > 0 ? filtered : colors;
+}
 
 export async function getNewMockUpColorMoonshot(
-  color: PaintColor,
+  colorInput: CurrentColor | CurrentColor[], // Accept the object or the array
   option: string,
-  targetShade?: string,
-  shadeLabel?: string
+  targetColor?: TargetColor 
 ) {
-  const mainHue = extractMainHue(color.name);
+  // 1. SAFELY unwrap the array if it exists (Fixes the array bug)
+  const color = Array.isArray(colorInput) ? colorInput[0] : colorInput;
 
-  let color_map = null;
+  // 2. DYNAMICALLY extract properties
+  const activeBrand = option === "shade" ? targetColor?.brand : color.brand;
+  
+  // color.family doesn't exist in your DB schema, so we safely fall back to undefined
+  // For 'shade', we still use the targetColor family if provided
+  const activeFamily = option === "shade" ? targetColor?.family : (color as any).family;
+  
+  const brandLabel = activeBrand ?? "paint";
+
+  // ── Build color map ──────────────────────────────────────────────────────
+  let color_map: PaintColor[] | Record<string, PaintColor[]>;
 
   if (option === "trendy") {
-    color_map = TRENDY_COLOR_MAP;
-  } else if (option === "random") {
-    color_map = RANDOM_COLOR_MAP;
-  } else if (option === "brighter" || option === "darker") {
-    const allColors = getRalClassicColors();
-    color_map = mainHue ? filterColorsByHue(mainHue, allColors) : allColors;
-  } else if (option === "shade" && targetShade) {
-    const allColors = getRalClassicColors();
-    const hue = SHADE_TO_HUE[targetShade] ?? targetShade;
-    color_map = filterColorsByHue(hue, allColors);
+    color_map = TRENDING_COLOR_SHADES;
+  } else if (["brighter", "darker", "shade"].includes(option)) {
+    // If activeFamily is undefined, filterByFamily safely returns the whole brand list
+    color_map = filterByFamily(getMainColors(activeBrand), activeFamily);
+  } else {
+    color_map = getMainColors(activeBrand);
   }
 
+  // ── Build prompt ─────────────────────────────────────────────────────────
+  // We add color.name to the base prompt so the AI knows it's "Pale green" even without a family property
+  const base = `You are an experienced interior decorator.
+Current color: ${color.name || "Unknown"} (${JSON.stringify(color.hex)}).
+Available colors database: ${JSON.stringify(color_map)}.`;
+
+  const familyContext = activeFamily ? `the "${activeFamily}"` : `the same`;
+
+  const instruction =
+    option === "brighter" || option === "darker"
+      ? `Select a ${brandLabel} color from the database that is noticeably ${option} than the current color, but stays in ${familyContext} color family (e.g. if current is green, stay in greens). If none are perfect, pick a lighter color.`
+      : option === "shade"
+      ? `Select a ${brandLabel} color from ${familyContext} family that is NOT similar to the current color.`
+      : `Select a completely different ${brandLabel} color that does NOT share the same family, name, or visual similarity to the current color. Be unpredictable.`;
+
+  const userPrompt = `${base}\n\nTask: ${instruction}\n\nIMPORTANT: Return strictly a valid JSON object. Do not return an empty {}. You MUST choose one color from the provided list.\nFormat:\n{"brand":"Brand Name","name":"Color Name","code":"color code","hex":"#XXXXXX"}`;
+
+  // ── Call Moonshot ─────────────────────────────────────────────────────────
   try {
-    let userPrompt: string;
-
-    if (option === "brighter" || option === "darker") {
-      userPrompt = `You are an experienced interior decorator. Current color: ${JSON.stringify(
-        color.hex
-      )}. Available colors: ${JSON.stringify(
-        color_map
-      )}. Select a RAL color that is noticeably ${option} MUST BE SIMILAR RAL NAME. Return ONLY valid JSON: {"name":"Color Name","ral":"RAL XXXX","hex":"#XXXXXX"}`;
-    } else if (option === "shade") {
-      userPrompt = `You are an experienced interior decorator. Current color: ${JSON.stringify(
-        color.hex
-      )}. Available colors: ${JSON.stringify(
-        color_map
-      )}. Select a RAL color from the ${shadeLabel} family. It must NOT be similar to the current color. Return ONLY valid JSON: {"name":"Color Name","ral":"RAL XXXX","hex":"#XXXXXX"}`;
-    } else {
-      userPrompt = `You are an experienced interior decorator. Current color: ${JSON.stringify(
-        color.hex
-      )}. Available colors: ${JSON.stringify(
-        color_map
-      )}. Select a ${option} RAL color that is NOT FROM THE RAL COLOR FAMILY OR CONTAIN THE SAME NAME OR COULD BE SIMILAR TO THE COLOR from the current color. Return ONLY valid JSON: {"name":"Color Name","ral":"RAL XXXX","hex":"#XXXXXX"}`;
-    }
-
     const response = await moonshot.chat.completions.create({
-      model: "kimi-k2-turbo-preview",
-      messages: [
-        {
-          role: "user",
-          content: userPrompt,
-        },
-      ],
+      model: "kimi-k2-thinking-turbo",
+      messages:[{ role: "user", content: userPrompt }],
       response_format: { type: "json_object" },
-      temperature: 0.9,
-      max_completion_tokens: 300,
+      temperature: 1, 
+      max_completion_tokens: 10000,
     });
 
-    const colorChoice = JSON.parse(response.choices[0].message.content || "{}");
+    const content = response.choices[0]?.message?.content?.trim() || "{}";
+    const colorChoice = JSON.parse(content) as PaintColor;
 
-    if (!colorChoice.hex) {
-      throw new Error();
+    console.log("RAW Moonshot Color Choice:", colorChoice);
+
+    if (!colorChoice.hex || Object.keys(colorChoice).length === 0) {
+      console.error("Moonshot returned empty or invalid JSON:", content);
+      throw new Error("No valid hex found in color choice");
     }
 
-    const extractedNewColor = colorChoice.name.split(" ").pop();
-
-    const colorPrompt = `Apply color: ${colorChoice.hex} to the walls of room`;
-
-    return { colorPrompt, colorChoice, extractedNewColor };
+    return colorChoice;
+    
   } catch (error) {
     console.error("Error getting color from Moonshot:", error);
     throw error;
