@@ -4,6 +4,7 @@ interface ColorParams {
   name: string;
   hex: string;
   ral: string;
+  brand: string | null
 }
 
 export async function updateMockupData(
@@ -26,9 +27,10 @@ export async function updateMockupData(
       bookingData: { connect: { id: booking.id } }, // Link using internal ID
       roomType,
       s3Key,
-      colorHex: colorChoice.hex,
-      colorRal: colorChoice.ral,
-      colorName: colorChoice.name,
+      hex: colorChoice.hex,
+      code: colorChoice.ral,
+      name: colorChoice.name,
+      brand: colorChoice.brand ?? "RAL"
     },
   });
 
@@ -37,7 +39,9 @@ export async function updateMockupData(
       bookingData: {connect: {id: booking.id }},
       hex: colorChoice.hex,
       name: colorChoice.name,
-      ral: colorChoice.ral,
+      code: colorChoice.ral,
+      brand: colorChoice.brand ?? "RAL",
+
     }
   })
 

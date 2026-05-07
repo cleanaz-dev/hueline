@@ -8,6 +8,7 @@ export async function getColorMatch(
   ral: string;
   hex: string;
   name: string;
+  brand?: string;
   reasoning?: string; // Optional: Added since your Lambda returns this now
   family?: string;    // Optional: Added since your Lambda returns this now
 }> {
@@ -45,7 +46,8 @@ export async function getColorMatch(
     return {
       ral: data.ral,     
       hex: data.hex,      
-      name: data.name,  
+      name: data.name,
+      brand: data.brand ?? "RAL",  
       reasoning: data.reasoning,
       family: data.Family
     };

@@ -71,7 +71,7 @@ export async function POST(req: Request) {
         // --- B: Build color list from ALL sources and pick smart color ---
         const usedColors = [
           ...subData.paintColors.map((pc: any) => ({ name: pc.name, hex: pc.hex })),
-          ...subData.mockups.map((m: any) => ({ name: m.colorName, hex: m.colorHex })),
+          ...subData.mockups.map((m: any) => ({ name: m.name, hex: m.hex })),
         ];
 
         let smartColor = await pickColor(usedColors);

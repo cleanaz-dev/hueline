@@ -173,7 +173,7 @@ export default function ExportOptionsDialog({
                 )}
                 <div
                   className="absolute bottom-0 inset-x-0 h-1.5 sm:h-2"
-                  style={{ background: mockup.colorHex }}
+                  style={{ background: mockup.hex }}
                 />
               </button>
             ))}

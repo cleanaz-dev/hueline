@@ -95,7 +95,7 @@ export async function POST(req: Request, { params }: Params) {
       extractedNewColor
     );
 
-    const { ral, name, hex } = await getColorMatch(
+    const { ral, name, hex, brand } = await getColorMatch(
       safeMockupUrl,
       anchorHex,
       extractedNewColor
@@ -112,6 +112,7 @@ export async function POST(req: Request, { params }: Params) {
       ral,
       name,
       hex,
+      brand
     };
 
     const newMockupData = await updateMockupData(
