@@ -1,4 +1,5 @@
-import { PrismaClientRustPanicError } from "@/app/generated/prisma/runtime/library";
+import { s3Client, S3_BUCKET_NAME } from "@/lib/aws/s3";
+import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -9,21 +10,16 @@ interface Params {
   }>;
 }
 
-const webhookSecret = process.env.LAMBDA_WEBHOOK_SECRET;
-
 export async function POST(req: Request, { params }: Params) {
   const { huelineId, slug } = await params;
 
   try {
     const body = await req.json();
-    const authHeaders = req.headers.get("x-webhook-secret");
 
     console.log("Booking Ingest MockUp:", body);
 
     const bookingData = await prisma.subBookingData.findFirst({
-      where: {
-        huelineId,
-      },
+      where: { huelineId },
       select: { id: true },
     });
 
@@ -31,51 +27,60 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Invalid Request" }, { status: 401 });
     }
 
-    const { s3Key, colorName, colorHex, colorCode, colorBrand, roomType } =
-      body;
+    const { s3Key, colorName, colorHex, colorCode, colorBrand, roomType } = body;
+
+    const head = await s3Client.send(new HeadObjectCommand({
+      Bucket: S3_BUCKET_NAME,
+      Key: s3Key,
+    }));
+
+    const mimeType = head.ContentType ?? "image/jpeg";
+    const size = head.ContentLength ?? 0;
 
     const newMockup = await prisma.mockup.create({
-        data: {
-            bookingData: {connect: {id: bookingData.id }},
-            brand: colorBrand,
-            code: colorCode,
-            hex: colorHex,
-            roomType: roomType,
-            name: colorName,
-            s3Key,
-        }
-    })
+      data: {
+        bookingData: { connect: { id: bookingData.id } },
+        brand: colorBrand,
+        code: colorCode,
+        hex: colorHex,
+        roomType: roomType,
+        name: colorName,
+        s3Key,
+      },
+    });
 
     const paintColors = await prisma.paintColor.create({
-        data: {
-            bookingData: {connect: {id: bookingData.id }},
-            brand: colorBrand,
-            code: colorCode,
-            hex: colorHex,
-            name: colorName,
-        }
-    })
+      data: {
+        bookingData: { connect: { id: bookingData.id } },
+        brand: colorBrand,
+        code: colorCode,
+        hex: colorHex,
+        name: colorName,
+      },
+    });
 
     await prisma.clientCommunication.create({
-        data: {
-            body: "New Mockup Generated",
-            type: "IMAGEN",
-            role: "CLIENT",
-            mediaAttachments: {create: [
-                {
-                    filename: `${paintColors.brand}-${paintColors.name}-${paintColors.code}`,
-                    mimeType: "image/jpeg",
-                    size: 10000,
-                    mediaUrl: newMockup.s3Key,
-                    mediaSource: "S3",
+      data: {
+        body: "New Mockup Generated",
+        type: "IMAGEN",
+        role: "CLIENT",
+        mediaAttachments: {
+          create: [{
+            filename: `${paintColors.brand}-${paintColors.name}-${paintColors.code}`,
+            mimeType,
+            size,
+            mediaUrl: newMockup.s3Key,
+            mediaSource: "S3",
+          }],
+        },
+      },
+    });
 
-                }
-            ]}
-        }
-    })
-
-    console.log("Paint Colors:", paintColors, "Mockup:", newMockup)
-  } catch (error) {}
+    console.log("Paint Colors:", paintColors, "Mockup:", newMockup);
+  } catch (error) {
+    console.error("Ingest mockup error:", error);
+    return NextResponse.json({ message: "Error" }, { status: 500 });
+  }
 
   return NextResponse.json({ message: "ok" }, { status: 200 });
 }

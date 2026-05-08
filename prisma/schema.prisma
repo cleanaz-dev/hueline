@@ -168,6 +168,9 @@ model ClientActivity {
   demoClient   DemoClient? @relation(fields: [demoClientId], references: [id], onDelete: Cascade)
   demoClientId String?     @db.ObjectId
 
+  subDomain   Subdomain? @relation(fields: [subDomainId], references: [id], onDelete: Cascade)
+  subDomainId String?    @db.ObjectId
+
   // Timeline stamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -207,9 +210,10 @@ model Subdomain {
   client       Client?          @relation(fields: [clientId], references: [id])
   clientId     String?          @unique @db.ObjectId
 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime?    @updatedAt
-  demoClients DemoClient[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime?        @updatedAt
+  demoClients      DemoClient[]
+  clientActivities ClientActivity[]
 }
 
 model RoomIntelligence {
