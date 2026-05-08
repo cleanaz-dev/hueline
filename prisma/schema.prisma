@@ -23,8 +23,10 @@ model SubdomainUser {
   subdomain   Subdomain @relation(fields: [subdomainId], references: [id])
   rooms       Room[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  clientCommunications ClientCommunication[]
+  jobs                 Job[]
 }
 
 model Client {
@@ -146,6 +148,7 @@ enum ClientActivityType {
   GENERATED_IMAGE
   SHARED_PROJECT
   UPSCALED_IMAGE
+  FOLLOWUP_IMAGE_SENT
 }
 
 model ClientActivity {
@@ -162,8 +165,8 @@ model ClientActivity {
   metadata Json?
 
   // Relations
-  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId String @db.ObjectId
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String? @db.ObjectId
 
   demoClient   DemoClient? @relation(fields: [demoClientId], references: [id], onDelete: Cascade)
   demoClientId String?     @db.ObjectId
@@ -337,6 +340,34 @@ model ClientCommunication {
   createdAt        DateTime          @default(now())
   mediaAttachments MediaAttachment[]
   metadata         Json?
+  operator         SubdomainUser?    @relation(fields: [operatorId], references: [id])
+  operatorId       String?           @db.ObjectId
+}
+
+model Job {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  status    String  @default("OPEN")
+  huelineId String?
+  jobType   JobType
+  model     String?
+  cost      Float?
+
+  initiator  JobRole
+  operator   SubdomainUser? @relation(fields: [operatorId], references: [id])
+  operatorId String?        @db.ObjectId
+  deliveryMethod String? 
+
+  // colors for imagen
+  brand String?
+  code  String?
+  hex   String?
+  name  String?
+}
+
+enum JobType {
+  IMAGEN
+  UPSCALE
+  VIDEO
 }
 
 model MediaAttachment {
@@ -355,6 +386,13 @@ model MediaAttachment {
 enum MediaSource {
   S3
   EXTERNAL
+}
+
+enum JobRole {
+  AI
+  CLIENT
+  USER
+  OPERATOR
 }
 
 enum CommunicationRole {

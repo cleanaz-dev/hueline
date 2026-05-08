@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import axios from "axios";
 import { NextResponse } from "next/server";
 
@@ -9,21 +11,40 @@ interface Params {
 export async function POST(req: Request, { params }: Params) {
   const { id } = await params;
 
-  try {
-    // 1. Destructure for clean visuals and type safety
-    const { mediaUrl, brand, color, deliveryMethod } = await req.json();
+  const session = await getServerSession(authOptions);
 
-    // 2. Basic Validation (Don't waste Lambda compute if data is missing)
-    if (!mediaUrl || !brand || !color || !deliveryMethod) {
+  if (!session?.user || session.role !== "SUPER_ADMIN") {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const operator = await prisma.subdomainUser.findFirst({
+    where: { email: session.user.email! },
+    select: { id: true },
+  });
+
+  if (!operator) {
+    return NextResponse.json(
+      { message: "Operator not found" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const { mediaUrl, brand, color, deliveryMethod, huelineId } =
+      await req.json();
+
+    if (!mediaUrl || !brand || !color || !deliveryMethod || !huelineId) {
       return NextResponse.json(
-        { message: "Missing required fields (mediaUrl, brand, color, deliveryMethod)" },
-        { status: 400 }
+        {
+          message:
+            "Missing required fields (mediaUrl, brand, color, deliveryMethod, huelineId)",
+        },
+        { status: 400 },
       );
     }
 
-    // 3. Verify Prospect
     const demoClient = await prisma.demoClient.findUnique({
-      where: { id: id },
+      where: { id },
       select: { id: true },
     });
 
@@ -32,29 +53,42 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
-    // 4. Construct a clean, flat payload for Lambda
+    const job = await prisma.job.create({
+      data: {
+        jobType: "IMAGEN",
+        brand: brand,
+        hex: color.hex,
+        code: color.code,
+        name: color.name,
+        model: "openai/gpt-image-2",
+        cost: 0.13,
+        deliveryMethod,
+        initiator: "OPERATOR",
+        operator: { connect: { id: operator.id } },
+      },
+    });
+
     const lambdaPayload = {
       prospectId: demoClient.id,
       mediaUrl,
       brand,
       color,
       deliveryMethod,
+      job
     };
 
-    // 5. Fire to Lambda
     await axios.post(process.env.CHAT_IMAGEN_LAMBDA_URL!, lambdaPayload);
 
     return NextResponse.json({ message: "Success" }, { status: 200 });
   } catch (error: any) {
-    // Cleaner error logging for Axios
     console.error(
       "Chat Imagen Lambda Error:",
-      error.response?.data || error.message || error
+      error.response?.data || error.message || error,
     );
 
     return NextResponse.json(
       { message: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
