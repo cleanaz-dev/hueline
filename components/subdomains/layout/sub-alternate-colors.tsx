@@ -81,6 +81,7 @@ export default function SubAlternateDesign({
     const generationPayload = {
       option: selectedOption,
       removeFurniture,
+      roomType: booking.roomType,
       currentColor: booking.paintColors,
       originalImageS3Key: booking.originalImages,
       // Only populated for "shade"; brighter/darker/trendy leave these undefined

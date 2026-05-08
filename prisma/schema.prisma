@@ -141,6 +141,11 @@ enum ClientActivityType {
   SUBDOMAIN_PROVISIONED
   INTEGRATION_CONNECTED
   EMAIL_SENT
+
+  //Client Portal & IMAGES
+  GENERATED_IMAGE
+  SHARED_PROJECT
+  UPSCALED_IMAGE
 }
 
 model ClientActivity {

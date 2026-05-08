@@ -64,7 +64,7 @@ Available colors database: ${JSON.stringify(color_map)}.`;
       ? `Select a ${brandLabel} color from ${familyContext} family that is NOT similar to the current color.`
       : `Select a completely different ${brandLabel} color that does NOT share the same family, name, or visual similarity to the current color. Be unpredictable.`;
 
-  const userPrompt = `${base}\n\nTask: ${instruction}\n\nIMPORTANT: Return strictly a valid JSON object. Do not return an empty {}. You MUST choose one color from the provided list.\nFormat:\n{"brand":"Brand Name","name":"Color Name","code":"color code","hex":"#XXXXXX"}`;
+  const userPrompt = `${base}\n\nTask: ${instruction}\n\nIMPORTANT: Return a valid JSON object ONLY. Do not return an empty {}. You MUST choose one color from the provided list.\nFormat:\n{"brand":"Brand Name","name":"Color Name","code":"color code","hex":"#XXXXXX"}`;
 
   // ── Call Moonshot ─────────────────────────────────────────────────────────
   try {

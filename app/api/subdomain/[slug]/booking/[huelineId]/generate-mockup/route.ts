@@ -1,16 +1,17 @@
-import { handleNewS3Key } from "@/lib/aws/s3";
+import { handleNewS3Key, getPresignedUrl } from "@/lib/aws/s3";
 import { getNewMockUpColorMoonshot } from "@/lib/moonshot";
 import { prisma } from "@/lib/prisma";
 import { updateMockupData } from "@/lib/prisma/mutations/booking-data";
 import { createMockupLog } from "@/lib/prisma/mutations/logs/create-mockup-log";
 import { getOriginalImageUrl } from "@/lib/prisma/mutations/s3key";
 import { generateMockup } from "@/lib/replicate";
-import { getColorMatch } from "@/lib/utils/color-match-lambda";
+// import { getColorMatch } from "@/lib/utils/color-match-lambda";
 import {
   CurrentColor,
   TargetColor,
   MoonShotColorChoice,
 } from "@/types/paint-types";
+import axios from "axios";
 import { NextResponse } from "next/server";
 
 interface Params {
@@ -20,11 +21,20 @@ interface Params {
   }>;
 }
 
+const lambdaUrl = process.env.LAMBDA_IMAGEN_URL;
+
 export async function POST(req: Request, { params }: Params) {
   const { huelineId, slug } = await params;
 
   try {
     // Need to await the JSON parsing
+
+    if (!lambdaUrl) {
+      return NextResponse.json(
+        { message: "Lambda URL not configured" },
+        { status: 500 },
+      );
+    }
     const body = await req.json();
     const {
       option,
@@ -42,21 +52,6 @@ export async function POST(req: Request, { params }: Params) {
     // if (body) {
     //   return NextResponse.json({ message: "ok" }, { status: 200 });
     // }
-
-    // const generationPayload = {
-    //   option: selectedOption,
-    //   removeFurniture,
-    //   currentColor: booking.paintColors,
-    //   originalImageS3Key: booking.originalImages,
-    //   // Only populated for "shade"; brighter/darker/trendy leave these undefined
-    //   ...(selectedOption === "shade" && {
-    //     targetBrand: selectedBrand,
-    //     targetBrandLabel: BRAND_LABELS[selectedBrand],
-    //     targetColorName: selectedColor.name,
-    //     targetColorCode: selectedColor.code,
-    //     targetColorHex: selectedColor.hex,
-    //   }),
-    // };
 
     const subdomain = await prisma.subdomain.findUnique({
       where: {
@@ -77,6 +72,7 @@ export async function POST(req: Request, { params }: Params) {
       },
       select: {
         id: true,
+        originalImages: true,
       },
     });
 
@@ -114,65 +110,17 @@ export async function POST(req: Request, { params }: Params) {
     );
 
     console.log("New Color by Moonshot", newColor);
-    return NextResponse.json({ message: "ok" }, { status: 200 });
 
-    // // Generate mockup
-    // const mockupUrl = await generateMockup(
-
-    //   originalImageUrl,
-    //   removeFurniture,
-    // );
-
-    // const anchorHex = colorChoice.hex;
-
-    // const safeMockupUrl = String(mockupUrl);
-
-    // console.log(
-    //   "📦 Data for Color Match:",
-    //   safeMockupUrl,
-    //   anchorHex,
-    //   extractedNewColor,
-    // );
-
-    // const { ral, name, hex, brand } = await getColorMatch(
-    //   safeMockupUrl,
-    //   anchorHex,
-    //   extractedNewColor,
-    // );
-
-    // const s3key = await handleNewS3Key({
-    //   url: mockupUrl,
-    //   huelineId,
-    //   subdomainId,
-    //   isMockup: true,
-    // });
-
-    // const newColorChoice = {
-    //   ral,
-    //   name,
-    //   hex,
-    //   brand,
-    // };
-
-    // const newMockupData = await updateMockupData(
-    //   huelineId,
-    //   s3key,
-    //   newColorChoice,
-    //   roomType,
-    // );
-
-    // console.log("Updated Booking:", newMockupData);
-
-    // // CREATE THE MOCKUP LOG
-    // await createMockupLog({
-    //   bookingDataId: booking.id,
-    //   subdomainId: subdomainId,
-    //   roomType: roomType,
-    //   color: newColorChoice,
-    //   option: option,
-    //   removeFurniture: removeFurniture || false,
-    //   s3Key: s3key, // Include the s3Key - good for debugging/tracking
-    // });
+    const generatePayload = {
+      slug: slug,
+      imageUrl: originalImageUrl,
+      roomType: roomType,
+      targetColor: newColor,
+      huelineId: huelineId,
+      sudomainId: subdomain.id,
+      action: "booking",
+    };
+    axios.post(lambdaUrl, generatePayload);
 
     return NextResponse.json(
       {
