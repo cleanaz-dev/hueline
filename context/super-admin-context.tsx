@@ -4,6 +4,7 @@ import { createContext, useContext, ReactNode, useState } from "react";
 import useSWR from "swr";
 import { Log } from "@/types/subdomain-type";
 import { AiSuggestionData } from "@/components/admin/prospects/ai-action-dock";
+import { MOCK_PROSPECTS } from "@/components/admin/prospects/mock-data";
 
 // ... [Keep your existing SuperAdminStats, Client, Admin interfaces] ...
 interface SuperAdminStats {
@@ -15,6 +16,14 @@ interface SuperAdminStats {
   totalCallsLast30Days: number;
   totalCallsAllTime: number;
   totalSubdomains: number;
+}
+
+export interface ChatProspect {
+  id: string;
+  name: string;
+  phone?: string;
+  // add any other fields you pull from the row (like email, status, etc.)
+  [key: string]: any;
 }
 
 interface Client {
@@ -66,12 +75,13 @@ interface SuperAdminContextType {
     body: string,
     subject?: string,
   ) => Promise<boolean>;
-  fetchAiSuggestion: (clientId: string) => Promise<void>
+  fetchAiSuggestion: (clientId: string) => Promise<void>;
   isSendingSMS: boolean;
   isSendingEmail: boolean;
   isAiLoading: boolean;
-  aiSuggestions: Record<string, AiSuggestionData>; 
-  clearAiSuggestion: (clientId: string) => void;       // was: missing entirely
+  isProspectsLoading: boolean;
+  aiSuggestions: Record<string, AiSuggestionData>;
+  clearAiSuggestion: (clientId: string) => void; // was: missing entirely
 
   // Optimistic UI Queue
   pendingMessages: PendingMessage[];
@@ -88,6 +98,16 @@ interface SuperAdminContextType {
   smsSuccess: string | null;
   emailSuccess: string | null;
   generateImageSuccess: string | null;
+
+  // GLOBAL CHAT WIDGET STATE
+  activeChatProspect: ChatProspect | null;
+  chatWindowState: "list" | "open" | "minimized" | "icon";
+  openChat: (prospect: ChatProspect) => void;
+  closeChat: () => void;
+  toggleMinimize: () => void;
+  openChatList: () => void;
+  globalProspects: any[]; 
+  
 }
 
 const SuperAdminContext = createContext<SuperAdminContextType | undefined>(
@@ -120,6 +140,12 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
     "/api/admin/logs",
     fetcher,
   );
+  const { data: prospectData, isLoading: isProspectsLoading } = useSWR<{
+    prospects: any[];
+  }>("/api/admin/prospects", fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
 
   const logs = logsData?.logs;
   const admin = adminData?.admin;
@@ -143,7 +169,16 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
   const [pendingMessages, setPendingMessages] = useState<PendingMessage[]>([]);
 
   // ??
-  const [aiSuggestions, setAiSuggestions] = useState<Record<string, AiSuggestionData>>({});
+  const [aiSuggestions, setAiSuggestions] = useState<
+    Record<string, AiSuggestionData>
+  >({});
+  // --- GLOBAL CHAT WIDGET STATE ---
+  const [activeChatProspect, setActiveChatProspect] =
+    useState<ChatProspect | null>(null);
+  const [chatWindowState, setChatWindowState] = useState<
+    "icon" | "list" | "open" | "minimized"
+  >("icon");
+  const globalProspects = process.env.NODE_ENV === "development" ? MOCK_PROSPECTS : (prospectData?.prospects ?? []);
 
   // --- Communication Handlers ---
   const sendSMS = async (prospectId: string, body: string) => {
@@ -223,10 +258,12 @@ export function SuperAdminProvider({ children }: { children: ReactNode }) {
     }
   };
 
-const fetchAiSuggestion = async (clientId: string) => {
+  const fetchAiSuggestion = async (clientId: string) => {
     setIsAiLoading(true);
     try {
-      const res = await fetch(`/api/admin/prospects/${clientId}/ai-chat-suggestions`);
+      const res = await fetch(
+        `/api/admin/prospects/${clientId}/ai-chat-suggestions`,
+      );
       const data = await res.json();
 
       // THE FIX: Save it specifically to THIS client's ID
@@ -283,6 +320,25 @@ const fetchAiSuggestion = async (clientId: string) => {
     }
   };
 
+  const openChat = (prospect: ChatProspect) => {
+    setActiveChatProspect(prospect);
+    setChatWindowState("open");
+  };
+
+  const closeChat = () => {
+    setActiveChatProspect(null);
+    setChatWindowState("icon"); // Morph back to the floating circle
+  };
+
+  const toggleMinimize = () => {
+    setChatWindowState((prev) => (prev === "minimized" ? "open" : "minimized"));
+  };
+
+  // Add this new handler to open the list
+  const openChatList = () => {
+    setChatWindowState("list");
+  };
+
   return (
     <SuperAdminContext.Provider
       value={{
@@ -306,12 +362,21 @@ const fetchAiSuggestion = async (clientId: string) => {
         isSendingSMS,
         isSendingEmail,
         isGeneratingImage,
+        isProspectsLoading,
         smsSuccess,
         emailSuccess,
         generateImageSuccess,
         aiSuggestions,
 
         pendingMessages, // Exposed!
+
+        activeChatProspect,
+        chatWindowState,
+        openChat,
+        closeChat,
+        toggleMinimize,
+        openChatList,
+        globalProspects,
       }}
     >
       {children}

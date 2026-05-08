@@ -1,13 +1,14 @@
 // app/subdomains/[slug]/layout.tsx
 
-import { Metadata } from 'next';
-import { getSubDomainAccount } from '@/lib/prisma';
-import { cache } from 'react';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config'; 
+import { Metadata } from "next";
+import { getSubDomainAccount } from "@/lib/prisma";
+import { cache } from "react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth/config";
 
-import SuperAdminSidebar from '@/components/admin/super-admin-sidebar';
-import { SuperAdminProvider } from '@/context/super-admin-context';
+import SuperAdminSidebar from "@/components/admin/super-admin-sidebar";
+import { SuperAdminProvider } from "@/context/super-admin-context";
+import { GlobalChatWidget } from "@/components/admin/prospects/global-chat-widget";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -21,35 +22,35 @@ const getSubdomainData = cache(async (slug: string) => {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const subData = await getSubdomainData(slug);
-  
+
   if (!subData) {
     return {
-      title: 'Design Report',
-      description: 'View your personalized design mockup'
+      title: "Design Report",
+      description: "View your personalized design mockup",
     };
   }
-  
+
   return {
     title: `${subData.slug} Design Studio`,
     description: `Personalized paint and design services from ${subData.slug}`,
     openGraph: {
       title: `${subData.slug} Design Studio`,
       description: `Professional paint design mockups and color consultation`,
-      images: [subData.logo || '/default-og-image.jpg'],
+      images: [subData.logo || "/default-og-image.jpg"],
       siteName: subData.slug,
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title: `${subData.slug} Design Studio`,
       description: `Professional paint design mockups`,
-      images: [subData.logo || '/default-og-image.jpg'],
-    }
+      images: [subData.logo || "/default-og-image.jpg"],
+    },
   };
 }
 
 export default async function SubDomainLayout({ children }: Props) {
   const session = await getServerSession(authOptions);
-  const isSuperAdmin = session?.role === 'SUPER_ADMIN';
+  const isSuperAdmin = session?.role === "SUPER_ADMIN";
 
   // REMOVED <NextAuthSessionProvider> WRAPPER HERE
   return (
@@ -61,11 +62,10 @@ export default async function SubDomainLayout({ children }: Props) {
             {/* REMOVED: w-full and min-w-0 */}
             <main className="lg:pl-64 transition-all duration-300 overflow-x-hidden">
               {/* REMOVED: w-full */}
-              <div className="p-4 lg:p-6 h-full">
-                {children}
-              </div>
+              <div className="p-4 lg:p-6 h-full">{children}</div>
             </main>
           </div>
+          <GlobalChatWidget />
         </SuperAdminProvider>
       ) : (
         // Regular layout for normal users

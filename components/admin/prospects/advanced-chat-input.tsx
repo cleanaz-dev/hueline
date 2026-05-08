@@ -10,7 +10,7 @@ import { AiActionDock } from "./ai-action-dock";
 import { useSuperAdmin } from "@/context/super-admin-context";
 
 interface AdvancedChatInputProps {
-  clientId: string; // <-- Added this so we can fetch the AI suggestion
+  clientId?: string; // <-- Changed to optional so TypeScript stops yelling
   onSend: (message: string, channel: "SMS" | "EMAIL", subject?: string) => void;
   isLoading?: boolean;
 }
@@ -20,22 +20,20 @@ export function AdvancedChatInput({
   onSend,
   isLoading,
 }: AdvancedChatInputProps) {
-  const[text, setText] = React.useState("");
+  const [text, setText] = React.useState("");
   const [subject, setSubject] = React.useState("");
-  const [channel, setChannel] = React.useState<"SMS" | "EMAIL">("SMS");
-  const [isUndocked, setIsUndocked] = React.useState(false);
+  const[channel, setChannel] = React.useState<"SMS" | "EMAIL">("SMS");
+  const[isUndocked, setIsUndocked] = React.useState(false);
   
   const {
     aiSuggestions,
     fetchAiSuggestion,
-    clearAiSuggestion, // <-- Ensure this is in your SuperAdmin context provider
+    clearAiSuggestion,
     isAiLoading
   } = useSuperAdmin();
 
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-
-  const currentSuggestion = aiSuggestions[clientId] || null;
-
+  // Safely grab the suggestion only if clientId exists
+  const currentSuggestion = clientId ? aiSuggestions[clientId] : null;
 
   const handleSend = () => {
     const plainText = text.replace(/<[^>]*>?/gm, "").trim();
@@ -56,13 +54,12 @@ export function AdvancedChatInput({
   const handleSwitchChannel = (newChannel: "SMS" | "EMAIL") => {
     if (channel !== newChannel) {
       setChannel(newChannel);
-      // Note: This clears text naturally when manual clicking, 
-      // which is why we don't use this function for the AI button clicks.
       setText("");
       setSubject("");
       setIsUndocked(false);
     }
   };
+  
   const isEmpty = !text.replace(/<[^>]*>?/gm, "").trim();
 
   // ─── Subject field (shared between docked + undocked) ─────────────────────
@@ -109,7 +106,6 @@ export function AdvancedChatInput({
       {/* ─── Undocked overlay — md+ only ─────────────────────────────────── */}
       <AnimatePresence>
         {isUndocked && channel === "EMAIL" && (
-          // ... [Keeping your exact email modal code untouched] ...
           <>
             <motion.div
               key="email-backdrop"
@@ -117,7 +113,7 @@ export function AdvancedChatInput({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-60 bg-black/40 backdrop-blur-sm hidden md:block"
+              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm hidden md:block"
               onClick={() => setIsUndocked(false)}
             />
 
@@ -127,7 +123,7 @@ export function AdvancedChatInput({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 16 }}
               transition={{ duration: 0.22, ease:[0.32, 0.72, 0, 1] }}
-              className="fixed z-61 hidden md:flex flex-col"
+              className="fixed z-[61] hidden md:flex flex-col"
               style={{
                 top: "50%",
                 left: "50%",
@@ -178,21 +174,20 @@ export function AdvancedChatInput({
         <AiActionDock 
           isLoading={isAiLoading}
           suggestion={currentSuggestion}
-          onAnalyze={() => fetchAiSuggestion(clientId)}
-          onClear={() => clearAiSuggestion(clientId)}
+          // Safely wrap the fetch/clear calls just in case clientId is undefined
+          onAnalyze={() => clientId && fetchAiSuggestion(clientId)}
+          onClear={() => clientId && clearAiSuggestion(clientId)}
           onUseSms={(aiText) => {
             setChannel("SMS");
             setSubject("");
             setText(aiText);
             setIsUndocked(false);
-            
           }}
           onUseEmail={(aiSubject, aiBody) => {
             setChannel("EMAIL");
             setSubject(aiSubject);
             setText(aiBody);
-            setIsUndocked(false); // Optional: Set to true if you want AI to auto-pop the big modal
-         
+            setIsUndocked(false); 
           }}
         />
 
