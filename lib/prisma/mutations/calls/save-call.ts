@@ -56,17 +56,19 @@ export async function saveCall(
           s3Key: m.s3_key,
           roomType: m.room_type,
           presignedUrl: m.presigned_url,
-          colorRal: m.color.ral,
-          colorName: m.color.name,
-          colorHex: m.color.hex,
+          brand: "RAL",
+          code: m.color.ral,
+          name: m.color.name,
+          hex: m.color.hex,
         })),
       },
 
       paintColors: {
         create: paint_colors.map((c) => ({
-          ral: c.ral,
+          code: c.ral,
           name: c.name,
           hex: c.hex,
+          brand: "RAL"
         })),
       },
     },
@@ -97,17 +99,19 @@ export async function saveCall(
           s3Key: m.s3_key,
           roomType: m.room_type,
           presignedUrl: m.presigned_url,
-          colorRal: m.color.ral,
-          colorName: m.color.name,
-          colorHex: m.color.hex,
+          code: m.color.ral,
+          name: m.color.name,
+          hex: m.color.hex,
+          brand: "RAL"
         })),
       },
 
       paintColors: {
         create: paint_colors.map((c) => ({
-          ral: c.ral,
+          code: c.ral,
           name: c.name,
           hex: c.hex,
+          brand: "RAL"
         })),
       },
     },
