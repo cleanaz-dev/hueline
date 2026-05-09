@@ -22,18 +22,13 @@ interface Params {
   }>;
 }
 
-const lambdaUrl = process.env.LAMBDA_IMAGEN_URL;
+const lambdaUrl = process.env.LAMBDA_IMAGEN_URL!;
 
 export async function POST(req: Request, { params }: Params) {
   const { huelineId, slug } = await params;
 
   try {
-    if (!lambdaUrl) {
-      return NextResponse.json(
-        { message: "Lambda URL not configured" },
-        { status: 500 },
-      );
-    }
+    
 
     const body = await req.json();
     const {

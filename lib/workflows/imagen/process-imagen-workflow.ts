@@ -1,4 +1,4 @@
-import { JsonValue } from "@/app/generated/prisma/runtime/library";
+
 import { prisma } from "@/lib/prisma";
 import { twilioClient } from "@/lib/twilio/config";
 import { getPresignedUrl } from "@/lib/aws/s3";
@@ -50,7 +50,7 @@ const TRIGGER_CONFIG: Record<ImagenTriggerSource, TriggerConfig> = {
     getEmailHtml: (ctx) => `<p>Your requested mockup featuring ${ctx.brandName} in ${ctx.colorName} is ready!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>`,
   },
 
-  FOLLOWUP_IMAGEN: {
+ FOLLOWUP_IMAGEN: {
     logActor: "SYSTEM",
     role: "OPERATOR",
     logTitle: (ctx) => `Followup Imagen — ${ctx.brandName} ${ctx.colorName}`,
@@ -59,9 +59,11 @@ const TRIGGER_CONFIG: Record<ImagenTriggerSource, TriggerConfig> = {
     activityTitle: (ctx) => `Followup Imagen — ${ctx.colorName}`,
     activityDescription: (ctx) => `Automated followup imagen sent to ${ctx.recipientName} using ${ctx.brandName} ${ctx.colorName}`,
     markFirstFollowupComplete: true,
-    getSmsBody: (ctx) => `${ctx.originalSmsBody || 'Here is your room preview.'}\n\nView your portal here: ${ctx.portalLink}`,
-    getEmailSubject: (ctx) => `Your Room Preview - ${ctx.colorName}`,
-    getEmailHtml: (ctx) => `<p>${ctx.originalSmsBody || 'Here is your room preview.'}</p><p><a href="${ctx.portalLink}">View your portal here</a></p>`,
+    
+    // NEW AI COPY HERE:
+    getSmsBody: (ctx) => `Hey! It's been 24 hours since you tested our demo! Based on the colors you tried earlier, our AI design assistant thought ${ctx.brandName} ${ctx.colorName} (${ctx.colorCode}) would look incredible in your space. What do you think?\n\nView your new mockup here: ${ctx.portalLink}`,
+    getEmailSubject: (ctx) => `Your AI Room Preview - ${ctx.colorName}`,
+    getEmailHtml: (ctx) => `<p>Hey! It's been 24 hours since you tested our demo! Based on the colors you tried earlier, our AI design assistant thought ${ctx.brandName} ${ctx.colorName} (${ctx.colorCode}) would look incredible in your space. What do you think?</p><p><a href="${ctx.portalLink}">View your new mockup here</a></p>`,
   },
 
   OPERATOR_IMAGEN: {

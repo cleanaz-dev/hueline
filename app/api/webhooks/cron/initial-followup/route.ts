@@ -4,7 +4,7 @@ import axios from "axios";
 import { pickColor } from "@/lib/moonshot/services/pick-color";
 import { getPresignedUrl } from "@/lib/aws/s3";
 
-const LAMBDA_URL = process.env.LAMBDA_FOLLOWUP_URL!;
+const LAMBDA_URL = process.env.LAMBDA_IMAGEN_URL!;
 const apiKey = process.env.INTERNAL_API_KEY!;
 
 export async function POST(req: Request) {

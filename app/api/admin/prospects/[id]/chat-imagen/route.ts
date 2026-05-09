@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 interface Params {
   params: Promise<{ id: string }>;
 }
+const lambdaUrl = process.env.LAMBDA_IMAGEN_URL!
 
 export async function POST(req: Request, { params }: Params) {
   const { id } = await params;
@@ -80,7 +81,7 @@ export async function POST(req: Request, { params }: Params) {
       jobId: job.id,
     };
 
-    await axios.post(process.env.CHAT_IMAGEN_LAMBDA_URL!, lambdaPayload);
+    await axios.post(lambdaUrl, lambdaPayload);
 
     return NextResponse.json({ message: "Success" }, { status: 200 });
   } catch (error: any) {
