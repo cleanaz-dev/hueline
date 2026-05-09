@@ -1,0 +1,156 @@
+// import { handleNewS3Key, getPresignedUrl } from "@/lib/aws/s3";
+// import { getNewMockUpColorMoonshot } from "@/lib/moonshot";
+// import { prisma } from "@/lib/prisma";
+// import { updateMockupData } from "@/lib/prisma/mutations/booking-data";
+// import { createMockupLog } from "@/lib/prisma/mutations/logs/create-mockup-log";
+// import { getOriginalImageUrl } from "@/lib/prisma/mutations/s3key";
+// import { generateMockup } from "@/lib/replicate";
+// // import { getColorMatch } from "@/lib/utils/color-match-lambda";
+// import {
+//   CurrentColor,
+//   TargetColor,
+//   MoonShotColorChoice,
+// } from "@/types/paint-types";
+// import axios from "axios";
+// import { NextResponse } from "next/server";
+
+// interface Params {
+//   params: Promise<{
+//     huelineId: string;
+//     slug: string;
+//   }>;
+// }
+
+// const lambdaUrl = process.env.LAMBDA_IMAGEN_URL;
+
+// export async function POST(req: Request, { params }: Params) {
+//   const { huelineId, slug } = await params;
+
+//   try {
+//     // Need to await the JSON parsing
+
+//     if (!lambdaUrl) {
+//       return NextResponse.json(
+//         { message: "Lambda URL not configured" },
+//         { status: 500 },
+//       );
+//     }
+//     const body = await req.json();
+//     const {
+//       option,
+//       currentColor,
+//       removeFurniture,
+//       targetColor,
+//     }: {
+//       option: string;
+//       currentColor: CurrentColor[];
+//       removeFurniture: boolean;
+//       targetColor?: TargetColor;
+//     } = body;
+//     console.log("📦 Request body:", body);
+
+//     const subdomain = await prisma.subdomain.findUnique({
+//       where: {
+//         slug,
+//         bookings: {
+//           some: {
+//             huelineId: huelineId,
+//           },
+//         },
+//       },
+//       select: {
+//         id: true,
+//       },
+//     });
+//     const booking = await prisma.subBookingData.findUnique({
+//       where: {
+//         huelineId,
+//       },
+//       select: {
+//         id: true,
+//         originalImages: true,
+//         demoClient: true,
+//       },
+//     });
+
+//     if (!subdomain || !booking) {
+//       return NextResponse.json(
+//         {
+//           message: "Missing required data",
+//         },
+//         { status: 400 },
+//       );
+//     }
+
+//     const color = currentColor[0];
+
+//     if (!option || !color) {
+//       return NextResponse.json(
+//         {
+//           message: "Missing required fields",
+//         },
+//         { status: 400 },
+//       );
+//     }
+//     const { originalImageUrl, roomType } = await getOriginalImageUrl(huelineId);
+
+//     if (!originalImageUrl && !roomType) {
+//       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
+//     }
+//     let newColor
+
+//     if (option === "brighter" || option === "trendy" || option === "darker") {
+//        newColor = await getNewMockUpColorMoonshot(
+//         color,
+//         option,
+//         targetColor,
+//       );
+//     } else {
+//        newColor = targetColor
+//     }
+   
+   
+//     console.log("New Color by Moonshot", newColor);
+
+//     const job = await prisma.job.create({
+//       data: {
+//         initiator: "CLIENT",
+//         jobType: "IMAGEN",
+//         status: "PENDING",
+//         brand: newColor.brand,
+//         hex: newColor.hex,
+//         code: newColor.code,
+//         name: newColor.name,
+//         cost: 0.13,
+//         huelineId: huelineId,
+//         model: "openai/gpt-image-2",
+//         deliveryMethod: "SMS",
+//       },
+//     });
+
+//     // const generatePayload = {
+//     //   imageUrl: originalImageUrl,
+//     //   roomType: roomType,
+//     //   targetColor: newColor,
+//     //   huelineId: huelineId,
+//     //   sudomainId: subdomain.id,
+//     //   action: "CLIENT_IMAGEN",
+//     //   jobId: job.id
+//     // };
+//     return NextResponse.json(
+//       {
+//         message: "success",
+//       },
+//       { status: 200 },
+//     );
+//   } catch (error) {
+//     console.error("Error in color generation:", error);
+//     return NextResponse.json(
+//       {
+//         message: "Error Generating New Mockup",
+//         error: String(error),
+//       },
+//       { status: 500 },
+//     );
+//   }
+// }

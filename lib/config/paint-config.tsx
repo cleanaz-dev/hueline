@@ -2,6 +2,7 @@ export interface PaintColor {
   name: string;
   code: string;
   hex: string;
+  brand?: string;
 
   family:
     | "white"

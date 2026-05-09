@@ -2,6 +2,10 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { BookingData, SubdomainAccountData } from "@/types/subdomain-type";
+import { Job } from "@/app/generated/prisma";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface BookingContextType {
   booking: BookingData;
@@ -12,6 +16,9 @@ interface BookingContextType {
   setIsShareDialogOpen: (open: boolean) => void;
   isExportDialogOpen: boolean;
   setIsExportDialogOpen: (open: boolean) => void;
+  // job tracking
+  activeImagenJob: Job | null;
+  hasActiveImagenJob: boolean;
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -31,6 +38,26 @@ export function BookingProvider({
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
+  // SWR handles polling, focus revalidation, and network recovery automatically
+  const { data: jobData } = useSWR<{ job: Job | null }>(
+    `/api/subdomain/${subdomain.slug}/booking/${initialBooking.huelineId}/job-status`,
+    fetcher,
+    {
+      refreshInterval: (data) => {
+        // only poll when a job is active, stops automatically when done
+        const status = data?.job?.status;
+        return status === "PENDING" || status === "PROCESSING" ? 10000 : 0;
+      },
+      revalidateOnFocus: true,   // user tabs back in after waiting → refetches
+      revalidateOnReconnect: true, // user loses network and reconnects → refetches
+    }
+  );
+
+  const activeImagenJob = jobData?.job ?? null;
+  const hasActiveImagenJob =
+    activeImagenJob?.status === "PENDING" ||
+    activeImagenJob?.status === "PROCESSING";
+
   useEffect(() => {
     let isMounted = true;
 
@@ -41,9 +68,9 @@ export function BookingProvider({
         );
 
         if (!res.ok) {
-           console.error("Fetch failed");
-           if (isMounted) setIsLoading(false);
-           return;
+          console.error("Fetch failed");
+          if (isMounted) setIsLoading(false);
+          return;
         }
 
         const { originalImages, mockups } = await res.json();
@@ -72,20 +99,26 @@ export function BookingProvider({
 
     fetchPresignedUrls();
 
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [subdomain.slug]);
 
   return (
-    <BookingContext.Provider value={{ 
-      booking, 
-      subdomain, 
-      isLoading, 
-      error,
-      isShareDialogOpen,
-      setIsShareDialogOpen,
-      isExportDialogOpen,
-      setIsExportDialogOpen
-    }}>
+    <BookingContext.Provider
+      value={{
+        booking,
+        subdomain,
+        isLoading,
+        error,
+        isShareDialogOpen,
+        setIsShareDialogOpen,
+        isExportDialogOpen,
+        setIsExportDialogOpen,
+        activeImagenJob,
+        hasActiveImagenJob,
+      }}
+    >
       {children}
     </BookingContext.Provider>
   );
@@ -93,6 +126,7 @@ export function BookingProvider({
 
 export function useBooking() {
   const context = useContext(BookingContext);
-  if (!context) throw new Error("useBooking must be used within a BookingProvider");
+  if (!context)
+    throw new Error("useBooking must be used within a BookingProvider");
   return context;
 }

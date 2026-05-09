@@ -1,5 +1,6 @@
 import { handleNewS3Key, getPresignedUrl } from "@/lib/aws/s3";
 import { getNewMockUpColorMoonshot } from "@/lib/moonshot";
+import { resolveNewColor } from "@/lib/moonshot/services/resolve-color";
 import { prisma } from "@/lib/prisma";
 import { updateMockupData } from "@/lib/prisma/mutations/booking-data";
 import { createMockupLog } from "@/lib/prisma/mutations/logs/create-mockup-log";
@@ -27,14 +28,13 @@ export async function POST(req: Request, { params }: Params) {
   const { huelineId, slug } = await params;
 
   try {
-    // Need to await the JSON parsing
-
     if (!lambdaUrl) {
       return NextResponse.json(
         { message: "Lambda URL not configured" },
         { status: 500 },
       );
     }
+
     const body = await req.json();
     const {
       option,
@@ -49,10 +49,6 @@ export async function POST(req: Request, { params }: Params) {
     } = body;
     console.log("📦 Request body:", body);
 
-    // if (body) {
-    //   return NextResponse.json({ message: "ok" }, { status: 200 });
-    // }
-
     const subdomain = await prisma.subdomain.findUnique({
       where: {
         slug,
@@ -66,6 +62,7 @@ export async function POST(req: Request, { params }: Params) {
         id: true,
       },
     });
+
     const booking = await prisma.subBookingData.findUnique({
       where: {
         huelineId,
@@ -73,61 +70,65 @@ export async function POST(req: Request, { params }: Params) {
       select: {
         id: true,
         originalImages: true,
+        demoClient: true,
       },
     });
 
     if (!subdomain || !booking) {
       return NextResponse.json(
-        {
-          message: "Missing required data",
-        },
+        { message: "Missing required data" },
         { status: 400 },
       );
     }
-
-    const subdomainId = subdomain.id;
 
     const color = currentColor[0];
 
     if (!option || !color) {
       return NextResponse.json(
-        {
-          message: "Missing required fields",
-        },
+        { message: "Missing required fields" },
         { status: 400 },
       );
     }
+
     const { originalImageUrl, roomType } = await getOriginalImageUrl(huelineId);
 
     if (!originalImageUrl && !roomType) {
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
-    const newColor = await getNewMockUpColorMoonshot(
-      color,
-      option,
-      targetColor,
-    );
+    const newColor = await resolveNewColor(option, color, targetColor);
 
-    console.log("New Color by Moonshot", newColor);
+    console.log("New Color:", newColor);
+
+    const job = await prisma.job.create({
+      data: {
+        initiator: "CLIENT",
+        jobType: "IMAGEN",
+        status: "PENDING",
+        brand: newColor.brand,
+        hex: newColor.hex,
+        code: newColor.code,
+        name: newColor.name,
+        cost: 0.13,
+        huelineId: huelineId,
+        model: "openai/gpt-image-2",
+        deliveryMethod: "SMS",
+      },
+    });
 
     const generatePayload = {
-      slug: slug,
       imageUrl: originalImageUrl,
       roomType: roomType,
       targetColor: newColor,
       huelineId: huelineId,
       sudomainId: subdomain.id,
-      action: "booking",
+      action: "CLIENT_IMAGEN",
+      jobId: job.id
     };
-    axios.post(lambdaUrl, generatePayload);
 
-    return NextResponse.json(
-      {
-        message: "success",
-      },
-      { status: 200 },
-    );
+    await axios.post(lambdaUrl, generatePayload)
+
+    return NextResponse.json({ message: "success" }, { status: 200 });
   } catch (error) {
     console.error("Error in color generation:", error);
     return NextResponse.json(

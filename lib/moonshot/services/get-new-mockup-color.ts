@@ -4,7 +4,7 @@ import {
   BrandId,
   PaintColor,
 } from "@/lib/config/paint-config";
-import { CurrentColor, TargetColor } from "@/types/paint-types";
+import { CurrentColor, MoonShotColorChoice, TargetColor } from "@/types/paint-types";
 import { moonshot } from "../config";
 
 function getMainColors(brand?: string): PaintColor[] {
@@ -24,8 +24,8 @@ export async function getNewMockUpColorMoonshot(
   colorInput: CurrentColor | CurrentColor[], // Accept the object or the array
   option: string,
   targetColor?: TargetColor 
-) {
-  // 1. SAFELY unwrap the array if it exists (Fixes the array bug)
+) : Promise<MoonShotColorChoice> {
+  // 1. SAFELY unwrap the arrayif it exists (Fixes the array bug)
   const color = Array.isArray(colorInput) ? colorInput[0] : colorInput;
 
   // 2. DYNAMICALLY extract properties
@@ -77,7 +77,7 @@ Available colors database: ${JSON.stringify(color_map)}.`;
     });
 
     const content = response.choices[0]?.message?.content?.trim() || "{}";
-    const colorChoice = JSON.parse(content) as PaintColor;
+    const colorChoice = JSON.parse(content) as MoonShotColorChoice;
 
     console.log("RAW Moonshot Color Choice:", colorChoice);
 

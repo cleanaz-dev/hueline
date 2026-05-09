@@ -65,12 +65,13 @@ export async function POST(req: Request, { params }: Params) {
         deliveryMethod,
         initiator: "OPERATOR",
         operator: { connect: { id: operator.id } },
-        status: "PENDING"
+        status: "PENDING",
+        huelineId: huelineId
       },
     });
 
     const lambdaPayload = {
-      action: "imagenOperator",
+      action: "OPERATOR_IMAGEN",
       prospectId: demoClient.id,
       mediaUrl,
       brand,
