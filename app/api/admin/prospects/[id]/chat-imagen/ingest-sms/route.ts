@@ -49,7 +49,7 @@ export async function POST(req: Request, { params }: Params) {
 
     await prisma.job.update({
       where: { id: jobExist.id },
-      data: { status: "SUCCESS" },
+      data: { status: "COMPLETED" },
     });
 
     // Determine Delivery Method dynamically based on whether they have an email on file

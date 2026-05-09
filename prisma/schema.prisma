@@ -347,7 +347,7 @@ model ClientCommunication {
 
 model Job {
   id        String  @id @default(auto()) @map("_id") @db.ObjectId
-  status    String  @default("OPEN")
+  status    JobStatus
   huelineId String?
   jobType   JobType // <-- We will use this in our Switch statement!
   model     String?
@@ -401,6 +401,14 @@ enum JobRole {
   CLIENT
   USER
   OPERATOR
+  SYSTEM
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 enum CommunicationRole {

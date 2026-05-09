@@ -65,6 +65,7 @@ export async function POST(req: Request, { params }: Params) {
         deliveryMethod,
         initiator: "OPERATOR",
         operator: { connect: { id: operator.id } },
+        status: "PENDING"
       },
     });
 

@@ -1,260 +1,234 @@
 import { JsonValue } from "@/app/generated/prisma/runtime/library";
 import { prisma } from "@/lib/prisma";
 import { twilioClient } from "@/lib/twilio/config";
-import { CommunicationRole, ClientActivityType, LogActor, LogType } from "@/app/generated/prisma";
+import { getPresignedUrl } from "@/lib/aws/s3";
+import { CommunicationRole, ClientActivityType, LogActor, Job, DemoClient } from "@/app/generated/prisma";
 import { sendEmail, SendMockUpEmail } from "@/lib/resend";
 
+// ─── Trigger Source ───────────────────────────────────────────────────────────
+export type ImagenTriggerSource = "FOLLOWUP_IMAGEN" | "OPERATOR_IMAGEN" | "CLIENT_IMAGEN";
 
 // ─── Dynamic Context ──────────────────────────────────────────────────────────
-
 export interface ImagenContext {
   brandName: string;
   colorName: string;
   colorHex: string;
   colorCode: string;
   recipientName: string;
-  roomType?: string;
+  roomType: string;
+  portalLink: string;
+  originalSmsBody?: string;
 }
 
-// ─── Trigger Source ───────────────────────────────────────────────────────────
-
-export type ImagenTriggerSource =
-  | "CLIENT_PORTAL"
-  | "CRON_FOLLOWUP"
-  | "OPERATOR_PORTAL";
-
-// ─── Trigger Config (templates, not hardcoded strings) ────────────────────────
-
+// ─── Trigger Config ───────────────────────────────────────────────────────────
 interface TriggerConfig {
   logActor: LogActor;
+  role: CommunicationRole;
   logTitle: (ctx: ImagenContext) => string;
   logDescription: (ctx: ImagenContext) => string;
   activityType: ClientActivityType;
   activityTitle: (ctx: ImagenContext) => string;
   activityDescription: (ctx: ImagenContext) => string;
   markFirstFollowupComplete: boolean;
+  getSmsBody: (ctx: ImagenContext) => string;
+  getEmailSubject: (ctx: ImagenContext) => string;
+  getEmailHtml: (ctx: ImagenContext) => string;
 }
 
 const TRIGGER_CONFIG: Record<ImagenTriggerSource, TriggerConfig> = {
-  CLIENT_PORTAL: {
+  CLIENT_IMAGEN: {
     logActor: "CLIENT",
+    role: "CLIENT",
     logTitle: (ctx) => `Client Imagen — ${ctx.brandName} ${ctx.colorName}`,
-    logDescription: (ctx) =>
-      // Changed colorHex to colorCode here! e.g., "Sherwin Williams Alabaster (SW 7008)"
-      `${ctx.recipientName} generated a ${ctx.roomType ?? "room"} preview using ${ctx.brandName} ${ctx.colorName} (${ctx.colorCode}) from their Hueline portal`,
+    logDescription: (ctx) => `${ctx.recipientName} generated a ${ctx.roomType} preview using ${ctx.brandName} ${ctx.colorName}.`,
     activityType: "GENERATED_IMAGE",
     activityTitle: (ctx) => `Imagen — ${ctx.colorName}`,
-    activityDescription: (ctx) =>
-      `${ctx.recipientName} previewed ${ctx.brandName} ${ctx.colorName} on their ${ctx.roomType ?? "room"}`,
+    activityDescription: (ctx) => `${ctx.recipientName} previewed ${ctx.brandName} ${ctx.colorName} on their ${ctx.roomType}`,
     markFirstFollowupComplete: false,
+    getSmsBody: (ctx) => `Your requested mockup featuring ${ctx.brandName} in ${ctx.colorName} is ready! View your portal here: ${ctx.portalLink}`,
+    getEmailSubject: (ctx) => `Your New Room Mockup - ${ctx.colorName}`,
+    getEmailHtml: (ctx) => `<p>Your requested mockup featuring ${ctx.brandName} in ${ctx.colorName} is ready!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>`,
   },
 
-  CRON_FOLLOWUP: {
+  FOLLOWUP_IMAGEN: {
     logActor: "SYSTEM",
+    role: "OPERATOR",
     logTitle: (ctx) => `Followup Imagen — ${ctx.brandName} ${ctx.colorName}`,
-    logDescription: (ctx) =>
-      // Changed colorHex to colorCode here!
-      `System sent automated 2hr followup for ${ctx.recipientName} — ${ctx.brandName} ${ctx.colorName} (${ctx.colorCode}), firstFollowup marked complete`,
+    logDescription: (ctx) => `System sent automated followup for ${ctx.recipientName} — ${ctx.brandName} ${ctx.colorName}.`,
     activityType: "FOLLOWUP_IMAGE_SENT",
     activityTitle: (ctx) => `Followup Imagen — ${ctx.colorName}`,
-    activityDescription: (ctx) =>
-      `Automated followup imagen sent to ${ctx.recipientName} for ${ctx.roomType ?? "room"} using ${ctx.brandName} ${ctx.colorName}`,
+    activityDescription: (ctx) => `Automated followup imagen sent to ${ctx.recipientName} using ${ctx.brandName} ${ctx.colorName}`,
     markFirstFollowupComplete: true,
+    getSmsBody: (ctx) => `${ctx.originalSmsBody || 'Here is your room preview.'}\n\nView your portal here: ${ctx.portalLink}`,
+    getEmailSubject: (ctx) => `Your Room Preview - ${ctx.colorName}`,
+    getEmailHtml: (ctx) => `<p>${ctx.originalSmsBody || 'Here is your room preview.'}</p><p><a href="${ctx.portalLink}">View your portal here</a></p>`,
   },
 
-  OPERATOR_PORTAL: {
+  OPERATOR_IMAGEN: {
     logActor: "PAINTER",
+    role: "OPERATOR",
     logTitle: (ctx) => `Operator Imagen — ${ctx.brandName} ${ctx.colorName}`,
-    logDescription: (ctx) =>
-      // Changed colorHex to colorCode here!
-      `Operator generated a ${ctx.roomType ?? "room"} preview for ${ctx.recipientName} using ${ctx.brandName} ${ctx.colorName} (${ctx.colorCode})`,
+    logDescription: (ctx) => `Operator generated a ${ctx.roomType} preview for ${ctx.recipientName} using ${ctx.brandName} ${ctx.colorName}.`,
     activityType: "GENERATED_IMAGE",
     activityTitle: (ctx) => `Operator Imagen — ${ctx.colorName}`,
-    activityDescription: (ctx) =>
-      `Operator sent ${ctx.recipientName} a ${ctx.roomType ?? "room"} preview — ${ctx.brandName} ${ctx.colorName}`,
+    activityDescription: (ctx) => `Operator sent ${ctx.recipientName} a ${ctx.roomType} preview — ${ctx.brandName} ${ctx.colorName}`,
     markFirstFollowupComplete: false,
+    getSmsBody: (ctx) => `Here is your new mockup featuring the ${ctx.brandName} palette in ${ctx.colorName}! View your portal here: ${ctx.portalLink}`,
+    getEmailSubject: (ctx) => `New Room Mockup - ${ctx.colorName}`,
+    getEmailHtml: (ctx) => `<p>Here is your new mockup featuring the ${ctx.brandName} palette in ${ctx.colorName}!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>`,
   },
 };
 
-// ─── Media ────────────────────────────────────────────────────────────────────
+// ─── Main Function ────────────────────────────────────────────────────────────
 
-interface MediaProps {
-  s3Key: string;         // Stored in the DB permanently
-  presignedUrl: string;  // Given to Twilio so it can fetch the image right now
-  size: number;
-  fileName: string;
-  mimeType: string;
+interface ProcessImagenArgs {
+  webhookBody: any;
+  triggerSource: ImagenTriggerSource;
+  job: Job;
+  demoClient: DemoClient;
+  operatorId?: string | null;
 }
 
-
-// ─── Main Function ─────────────────────────────────────────────────────────────
-
-export async function processImagenWorkflow({
-  toPhone,        // Changed to clarify this is the phone
-  toEmail,        // Added for email
-  smsBody,
-  emailSubject,
-  emailHtml,
-  demoClientId,
-  mediaData,
-  role,
-  metadata,
-  triggerSource,
-  context,
-  operatorId,
-  deliveryMethod, // "SMS" | "EMAIL" | "BOTH"
-}: {
-  toPhone?: string | null;
-  toEmail?: string | null;
-  smsBody?: string;
-  emailSubject?: string;
-  emailHtml?: string;
-  demoClientId: string;
-  mediaData: MediaProps;
-  role: CommunicationRole;
-  metadata: JsonValue;
-  triggerSource: ImagenTriggerSource;
-  context: ImagenContext;
-  operatorId?: string | null;
-  deliveryMethod: "SMS" | "EMAIL" | "BOTH";
-}) {
+export async function processImagenWorkflow({ webhookBody, triggerSource, job, demoClient, operatorId }: ProcessImagenArgs) {
   const config = TRIGGER_CONFIG[triggerSource];
 
   try {
-    const subdomain = await prisma.subdomain.findFirst({
-      where: {
-        OR:[
-          { demoClients: { some: { id: demoClientId } } },
-          { clients:     { some: { id: demoClientId } } },
-        ],
+    // 1. Normalize Payload Data seamlessly 
+    const activeColor = webhookBody.targetColor || webhookBody.color || {};
+    const brandName = webhookBody.brand || activeColor.brand || "RAL";
+    const colorName = activeColor.name || "Selected Color";
+    const colorCode = activeColor.code || "";
+    const colorHex = activeColor.hex || "";
+    const roomType = webhookBody.roomType || "Room";
+    const s3Key = webhookBody.s3Key;
+    const huelineId = webhookBody.huelineId;
+
+    // Determine strict delivery method
+    const deliveryMethod: "SMS" | "EMAIL" = demoClient.phone ? "SMS" : "EMAIL";
+
+    // 2. UNIVERSAL DATABASE SAVE (Happens every time, no exceptions)
+    const subBookingData = await prisma.subBookingData.update({
+      where: { huelineId },
+      include: { subdomain: true },
+      data: {
+        mockups: {
+          create: {
+            s3Key, roomType,
+            brand: brandName,
+            code: colorCode,
+            name: colorName,
+            hex: colorHex,
+          },
+        },
+        paintColors: {
+          create: {
+            brand: brandName,
+            code: colorCode,
+            name: colorName,
+            hex: colorHex,
+          },
+        },
       },
-      select: { id: true, slug: true },
     });
 
-    // 1. Send External Messages First
-    let twilioMessage;
-    let resendMessage;
-    if (!subdomain) {
-      throw new Error
-    }
+    // 3. Generate Context & Presigned URL
+    const portalLink = `https://${subBookingData.subdomain.slug}.hue-line.com/j/${huelineId}`;
+    const presignedUrl = await getPresignedUrl(s3Key);
 
-       if ((deliveryMethod === "SMS" || deliveryMethod === "BOTH") && toPhone && smsBody) {
+    const context: ImagenContext = {
+      brandName,
+      colorName,
+      colorHex,
+      colorCode,
+      recipientName: demoClient.name || "Client",
+      roomType,
+      portalLink,
+      originalSmsBody: webhookBody.smsBody,
+    };
+
+    // 4. Get Text/Email Content from Config
+    const smsBody = config.getSmsBody(context);
+    const emailSubject = config.getEmailSubject(context);
+    const emailHtml = config.getEmailHtml(context);
+
+    // 5. Send Message (Only ONE fires)
+    if (deliveryMethod === "SMS" && demoClient.phone) {
       await twilioClient.messages.create({
-        to: toPhone,
+        to: demoClient.phone,
         from: process.env.TWILIO_PHONE_NUMBER,
         body: smsBody,
-        // Twilio gets the temporary presigned URL!
-        mediaUrl:[mediaData.presignedUrl], 
+        mediaUrl: [presignedUrl],
       });
-    }
-
-    if ((deliveryMethod === "EMAIL" || deliveryMethod === "BOTH") && toEmail && emailSubject && emailHtml) {
+    } else if (deliveryMethod === "EMAIL" && demoClient.email) {
       await sendEmail({
-        to: toEmail,
+        to: demoClient.email,
         subject: emailSubject,
         template: SendMockUpEmail({
           clientName: context.recipientName,
-          colors: {
-            brand: context.brandName,
-            code:context.colorCode,
-            hex: context.colorHex,
-            name: context.colorName,
-          },
+          colors: { brand: brandName, code: colorCode, hex: colorHex, name: colorName },
           subject: emailSubject,
-          body: emailHtml
-        })
+          body: emailHtml,
+        }),
       });
     }
 
-    // 2. Database Transaction
-    const results = await prisma.$transaction(async (tx) => {
-      
-      const communicationIds: string[] =[];
-
-      // A. Create SMS Record if applicable
-      if (deliveryMethod === "SMS" || deliveryMethod === "BOTH") {
-        const smsComm = await tx.clientCommunication.create({
-          data: {
-            body: smsBody || "SMS Sent",
-            role,
-            type: "SMS",
-            demoClient: { connect: { id: demoClientId } },
-            ...(operatorId ? { operator: { connect: { id: operatorId } } } : {}),
-            mediaAttachments: {
-              create: {
-                filename: mediaData.fileName,
-                size: mediaData.size,
-                mimeType: mediaData.mimeType,
-                mediaSource: "S3",
-                mediaUrl: mediaData.s3Key,
-              }
-            }
+    // 6. Database Transaction (Logs & Activity)
+    await prisma.$transaction(async (tx) => {
+      // A. Communication Record
+      await tx.clientCommunication.create({
+        data: {
+          body: deliveryMethod === "SMS" ? smsBody : emailSubject,
+          role: config.role,
+          type: deliveryMethod, 
+          demoClient: { connect: { id: demoClient.id } },
+          ...(operatorId ? { operator: { connect: { id: operatorId } } } : {}),
+          mediaAttachments: {
+            create: {
+              filename: `${brandName}-mockup.jpg`,
+              size: 0,
+              mimeType: "image/jpeg",
+              mediaSource: "S3",
+              mediaUrl: s3Key,
+            },
           },
-        });
-        communicationIds.push(smsComm.id);
-      }
+        },
+      });
 
-      // B. Create EMAIL Record if applicable
-      if (deliveryMethod === "EMAIL" || deliveryMethod === "BOTH") {
-        const emailComm = await tx.clientCommunication.create({
-          data: {
-            body: emailSubject || "Email Sent", // Storing subject as the main body text for logs
-            role,
-            type: "EMAIL",
-            demoClient: { connect: { id: demoClientId } },
-            ...(operatorId ? { operator: { connect: { id: operatorId } } } : {}),
-            mediaAttachments: {
-              create: {
-                filename: mediaData.fileName,
-                size: mediaData.size,
-                mimeType: mediaData.mimeType,
-                mediaSource: "S3",
-                mediaUrl: mediaData.s3Key,
-              }
-            }
-          },
-        });
-        communicationIds.push(emailComm.id);
-      }
-
-      // C. Activity & Logs (We just write ONE activity, no matter how many methods were used)
+      // B. Activity Log
       await tx.clientActivity.create({
         data: {
           type: config.activityType,
           title: config.activityTitle(context),
           description: `${config.activityDescription(context)} (via ${deliveryMethod})`,
-          metadata,
-          demoClient: { connect: { id: demoClientId } },
+          metadata: { huelineId, jobId: job.id },
+          demoClient: { connect: { id: demoClient.id } },
         },
       });
 
-     
-        await tx.logs.create({
-          data: {
-            title: config.logTitle(context),
-            type: "MOCKUP",
-            actor: config.logActor,
-            description: `${config.logDescription(context)} (via ${deliveryMethod})`,
-            subdomain: { connect: { id: subdomain.id } },
-          },
-        });
-    
+      // C. System Log
+      await tx.logs.create({
+        data: {
+          title: config.logTitle(context),
+          type: "MOCKUP",
+          actor: config.logActor,
+          description: `${config.logDescription(context)} (via ${deliveryMethod})`,
+          subdomain: { connect: { id: subBookingData.subdomain.id } },
+        },
+      });
 
       // D. Mark Followup Complete
       if (config.markFirstFollowupComplete) {
         await tx.demoClient.update({
-          where: { id: demoClientId },
+          where: { id: demoClient.id },
           data: { initialFollowUp: true },
         });
       }
-
-      return communicationIds;
     });
 
-    return { success: true, communicationIds: results };
+    return { success: true };
 
   } catch (error) {
-    console.error(`[processImagenWorkflow] Failed for ${demoClientId}:`, error);
+    console.error(`[processImagenWorkflow] Failed for ${demoClient.id}:`, error);
     throw new Error("Failed to process Imagen workflow");
   }
 }
