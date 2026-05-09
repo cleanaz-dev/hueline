@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -14,7 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { COLOR_BRANDS } from "./color-brand-data";
-import { useSuperAdmin } from "@/context/super-admin-context";
+import { useState } from "react";
+
 
 type Step = "IDLE" | "BRAND" | "COLOR" | "CONFIRM" | "LOADING" | "SUCCESS";
 type DeliveryMethod = "email" | "sms";
@@ -39,13 +39,10 @@ export function InteractiveChatImage({
 }: InteractiveChatImageProps) {
   
 
-  const[step, setStep] = React.useState<Step>("IDLE");
-  const [selectedBrand, setSelectedBrand] = React.useState<
-    keyof typeof COLOR_BRANDS | null
-  >(null);
-  const[selectedColor, setSelectedColor] = React.useState<any>(null);
-  const [deliveryMethod, setDeliveryMethod] =
-    React.useState<DeliveryMethod>("email");
+  const[step, setStep] = useState<Step>("IDLE");
+  const [selectedBrand, setSelectedBrand] = useState< keyof typeof COLOR_BRANDS | null >(null);
+  const [selectedColor, setSelectedColor] = useState<any>(null);
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("email");
 
   
 

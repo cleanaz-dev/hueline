@@ -326,6 +326,7 @@ model DemoClient {
   createdAt        DateTime?        @default(now())
   updatedAt        DateTime?        @updatedAt
   clientActivities ClientActivity[]
+  jobs             Job[]
 }
 
 model ClientCommunication {
@@ -348,20 +349,27 @@ model Job {
   id        String  @id @default(auto()) @map("_id") @db.ObjectId
   status    String  @default("OPEN")
   huelineId String?
-  jobType   JobType
+  jobType   JobType // <-- We will use this in our Switch statement!
   model     String?
   cost      Float?
 
-  initiator  JobRole
-  operator   SubdomainUser? @relation(fields: [operatorId], references: [id])
-  operatorId String?        @db.ObjectId
-  deliveryMethod String? 
+  initiator      JobRole
+  operator       SubdomainUser? @relation(fields: [operatorId], references: [id])
+  operatorId     String?        @db.ObjectId
+  deliveryMethod String?
 
   // colors for imagen
   brand String?
   code  String?
   hex   String?
   name  String?
+
+  // 🌟 NEW: Let the Job know exactly who it is for!
+  demoClientId String?     @db.ObjectId
+  demoClient   DemoClient? @relation(fields: [demoClientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum JobType {

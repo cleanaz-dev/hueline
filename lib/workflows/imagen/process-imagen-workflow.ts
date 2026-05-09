@@ -1,8 +1,8 @@
 import { JsonValue } from "@/app/generated/prisma/runtime/library";
-import { prisma } from "../prisma";
-import { twilioClient } from "./config";
+import { prisma } from "@/lib/prisma";
+import { twilioClient } from "@/lib/twilio/config";
 import { CommunicationRole, ClientActivityType, LogActor, LogType } from "@/app/generated/prisma";
-import { sendEmail, SendMockUpEmail } from "../resend";
+import { sendEmail, SendMockUpEmail } from "@/lib/resend";
 
 
 // ─── Dynamic Context ──────────────────────────────────────────────────────────

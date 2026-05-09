@@ -69,12 +69,13 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     const lambdaPayload = {
+      action: "imagenOperator",
       prospectId: demoClient.id,
       mediaUrl,
       brand,
       color,
       deliveryMethod,
-      job
+      jobId: job.id,
     };
 
     await axios.post(process.env.CHAT_IMAGEN_LAMBDA_URL!, lambdaPayload);

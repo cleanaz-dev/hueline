@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/resend";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -15,19 +16,25 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { s3Key, brand, color } = await req.json();
+    const { s3Key, brand, color, jobId } = await req.json();
 
-    if (!s3Key) {
-      return NextResponse.json({ message: "Missing s3Key" }, { status: 400 });
+    if (!s3Key || !jobId) {
+      return NextResponse.json({ message: "Missing s3Key and Job ID" }, { status: 400 });
     }
+
+    const job = await prisma.job.findUnique({
+      where: {
+        id: jobId
+      }
+    })
 
     const demoClient = await prisma.demoClient.findUnique({
       where: { id },
       include: { subBookingData: true },
     });
 
-    if (!demoClient) {
-      return NextResponse.json({ message: "Prospect not found" }, { status: 404 });
+    if (!demoClient || !job) {
+      return NextResponse.json({ message: "Data not found" }, { status: 404 });
     }
 
     if (demoClient.subBookingData) {
@@ -65,7 +72,17 @@ export async function POST(req: Request, { params }: Params) {
         },
       },
     });
-    // TO DO SEND EMAIL
+    // // TO DO SEND EMAIL
+    // await sendEmail(
+    //   {
+    //     to: "",
+    //     subject: "",
+    //     template: MockupTemplate: {
+
+    //     }
+    //   }
+
+    // )
     
 
     return NextResponse.json({ message: "Email mockup ingested successfully" }, { status: 200 });

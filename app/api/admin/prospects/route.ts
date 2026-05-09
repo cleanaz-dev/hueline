@@ -3,7 +3,15 @@ import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
-    const demoClients = await prisma.demoClient.findMany();
+    const demoClients = await prisma.demoClient.findMany({
+      select: {
+        subBookingData: {
+          select: {
+            huelineId: true
+          }
+        }
+      }
+    });
     return NextResponse.json(demoClients);
   } catch (error) {
     console.error(error);

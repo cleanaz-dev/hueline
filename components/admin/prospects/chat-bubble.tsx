@@ -38,6 +38,8 @@ interface ChatBubbleProps {
       size: number;
     }[];
   };
+ 
+  huelineId?: string
   prospectName?: string;
   prospectId?: string;
   isPending?: boolean;
@@ -79,7 +81,8 @@ const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
 };
 
 export function ChatBubble({ 
-  msg, 
+  msg,
+  huelineId,
   prospectName, 
   isPending, 
   prospectId,
