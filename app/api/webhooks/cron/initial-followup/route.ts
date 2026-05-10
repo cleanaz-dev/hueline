@@ -41,8 +41,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "No pending follow-ups." });
     }
 
-   
-
     let successCount = 0;
 
     for (const client of followUps) {
@@ -53,7 +51,7 @@ export async function POST(req: Request) {
       }
 
       if (!client.subdomainId) {
-        return NextResponse.json({message: "Invalid Data"}, {status: 400})
+        return NextResponse.json({ message: "Invalid Data" }, { status: 400 });
       }
 
       try {
@@ -118,10 +116,17 @@ export async function POST(req: Request) {
           imageUrl: presignedUrl,
           targetColor: smartColor,
           jobId: job.id,
-          subdomainId: client.subdomainId
-        }
+          subdomainId: client.subdomainId,
+        };
 
-        const parsed = lambdaPayloadSchema.parse(lambdaPayload)
+        const parsed = lambdaPayloadSchema.safeParse(lambdaPayload);
+        if (!parsed.success) {
+          console.error("Invalid payload:", parsed.error.issues);
+          return NextResponse.json(
+            { message: "Invalid payload" },
+            { status: 400 },
+          );
+        }
         // --- D: Fire Lambda ---
         const res = await axios.post(LAMBDA_URL, lambdaPayload);
 
