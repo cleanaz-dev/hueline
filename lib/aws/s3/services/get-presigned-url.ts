@@ -14,3 +14,10 @@ export async function getPresignedUrl(
   const url = await getSignedUrl(s3Client, command, { expiresIn });
   return url;
 }
+
+export async function getPresignedUrls(
+  keys: string[],
+  expiresIn: number = 3600
+): Promise<string[]> {
+  return Promise.all(keys.map((key) => getPresignedUrl(key, expiresIn)));
+}

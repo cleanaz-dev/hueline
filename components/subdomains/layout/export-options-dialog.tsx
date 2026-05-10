@@ -50,7 +50,7 @@ export default function ExportOptionsDialog({
   const [isExporting, setIsExporting] = useState<boolean>(false);
 
   const mockupUrls = booking.mockups || [];
-  const { subdomain } = useBooking();
+  const { subdomain, refreshUpscaleJob } = useBooking();
 
   const toggleImageSelection = (index: number) => {
     setSelectedImages((prev) =>
@@ -85,6 +85,7 @@ export default function ExportOptionsDialog({
 
       if (!response.ok) throw new Error("Export failed");
 
+      refreshUpscaleJob();
       toast.success("Export started! You'll receive an SMS when ready.");
       onClose();
     } catch (error) {
@@ -98,34 +99,26 @@ export default function ExportOptionsDialog({
   if (!isOpen) return null;
 
   return (
-    // 1. CONTAINER: Desktop centers items, Mobile aligns to bottom (items-end)
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4">
       
-      {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
         onClick={onClose} 
       />
 
-      {/* 2. CARD/SHEET: 
-          - Mobile: rounded-t-[2rem], full width, fixed height (85vh)
-          - Desktop: rounded-2xl, max width, auto height
-      */}
       <div className="relative bg-white w-full sm:max-w-2xl 
                       h-[85vh] sm:h-auto sm:max-h-[90vh] 
                       rounded-t-[2rem] sm:rounded-2xl 
                       flex flex-col shadow-2xl overflow-hidden 
                       animate-in slide-in-from-bottom-10 fade-in duration-300">
         
-        {/* --- MOBILE GRAB HANDLE (Hidden on Desktop) --- */}
         <div 
           className="sm:hidden w-full flex justify-center pt-3 pb-2 flex-shrink-0 cursor-grab active:cursor-grabbing" 
           onClick={onClose}
         >
-            <div className="w-10 h-1.5 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors" />
+          <div className="w-10 h-1.5 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors" />
         </div>
 
-        {/* Header */}
         <div className="flex items-center justify-between px-6 pb-4 pt-2 sm:p-6 border-b-0 sm:border-b shrink-0">
           <div>
             <h3 className="text-xl font-bold text-gray-900">Export Images</h3>
@@ -134,7 +127,6 @@ export default function ExportOptionsDialog({
             </p>
           </div>
           
-          {/* DESKTOP CLOSE BUTTON (Hidden on Mobile) */}
           <button
             onClick={onClose}
             className="hidden sm:flex p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -143,10 +135,8 @@ export default function ExportOptionsDialog({
           </button>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 pt-2 sm:pt-6">
           
-          {/* Image Grid */}
           <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
             {mockupUrls.map((mockup, i) => (
               <button
@@ -179,7 +169,6 @@ export default function ExportOptionsDialog({
             ))}
           </div>
 
-          {/* Resolution Selector */}
           <div className="space-y-3">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
               Output Quality
@@ -214,7 +203,6 @@ export default function ExportOptionsDialog({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-6 border-t bg-gray-50 flex justify-end shrink-0 pb-8 sm:pb-6">
           <div className="flex gap-3 w-full sm:w-auto">
             <Button onClick={onClose} size="lg" variant="outline" className="flex-1 sm:flex-none">

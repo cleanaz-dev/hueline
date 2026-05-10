@@ -16,9 +16,11 @@ interface BookingContextType {
   setIsShareDialogOpen: (open: boolean) => void;
   isExportDialogOpen: boolean;
   setIsExportDialogOpen: (open: boolean) => void;
-  // job tracking
   activeImagenJob: Job | null;
   hasActiveImagenJob: boolean;
+  activeUpscaleJob: Job | null;
+  hasActiveUpscaleJob: boolean;
+  refreshUpscaleJob: () => void;
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -38,25 +40,41 @@ export function BookingProvider({
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
-  // SWR handles polling, focus revalidation, and network recovery automatically
-  const { data: jobData } = useSWR<{ job: Job | null }>(
-    `/api/subdomain/${subdomain.slug}/booking/${initialBooking.huelineId}/job-status`,
+  const { data: imagenJobData } = useSWR<{ job: Job | null }>(
+    `/api/subdomain/${subdomain.slug}/booking/${initialBooking.huelineId}/imagen-job-status`,
     fetcher,
     {
       refreshInterval: (data) => {
-        // only poll when a job is active, stops automatically when done
         const status = data?.job?.status;
         return status === "PENDING" || status === "PROCESSING" ? 10000 : 0;
       },
-      revalidateOnFocus: true,   // user tabs back in after waiting → refetches
-      revalidateOnReconnect: true, // user loses network and reconnects → refetches
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
     }
   );
 
-  const activeImagenJob = jobData?.job ?? null;
+  const activeImagenJob = imagenJobData?.job ?? null;
   const hasActiveImagenJob =
     activeImagenJob?.status === "PENDING" ||
     activeImagenJob?.status === "PROCESSING";
+
+  const { data: upscaleJobData, mutate: mutateUpscaleJob } = useSWR<{ job: Job | null }>(
+    `/api/subdomain/${subdomain.slug}/booking/${initialBooking.huelineId}/upscale-job-status`,
+    fetcher,
+    {
+      refreshInterval: (data) => {
+        const status = data?.job?.status;
+        return status === "PENDING" || status === "PROCESSING" ? 10000 : 0;
+      },
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  const activeUpscaleJob = upscaleJobData?.job ?? null;
+  const hasActiveUpscaleJob =
+    activeUpscaleJob?.status === "PENDING" ||
+    activeUpscaleJob?.status === "PROCESSING";
 
   useEffect(() => {
     let isMounted = true;
@@ -117,6 +135,9 @@ export function BookingProvider({
         setIsExportDialogOpen,
         activeImagenJob,
         hasActiveImagenJob,
+        activeUpscaleJob,
+        hasActiveUpscaleJob,
+        refreshUpscaleJob: mutateUpscaleJob,
       }}
     >
       {children}

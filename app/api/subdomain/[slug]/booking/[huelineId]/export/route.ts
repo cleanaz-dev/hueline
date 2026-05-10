@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { headers } from "next/headers";
+import axios from "axios";
+import {
+  LambdaUpscalePayload,
+  upscalePayloadSchema,
+} from "@/lib/zod/lambda-upscale-payload";
+import { getPresignedUrls } from "@/lib/aws/s3/services/get-presigned-url";
 
 interface Params {
   params: Promise<{
@@ -10,6 +15,8 @@ interface Params {
     slug: string;
   }>;
 }
+
+const lambdaUrl = process.env.LAMBDA_EXPORT_URL!;
 
 // GET exports for SWR polling
 export async function GET(req: Request, { params }: Params) {
@@ -32,7 +39,10 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ exports: booking.exports });
   } catch (error) {
     console.error("Error fetching exports:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -50,7 +60,10 @@ export async function POST(req: Request, { params }: Params) {
     const { imageKeys, resolution, phone } = body;
 
     if (!imageKeys?.length || !resolution || !phone) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
     }
 
     const subdomain = await prisma.subdomain.findUnique({
@@ -61,8 +74,11 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
-    if (!subdomain) {
-      return NextResponse.json({ error: "Invalid Data Request" }, { status: 400 });
+    if (!subdomain || !subdomain.twilioPhoneNumber) {
+      return NextResponse.json(
+        { error: "Invalid Data Request" },
+        { status: 400 },
+      );
     }
 
     const booking = await prisma.subBookingData.findUnique({
@@ -74,29 +90,58 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    const lambdaResponse = await fetch(process.env.LAMBDA_EXPORT_URL!, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        subdomain_id: subdomain.id,
-        slug,
-        hueline_id: huelineId,
-        image_keys: imageKeys,
-        resolution,
-        phone,
-        twilio_from: subdomain.twilioPhoneNumber,
-      }),
+    const imageUrls = await getPresignedUrls(imageKeys, 3600);
+
+    const job = await prisma.job.create({
+      data: {
+        initiator: "CLIENT",
+        jobType: "UPSCALE",
+        status: "PENDING",
+        model: "novita/image-upscaler",
+        cost: 0.01,
+        huelineId,
+        deliveryMethod: "SMS",
+      },
     });
 
-    if (!lambdaResponse.ok) {
-      throw new Error("Lambda request failed");
+    const upscalePayload: LambdaUpscalePayload = {
+      subdomainId: subdomain.id,
+      huelineId: huelineId,
+      imageUrls,
+      resolution,
+      phone,
+      twilioFromNumber: subdomain.twilioPhoneNumber,
+      jobId: job.id,
+      action: "IMAGE_UPSCALE",
+    };
+
+    const parsed = upscalePayloadSchema.safeParse(upscalePayload);
+
+    if (!parsed.success) {
+      console.error("Invalid payload:", parsed.error.issues);
+      return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
+    }
+    const lambdaRes = await axios.post(lambdaUrl, upscalePayload);
+
+    if (lambdaRes.status !== 200) {
+      await prisma.job.update({
+        where: { id: job.id },
+        data: { status: "FAILED" },
+      });
+      return NextResponse.json(
+        { error: "Failed to start export" },
+        { status: 500 },
+      );
     }
 
-    const { job_id } = await lambdaResponse.json();
+    await prisma.job.update({
+      where: { id: job.id },
+      data: { status: "PROCESSING" },
+    });
 
     await prisma.export.create({
       data: {
-        jobId: job_id,
+        jobId: job.id,
         bookingId: booking.id,
         resolution,
         imageCount: imageKeys.length,
@@ -106,41 +151,47 @@ export async function POST(req: Request, { params }: Params) {
 
     return NextResponse.json({
       success: true,
-      jobId: job_id,
+      jobId: job.id,
       message: "Export started. You'll receive an SMS when ready.",
     });
   } catch (error) {
     console.error("Export error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
 // Update existing export (called by Lambda)
-export async function PATCH(req: Request, { params }: Params) {
-  try {
-    const headersList = await headers();
-    const apiKey = headersList.get("x-api-key");
+// export async function PATCH(req: Request, { params }: Params) {
+//   try {
+//     const headersList = await headers();
+//     const apiKey = headersList.get("x-api-key");
 
-    if (apiKey !== process.env.INTERNAL_API_KEY) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+//     if (apiKey !== process.env.INTERNAL_API_KEY) {
+//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//     }
 
-    const body = await req.json();
-    const { jobId, status, downloadUrl, completedAt, error } = body;
+//     const body = await req.json();
+//     const { jobId, status, downloadUrl, completedAt, error } = body;
 
-    const updatedExport = await prisma.export.update({
-      where: { jobId },
-      data: {
-        status,
-        ...(downloadUrl && { downloadUrl }),
-        ...(completedAt && { completedAt: new Date(completedAt) }),
-        ...(error && { error }),
-      },
-    });
+//     const updatedExport = await prisma.export.update({
+//       where: { jobId },
+//       data: {
+//         status,
+//         ...(downloadUrl && { downloadUrl }),
+//         ...(completedAt && { completedAt: new Date(completedAt) }),
+//         ...(error && { error }),
+//       },
+//     });
 
-    return NextResponse.json({ success: true, export: updatedExport });
-  } catch (error) {
-    console.error("Error updating export:", error);
-    return NextResponse.json({ error: "Failed to update export" }, { status: 500 });
-  }
-}
+//     return NextResponse.json({ success: true, export: updatedExport });
+//   } catch (error) {
+//     console.error("Error updating export:", error);
+//     return NextResponse.json(
+//       { error: "Failed to update export" },
+//       { status: 500 },
+//     );
+//   }
+// }

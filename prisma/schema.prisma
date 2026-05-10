@@ -308,6 +308,19 @@ model SubBookingData {
   demoClient DemoClient?
 }
 
+model Quote {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  huelineId String
+  version Int @default(1)
+  status      QuoteStatus @default(DRAFT)
+}
+
+enum QuoteStatus {
+  DRAFT
+  READY
+  SENT
+  ACCEPTED
+}
 model DemoClient {
   id              String        @id @default(auto()) @map("_id") @db.ObjectId
   name            String?
