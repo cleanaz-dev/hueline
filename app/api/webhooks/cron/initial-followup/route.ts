@@ -108,10 +108,10 @@ export async function POST(req: Request) {
           action: "FOLLOWUP_IMAGEN",
           clientId: client.id,
           huelineId: subData.huelineId,
-          roomType: subData.roomType,
           imageUrl: presignedUrl,
           targetColor: smartColor,
-          jobId: job.id
+          jobId: job.id,
+          subdomainId: client.subdomainId
         }
         // --- D: Fire Lambda ---
         const res = await axios.post(LAMBDA_URL, payload);

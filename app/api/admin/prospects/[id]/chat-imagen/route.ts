@@ -20,7 +20,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const operator = await prisma.subdomainUser.findFirst({
     where: { email: session.user.email! },
-    select: { id: true },
+    select: { id: true, subdomainId: true },
   });
 
   if (!operator) {
@@ -74,10 +74,10 @@ export async function POST(req: Request, { params }: Params) {
     const lambdaPayload = {
       action: "OPERATOR_IMAGEN",
       prospectId: demoClient.id,
+      subdomainId: operator.subdomainId,
       mediaUrl,
       brand,
       color,
-      deliveryMethod,
       jobId: job.id,
     };
 

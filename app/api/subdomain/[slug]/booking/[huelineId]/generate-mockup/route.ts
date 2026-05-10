@@ -108,15 +108,17 @@ export async function POST(req: Request, { params }: Params) {
         huelineId: huelineId,
         model: "openai/gpt-image-2",
         deliveryMethod: "SMS",
+        demoClient: {connect: {id: booking.demoClient?.id }}
       },
     });
 
     const generatePayload = {
+      clientId: booking.demoClient?.id,
       imageUrl: originalImageUrl,
       roomType: roomType,
       targetColor: newColor,
       huelineId: huelineId,
-      sudomainId: subdomain.id,
+      subdomainId: subdomain.id,
       action: "CLIENT_IMAGEN",
       jobId: job.id
     };
