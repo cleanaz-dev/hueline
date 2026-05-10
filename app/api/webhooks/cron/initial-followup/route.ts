@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import axios from "axios";
 import { pickColor } from "@/lib/moonshot/services/pick-color";
 import { getPresignedUrl } from "@/lib/aws/s3";
+import { type LambdaImagenPayload, lambdaPayloadSchema } from "@/lib/zod";
 
 const LAMBDA_URL = process.env.LAMBDA_IMAGEN_URL!;
 const apiKey = process.env.INTERNAL_API_KEY!;
@@ -40,6 +41,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "No pending follow-ups." });
     }
 
+   
+
     let successCount = 0;
 
     for (const client of followUps) {
@@ -47,6 +50,10 @@ export async function POST(req: Request) {
       if (!subData || !subData.originalImages) {
         console.warn(`Skipping client ${client.id}: No original image found.`);
         continue;
+      }
+
+      if (!client.subdomainId) {
+        return NextResponse.json({message: "Invalid Data"}, {status: 400})
       }
 
       try {
@@ -104,7 +111,7 @@ export async function POST(req: Request) {
         });
 
         // --- C: Build Payload (Extremely lean now!) ---
-        const payload = {
+        const lambdaPayload: LambdaImagenPayload = {
           action: "FOLLOWUP_IMAGEN",
           clientId: client.id,
           huelineId: subData.huelineId,
@@ -113,8 +120,10 @@ export async function POST(req: Request) {
           jobId: job.id,
           subdomainId: client.subdomainId
         }
+
+        const parsed = lambdaPayloadSchema.parse(lambdaPayload)
         // --- D: Fire Lambda ---
-        const res = await axios.post(LAMBDA_URL, payload);
+        const res = await axios.post(LAMBDA_URL, lambdaPayload);
 
         // --- E: Count Successes (NO MORE DATABASE UPDATES HERE!) ---
         if (res.status === 200) {

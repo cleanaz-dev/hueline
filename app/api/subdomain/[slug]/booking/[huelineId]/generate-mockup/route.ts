@@ -6,6 +6,7 @@ import { updateMockupData } from "@/lib/prisma/mutations/booking-data";
 import { createMockupLog } from "@/lib/prisma/mutations/logs/create-mockup-log";
 import { getOriginalImageUrl } from "@/lib/prisma/mutations/s3key";
 import { generateMockup } from "@/lib/replicate";
+import { lambdaPayloadSchema, type LambdaImagenPayload } from "@/lib/zod";
 // import { getColorMatch } from "@/lib/utils/color-match-lambda";
 import {
   CurrentColor,
@@ -28,8 +29,6 @@ export async function POST(req: Request, { params }: Params) {
   const { huelineId, slug } = await params;
 
   try {
-    
-
     const body = await req.json();
     const {
       option,
@@ -69,7 +68,7 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
-    if (!subdomain || !booking) {
+    if (!subdomain || !booking || !booking.demoClient?.id) {
       return NextResponse.json(
         { message: "Missing required data" },
         { status: 400 },
@@ -108,22 +107,27 @@ export async function POST(req: Request, { params }: Params) {
         huelineId: huelineId,
         model: "openai/gpt-image-2",
         deliveryMethod: "SMS",
-        demoClient: {connect: {id: booking.demoClient?.id }}
+        demoClient: { connect: { id: booking.demoClient?.id } },
       },
     });
 
-    const generatePayload = {
+    const generatePayload: LambdaImagenPayload = {
       clientId: booking.demoClient?.id,
       imageUrl: originalImageUrl,
-      roomType: roomType,
       targetColor: newColor,
       huelineId: huelineId,
       subdomainId: subdomain.id,
       action: "CLIENT_IMAGEN",
-      jobId: job.id
+      jobId: job.id,
     };
 
-    await axios.post(lambdaUrl, generatePayload)
+    const parsed = lambdaPayloadSchema.safeParse(generatePayload);
+    if (!parsed.success) {
+      console.error("Invalid payload:", parsed.error.issues);
+      return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
+    }
+
+    await axios.post(lambdaUrl, generatePayload);
 
     return NextResponse.json({ message: "success" }, { status: 200 });
   } catch (error) {

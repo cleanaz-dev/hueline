@@ -3,11 +3,13 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import axios from "axios";
 import { NextResponse } from "next/server";
+import { lambdaPayloadSchema, type LambdaImagenPayload } from "@/lib/zod";
+import { getPresignedUrl } from "@/lib/aws/s3";
 
 interface Params {
   params: Promise<{ id: string }>;
 }
-const lambdaUrl = process.env.LAMBDA_IMAGEN_URL!
+const lambdaUrl = process.env.LAMBDA_IMAGEN_URL!;
 
 export async function POST(req: Request, { params }: Params) {
   const { id } = await params;
@@ -67,19 +69,34 @@ export async function POST(req: Request, { params }: Params) {
         initiator: "OPERATOR",
         operator: { connect: { id: operator.id } },
         status: "PENDING",
-        huelineId: huelineId
+        huelineId: huelineId,
       },
     });
 
-    const lambdaPayload = {
-      action: "OPERATOR_IMAGEN",
-      prospectId: demoClient.id,
-      subdomainId: operator.subdomainId,
-      mediaUrl,
+    const imageUrl = await getPresignedUrl(mediaUrl, 3600);
+
+    const targetColor = {
       brand,
-      color,
-      jobId: job.id,
+      hex: color.hex,
+      code: color.code,
+      name: color.name,
     };
+
+    const lambdaPayload: LambdaImagenPayload = {
+      action: "OPERATOR_IMAGEN",
+      clientId: demoClient.id,
+      subdomainId: operator.subdomainId,
+      imageUrl,
+      targetColor,
+      jobId: job.id,
+      huelineId,
+    };
+
+    const parsed = lambdaPayloadSchema.safeParse(lambdaPayload);
+    if (!parsed.success) {
+      console.error("Invalid payload:", parsed.error.issues);
+      return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
+    }
 
     await axios.post(lambdaUrl, lambdaPayload);
 
