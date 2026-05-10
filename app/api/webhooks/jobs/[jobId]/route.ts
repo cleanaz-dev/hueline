@@ -52,6 +52,7 @@ export async function POST(req: Request, { params }: Params) {
       }
 
       case "UPSCALE":
+        
         return NextResponse.json({ message: "Upscale workflow pending" }, { status: 501 });
 
       case "VIDEO":

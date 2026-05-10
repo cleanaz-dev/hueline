@@ -28,9 +28,9 @@ export async function GET(req: Request, { params }: Params) {
       select: {
         exports: {
           orderBy: { createdAt: "desc" },
-        },
-      },
-    });
+        }
+      }
+    })
 
     if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -83,10 +83,13 @@ export async function POST(req: Request, { params }: Params) {
 
     const booking = await prisma.subBookingData.findUnique({
       where: { huelineId },
-      select: { id: true },
+      select: { 
+        id: true,
+        demoClient: true
+      },
     });
 
-    if (!booking) {
+    if (!booking || !booking.demoClient) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
@@ -101,6 +104,7 @@ export async function POST(req: Request, { params }: Params) {
         cost: 0.01,
         huelineId,
         deliveryMethod: "SMS",
+        demoClient: {connect: {id: booking.demoClient.id}}
       },
     });
 
@@ -163,35 +167,3 @@ export async function POST(req: Request, { params }: Params) {
   }
 }
 
-// Update existing export (called by Lambda)
-// export async function PATCH(req: Request, { params }: Params) {
-//   try {
-//     const headersList = await headers();
-//     const apiKey = headersList.get("x-api-key");
-
-//     if (apiKey !== process.env.INTERNAL_API_KEY) {
-//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-
-//     const body = await req.json();
-//     const { jobId, status, downloadUrl, completedAt, error } = body;
-
-//     const updatedExport = await prisma.export.update({
-//       where: { jobId },
-//       data: {
-//         status,
-//         ...(downloadUrl && { downloadUrl }),
-//         ...(completedAt && { completedAt: new Date(completedAt) }),
-//         ...(error && { error }),
-//       },
-//     });
-
-//     return NextResponse.json({ success: true, export: updatedExport });
-//   } catch (error) {
-//     console.error("Error updating export:", error);
-//     return NextResponse.json(
-//       { error: "Failed to update export" },
-//       { status: 500 },
-//     );
-//   }
-// }
