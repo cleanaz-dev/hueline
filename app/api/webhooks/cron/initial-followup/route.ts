@@ -22,17 +22,18 @@ export async function POST(req: Request) {
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
-    const followUps = await prisma.demoClient.findMany({
+    const followUps = await prisma.customer.findMany({
       where: {
         createdAt: { lte: twentyFourHoursAgo, gte: fortyEightHoursAgo },
         initialFollowUp: false,
+        customerType: "DEMO",
       },
       include: {
         subBookingData: {
           include: {
             paintColors: true,
-            mockups: true,
-          },
+            mockups: true
+          }
         },
       },
     });
@@ -44,98 +45,102 @@ export async function POST(req: Request) {
     let successCount = 0;
 
     for (const client of followUps) {
-      const subData = client.subBookingData;
-      if (!subData || !subData.originalImages) {
-        console.warn(`Skipping client ${client.id}: No original image found.`);
-        continue;
-      }
-
       if (!client.subdomainId) {
         return NextResponse.json({ message: "Invalid Data" }, { status: 400 });
       }
 
-      try {
-        const presignedUrl = await getPresignedUrl(
-          subData.originalImages,
-          3600,
-        );
+      if (!client.subBookingData.length) {
+        console.warn(`Skipping client ${client.id}: No subBookingData found.`);
+        continue;
+      }
 
-        // --- B: Build a clean, UNIQUE color list from ALL sources ---
-        const rawColors = [
-          ...subData.paintColors.map((pc: any) => ({
-            name: pc.name,
-            hex: pc.hex,
-            brand: pc.brand,
-            code: pc.code,
-          })),
-          ...subData.mockups.map((m: any) => ({
-            name: m.name,
-            hex: m.hex,
-            code: m.code,
-            brand: m.brand,
-          })),
-        ];
-
-        // Deduplicate by HEX code so the AI doesn't get confused by repeats
-        const uniqueColors = Array.from(
-          new Map(rawColors.map((c) => [c.hex, c])).values(),
-        );
-
-        let smartColor = await pickColor(uniqueColors);
-        if (!smartColor) {
-          smartColor = {
-            name: "Hale Navy",
-            code: "HC-154",
-            hex: "#3b444b",
-            brand: "Benjamin Moore",
-          };
+      for (const subData of client.subBookingData) {
+        if (!subData.originalImages) {
+          console.warn(
+            `Skipping subBookingData ${subData.id} for client ${client.id}: No original image found.`,
+          );
+          continue;
         }
 
-        const job = await prisma.job.create({
-          data: {
-            initiator: "SYSTEM",
-            jobType: "IMAGEN",
-            brand: smartColor.brand,
-            name: smartColor.name,
-            code: smartColor.code,
-            hex: smartColor.hex,
-            cost: 0.13,
-            deliveryMethod: "SMS",
-            demoClient: { connect: { id: client.id } },
+        try {
+          const presignedUrl = await getPresignedUrl(subData.originalImages, 3600);
+
+          const rawColors = [
+            ...subData.paintColors.map((pc: any) => ({
+              name: pc.name,
+              hex: pc.hex,
+              brand: pc.brand,
+              code: pc.code,
+            })),
+            ...subData.mockups.map((m: any) => ({
+              name: m.name,
+              hex: m.hex,
+              code: m.code,
+              brand: m.brand,
+            })),
+          ];
+
+          const uniqueColors = Array.from(
+            new Map(rawColors.map((c) => [c.hex, c])).values(),
+          );
+
+          let smartColor = await pickColor(uniqueColors);
+          if (!smartColor) {
+            smartColor = {
+              name: "Hale Navy",
+              code: "HC-154",
+              hex: "#3b444b",
+              brand: "Benjamin Moore",
+            };
+          }
+
+          const job = await prisma.job.create({
+            data: {
+              initiator: "SYSTEM",
+              jobType: "IMAGEN",
+              brand: smartColor.brand,
+              name: smartColor.name,
+              code: smartColor.code,
+              hex: smartColor.hex,
+              cost: 0.13,
+              deliveryMethod: "SMS",
+              customer: { connect: { id: client.id } },
+              huelineId: subData.huelineId,
+              status: "PENDING",
+              model: "openai/gtp-image-2",
+            },
+          });
+
+          const lambdaPayload: LambdaImagenPayload = {
+            action: "FOLLOWUP_IMAGEN",
+            customerId: client.id,
             huelineId: subData.huelineId,
-            status: "PENDING",
-            model: "openai/gtp-image-2",
-          },
-        });
+            imageUrl: presignedUrl,
+            targetColor: smartColor,
+            jobId: job.id,
+            subdomainId: client.subdomainId,
+          };
 
-        // --- C: Build Payload (Extremely lean now!) ---
-        const lambdaPayload: LambdaImagenPayload = {
-          action: "FOLLOWUP_IMAGEN",
-          clientId: client.id,
-          huelineId: subData.huelineId,
-          imageUrl: presignedUrl,
-          targetColor: smartColor,
-          jobId: job.id,
-          subdomainId: client.subdomainId,
-        };
+          const parsed = lambdaPayloadSchema.safeParse(lambdaPayload);
+          if (!parsed.success) {
+            console.error("Invalid payload:", parsed.error.issues);
+            return NextResponse.json(
+              { message: "Invalid payload" },
+              { status: 400 },
+            );
+          }
 
-        const parsed = lambdaPayloadSchema.safeParse(lambdaPayload);
-        if (!parsed.success) {
-          console.error("Invalid payload:", parsed.error.issues);
-          return NextResponse.json(
-            { message: "Invalid payload" },
-            { status: 400 },
+          const res = await axios.post(LAMBDA_URL, lambdaPayload);
+
+          if (res.status === 200) {
+            successCount++;
+          }
+        } catch (err) {
+          console.error(
+            `Failed to process subBookingData ${subData.id} for client ${client.id}:`,
+            err,
           );
         }
-        // --- D: Fire Lambda ---
-        const res = await axios.post(LAMBDA_URL, lambdaPayload);
-
-        // --- E: Count Successes (NO MORE DATABASE UPDATES HERE!) ---
-        if (res.status === 200) {
-          successCount++;
-        }
-      } catch (err) {
-        console.error(`Failed to process Client ${client.id}:`, err);
       }
     }
 

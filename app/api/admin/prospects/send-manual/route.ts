@@ -21,7 +21,7 @@ export async function POST(req: Request) {
         body: body,
         role: "OPERATOR", // New role for manual messages
         type: "SMS",
-        demoClient: { connect: { id: prospectId } }
+        customer: { connect: { id: prospectId } }
       }
     });
 

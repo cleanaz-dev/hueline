@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Not admin domain" }, { status: 200 });
     }
 
-    const existingClient = await prisma.demoClient.findFirst({
+    const existingCustomer = await prisma.customer.findFirst({
       where: {
         email: fromAddress,
       },
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       },
     });
 
-    if (!existingClient) {
+    if (!existingCustomer) {
       console.warn("Not a client")
       return NextResponse.json({ message: "Not a client" }, { status: 200 });
     }
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         body: summary,
         role: "CLIENT",
         type: "EMAIL",
-        demoClient: { connect: { id: existingClient.id } },
+        customer: { connect: { id: existingCustomer.id } },
       },
     });
 

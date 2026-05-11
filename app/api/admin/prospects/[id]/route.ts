@@ -11,10 +11,7 @@ export async function GET(req: Request, { params }: Params) {
     
     const messages = await prisma.clientCommunication.findMany({
       where: { 
-        OR: [
-          { demoClientId: id },
-          { clientId: id }
-        ]
+        customerId: id
       },
       orderBy: { createdAt: "asc" },
     });

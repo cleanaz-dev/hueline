@@ -3,7 +3,12 @@ import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
-    const demoClients = await prisma.demoClient.findMany({
+    const customers = await prisma.customer.findMany({
+      where: {
+        subdomain: {
+          slug: "demo"
+        }
+      },
       select: {
         subBookingData: {
           select: {
@@ -12,7 +17,7 @@ export async function GET(req: Request) {
         }
       }
     });
-    return NextResponse.json(demoClients);
+    return NextResponse.json(customers);
   } catch (error) {
     console.error(error);
     return NextResponse.json(

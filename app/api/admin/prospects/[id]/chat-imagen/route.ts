@@ -46,13 +46,13 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const demoClient = await prisma.demoClient.findUnique({
+    const customer = await prisma.customer.findUnique({
       where: { id },
       select: { id: true },
     });
 
-    if (!demoClient) {
-      console.warn(`No Demo Client Found for ID: ${id}`);
+    if (!customer) {
+      console.warn(`No Customer Found for ID: ${id}`);
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
@@ -84,7 +84,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const lambdaPayload: LambdaImagenPayload = {
       action: "OPERATOR_IMAGEN",
-      clientId: demoClient.id,
+      customerId: customer.id,
       subdomainId: operator.subdomainId,
       imageUrl,
       targetColor,

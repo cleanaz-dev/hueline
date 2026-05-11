@@ -64,11 +64,11 @@ export async function POST(req: Request, { params }: Params) {
       select: {
         id: true,
         originalImages: true,
-        demoClient: true,
+        customer: true,
       },
     });
 
-    if (!subdomain || !booking || !booking.demoClient?.id) {
+    if (!subdomain || !booking || !booking.customer?.id) {
       return NextResponse.json(
         { message: "Missing required data" },
         { status: 400 },
@@ -107,12 +107,12 @@ export async function POST(req: Request, { params }: Params) {
         huelineId: huelineId,
         model: "openai/gpt-image-2",
         deliveryMethod: "SMS",
-        demoClient: { connect: { id: booking.demoClient?.id } },
+        customer: { connect: { id: booking.customer?.id } },
       },
     });
 
     const generatePayload: LambdaImagenPayload = {
-      clientId: booking.demoClient?.id,
+      customerId: booking.customer?.id,
       imageUrl: originalImageUrl,
       targetColor: newColor,
       huelineId: huelineId,

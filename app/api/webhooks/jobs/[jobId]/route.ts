@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { handleImagenWebhook } from "@/lib/workflows/imagen/handle-imagen-webhook";
 import { ImagenTriggerSource } from "@/lib/workflows/imagen/process-imagen-workflow";
+import { UpscaleTriggerSource } from "@/lib/workflows/upscale/process-upscale-workflow";
+import { handleUpscaleWebhook } from "@/lib/workflows/upscale/handle-upscale-webook";
 
 interface Params {
   params: Promise<{ jobId: string }>;
@@ -11,6 +13,11 @@ const VALID_IMAGEN_ACTIONS = new Set<ImagenTriggerSource>([
   "FOLLOWUP_IMAGEN",
   "OPERATOR_IMAGEN",
   "CLIENT_IMAGEN",
+]);
+
+const VALID_UPSCALE_ACTIONS = new Set<UpscaleTriggerSource>([
+  "CLIENT_UPSCALE",
+  "OPERATOR_UPSCALE",
 ]);
 
 export async function POST(req: Request, { params }: Params) {
@@ -24,15 +31,18 @@ export async function POST(req: Request, { params }: Params) {
 
     const job = await prisma.job.findUnique({
       where: { id: jobId },
-      include: { demoClient: true },
+      include: { customer: true },
     });
 
     if (!job) {
       return NextResponse.json({ message: "Job not found" }, { status: 404 });
     }
 
-    if (!job.demoClient) {
-      return NextResponse.json({ message: "No client attached to this job" }, { status: 400 });
+    if (!job.customer) {
+      return NextResponse.json(
+        { message: "No customer attached to this job" },
+        { status: 400 },
+      );
     }
 
     const body = await req.json();
@@ -43,28 +53,65 @@ export async function POST(req: Request, { params }: Params) {
 
         if (!VALID_IMAGEN_ACTIONS.has(triggerSource)) {
           return NextResponse.json(
-            { message: `Unknown action: "${body.action}". Expected: ${[...VALID_IMAGEN_ACTIONS].join(", ")}` },
-            { status: 400 }
+            {
+              message: `Unknown action: "${body.action}". Expected: ${[...VALID_IMAGEN_ACTIONS].join(", ")}`,
+            },
+            { status: 400 },
           );
         }
 
-        return await handleImagenWebhook(body, triggerSource, job, job.demoClient);
+        return await handleImagenWebhook(
+          body,
+          triggerSource,
+          job,
+          job.customer,
+        );
       }
 
-      case "UPSCALE":
-        
-        return NextResponse.json({ message: "Upscale workflow pending" }, { status: 501 });
+      case "UPSCALE": { // <-- Added brackets here to safely scope variables
+        // If Python sent {"status": "failed"}, we default triggerSource to CLIENT_UPSCALE 
+        // just to get it through the router, then handle the failure inside the handler.
+        const triggerSource = (body.action || "CLIENT_UPSCALE") as UpscaleTriggerSource;
+
+        if (!VALID_UPSCALE_ACTIONS.has(triggerSource)) {
+          return NextResponse.json(
+            {
+              message: `Unknown action: "${body.action}". Expected: ${[...VALID_UPSCALE_ACTIONS].join(", ")}`,
+            },
+            { status: 400 },
+          );
+        }
+
+        // Return the handler response directly back to the Webhook sender
+        return await handleUpscaleWebhook(
+          body,
+          job,
+          job.customer,
+          triggerSource
+        );
+      }
 
       case "VIDEO":
-        return NextResponse.json({ message: "Video workflow pending" }, { status: 501 });
+        return NextResponse.json(
+          { message: "Video workflow pending" },
+          { status: 501 },
+        );
 
       default:
         console.warn(`Unhandled job type: ${job.jobType} for Job: ${jobId}`);
-        return NextResponse.json({ message: "Unhandled Job Type" }, { status: 400 });
+        return NextResponse.json(
+          { message: "Unhandled Job Type" },
+          { status: 400 },
+        );
     }
-
   } catch (error: any) {
-    console.error(`Master Webhook Error for Job ${jobId}:`, error.message || error);
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    console.error(
+      `Master Webhook Error for Job ${jobId}:`,
+      error.message || error,
+    );
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

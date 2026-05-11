@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { twilioClient } from "@/lib/twilio/config";
 import { getPresignedUrl } from "@/lib/aws/s3";
-import { CommunicationRole, ClientActivityType, LogActor, Job, DemoClient } from "@/app/generated/prisma";
+import { CommunicationRole, ClientActivityType, LogActor, Job, CommunicationType, Customer } from "@/app/generated/prisma";
 import { sendEmail, SendMockUpEmail } from "@/lib/resend";
 
 // ─── Trigger Source ───────────────────────────────────────────────────────────
@@ -43,7 +43,7 @@ const TRIGGER_CONFIG: Record<ImagenTriggerSource, TriggerConfig> = {
     logDescription: (ctx) => `${ctx.recipientName} generated a ${ctx.roomType} preview using ${ctx.brandName} ${ctx.colorName}.`,
     activityType: "GENERATED_IMAGE",
     activityTitle: (ctx) => `Imagen — ${ctx.colorName}`,
-    activityDescription: (ctx) => `${ctx.recipientName} previewed ${ctx.brandName} ${ctx.colorName} on their ${ctx.roomType}`,
+    activityDescription: (ctx) => `${ctx.recipientName} generated ${ctx.brandName} ${ctx.colorName} on their ${ctx.roomType}`,
     markFirstFollowupComplete: false,
     getSmsBody: (ctx) => `Your requested mockup featuring ${ctx.brandName} in ${ctx.colorName} is ready! View your portal here: ${ctx.portalLink}`,
     getEmailSubject: (ctx) => `Your New Room Mockup - ${ctx.colorName}`,
@@ -87,11 +87,11 @@ interface ProcessImagenArgs {
   webhookBody: any;
   triggerSource: ImagenTriggerSource;
   job: Job;
-  demoClient: DemoClient;
+  customer: Customer;
   operatorId?: string | null;
 }
 
-export async function processImagenWorkflow({ webhookBody, triggerSource, job, demoClient, operatorId }: ProcessImagenArgs) {
+export async function processImagenWorkflow({ webhookBody, triggerSource, job, customer, operatorId }: ProcessImagenArgs) {
   const config = TRIGGER_CONFIG[triggerSource];
 
   try {
@@ -106,7 +106,10 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, d
     const huelineId = webhookBody.huelineId;
 
     // Determine strict delivery method
-    const deliveryMethod: "SMS" | "EMAIL" = demoClient.phone ? "SMS" : "EMAIL";
+    const deliveryMethod = job.deliveryMethod as CommunicationType
+    if(!deliveryMethod) {
+      throw new Error
+    }
 
     // 2. UNIVERSAL DATABASE SAVE (Happens every time, no exceptions)
     const subBookingData = await prisma.subBookingData.update({
@@ -142,7 +145,7 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, d
       colorName,
       colorHex,
       colorCode,
-      recipientName: demoClient.name || "Client",
+      recipientName: customer.name || "Client",
       roomType,
       portalLink,
       originalSmsBody: webhookBody.smsBody,
@@ -154,16 +157,16 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, d
     const emailHtml = config.getEmailHtml(context);
 
     // 5. Send Message (Only ONE fires)
-    if (deliveryMethod === "SMS" && demoClient.phone) {
+    if (deliveryMethod === "SMS" && customer.phone) {
       await twilioClient.messages.create({
-        to: demoClient.phone,
+        to: customer.phone,
         from: process.env.TWILIO_PHONE_NUMBER,
         body: smsBody,
         mediaUrl: [presignedUrl],
       });
-    } else if (deliveryMethod === "EMAIL" && demoClient.email) {
+    } else if (deliveryMethod === "EMAIL" && customer.email) {
       await sendEmail({
-        to: demoClient.email,
+        to: customer.email,
         subject: emailSubject,
         template: SendMockUpEmail({
           clientName: context.recipientName,
@@ -182,7 +185,7 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, d
           body: deliveryMethod === "SMS" ? smsBody : emailSubject,
           role: config.role,
           type: deliveryMethod, 
-          demoClient: { connect: { id: demoClient.id } },
+          customer: { connect: { id: customer.id } },
           ...(operatorId ? { operator: { connect: { id: operatorId } } } : {}),
           mediaAttachments: {
             create: {
@@ -203,7 +206,7 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, d
           title: config.activityTitle(context),
           description: `${config.activityDescription(context)} (via ${deliveryMethod})`,
           metadata: { huelineId, jobId: job.id },
-          demoClient: { connect: { id: demoClient.id } },
+          customer: { connect: { id: customer.id } },
         },
       });
 
@@ -220,8 +223,8 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, d
 
       // D. Mark Followup Complete
       if (config.markFirstFollowupComplete) {
-        await tx.demoClient.update({
-          where: { id: demoClient.id },
+        await tx.customer.update({
+          where: { id: customer.id },
           data: { initialFollowUp: true },
         });
       }
@@ -230,7 +233,7 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, d
     return { success: true };
 
   } catch (error) {
-    console.error(`[processImagenWorkflow] Failed for ${demoClient.id}:`, error);
+    console.error(`[processImagenWorkflow] Failed for ${customer.id}:`, error);
     throw new Error("Failed to process Imagen workflow");
   }
 }

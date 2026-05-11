@@ -6,8 +6,6 @@ export const upscalePayloadSchema = z.object({
   action: z.literal("IMAGE_UPSCALE"),
   huelineId: z.string().min(1),
   resolution: z.enum(["4K", "8K"]),
-  phone: z.string().min(1),
-  twilioFromNumber: z.string().min(1),
   jobId: z.string().min(1),
 });
 

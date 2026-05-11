@@ -39,16 +39,14 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // 3. IDENTIFY USER
-    const demoClient = await prisma.demoClient.findFirst({ where: { phone: incomingPhone } });
-    const regularClient = !demoClient ? await prisma.client.findFirst({ where: { phone: incomingPhone } }) : null;
-    const user = demoClient || regularClient;
+    const customer = await prisma.customer.findFirst({ where: { phone: incomingPhone } });
 
-    if (!user) {
+    if (!customer || !customer.name) {
       return NextResponse.json({ success: true, message: "Unknown sender dropped" });
     }
 
-    const isDemo = 'name' in user;
-    const recipientName = (isDemo ? user.name : user.firstName) || "there";
+    
+    const recipientName = customer.name
 
     // 4. LOG INCOMING MESSAGE (Always log so the Operator sees it in the Chat Drawer)
     await prisma.clientCommunication.create({
@@ -56,10 +54,6 @@ export async function POST(req: Request, { params }: Params) {
         body: incomingMessage,
         role: "CLIENT",
         type: "SMS",
-        ...(isDemo 
-          ? { demoClient: { connect: { id: user.id } } } 
-          : { client: { connect: { id: user.id } } }
-        ),
       },
     });
 
@@ -75,7 +69,7 @@ export async function POST(req: Request, { params }: Params) {
 
     // 6. GET RECENT HISTORY (Last 5 messages for Kimi's context)
     const previousMessages = await prisma.clientCommunication.findMany({
-      where: isDemo ? { demoClientId: user.id } : { clientId: user.id },
+      where: {customerId: customer.id},
       orderBy: { createdAt: "desc" },
       take: 5,
     });
@@ -91,7 +85,7 @@ export async function POST(req: Request, { params }: Params) {
       recipientName: recipientName,
       promptType: "CONVERSATION",
       context: incomingMessage,
-      demoClientId: user.id,
+      customerId: customer.id,
       history: history,
     });
 

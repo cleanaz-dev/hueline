@@ -12,28 +12,27 @@ export async function POST(req: Request, { params }: Params) {
   const { id } = await params;
 
   try {
-    const demoClient = await prisma.demoClient.findUnique({
+    const customer = await prisma.customer.findUnique({
       where: { id },
       select: {
         id: true,
         email: true,
+        subdomain: {
+          select: {
+           slug: true,
+          },
+        }
       },
     });
 
-    if (!demoClient) {
+    if (!customer || !customer.email) {
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
-    }
-    if (!demoClient.email) {
-      return NextResponse.json(
-        { message: "No email on file" },
-        { status: 400 },
-      );
     }
 
     const { body, subject } = await req.json();
 
     await sendBasicEmail({
-      email: demoClient.email,
+      email: customer.email,
       subject: subject ?? "Update from Your Painter",
       body,
     });
@@ -43,7 +42,7 @@ export async function POST(req: Request, { params }: Params) {
         body,
         type: "EMAIL",
         role: "OPERATOR",
-        demoClient: { connect: { id: demoClient.id } },
+        customer: { connect: { id: customer.id } },
       },
     });
 

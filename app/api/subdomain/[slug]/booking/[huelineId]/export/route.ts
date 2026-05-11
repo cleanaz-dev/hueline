@@ -8,6 +8,8 @@ import {
   upscalePayloadSchema,
 } from "@/lib/zod/lambda-upscale-payload";
 import { getPresignedUrls } from "@/lib/aws/s3/services/get-presigned-url";
+import { UserPen } from "lucide-react";
+import { ImageUpscaleMetadata } from "@/lib/zod/job-upscale-metadata";
 
 interface Params {
   params: Promise<{
@@ -28,9 +30,9 @@ export async function GET(req: Request, { params }: Params) {
       select: {
         exports: {
           orderBy: { createdAt: "desc" },
-        }
-      }
-    })
+        },
+      },
+    });
 
     if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -57,9 +59,9 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const body = await req.json();
-    const { imageKeys, resolution, phone } = body;
+    const { imageKeys, resolution, phone , roomType} = body;
 
-    if (!imageKeys?.length || !resolution || !phone) {
+    if (!imageKeys?.length || !resolution || !phone || !roomType) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
@@ -83,17 +85,26 @@ export async function POST(req: Request, { params }: Params) {
 
     const booking = await prisma.subBookingData.findUnique({
       where: { huelineId },
-      select: { 
+      select: {
         id: true,
-        demoClient: true
+        customer: true,
       },
     });
 
-    if (!booking || !booking.demoClient) {
+    if (!booking || !booking.customer) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
     const imageUrls = await getPresignedUrls(imageKeys, 3600);
+
+    const exportData = await prisma.export.create({
+      data: {
+        status: "PENDING",
+        bookingId: booking.id,
+        resolution,
+        imageCount: imageKeys.length,
+      },
+    });
 
     const job = await prisma.job.create({
       data: {
@@ -104,7 +115,17 @@ export async function POST(req: Request, { params }: Params) {
         cost: 0.01,
         huelineId,
         deliveryMethod: "SMS",
-        demoClient: {connect: {id: booking.demoClient.id}}
+        customer: { connect: { id: booking.customer.id } },
+        metadataSource: "UPSCALE",
+        metadata: {
+          resolution: resolution,
+          exportId: exportData.id,
+          imageCount: imageKeys.length,
+          twilioFromNumber: subdomain.twilioPhoneNumber,
+          phoneNumber: phone,
+          s3Keys: imageKeys,
+          roomType,
+        } satisfies ImageUpscaleMetadata,
       },
     });
 
@@ -113,8 +134,6 @@ export async function POST(req: Request, { params }: Params) {
       huelineId: huelineId,
       imageUrls,
       resolution,
-      phone,
-      twilioFromNumber: subdomain.twilioPhoneNumber,
       jobId: job.id,
       action: "IMAGE_UPSCALE",
     };
@@ -143,16 +162,6 @@ export async function POST(req: Request, { params }: Params) {
       data: { status: "PROCESSING" },
     });
 
-    await prisma.export.create({
-      data: {
-        jobId: job.id,
-        bookingId: booking.id,
-        resolution,
-        imageCount: imageKeys.length,
-        status: "processing",
-      },
-    });
-
     return NextResponse.json({
       success: true,
       jobId: job.id,
@@ -166,4 +175,3 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 }
-

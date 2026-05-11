@@ -147,7 +147,7 @@ export async function createMockupBooking(payload: CreateMockupBookingPayload) {
     })
   );
 
-  await prisma.demoClient.create({
+  await prisma.customer.create({
     data: {
       name,
       phone,

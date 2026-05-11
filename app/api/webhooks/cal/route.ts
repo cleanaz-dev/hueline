@@ -53,12 +53,22 @@ export async function POST(req: Request) {
 
   if (eventTypeId === EVENT_TYPES.LANDING_PAGE) {
     // create new demo client
-    const newDemoClient = await prisma.demoClient.create({
+    const newCustomer = await prisma.customer.create({
       data: {
         name: attendee.name,
         phone: attendee.phone,
         email: attendee.email,
+        customerType: "DEMO",
         subdomain: { connect: { id: adminSubdomainId } },
+      },
+    });
+
+    await prisma.clientActivity.create({
+      data: {
+        type: "CLIENT_CREATED",
+        customer: { connect: { id: newCustomer.id } },
+        description: "New client created via Landing Page Booking",
+        title: "New Client Created!",
       },
     });
     await prisma.clientCommunication.create({
@@ -66,25 +76,57 @@ export async function POST(req: Request) {
         body: "Potential Client booked meeting from Landing Page",
         role: "CLIENT",
         type: "MEETING",
-        demoClient: { connect: { id: newDemoClient.id } },
+        customer: { connect: { id: newCustomer.id } },
+        metadata: {
+          attendeeName: attendee.name,
+          attendeePhone: attendee.phone,
+          startTime: start
+        }
       },
     });
+    await prisma.clientCommunication.create({
+      data: {
+        body: `Hi ${attendee.name}, your booking "${title}" is confirmed for ${formatted}. See you then!`,
+        role: "AI",
+        type: "SMS",
+        customer: { connect: { id: newCustomer.id } },
+      },
+    }),
+      await prisma.logs.create({
+        data: {
+          title: "New Meeting",
+          type: "MEETING",
+          actor: "CLIENT",
+          description: "New Meeting from Landing Page",
+          subdomain: { connect: { id: adminSubdomainId } },
+          metadata: {
+            name: newCustomer.name,
+            email: newCustomer.email,
+            phone: newCustomer.phone,
+            createdAt: new Date(),
+          },
+        },
+      });
     console.log("Booking from Landing Page");
   }
 
   if (eventTypeId === EVENT_TYPES.DEMO_PAGE && huelineId) {
-    const demoClient = await prisma.demoClient.findFirst({
-      where: { subBookingData: { huelineId } },
+    const customer = await prisma.customer.findFirst({
+      where: {
+        subBookingData: {
+          some: huelineId,
+        },
+      },
     });
 
-    if (!demoClient) {
-      console.error("No demoClient found for huelineId", huelineId);
+    if (!customer) {
+      console.error("No Cusomter found for huelineId", huelineId);
       return NextResponse.json({ ok: true });
     }
 
     await Promise.all([
-      prisma.demoClient.update({
-        where: { id: demoClient.id },
+      prisma.customer.update({
+        where: { id: customer.id },
         data: { status: "BOOKED" },
       }),
       prisma.clientCommunication.create({
@@ -92,11 +134,28 @@ export async function POST(req: Request) {
           body: `Hi ${attendee.name}, your booking "${title}" is confirmed for ${formatted}. See you then!`,
           role: "AI",
           type: "SMS",
-          demoClient: { connect: { id: demoClient.id } },
+          customer: { connect: { id: customer.id } },
+        },
+      }),
+      prisma.clientActivity.create({
+        data: {
+          type: "MEETING_BOOKED",
+          customer: { connect: { id: customer.id } },
+          description: "Client booked meeting from Booking page.",
+          title: "Meeting Booked!",
+          subDomain: { connect: { id: adminSubdomainId } },
+        },
+      }),
+      prisma.logs.create({
+        data: {
+          title: "New Meeting!",
+          type: "MEETING",
+          subdomain: { connect: { id: adminSubdomainId } },
+          actor: "CLIENT",
         },
       }),
     ]);
-  }
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  }
 }

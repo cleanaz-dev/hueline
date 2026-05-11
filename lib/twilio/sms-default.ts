@@ -5,14 +5,14 @@ interface SendSMSDefault {
   to: string;
   recipientName: string;
   body: string;
-  demoClientId: string; // Added missing field
+  customerId: string; // Added missing field
 }
 
 export async function sendDefaultSMS({
   to,
   recipientName,
   body,
-  demoClientId, // Added missing parameter
+  customerId, // Added missing parameter
 }: SendSMSDefault) {
   // Fixed syntax: added closing parenthesis
   try {
@@ -27,7 +27,7 @@ export async function sendDefaultSMS({
         body,
         role: "OPERATOR", // You might want to set a proper role here
         type: "SMS",
-        demoClientId,
+        customerId,
       },
     });
 

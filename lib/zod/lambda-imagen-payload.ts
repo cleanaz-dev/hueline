@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const lambdaPayloadSchema = z.object({
-  clientId: z.string().min(1),
+  customerId: z.string().min(1),
   imageUrl: z.url(),
   targetColor: z.object({
     name: z.string(),

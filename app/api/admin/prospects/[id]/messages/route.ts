@@ -10,7 +10,7 @@ export async function GET(
     const { id } = await params;
 
     if (process.env.NODE_ENV === "development") {
-      const mock = MOCK_PROSPECTS.find((p) => p.id === id)
+      const mock = MOCK_PROSPECTS.find((p) => p.id === id);
 
       if (mock) {
         return NextResponse.json(mock.communication);
@@ -20,7 +20,7 @@ export async function GET(
     // 1. Fetch Communications WITH their attachments
     const communications = await prisma.clientCommunication.findMany({
       where: {
-        OR: [{ demoClientId: id }, { clientId: id }],
+        customerId: id,
       },
       include: {
         mediaAttachments: true, // <-- THIS IS THE MAGIC KEY
@@ -29,9 +29,7 @@ export async function GET(
 
     // 2. Fetch Activities
     const activities = await prisma.clientActivity.findMany({
-      where: {
-        OR: [{ demoClientId: id }, { clientId: id }],
-      },
+      where: { customerId: id },
     });
 
     // 3. Map Activities to match the Communication shape

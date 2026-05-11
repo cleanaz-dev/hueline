@@ -123,6 +123,7 @@ enum ClientActivityType {
   INTAKE_FORM_STARTED
   INTAKE_FORM_COMPLETED
   CLIENT_INFO_UPDATED
+  MEETING_BOOKED
 
   // Billing & Stripe
   SETUP_LINK_SENT
@@ -175,8 +176,10 @@ model ClientActivity {
   subDomainId String?    @db.ObjectId
 
   // Timeline stamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?   @db.ObjectId
 }
 
 model Subdomain {
@@ -217,6 +220,7 @@ model Subdomain {
   updatedAt        DateTime?        @updatedAt
   demoClients      DemoClient[]
   clientActivities ClientActivity[]
+  customers        Customer[]
 }
 
 model RoomIntelligence {
@@ -306,13 +310,15 @@ model SubBookingData {
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   demoClient DemoClient?
+  customer   Customer?   @relation(fields: [customerId], references: [id])
+  customerId String?     @db.ObjectId
 }
 
 model Quote {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
   huelineId String
-  version Int @default(1)
-  status      QuoteStatus @default(DRAFT)
+  version   Int         @default(1)
+  status    QuoteStatus @default(DRAFT)
 }
 
 enum QuoteStatus {
@@ -321,6 +327,7 @@ enum QuoteStatus {
   SENT
   ACCEPTED
 }
+
 model DemoClient {
   id              String        @id @default(auto()) @map("_id") @db.ObjectId
   name            String?
@@ -342,6 +349,35 @@ model DemoClient {
   jobs             Job[]
 }
 
+model Customer {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  name            String?
+  phone           String?
+  email           String?
+  initialFollowUp Boolean?      @default(false)
+  status          BookingStatus @default(PENDING)
+
+  subdomain      Subdomain?       @relation(fields: [subdomainId], references: [id])
+  subdomainId    String?          @db.ObjectId
+  subBookingData SubBookingData[]
+
+  communication ClientCommunication[]
+
+  createdAt        DateTime?        @default(now())
+  updatedAt        DateTime?        @updatedAt
+  clientActivities ClientActivity[]
+  jobs             Job[]
+  customerType     CustomerType     @default(RESIDENTIAL)
+}
+
+enum CustomerType {
+  RESIDENTIAL // Homeowners
+  COMMERCIAL // Businesses, Warehouses
+  PROPERTY_MANAGER // Apartment complexes, HOAs
+  DEMO
+  OTHER
+}
+
 model ClientCommunication {
   id               String            @id @default(auto()) @map("_id") @db.ObjectId
   body             String
@@ -356,10 +392,12 @@ model ClientCommunication {
   metadata         Json?
   operator         SubdomainUser?    @relation(fields: [operatorId], references: [id])
   operatorId       String?           @db.ObjectId
+  customer         Customer?         @relation(fields: [customerId], references: [id])
+  customerId       String?           @db.ObjectId
 }
 
 model Job {
-  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
   status    JobStatus
   huelineId String?
   jobType   JobType // <-- We will use this in our Switch statement!
@@ -377,12 +415,22 @@ model Job {
   hex   String?
   name  String?
 
+  metadata       Json?
+  metadataSource MetadataSource?
+
   // 🌟 NEW: Let the Job know exactly who it is for!
   demoClientId String?     @db.ObjectId
   demoClient   DemoClient? @relation(fields: [demoClientId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?   @db.ObjectId
+}
+
+enum MetadataSource {
+  IMAGEN
+  UPSCALE
 }
 
 enum JobType {
@@ -669,6 +717,9 @@ enum LogType {
   NOTE
   SHARE
   ROOM
+  UPSCALE
+  VIDEO
+  MEETING
 }
 
 enum LogActor {

@@ -8,7 +8,7 @@ interface SendDynamicSmsProps {
   recipientName: string;
   promptType: PromptType;
   context: string;
-  demoClientId: string;
+  customerId: string;
   history?: { role: "user" | "assistant"; content: string }[];
 }
 
@@ -17,7 +17,7 @@ export async function sendDynamicSms({
   recipientName,
   promptType,
   context,
-  demoClientId,
+  customerId,
   history = [],
 }: SendDynamicSmsProps) {
   
@@ -48,7 +48,7 @@ export async function sendDynamicSms({
         body,
         role: "AI",
         type: "SMS",
-        demoClientId,
+        customerId,
       },
     });
 
