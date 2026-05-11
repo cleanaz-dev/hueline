@@ -4,6 +4,7 @@ import { handleImagenWebhook } from "@/lib/workflows/imagen/handle-imagen-webhoo
 import { ImagenTriggerSource } from "@/lib/workflows/imagen/process-imagen-workflow";
 import { UpscaleTriggerSource } from "@/lib/workflows/upscale/process-upscale-workflow";
 import { handleUpscaleWebhook } from "@/lib/workflows/upscale/handle-upscale-webook";
+import { handleVoiceMockupWebhook } from "@/lib/workflows/voice-mockup/handle-voice-mockup-webhook";
 
 interface Params {
   params: Promise<{ jobId: string }>;
@@ -96,6 +97,18 @@ export async function POST(req: Request, { params }: Params) {
           { message: "Video workflow pending" },
           { status: 501 },
         );
+
+      case "VOICE_MOCKUP": {
+      const triggerSource = body.action || "LIVEKIT_AGENT";
+        
+        return await handleVoiceMockupWebhook(
+          body,
+          job,
+          job.customer, // <-- Using the newly renamed Customer model!
+          triggerSource
+        );
+      }
+        
 
       default:
         console.warn(`Unhandled job type: ${job.jobType} for Job: ${jobId}`);

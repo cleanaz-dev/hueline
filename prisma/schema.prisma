@@ -437,6 +437,7 @@ enum JobType {
   IMAGEN
   UPSCALE
   VIDEO
+  VOICE_MOCKUP
 }
 
 model MediaAttachment {
