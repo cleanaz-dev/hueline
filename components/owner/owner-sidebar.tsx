@@ -273,9 +273,9 @@ export default function OwnerSidebar({
         </header>
 
         {/* Scrollable Content Area */}
-        <main className="flex-1 overflow-auto bg-background">
+        <main className="flex-1 overflow-auto ">
           <div className="h-full p-0 md:p-6">
-            <div className="h-full bg-muted/10 rounded-xl border border-border/40 p-4 md:p-6 overflow-auto">
+            <div className="h-full bg-blue-100 rounded-xl border border-border/40 p-4 md:p-6 overflow-auto">
               {children}
             </div>
           </div>
