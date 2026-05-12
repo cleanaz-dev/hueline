@@ -150,6 +150,7 @@ enum ClientActivityType {
   SHARED_PROJECT
   UPSCALED_IMAGE
   FOLLOWUP_IMAGE_SENT
+  INBOUND_CALL
 }
 
 model ClientActivity {
@@ -368,6 +369,7 @@ model Customer {
   clientActivities ClientActivity[]
   jobs             Job[]
   customerType     CustomerType     @default(RESIDENTIAL)
+  calls            Call[]
 }
 
 enum CustomerType {
@@ -431,6 +433,7 @@ model Job {
 enum MetadataSource {
   IMAGEN
   UPSCALE
+  VOICE
 }
 
 enum JobType {
@@ -438,6 +441,7 @@ enum JobType {
   UPSCALE
   VIDEO
   VOICE_MOCKUP
+  VOICE
 }
 
 model MediaAttachment {
@@ -554,6 +558,8 @@ model Call {
   updatedAt   DateTime   @updatedAt
   subdomain   Subdomain? @relation(fields: [subdomainId], references: [id])
   subdomainId String?    @db.ObjectId
+  customer    Customer?  @relation(fields: [customerId], references: [id])
+  customerId  String?    @db.ObjectId
 
   @@index([bookingDataId])
 }

@@ -25,7 +25,7 @@ export async function createCallIngestLog(params: {
         }s. Sending to AI for analysis...`,
         metadata: {
           callSid,
-          stage: "ingestion",
+          to: "",
           duration,
           from,
         },

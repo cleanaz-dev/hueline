@@ -1,13 +1,14 @@
 import axios, { isCancel, AxiosError } from "axios";
 
 interface Params {
-  hueline_id?: string
+  hueline_id: string
   domain_id: string;
   slug: string;
   call_sid: string;
+  job_id: string;
 }
 
-const url = process.env.LAMBDA_CALL_INTELLIGENCE || ""
+const url = process.env.LAMBDA_CALL_INTELLIGENCE!
 
 export async function triggerIntelligenceLambda(params: Params) {
 

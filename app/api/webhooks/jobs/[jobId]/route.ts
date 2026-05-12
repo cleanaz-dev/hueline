@@ -5,6 +5,8 @@ import { ImagenTriggerSource } from "@/lib/workflows/imagen/process-imagen-workf
 import { UpscaleTriggerSource } from "@/lib/workflows/upscale/process-upscale-workflow";
 import { handleUpscaleWebhook } from "@/lib/workflows/upscale/handle-upscale-webook";
 import { handleVoiceMockupWebhook } from "@/lib/workflows/voice-mockup/handle-voice-mockup-webhook";
+import { callTriggerSource } from "@/lib/workflows/call/process-call-workflow";
+import { handleCallWebhook } from "@/lib/workflows/call/handle-call-webhook";
 
 interface Params {
   params: Promise<{ jobId: string }>;
@@ -20,6 +22,11 @@ const VALID_UPSCALE_ACTIONS = new Set<UpscaleTriggerSource>([
   "CLIENT_UPSCALE",
   "OPERATOR_UPSCALE",
 ]);
+
+const VALID_CALL_ACTIONS = new Set<callTriggerSource>([
+  "CALL_INTELLIGENCE",
+  "REPEAT_CALL_INTELLIGENCE"
+])
 
 export async function POST(req: Request, { params }: Params) {
   const { jobId } = await params;
@@ -98,6 +105,30 @@ export async function POST(req: Request, { params }: Params) {
           { status: 501 },
         );
 
+
+      case "VOICE": {
+        const triggerSource = (body.action || "CALL_INTELLIGENCE") as callTriggerSource
+
+        if (!VALID_CALL_ACTIONS.has(triggerSource)) {
+           return NextResponse.json(
+            {
+              message: `Unknown action: "${body.action}". Expected: ${[...VALID_CALL_ACTIONS].join(", ")}`,
+            },
+            { status: 400 },
+          );
+        }
+
+        return await handleCallWebhook(
+          body,
+          job,
+          job.customer,
+          triggerSource
+        )
+        return NextResponse.json(
+          { message: "Video workflow pending" },
+          { status: 501 },
+        );
+      }
       case "VOICE_MOCKUP": {
       const triggerSource = body.action || "LIVEKIT_AGENT";
         

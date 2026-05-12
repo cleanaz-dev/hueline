@@ -91,12 +91,12 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     // 4. Trigger Intelligence
-    await triggerIntelligenceLambda({
-      call_sid: callSid,
-      hueline_id: booking?.huelineId,
-      slug,
-      domain_id: subdomain.id,
-    });
+    // await triggerIntelligenceLambda({
+    //   call_sid: callSid,
+    //   hueline_id: booking?.huelineId,
+    //   slug,
+    //   domain_id: subdomain.id,
+    // });
 
     await createCallIngestLog({
       bookingDataId: booking?.id,
