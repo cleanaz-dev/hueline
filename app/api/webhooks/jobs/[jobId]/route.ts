@@ -5,7 +5,7 @@ import { ImagenTriggerSource } from "@/lib/workflows/imagen/process-imagen-workf
 import { UpscaleTriggerSource } from "@/lib/workflows/upscale/process-upscale-workflow";
 import { handleUpscaleWebhook } from "@/lib/workflows/upscale/handle-upscale-webook";
 import { handleVoiceMockupWebhook } from "@/lib/workflows/voice-mockup/handle-voice-mockup-webhook";
-import { callTriggerSource } from "@/lib/workflows/call/process-call-workflow";
+import { CallTriggerSource } from "@/lib/workflows/call/process-call-workflow";
 import { handleCallWebhook } from "@/lib/workflows/call/handle-call-webhook";
 
 interface Params {
@@ -23,7 +23,7 @@ const VALID_UPSCALE_ACTIONS = new Set<UpscaleTriggerSource>([
   "OPERATOR_UPSCALE",
 ]);
 
-const VALID_CALL_ACTIONS = new Set<callTriggerSource>([
+const VALID_CALL_ACTIONS = new Set<CallTriggerSource>([
   "CALL_INTELLIGENCE",
   "REPEAT_CALL_INTELLIGENCE"
 ])
@@ -107,7 +107,7 @@ export async function POST(req: Request, { params }: Params) {
 
 
       case "VOICE": {
-        const triggerSource = (body.action || "CALL_INTELLIGENCE") as callTriggerSource
+        const triggerSource = (body.action || "CALL_INTELLIGENCE") as CallTriggerSource
 
         if (!VALID_CALL_ACTIONS.has(triggerSource)) {
            return NextResponse.json(
@@ -124,10 +124,7 @@ export async function POST(req: Request, { params }: Params) {
           job.customer,
           triggerSource
         )
-        return NextResponse.json(
-          { message: "Video workflow pending" },
-          { status: 501 },
-        );
+  
       }
       case "VOICE_MOCKUP": {
       const triggerSource = body.action || "LIVEKIT_AGENT";
