@@ -2,7 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { twilioClient } from "@/lib/twilio/config";
 import { getPresignedUrl } from "@/lib/aws/s3";
-import { CommunicationRole, ClientActivityType, LogActor, Job, CommunicationType, Customer } from "@/app/generated/prisma";
+import { CommunicationRole, ClientActivityType, LogActor, SystemTask, CommunicationType, Customer } from "@/app/generated/prisma";
 import { sendEmail, SendMockUpEmail } from "@/lib/resend";
 
 // ─── Trigger Source ───────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ const TRIGGER_CONFIG: Record<ImagenTriggerSource, TriggerConfig> = {
 interface ProcessImagenArgs {
   webhookBody: any;
   triggerSource: ImagenTriggerSource;
-  job: Job;
+  job: SystemTask;
   customer: Customer;
   operatorId?: string | null;
 }

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { processImagenWorkflow, ImagenTriggerSource } from "./process-imagen-workflow";
-import { Job, Customer } from "@/app/generated/prisma";
+import { SystemTask, Customer } from "@/app/generated/prisma";
 
 export async function handleImagenWebhook(
   body: any,
   triggerSource: ImagenTriggerSource,
-  job: Job,
+  job: SystemTask,
   customer: Customer
 ) {
   try {
@@ -20,7 +20,7 @@ export async function handleImagenWebhook(
 
 
     // 2. Mark Job as Success
-    await prisma.job.update({ where: { id: job.id }, data: { status: "COMPLETED" } });
+    await prisma.systemTask.update({ where: { id: job.id }, data: { status: "COMPLETED" } });
 
     // 3. Pass everything to the Processor
     await processImagenWorkflow({

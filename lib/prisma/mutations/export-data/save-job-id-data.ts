@@ -1,7 +1,7 @@
 import { prisma } from "../../config";
 
 interface JobParams {
-  jobId: string;
+  systemTaskId: string;
   huelineId: string;
   resolution: "4k" | "8k";
   imageKeys: number;
@@ -9,7 +9,7 @@ interface JobParams {
 }
 
 export async function SaveJobIdData(params: JobParams) {
-  const { jobId, huelineId, resolution, imageKeys, status } = params;
+  const { systemTaskId, huelineId, resolution, imageKeys, status } = params;
 
   // First, get the booking by huelineId to get the bookingId
   const booking = await prisma.subBookingData.findUnique({
@@ -23,7 +23,7 @@ export async function SaveJobIdData(params: JobParams) {
 
   const exportRecord = await prisma.export.create({
     data: {
-      jobId,
+      systemTaskId,
       booking: { connect: { id: booking.id } },
       resolution,
       imageCount: imageKeys,

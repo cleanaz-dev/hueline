@@ -5,7 +5,7 @@ import {
   CommunicationRole,
   CommunicationType,
   Customer,
-  Job,
+  SystemTask,
   LogActor,
 } from "@/app/generated/prisma";
 import { CallTriggerSource, voiceMetadataSchema } from "@/lib/zod/job-voice-metadata";
@@ -100,7 +100,7 @@ export interface CallWebhookBody {
 
 export interface ProcessCallArgs {
   body: CallWebhookBody;
-  job: Job;
+  job: SystemTask;
   customer: Customer;
 }
 

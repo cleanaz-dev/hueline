@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
-import { Job, Customer } from "@/app/generated/prisma";
+import { SystemTask, Customer } from "@/app/generated/prisma";
 import { processUpscaleWorkflow, UpscaleTriggerSource } from "./process-upscale-workflow";
 
 // 1. Zod Schema: This handles BOTH the "complete" and "failed" payloads from Python
@@ -18,7 +18,7 @@ const upscaleWebhookSchema = z.object({
 
 export async function handleUpscaleWebhook(
   body: any,
-  job: Job,
+  job: SystemTask,
   customer: Customer,
   triggerSource: UpscaleTriggerSource,
 ) {
@@ -33,7 +33,7 @@ export async function handleUpscaleWebhook(
 
     // 3. Handle Python Lambda Failures Gracefully
     if (validPayload.status === "failed") {
-      await prisma.job.update({ where: { id: job.id }, data: { status: "FAILED" } });
+      await prisma.systemTask.update({ where: { id: job.id }, data: { status: "FAILED" } });
       return NextResponse.json({ message: "Job marked as failed" }, { status: 200 });
     }
 
@@ -49,7 +49,7 @@ export async function handleUpscaleWebhook(
     }
 
     // 5. Mark Job as Success
-    await prisma.job.update({ where: { id: job.id }, data: { status: "COMPLETED" } });
+    await prisma.systemTask.update({ where: { id: job.id }, data: { status: "COMPLETED" } });
 
     // 6. Pass the strictly typed payload to the Processor
     await processUpscaleWorkflow({

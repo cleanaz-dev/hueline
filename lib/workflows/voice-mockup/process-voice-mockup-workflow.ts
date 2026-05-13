@@ -3,7 +3,7 @@ import {
   CommunicationRole,
   CommunicationType,
   Customer,
-  Job,
+  SystemTask,
   LogActor,
 } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
@@ -72,7 +72,7 @@ const MOCKUP_CONFIG: Record<MockupTriggerSource, MockupConfig> = {
 interface ProcessMockupArgs {
   webhookBody: unknown;
   triggerSource: MockupTriggerSource;
-  job: Job;
+  job: SystemTask;
   customer: Customer;
   operatorId?: string | null;
   operatorName?: string | null;

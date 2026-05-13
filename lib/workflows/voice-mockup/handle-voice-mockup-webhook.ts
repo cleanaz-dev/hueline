@@ -1,11 +1,11 @@
-import { Customer, Job } from "@/app/generated/prisma";
+import { Customer, SystemTask } from "@/app/generated/prisma";
 import { NextResponse } from "next/server";
 import { MockupTriggerSource, processMockupWorkflow } from "./process-voice-mockup-workflow";
 
 
 export async function handleVoiceMockupWebhook(
   body: unknown,
-  job: Job,
+  job: SystemTask,
   customer: Customer,
   triggerSource: string,
 ) {

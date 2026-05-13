@@ -1,4 +1,4 @@
-import { Customer, Job } from "@/app/generated/prisma";
+import { Customer, SystemTask } from "@/app/generated/prisma";
 import {
   processCallWorkflow,
 } from "./process-call-workflow";
@@ -9,7 +9,7 @@ import { CallTriggerSource } from "@/lib/zod/job-voice-metadata";
 
 export async function handleCallWebhook(
   body: any,
-  job: Job,
+  job: SystemTask,
   customer: Customer,
 
 ) {
@@ -38,7 +38,7 @@ export async function handleCallWebhook(
       );
     }
 
-    await prisma.job.update({
+    await prisma.systemTask.update({
       where: { id: job.id },
       data: { status: "COMPLETED" },
     });

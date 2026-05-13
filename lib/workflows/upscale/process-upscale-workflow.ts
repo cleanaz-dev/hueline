@@ -3,7 +3,7 @@ import {
   CommunicationRole,
   CommunicationType,
   Customer,
-  Job,
+  SystemTask,
   LogActor,
 } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
@@ -74,7 +74,7 @@ interface UpscaleWebhookBody {
 interface ProcessUpscaleArgs {
   webhookBody: UpscaleWebhookBody;
   triggerSource: UpscaleTriggerSource;
-  job: Job;
+  job: SystemTask;
   customer: Customer;
   operatorId?: string | null;
   operatorName?: string | null;
