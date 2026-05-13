@@ -9,6 +9,8 @@ export const callTriggerSourceSchema = z.enum([
 export const voiceMetadataSchema = z.object({
   to: z.string().optional(),
   from: z.string().optional(),
+  callerName: z.string(),
+  callerPhone: z.string().startsWith("+"),
   duration: z.number().optional(),
   callSid: z.string(),
   callId: z.string(),

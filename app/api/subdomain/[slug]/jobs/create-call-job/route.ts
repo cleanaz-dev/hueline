@@ -15,8 +15,18 @@ export async function POST(req: Request, { params }: Params) {
   try {
     const body = await req.json();
 
-    const { callSid, customerId, huelineId, duration, to, domainId, from } =
-      body;
+    const {
+      callSid,
+      customerId,
+      huelineId,
+      duration,
+      to,
+      domainId,
+      from,
+      callerName,
+      callerPhone,
+      triggerSource,
+    } = body;
 
     const subdomain = await prisma.subdomain.findUnique({
       where: { id: domainId },
@@ -40,8 +50,9 @@ export async function POST(req: Request, { params }: Params) {
         callSid,
         status: "PROCESSING",
         subdomain: { connect: { id: subdomain.id } },
-        customer: { connect: { id: customerId } },
-        // Only link to booking if one was found
+        callerName,
+        callerPhone,
+        ...(customerId && { customer: { connect: { id: customerId } } }),
         ...(booking && { bookingData: { connect: { id: booking.id } } }),
       },
     });
@@ -51,8 +62,7 @@ export async function POST(req: Request, { params }: Params) {
         initiator: "SYSTEM",
         jobType: "VOICE",
         status: "PROCESSING",
-        customer: { connect: { id: customerId } },
-        // huelineId may be undefined — that's fine
+        ...(customerId && { customer: { connect: { id: customerId } } }),
         huelineId: huelineId ?? null,
         model: "assemblyai",
         metadataSource: "VOICE",
@@ -61,11 +71,11 @@ export async function POST(req: Request, { params }: Params) {
           from,
           duration,
           callSid,
+          callerName,
+          callerPhone,
           callId: newCall.id,
-          // bookingId only present when booking exists
           ...(booking && { bookingId: booking.id }),
-          // Stored here so processCallWorkflow can branch without relying on Lambda payload
-          triggerSource: booking ? "CALL_INTELLIGENCE" : "UNCOMPLETED_CALL",
+          triggerSource, // passed directly from agent
         } satisfies VoiceMetadata,
       },
     });

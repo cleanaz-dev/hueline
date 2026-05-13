@@ -546,6 +546,9 @@ model Call {
   bookingDataId String?         @db.ObjectId
   bookingData   SubBookingData? @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
 
+  callerName   String?
+  callerPhone  String?
+
   callSid      String  @unique
   recordingSid String?
   audioUrl     String?
