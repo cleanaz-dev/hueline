@@ -5,7 +5,7 @@ interface Params {
   domain_id: string;
   slug: string;
   call_sid: string;
-  job_id: string;
+  system_task_id: string;
 }
 
 const url = process.env.LAMBDA_CALL_INTELLIGENCE!

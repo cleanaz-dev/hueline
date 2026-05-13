@@ -94,10 +94,10 @@ export async function POST(req: Request, { params }: Params) {
 
     console.log("New Color:", newColor);
 
-    const job = await prisma.job.create({
+    const systemTask = await prisma.systemTask.create({
       data: {
         initiator: "CLIENT",
-        jobType: "IMAGEN",
+        type: "IMAGEN",
         status: "PENDING",
         brand: newColor.brand,
         hex: newColor.hex,
@@ -118,7 +118,7 @@ export async function POST(req: Request, { params }: Params) {
       huelineId: huelineId,
       subdomainId: subdomain.id,
       action: "CLIENT_IMAGEN",
-      jobId: job.id,
+      systemTaskId: systemTask.id,
     };
 
     const parsed = lambdaPayloadSchema.safeParse(generatePayload);

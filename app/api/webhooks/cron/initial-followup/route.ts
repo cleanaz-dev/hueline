@@ -94,10 +94,10 @@ export async function POST(req: Request) {
             };
           }
 
-          const job = await prisma.job.create({
+          const systemTask = await prisma.systemTask.create({
             data: {
               initiator: "SYSTEM",
-              jobType: "IMAGEN",
+              type: "IMAGEN",
               brand: smartColor.brand,
               name: smartColor.name,
               code: smartColor.code,
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
             huelineId: subData.huelineId,
             imageUrl: presignedUrl,
             targetColor: smartColor,
-            jobId: job.id,
+            systemTaskId: systemTask.id,
             subdomainId: client.subdomainId,
           };
 

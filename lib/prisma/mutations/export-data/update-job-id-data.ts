@@ -1,17 +1,18 @@
 import { prisma } from "../../config";
 
 interface UpdateJobParams {
-  jobId: string;
+  systemTaskId: string;
   status: string;
   downloadUrl?: string;
   completedAt?: Date;
 }
 
 export async function UpdateJobIdData(params: UpdateJobParams) {
-  const { jobId, status, downloadUrl, completedAt } = params;
+  const { systemTaskId, status, downloadUrl, completedAt } = params;
+
 
   const exportRecord = await prisma.export.update({
-    where: { jobId },
+    where: { systemTaskId },
     data: {
       status,
       ...(downloadUrl && { downloadUrl }),

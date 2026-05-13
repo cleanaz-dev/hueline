@@ -6,7 +6,7 @@ export const upscalePayloadSchema = z.object({
   action: z.literal("IMAGE_UPSCALE"),
   huelineId: z.string().min(1),
   resolution: z.enum(["4K", "8K"]),
-  jobId: z.string().min(1),
+  systemTaskId: z.string().min(1),
 });
 
 

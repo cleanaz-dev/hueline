@@ -29,10 +29,10 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const job = await prisma.job.findFirst({
+    const systemTask = await prisma.systemTask.findFirst({
       where: {
         huelineId,
-        jobType: "UPSCALE",
+        type: "UPSCALE",
         status: { in: ["PENDING", "PROCESSING"] },
       },
       orderBy: {
@@ -44,11 +44,11 @@ export async function GET(req: Request, { params }: Params) {
       },
     });
 
-    return NextResponse.json({ job: job ?? null });
+    return NextResponse.json({ systemTask: systemTask ?? null });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { message: "Error Fetching Job Data" },
+      { message: "Error Fetching systemTask Data" },
       { status: 500 },
     );
   }

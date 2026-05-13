@@ -16,6 +16,7 @@ import {
   Bell,
   Cpu,
   Plus,
+  HatGlasses,
 } from "lucide-react";
 import LogoImage from "@/public/images/url-image.png";
 
@@ -49,8 +50,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useOwner } from "@/context/owner-context";
 import { useSession, signOut } from "next-auth/react";
-import { Button } from "../ui/button";
-import Image from "next/image";
 
 // Menu Configuration
 const navMain = [
@@ -58,6 +57,7 @@ const navMain = [
   { title: "Rooms", url: "/my/rooms", icon: DoorOpen },
   { title: "Calls", url: "/my/calls", icon: Phone },
   { title: "Intelligence", url: "/my/intelligence", icon: Cpu },
+  { title: "System Tasks", url: "/my/system-tasks", icon: HatGlasses },
 ];
 
 function AppSidebar() {

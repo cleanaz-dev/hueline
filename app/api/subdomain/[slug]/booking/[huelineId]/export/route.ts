@@ -8,7 +8,6 @@ import {
   upscalePayloadSchema,
 } from "@/lib/zod/lambda-upscale-payload";
 import { getPresignedUrls } from "@/lib/aws/s3/services/get-presigned-url";
-import { UserPen } from "lucide-react";
 import { ImageUpscaleMetadata } from "@/lib/zod/job-upscale-metadata";
 
 interface Params {
@@ -106,10 +105,10 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
-    const job = await prisma.job.create({
+    const systemTask = await prisma.systemTask.create({
       data: {
         initiator: "CLIENT",
-        jobType: "UPSCALE",
+        type: "UPSCALE",
         status: "PENDING",
         model: "novita/image-upscaler",
         cost: 0.01,
@@ -134,7 +133,7 @@ export async function POST(req: Request, { params }: Params) {
       huelineId: huelineId,
       imageUrls,
       resolution,
-      jobId: job.id,
+      systemTaskId: systemTask.id,
       action: "IMAGE_UPSCALE",
     };
 
@@ -147,8 +146,8 @@ export async function POST(req: Request, { params }: Params) {
     const lambdaRes = await axios.post(lambdaUrl, upscalePayload);
 
     if (lambdaRes.status !== 200) {
-      await prisma.job.update({
-        where: { id: job.id },
+      await prisma.systemTask.update({
+        where: { id: systemTask.id },
         data: { status: "FAILED" },
       });
       return NextResponse.json(
@@ -157,14 +156,14 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    await prisma.job.update({
-      where: { id: job.id },
+    await prisma.systemTask.update({
+      where: { id: systemTask.id },
       data: { status: "PROCESSING" },
     });
 
     return NextResponse.json({
       success: true,
-      jobId: job.id,
+      systemTaskId: systemTask.id,
       message: "Export started. You'll receive an SMS when ready.",
     });
   } catch (error) {

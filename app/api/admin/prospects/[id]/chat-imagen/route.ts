@@ -56,9 +56,9 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
-    const job = await prisma.job.create({
+    const systemTask = await prisma.systemTask.create({
       data: {
-        jobType: "IMAGEN",
+        type: "IMAGEN",
         brand: brand,
         hex: color.hex,
         code: color.code,
@@ -88,7 +88,7 @@ export async function POST(req: Request, { params }: Params) {
       subdomainId: operator.subdomainId,
       imageUrl,
       targetColor,
-      jobId: job.id,
+      systemTaskId: systemTask.id,
       huelineId,
     };
 

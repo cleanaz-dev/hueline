@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { BookingData, SubdomainAccountData } from "@/types/subdomain-type";
-import { Job } from "@/app/generated/prisma";
+import { SystemTask } from "@/app/generated/prisma";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -16,9 +16,9 @@ interface BookingContextType {
   setIsShareDialogOpen: (open: boolean) => void;
   isExportDialogOpen: boolean;
   setIsExportDialogOpen: (open: boolean) => void;
-  activeImagenJob: Job | null;
+  activeImagenJob: SystemTask | null;
   hasActiveImagenJob: boolean;
-  activeUpscaleJob: Job | null;
+  activeUpscaleJob: SystemTask | null;
   hasActiveUpscaleJob: boolean;
   refreshUpscaleJob: () => void;
 }
@@ -40,7 +40,7 @@ export function BookingProvider({
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
-  const { data: imagenJobData } = useSWR<{ job: Job | null }>(
+  const { data: imagenJobData } = useSWR<{ job: SystemTask | null }>(
     `/api/subdomain/${subdomain.slug}/booking/${initialBooking.huelineId}/imagen-job-status`,
     fetcher,
     {
@@ -58,7 +58,7 @@ export function BookingProvider({
     activeImagenJob?.status === "PENDING" ||
     activeImagenJob?.status === "PROCESSING";
 
-  const { data: upscaleJobData, mutate: mutateUpscaleJob } = useSWR<{ job: Job | null }>(
+  const { data: upscaleJobData, mutate: mutateUpscaleJob } = useSWR<{ job: SystemTask | null }>(
     `/api/subdomain/${subdomain.slug}/booking/${initialBooking.huelineId}/upscale-job-status`,
     fetcher,
     {

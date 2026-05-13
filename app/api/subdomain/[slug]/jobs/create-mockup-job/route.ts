@@ -39,10 +39,10 @@ export async function POST(req: Request, { params }: Params) {
         status: "PENDING",
       },
     });
-    const newJob = await prisma.job.create({
+    const newSystemTask = await prisma.systemTask.create({
       data: {
         initiator: "CLIENT",
-        jobType: "VOICE_MOCKUP",
+        type: "VOICE_MOCKUP",
         status: "PROCESSING",
         model: "google/nano-banana",
         cost: 0.04,
@@ -52,7 +52,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     return NextResponse.json(
-      { jobId: newJob.id, customerId: newCusomter.id },
+      { sytemTaskId: newSystemTask.id, customerId: newCusomter.id },
       { status: 200 },
     );
   } catch (error) {

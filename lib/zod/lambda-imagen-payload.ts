@@ -12,7 +12,7 @@ export const lambdaPayloadSchema = z.object({
   huelineId: z.string().min(1),
   subdomainId: z.string().min(1),
   action: z.string(),
-  jobId: z.string().min(1),
+  systemTaskId: z.string().min(1),
 });
 
 

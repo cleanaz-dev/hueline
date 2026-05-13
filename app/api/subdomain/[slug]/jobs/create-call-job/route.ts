@@ -57,10 +57,10 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
-    const newJob = await prisma.job.create({
+    const newSystemTask = await prisma.systemTask.create({
       data: {
         initiator: "SYSTEM",
-        jobType: "VOICE",
+        type: "VOICE",
         status: "PROCESSING",
         ...(customerId && { customer: { connect: { id: customerId } } }),
         huelineId: huelineId ?? null,
@@ -85,10 +85,10 @@ export async function POST(req: Request, { params }: Params) {
       hueline_id: huelineId ?? null,
       slug,
       domain_id: subdomain.id,
-      job_id: newJob.id,
+      system_task_id: newSystemTask.id,
     });
 
-    return NextResponse.json({ job_id: newJob.id }, { status: 200 });
+    return NextResponse.json({ systemTask_id: newSystemTask.id }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

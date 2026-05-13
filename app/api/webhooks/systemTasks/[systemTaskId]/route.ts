@@ -8,7 +8,7 @@ import { handleVoiceMockupWebhook } from "@/lib/workflows/voice-mockup/handle-vo
 import { handleCallWebhook } from "@/lib/workflows/call/handle-call-webhook";
 
 interface Params {
-  params: Promise<{ jobId: string }>;
+  params: Promise<{ systemTaskId: string }>;
 }
 
 const VALID_IMAGEN_ACTIONS = new Set<ImagenTriggerSource>([
@@ -24,7 +24,7 @@ const VALID_UPSCALE_ACTIONS = new Set<UpscaleTriggerSource>([
 
 
 export async function POST(req: Request, { params }: Params) {
-  const { jobId } = await params;
+  const { systemTaskId } = await params;
 
   try {
     const authHeader = req.headers.get("x-webhook-secret");
@@ -32,25 +32,25 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const job = await prisma.job.findUnique({
-      where: { id: jobId },
+    const systemTask = await prisma.systemTask.findUnique({
+      where: { id: systemTaskId },
       include: { customer: true },
     });
 
-    if (!job) {
-      return NextResponse.json({ message: "Job not found" }, { status: 404 });
+    if (!systemTask) {
+      return NextResponse.json({ message: "systemTask not found" }, { status: 404 });
     }
 
-    if (!job.customer) {
+    if (!systemTask.customer) {
       return NextResponse.json(
-        { message: "No customer attached to this job" },
+        { message: "No customer attached to this systemTask" },
         { status: 400 },
       );
     }
 
     const body = await req.json();
 
-    switch (job.jobType) {
+    switch (systemTask.type) {
       case "IMAGEN": {
         const triggerSource = body.action as ImagenTriggerSource;
 
@@ -66,8 +66,8 @@ export async function POST(req: Request, { params }: Params) {
         return await handleImagenWebhook(
           body,
           triggerSource,
-          job,
-          job.customer,
+          systemTask,
+          systemTask.customer,
         );
       }
 
@@ -88,8 +88,8 @@ export async function POST(req: Request, { params }: Params) {
         // Return the handler response directly back to the Webhook sender
         return await handleUpscaleWebhook(
           body,
-          job,
-          job.customer,
+          systemTask,
+          systemTask.customer,
           triggerSource
         );
       }
@@ -102,30 +102,30 @@ export async function POST(req: Request, { params }: Params) {
 
 
       case "VOICE": {
-       return await handleCallWebhook(body, job, job.customer);
+       return await handleCallWebhook(body, systemTask, systemTask.customer);
       }
       case "VOICE_MOCKUP": {
       const triggerSource = body.action || "LIVEKIT_AGENT";
         
         return await handleVoiceMockupWebhook(
           body,
-          job,
-          job.customer, // <-- Using the newly renamed Customer model!
+          systemTask,
+          systemTask.customer, // <-- Using the newly renamed Customer model!
           triggerSource
         );
       }
         
 
       default:
-        console.warn(`Unhandled job type: ${job.jobType} for Job: ${jobId}`);
+        console.warn(`Unhandled systemTask type: ${systemTask.type} for systemTask: ${systemTaskId}`);
         return NextResponse.json(
-          { message: "Unhandled Job Type" },
+          { message: "Unhandled systemTask Type" },
           { status: 400 },
         );
     }
   } catch (error: any) {
     console.error(
-      `Master Webhook Error for Job ${jobId}:`,
+      `Master Webhook Error for  ${systemTaskId}:`,
       error.message || error,
     );
     return NextResponse.json(

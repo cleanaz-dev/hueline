@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const { huelineId, slug } = await params
     const body = await req.json()
-    const { jobId, status, downloadUrl, completedAt } = body
+    const { systemTaskId, status, downloadUrl, completedAt } = body
 
     // Get booking ID from huelineId
     const booking = await prisma.subBookingData.findUnique({
@@ -41,7 +41,7 @@ export async function POST(req: Request, { params }: Params) {
 
     // Update the export
     const updatedExport = await prisma.export.update({
-      where: { jobId },
+      where: { systemTaskId },
       data: {
         status,
         ...(downloadUrl && { downloadUrl }),

@@ -26,7 +26,7 @@ model SubdomainUser {
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   clientCommunications ClientCommunication[]
-  jobs                 Job[]
+  systemTasks          SystemTask[]
 }
 
 model Client {
@@ -222,6 +222,7 @@ model Subdomain {
   demoClients      DemoClient[]
   clientActivities ClientActivity[]
   customers        Customer[]
+  systemTasks      SystemTask[]
 }
 
 model RoomIntelligence {
@@ -347,7 +348,7 @@ model DemoClient {
   createdAt        DateTime?        @default(now())
   updatedAt        DateTime?        @updatedAt
   clientActivities ClientActivity[]
-  jobs             Job[]
+  systemTasks      SystemTask[]
 }
 
 model Customer {
@@ -367,7 +368,7 @@ model Customer {
   createdAt        DateTime?        @default(now())
   updatedAt        DateTime?        @updatedAt
   clientActivities ClientActivity[]
-  jobs             Job[]
+  systemTasks      SystemTask[]
   customerType     CustomerType     @default(RESIDENTIAL)
   calls            Call[]
 }
@@ -398,15 +399,15 @@ model ClientCommunication {
   customerId       String?           @db.ObjectId
 }
 
-model Job {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  status    JobStatus
+model SystemTask {
+  id        String           @id @default(auto()) @map("_id") @db.ObjectId
+  status    SystemTaskStatus
   huelineId String?
-  jobType   JobType // <-- We will use this in our Switch statement!
+  type      SystemTaskType // <-- We will use this in our Switch statement!
   model     String?
   cost      Float?
 
-  initiator      JobRole
+  initiator      SystemTaskRole
   operator       SubdomainUser? @relation(fields: [operatorId], references: [id])
   operatorId     String?        @db.ObjectId
   deliveryMethod String?
@@ -423,6 +424,8 @@ model Job {
   // 🌟 NEW: Let the Job know exactly who it is for!
   demoClientId String?     @db.ObjectId
   demoClient   DemoClient? @relation(fields: [demoClientId], references: [id], onDelete: Cascade)
+  subdomain    Subdomain?  @relation(fields: [subdomainId], references: [id])
+  subdomainId  String?     @db.ObjectId
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -436,7 +439,7 @@ enum MetadataSource {
   VOICE
 }
 
-enum JobType {
+enum SystemTaskType {
   IMAGEN
   UPSCALE
   VIDEO
@@ -462,7 +465,7 @@ enum MediaSource {
   EXTERNAL
 }
 
-enum JobRole {
+enum SystemTaskRole {
   AI
   CLIENT
   USER
@@ -470,7 +473,7 @@ enum JobRole {
   SYSTEM
 }
 
-enum JobStatus {
+enum SystemTaskStatus {
   PENDING
   PROCESSING
   COMPLETED
@@ -546,8 +549,8 @@ model Call {
   bookingDataId String?         @db.ObjectId
   bookingData   SubBookingData? @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
 
-  callerName   String?
-  callerPhone  String?
+  callerName  String?
+  callerPhone String?
 
   callSid      String  @unique
   recordingSid String?
@@ -590,17 +593,17 @@ model CallIntelligence {
 }
 
 model Export {
-  id          String         @id @default(auto()) @map("_id") @db.ObjectId
-  jobId       String?        @unique
-  bookingId   String         @db.ObjectId
-  booking     SubBookingData @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  resolution  String
-  imageCount  Int
-  status      String
-  downloadUrl String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  completedAt DateTime?
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  systemTaskId String         @unique
+  bookingId    String         @db.ObjectId
+  booking      SubBookingData @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  resolution   String
+  imageCount   Int
+  status       String
+  downloadUrl  String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  completedAt  DateTime?
 
   @@index([bookingId])
 }
