@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { OwnerProvider } from "@/context/owner-context";
 import { getOwnerData } from "@/lib/prisma/queries/owner/get-owner-data";
+import { GlobalOwnerChatWidget } from "@/components/admin/prospects/global-owner-chat-widget";
 
 export default async function OwnerRootLayout({
   children,
@@ -20,8 +21,9 @@ export default async function OwnerRootLayout({
 
   // 3. Pass Data ONLY. No visual sidebar here.
   return (
-    <OwnerProvider value={{ subdomain }}>
+    <OwnerProvider subdomain={ subdomain }>
       {children}
+      <GlobalOwnerChatWidget />
     </OwnerProvider>
   );
 }
