@@ -8,16 +8,13 @@ import {
   Job,
   LogActor,
 } from "@/app/generated/prisma";
-import { voiceMetadataSchema } from "@/lib/zod/job-voice-metadata";
+import { CallTriggerSource, voiceMetadataSchema } from "@/lib/zod/job-voice-metadata";
 import {
   getBookingSnapshot,
   updateBookingData,
   upsertCall,
-} from "./mutations";
-
-export type CallTriggerSource =
-  | "CALL_INTELLIGENCE"
-  | "REPEAT_CALL_INTELLIGENCE";
+} from "./mutations/call-intelligence-mutations";
+import { updateCallBasic } from "./mutations";
 
 export interface CallContext {
   callerName: string;
@@ -41,6 +38,7 @@ interface CallConfig {
   activityTitle: (ctx: CallContext) => string;
   activityDescription: (ctx: CallContext) => string;
   communicationType: CommunicationType;
+  communcationBody: (ctx: CallContext) => string;
 }
 
 const CALL_CONFIG: Record<CallTriggerSource, CallConfig> = {
@@ -55,6 +53,7 @@ const CALL_CONFIG: Record<CallTriggerSource, CallConfig> = {
     activityDescription: (ctx) =>
       `Call regarding: ${ctx.callerName} about ${ctx.roomType}, valued at ${ctx.intelligence.estimatedAdditionalValue}`,
     communicationType: "PHONE",
+    communcationBody: (ctx) => `Inbound call from ${ctx.callerName} (${ctx.callerPhone}`
   },
   REPEAT_CALL_INTELLIGENCE: {
     logActor: "CLIENT",
@@ -67,7 +66,19 @@ const CALL_CONFIG: Record<CallTriggerSource, CallConfig> = {
     activityDescription: (ctx) =>
       `Call regarding: ${ctx.callerName} about ${ctx.roomType}, valued at ${ctx.intelligence.estimatedAdditionalValue}`,
     communicationType: "PHONE",
+    communcationBody: (ctx) => `Inbound call from ${ctx.callerName} (${ctx.callerPhone}`
   },
+  UNCOMPLETED_CALL: {
+    logActor: "CLIENT",
+    role: "CLIENT",
+    logTitle: (ctx) => `Call inbound from ${ctx.callerPhone} at ${ctx.call.createdAt}`,
+    logDescription: (ctx) => `Uncomplete Call: ${ctx.callSummary}`,
+    activityType: "INBOUND_CALL",
+    activityTitle: (ctx) => `${ctx.callerPhone} called at ${ctx.call.createdAt}`,
+    activityDescription: (ctx) => `Uncomplete Call: ${ctx.callSummary}`,
+    communicationType: "PHONE",
+    communcationBody: (ctx) => `Inbound call from (${ctx.callerPhone}`
+  }
 };
 
 export interface CallWebhookBody {
@@ -90,14 +101,12 @@ export interface CallWebhookBody {
 export interface ProcessCallArgs {
   body: CallWebhookBody;
   job: Job;
-  triggerSource: CallTriggerSource;
   customer: Customer;
 }
 
 export async function processCallWorkflow({
   body,
   job,
-  triggerSource,
   customer,
 }: ProcessCallArgs) {
   // 1. Validate job metadata
@@ -106,9 +115,22 @@ export async function processCallWorkflow({
     throw new Error(`Invalid job metadata: ${metadataResult.error.message}`);
   }
 
-  const { callSid, duration, bookingId } = metadataResult.data;
+  const { callSid, duration, bookingId, triggerSource } = metadataResult.data;
 
-  // 2. Destructure intelligence fields
+  // 2. Early exit — no booking/hueline, just stamp the audio URL and stop
+  if (triggerSource === "UNCOMPLETED_CALL") {
+    await updateCallBasic({ callSid, recordingUrl: body.recording_url, duration });
+    return;
+  }
+
+  // Beyond this point a bookingId is required
+  if (!bookingId) {
+    throw new Error(
+      `bookingId missing in job metadata for trigger: ${triggerSource}`
+    );
+  }
+
+  // 3. Destructure intelligence fields
   const {
     callReason,
     projectScope,
@@ -190,5 +212,4 @@ export async function processCallWorkflow({
   });
 
   // 7. TODO: enter logs and activities here...
-  
 }
