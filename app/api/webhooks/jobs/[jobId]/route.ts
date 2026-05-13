@@ -5,7 +5,7 @@ import { ImagenTriggerSource } from "@/lib/workflows/imagen/process-imagen-workf
 import { UpscaleTriggerSource } from "@/lib/workflows/upscale/process-upscale-workflow";
 import { handleUpscaleWebhook } from "@/lib/workflows/upscale/handle-upscale-webook";
 import { handleVoiceMockupWebhook } from "@/lib/workflows/voice-mockup/handle-voice-mockup-webhook";
-import { CallTriggerSource } from "@/lib/workflows/call/process-call-workflow";
+import { CallTriggerSource } from "@/lib/zod/job-voice-metadata";
 import { handleCallWebhook } from "@/lib/workflows/call/handle-call-webhook";
 
 interface Params {
@@ -124,7 +124,6 @@ export async function POST(req: Request, { params }: Params) {
           job.customer,
           triggerSource
         )
-  
       }
       case "VOICE_MOCKUP": {
       const triggerSource = body.action || "LIVEKIT_AGENT";

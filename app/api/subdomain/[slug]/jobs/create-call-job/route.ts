@@ -27,16 +27,13 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
-    const booking = await prisma.subBookingData.findUnique({
-      where: {
-        huelineId,
-      },
-      select: { id: true },
-    });
-
-    if (!booking) {
-      return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
-    }
+    // Booking lookup is optional — only attempt if huelineId was provided
+    const booking = huelineId
+      ? await prisma.subBookingData.findUnique({
+          where: { huelineId },
+          select: { id: true },
+        })
+      : null;
 
     const newCall = await prisma.call.create({
       data: {
@@ -44,7 +41,8 @@ export async function POST(req: Request, { params }: Params) {
         status: "PROCESSING",
         subdomain: { connect: { id: subdomain.id } },
         customer: { connect: { id: customerId } },
-        bookingData: { connect: { id: booking.id } },
+        // Only link to booking if one was found
+        ...(booking && { bookingData: { connect: { id: booking.id } } }),
       },
     });
 
@@ -54,7 +52,8 @@ export async function POST(req: Request, { params }: Params) {
         jobType: "VOICE",
         status: "PROCESSING",
         customer: { connect: { id: customerId } },
-        huelineId,
+        // huelineId may be undefined — that's fine
+        huelineId: huelineId ?? null,
         model: "assemblyai",
         metadataSource: "VOICE",
         metadata: {
@@ -63,14 +62,17 @@ export async function POST(req: Request, { params }: Params) {
           duration,
           callSid,
           callId: newCall.id,
-          bookingId: booking.id,
+          // bookingId only present when booking exists
+          ...(booking && { bookingId: booking.id }),
+          // Stored here so processCallWorkflow can branch without relying on Lambda payload
+          triggerSource: booking ? "CALL_INTELLIGENCE" : "UNCOMPLETED_CALL",
         } satisfies VoiceMetadata,
       },
     });
 
     await triggerIntelligenceLambda({
       call_sid: callSid,
-      hueline_id: huelineId,
+      hueline_id: huelineId ?? null,
       slug,
       domain_id: subdomain.id,
       job_id: newJob.id,
