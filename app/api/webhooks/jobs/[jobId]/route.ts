@@ -107,23 +107,7 @@ export async function POST(req: Request, { params }: Params) {
 
 
       case "VOICE": {
-        const triggerSource = (body.action || "CALL_INTELLIGENCE") as CallTriggerSource
-
-        if (!VALID_CALL_ACTIONS.has(triggerSource)) {
-           return NextResponse.json(
-            {
-              message: `Unknown action: "${body.action}". Expected: ${[...VALID_CALL_ACTIONS].join(", ")}`,
-            },
-            { status: 400 },
-          );
-        }
-
-        return await handleCallWebhook(
-          body,
-          job,
-          job.customer,
-          triggerSource
-        )
+       return await handleCallWebhook(body, job, job.customer);
       }
       case "VOICE_MOCKUP": {
       const triggerSource = body.action || "LIVEKIT_AGENT";

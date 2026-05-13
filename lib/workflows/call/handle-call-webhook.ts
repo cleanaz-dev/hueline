@@ -1,17 +1,17 @@
 import { Customer, Job } from "@/app/generated/prisma";
 import {
-  CallTriggerSource,
   processCallWorkflow,
 } from "./process-call-workflow";
 import { callWebhookBodySchema } from "@/lib/zod/call-webhook-body-schema";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { CallTriggerSource } from "@/lib/zod/job-voice-metadata";
 
 export async function handleCallWebhook(
   body: any,
   job: Job,
   customer: Customer,
-  triggerSource: CallTriggerSource,
+
 ) {
   try {
     const parsedBody = callWebhookBodySchema.safeParse(body);
@@ -47,7 +47,6 @@ export async function handleCallWebhook(
       body,
       customer,
       job,
-      triggerSource,
     });
 
     return NextResponse.json(
