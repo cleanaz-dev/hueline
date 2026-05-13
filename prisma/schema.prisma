@@ -594,7 +594,7 @@ model CallIntelligence {
 
 model Export {
   id           String         @id @default(auto()) @map("_id") @db.ObjectId
-  systemTaskId String         @unique
+  systemTaskId String?         @unique
   bookingId    String         @db.ObjectId
   booking      SubBookingData @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   resolution   String

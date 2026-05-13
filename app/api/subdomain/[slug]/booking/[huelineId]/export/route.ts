@@ -58,7 +58,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const body = await req.json();
-    const { imageKeys, resolution, phone , roomType} = body;
+    const { imageKeys, resolution, phone, roomType } = body;
 
     if (!imageKeys?.length || !resolution || !phone || !roomType) {
       return NextResponse.json(
@@ -125,6 +125,13 @@ export async function POST(req: Request, { params }: Params) {
           s3Keys: imageKeys,
           roomType,
         } satisfies ImageUpscaleMetadata,
+      },
+    });
+
+    await prisma.export.update({
+      where: { id: exportData.id },
+      data: {
+        systemTaskId: systemTask.id,
       },
     });
 
