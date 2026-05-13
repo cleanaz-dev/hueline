@@ -1,4 +1,4 @@
-import { Prisma, RoomType, BookingStatus } from "@/app/generated/prisma";
+import { Prisma, RoomType, BookingStatus, Export } from "@/app/generated/prisma";
 import {
   CallReason,
   CallOutcome,
@@ -194,17 +194,17 @@ export interface CallFlow {
   createdAt: Date | string;
 }
 
-export interface Export {
-  id: string;
-  jobId: string | null;
-  bookingId: string;
-  resolution: string;
-  imageCount: number;
-  status: string;
-  downloadUrl?: string | null;
-  createdAt: Date | string;
-  completedAt?: Date | string | null;
-}
+// export interface Export {
+//   id: string;
+//   jobId: string | null;
+//   bookingId: string;
+//   resolution: string;
+//   imageCount: number;
+//   status: string;
+//   downloadUrl?: string | null;
+//   createdAt: Date | string;
+//   completedAt?: Date | string | null;
+// }
 
 export interface Mockup {
   id: string;
