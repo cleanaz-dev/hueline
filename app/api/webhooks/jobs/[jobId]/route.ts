@@ -5,7 +5,6 @@ import { ImagenTriggerSource } from "@/lib/workflows/imagen/process-imagen-workf
 import { UpscaleTriggerSource } from "@/lib/workflows/upscale/process-upscale-workflow";
 import { handleUpscaleWebhook } from "@/lib/workflows/upscale/handle-upscale-webook";
 import { handleVoiceMockupWebhook } from "@/lib/workflows/voice-mockup/handle-voice-mockup-webhook";
-import { CallTriggerSource } from "@/lib/zod/job-voice-metadata";
 import { handleCallWebhook } from "@/lib/workflows/call/handle-call-webhook";
 
 interface Params {
@@ -23,10 +22,6 @@ const VALID_UPSCALE_ACTIONS = new Set<UpscaleTriggerSource>([
   "OPERATOR_UPSCALE",
 ]);
 
-const VALID_CALL_ACTIONS = new Set<CallTriggerSource>([
-  "CALL_INTELLIGENCE",
-  "REPEAT_CALL_INTELLIGENCE"
-])
 
 export async function POST(req: Request, { params }: Params) {
   const { jobId } = await params;
