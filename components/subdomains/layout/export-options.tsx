@@ -3,8 +3,9 @@
 import { CloudDownload } from "lucide-react";
 import { BsBadge8K, BsBadge4K } from "react-icons/bs";
 import { useBooking } from "@/context/booking-context";
-import { Export } from "@/types/subdomain-type";
+
 import Link from "next/link";
+import { Export } from "@/app/generated/prisma";
 
 export default function ExportOptions() {
   const { setIsExportDialogOpen, booking, hasActiveUpscaleJob, activeUpscaleJob } = useBooking();

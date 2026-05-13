@@ -5,9 +5,10 @@ import { Download, CheckCircle, Clock, XCircle, FileArchive } from "lucide-react
 import { useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import useSWR from "swr";
-import type { Export } from "@/types/subdomain-type";
+
 import SubdomainNav from "./subdomain-nav";
 import { generateFreshDownloadLink } from "@/app/actions/download"; // <-- Import the new action
+import { Export } from "@/app/generated/prisma";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
