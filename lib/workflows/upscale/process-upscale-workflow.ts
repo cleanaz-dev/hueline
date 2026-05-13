@@ -146,7 +146,7 @@ export async function processUpscaleWorkflow({
       data: {
         resolution,
         imageCount,
-        jobId: job.id,
+        systemTaskId: job.id,
         status: "COMPLETED",
         // Note: Assuming your Export schema uses `downloadUrl` to store the S3 Key
         // to be resolved into a presigned URL on the frontend later.
