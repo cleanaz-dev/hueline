@@ -104,6 +104,8 @@ export function OwnerProvider({
   const [activeChatProspect, setActiveChatProspect] = useState<CustomerChat | null>(null);
   const [chatWindowState, setChatWindowState] = useState<"icon" | "list" | "open" | "minimized">("icon");
 
+  const users = userData?.users
+
   const openChat = (prospect: CustomerChat) => {
     setActiveChatProspect(prospect);
     setChatWindowState("open");
