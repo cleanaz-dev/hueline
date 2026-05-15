@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  PersonStanding,
-  Users,
-  Phone,
-  Mail,
-  Building2,
-} from "lucide-react";
+import { PersonStanding, Users, Phone, Mail, Building2 } from "lucide-react";
 
 import {
   Table,
@@ -18,8 +12,12 @@ import {
 } from "@/components/ui/table";
 
 import { Button } from "@/components/ui/button";
+import OwnerPageHeader from "@/components/owner/owner-page.header";
+import { useOwner } from "@/context/owner-context";
 
 export default function Page() {
+
+  const { setAddCustomerDialogOpen } = useOwner()
   // temp mock data until API is connected
   const customers = [
     {
@@ -41,40 +39,19 @@ export default function Page() {
   ];
 
   return (
-    <main className="container max-w-6xl mx-auto py-8 px-4">
+    <main className="container max-w-6xl mx-auto px-4">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-5 mb-8">
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex w-14 h-14 rounded-2xl border border-zinc-200 bg-zinc-100 items-center justify-center shadow-sm">
-            <PersonStanding className="w-7 h-7 text-zinc-700" />
-          </div>
-
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
-              Customers
-            </h1>
-
-            <p className="text-sm text-zinc-500 mt-1 max-w-xl">
-              Analyze conversations, manage customer communication,
-              generate AI images, and monitor project activity.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border bg-white px-4 py-2 shadow-sm">
-            <Users className="w-4 h-4 text-zinc-500" />
-
-            <span className="text-sm font-medium text-zinc-700">
-              {customers.length} Customers
-            </span>
-          </div>
-
-          <Button className="rounded-xl">
-            Add Customer
-          </Button>
-        </div>
-      </div>
+      <OwnerPageHeader
+        title="Customers"
+        description="Analyze conversations, manage customer communication,
+                  generate AI images, and monitor project activity."
+        icon={<PersonStanding className="w-7 h-7 text-zinc-700" />}
+        count={customers.length}
+        countLabel="Customers"
+        countIcon={<Users className="w-4 h-4 text-zinc-500" />}
+        onAddClick={() => setAddCustomerDialogOpen(true)}
+        addButtonLabel="Add Customer"
+      />
 
       {/* Table */}
       <div className="rounded-3xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
@@ -144,18 +121,11 @@ export default function Page() {
                 {/* Actions */}
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-lg"
-                    >
+                    <Button variant="outline" size="sm" className="rounded-lg">
                       View
                     </Button>
 
-                    <Button
-                      size="sm"
-                      className="rounded-lg"
-                    >
+                    <Button size="sm" className="rounded-lg">
                       Message
                     </Button>
                   </div>

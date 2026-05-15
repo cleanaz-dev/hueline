@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { OwnerProvider } from "@/context/owner-context";
 import { getOwnerData } from "@/lib/prisma/queries/owner/get-owner-data";
 import { GlobalOwnerChatWidget } from "@/components/admin/prospects/global-owner-chat-widget";
+import AddCustomerDialog from "@/components/owner/customers/add-customer-dialog";
 
 export default async function OwnerRootLayout({
   children,
@@ -24,6 +25,7 @@ export default async function OwnerRootLayout({
     <OwnerProvider subdomain={ subdomain }>
       {children}
       <GlobalOwnerChatWidget />
+      <AddCustomerDialog />
     </OwnerProvider>
   );
 }
