@@ -19,6 +19,7 @@ import {
   HatGlasses,
   Users2,
   PersonStanding,
+  Palette,
 } from "lucide-react";
 import LogoImage from "@/public/images/url-image.png";
 
@@ -57,10 +58,11 @@ import { useSession, signOut } from "next-auth/react";
 const navMain = [
   { title: "Dashboard", url: "/my/dashboard", icon: LayoutDashboard },
   { title: "Customers", url: "/my/customers", icon: PersonStanding },
-  { title: "Team", url: '/my/team', icon: Users2 },
+  { title: "Team", url: "/my/team", icon: Users2 },
   { title: "Rooms", url: "/my/rooms", icon: DoorOpen },
   { title: "Calls", url: "/my/calls", icon: Phone },
   { title: "Intelligence", url: "/my/intelligence", icon: Cpu },
+  { title: "Design Studio", url: "/my/design-studio", icon: Palette },
   { title: "System Tasks", url: "/my/system-tasks", icon: HatGlasses },
 ];
 
@@ -254,8 +256,6 @@ export default function OwnerSidebar({
               </span>
             </div>
           </div>
-
-          
         </header>
 
         {/* Scrollable Content Area */}

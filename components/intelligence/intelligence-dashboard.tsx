@@ -27,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import OwnerPageHeader from "../owner/owner-page.header";
 
 // --- TYPES & HELPERS ---
 type VariableValue =
@@ -144,23 +145,20 @@ export default function IntelligenceDashboardPage() {
   const roomExamples = roomJson.examples || [];
 
   return (
-    <div className="">
+    <div className="container max-w-7xl mx-auto">
       {/* --- ADDED HEADER SECTION --- */}
-      <div className="flex items-center gap-4 mb-10">
-        <div className="w-14 h-14 bg-zinc-100 rounded-2xl  items-center justify-center border border-zinc-200 shadow-sm hidden md:flex">
-          <Cpu className="w-7 h-7 text-zinc-700" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-            Intelligence
-          </h1>
-          <p className="text-sm text-zinc-500 mt-1 max-w-2xl">
-            Review the active logic gates, pricing models, and vision
-            capabilities currently deployed to your AI agent.
-          </p>
-        </div>
-      </div>
-      {/* --------------------------- */}
+
+      <OwnerPageHeader 
+        title="Intelligence"
+        description="Review the active logic gates, pricing models, and vision."
+        icon={<Cpu className="size-6 text-zinc-500" />}
+        addButtonLabel="Update Intelligence"
+        onAddClick={() => console.log("Button Clicked!")}
+      
+      
+      
+      />
+     
 
       <Tabs defaultValue="pricing" className="w-full ">
         <TabsList className="bg-transparent p-0 border-b border-zinc-200 w-full justify-start h-auto rounded-none gap-6 mb-8">

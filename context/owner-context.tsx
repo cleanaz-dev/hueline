@@ -28,12 +28,27 @@ interface OwnerContextValue {
   customers: Customer[] | undefined;
   isCustomersLoading: boolean;
   addCustomer: (
-    customerName: string, 
+    customerName: string,
     customerPhone: string,
-    customerEmail: string
-  ) => Promise<boolean>
+    customerEmail: string,
+  ) => Promise<boolean>;
+  inviteMember: (
+    memberName: string,
+    memberPhone: string,
+    memberEmail: string
+  ) => Promise<boolean>;
   addCustomerDialogOpen: boolean;
   setAddCustomerDialogOpen: (open: boolean) => void;
+  inviteMemberDialogOpen: boolean;
+  setInviteMemberDialogOpen: (open: boolean) => void;
+  isInvitingMember: boolean;
+  isReportingTask: boolean;
+  reportTaskDialogOpen: boolean;
+  setReportTaskDialogOpen: (open: boolean) => void;
+  reportTask: (
+    taskId: string,
+    text: string
+  ) => Promise<boolean>
   refreshCustomers: () => void;
   refreshUsers: () => void;
   isSendingSMS: boolean;
@@ -110,6 +125,10 @@ export function OwnerProvider({
   >({});
   const [addCustomerDialogOpen, setAddCustomerDialogOpen] = useState(false);
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
+  const [isInvitingMember, setIsInvitingMember] = useState(false);
+  const [ inviteMemberDialogOpen, setInviteMemberDialogOpen ] = useState(false)
+  const [ reportTaskDialogOpen, setReportTaskDialogOpen ] = useState(false)
+  const [ isReportingTask, setIsReportingTask ] = useState(false)
 
   // --- Success banners ---
   const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
@@ -240,12 +259,62 @@ export function OwnerProvider({
         }),
       });
 
-      if(!res.ok) {
-        throw new Error
+      if (!res.ok) {
+        throw new Error();
       }
       return res.ok;
     } finally {
       setIsAddingCustomer(false);
+    }
+  };
+
+  const inviteMember = async (
+    memberName: string,
+    memberPhone: string,
+    memberEmail: string,
+  ) => {
+    try {
+      setIsInvitingMember(true);
+
+      const res = await fetch(`/api/subdomain/${subdomain.slug}/customers`, {
+        method: "POST",
+        body: JSON.stringify({
+          memberName,
+          memberPhone,
+          memberEmail,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error();
+      }
+      return res.ok;
+    } finally {
+      setIsInvitingMember(false);
+    }
+  };
+
+    const reportTask = async (
+    taskId: string,
+    text: string
+    
+  ) => {
+    try {
+      setIsReportingTask(true);
+
+      const res = await fetch(`/api/subdomain/${subdomain.slug}/system-tasks/report-issue/${taskId}`, {
+        method: "POST",
+        body: JSON.stringify({
+          text
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error();
+      }
+      return res.ok;
+    } finally {
+      setIsReportingTask(false);
     }
   };
 
@@ -258,11 +327,19 @@ export function OwnerProvider({
         isUsersLoading,
         customers: customersData?.customers,
         isCustomersLoading,
+        isInvitingMember,
         addCustomerDialogOpen,
         setAddCustomerDialogOpen,
         addCustomer,
+        inviteMember,
+        inviteMemberDialogOpen,
+        setInviteMemberDialogOpen,
         refreshCustomers: () => mutateCustomers(),
         refreshUsers: () => mutateUsers(),
+        reportTask,
+        reportTaskDialogOpen,
+        setReportTaskDialogOpen,
+        isReportingTask,
         isSendingSMS,
         isSendingEmail,
         isAiLoading,

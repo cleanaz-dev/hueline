@@ -39,12 +39,11 @@ export default function Page() {
   ];
 
   return (
-    <main className="container max-w-6xl mx-auto px-4">
+    <main className="container max-w-7xl mx-auto px-4">
       {/* Header */}
       <OwnerPageHeader
         title="Customers"
-        description="Analyze conversations, manage customer communication,
-                  generate AI images, and monitor project activity."
+        description="Analyze conversations, manage customer communication"
         icon={<PersonStanding className="w-7 h-7 text-zinc-700" />}
         count={customers.length}
         countLabel="Customers"

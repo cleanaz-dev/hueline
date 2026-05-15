@@ -27,6 +27,41 @@ model SubdomainUser {
   updatedAt            DateTime              @updatedAt
   clientCommunications ClientCommunication[]
   systemTasks          SystemTask[]
+  designProjects       DesignProject[]
+}
+
+model DesignProject {
+  id   String  @id @default(auto()) @map("_id") @db.ObjectId
+  name String? @default("Untitled Design")
+
+  // The Base Canvas
+  originalImageUrl String? // The URL returned from your S3 upload
+
+  // Active Settings (Saves their progress)
+  activeBrand     String?
+  activeColorCode String?
+  activeColorHex  String?
+  removeFurniture Boolean @default(false)
+
+  // Relations: Who owns this?
+  subdomainId String    @db.ObjectId
+  subdomain   Subdomain @relation(fields: [subdomainId], references: [id], onDelete: Cascade)
+
+  creatorId String?        @db.ObjectId
+  creator   SubdomainUser? @relation(fields: [creatorId], references: [id])
+
+  // The "Connect Booking" Feature
+  bookingId String?         @db.ObjectId
+  booking   SubBookingData? @relation(fields: [bookingId], references: [id])
+
+  // The generated images (reusing your existing Mockup model)
+  mockups Mockup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subdomainId])
+  @@index([bookingId])
 }
 
 model Client {
@@ -223,6 +258,7 @@ model Subdomain {
   clientActivities ClientActivity[]
   customers        Customer[]
   systemTasks      SystemTask[]
+  designProjects   DesignProject[]
 }
 
 model RoomIntelligence {
@@ -309,11 +345,12 @@ model SubBookingData {
   logs            Logs[]
   rooms           Room[]
 
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  demoClient DemoClient?
-  customer   Customer?   @relation(fields: [customerId], references: [id])
-  customerId String?     @db.ObjectId
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  demoClient     DemoClient?
+  customer       Customer?       @relation(fields: [customerId], references: [id])
+  customerId     String?         @db.ObjectId
+  designProjects DesignProject[]
 }
 
 model Quote {
@@ -594,7 +631,7 @@ model CallIntelligence {
 
 model Export {
   id           String         @id @default(auto()) @map("_id") @db.ObjectId
-  systemTaskId String?         @unique
+  systemTaskId String?        @unique
   bookingId    String         @db.ObjectId
   booking      SubBookingData @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   resolution   String
@@ -631,7 +668,9 @@ model Mockup {
   // --- OLD FIELDS (To be deleted after step 2) ---
   colorRal String?
 
-  createdAt DateTime @default(now())
+  createdAt       DateTime       @default(now())
+  designProject   DesignProject? @relation(fields: [designProjectId], references: [id])
+  designProjectId String?        @db.ObjectId
 
   @@index([bookingDataId])
 }
