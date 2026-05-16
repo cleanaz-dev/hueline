@@ -20,6 +20,7 @@ interface DesignContext {
   designProject: DesignProject | undefined; // added
   createDesignProject: () => Promise<void>;
   fetchSingleDesignProject: (designId: string) => Promise<void>;
+  uploadImageToDesign: (designId: string, file: File) => Promise<void>
 }
 const DesignStudioContext = createContext<DesignContext | undefined>(undefined);
 
@@ -53,7 +54,7 @@ export function DesignProvider({ children }: { children: ReactNode }) {
         const { designId } = await res.json();
         setDesignProjectId(designId);
         await mutateDesigns();
-        push(`my/design-studio/${designId}`); // use designId directly, not designProjectId state — it's still null here
+        push(`/design-studio/${designId}`); // use designId directly, not designProjectId state — it's still null here
       }
     } catch (error) {
       console.error(error);
@@ -81,6 +82,46 @@ export function DesignProvider({ children }: { children: ReactNode }) {
     }
   };
 
+
+const uploadImageToDesign = async (designId: string, file: File) => {
+  try {
+    // Your API generates this using the AWS SDK, but DOES NOT process the file yet.
+    const urlRes = await fetch(`${API_URL}/designs/${designId}/upload-url`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        filename: file.name, 
+        contentType: file.type 
+      }),
+    });
+    
+    const { uploadUrl, finalImageUrl } = await urlRes.json();
+
+    await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type },
+    });
+
+    
+    await fetch(`${API_URL}/designs/${designId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ originalImageUrl: finalImageUrl }),
+    });
+
+   
+    setDesignProject((prev) => 
+      prev ? { ...prev, originalImageUrl: finalImageUrl } : prev
+    );
+    await mutateDesigns();
+
+  } catch (error) {
+    console.error("Failed to upload image:", error);
+    throw error;
+  }
+};
+
   return (
     <DesignStudioContext.Provider
       value={{
@@ -95,6 +136,7 @@ export function DesignProvider({ children }: { children: ReactNode }) {
         designProject,        // added
         createDesignProject,
         fetchSingleDesignProject,
+        uploadImageToDesign
       }}
     >
       {children}
