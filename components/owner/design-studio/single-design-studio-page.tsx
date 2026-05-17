@@ -1,45 +1,46 @@
 "use client";
+import { useState } from "react";
+import useSWR from "swr";
 import { useDesign } from "@/context/design-studio-context";
-import { useState, useEffect } from "react";
-// Change this path to match where you saved the file!
-import {
-  BRAND_LABELS,
-  TRENDING_COLOR_SHADES,
-  MAIN_COLOR_SHADES,
-  BrandId,
-  PaintColor,
-} from "@/lib/desing-studio-config";
+import { useOwner } from "@/context/owner-context";
+import { BRAND_LABELS, TRENDING_COLOR_SHADES, MAIN_COLOR_SHADES, BrandId, PaintColor } from "@/lib/desing-studio-config";
+import { Sparkles } from "lucide-react";
+import { DesignProject } from "@/app/generated/prisma";
 
 interface Props {
   designId: string;
+  initialDesignProject: DesignProject;
+  initialImageUrl: string | null;
 }
 
-export default function SingleDesignStudio({ designId }: Props) {
-  const [selectedBrand, setSelectedBrand] =
-    useState<BrandId>("sherwin_williams");
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+export default function SingleDesignStudio({
+  designId,
+  initialDesignProject,
+  initialImageUrl,
+}: Props) {
+  const { subdomain, customers } = useOwner();
+  const { uploadImageToDesign } = useDesign();
+
+  // 🟢 MAGIC HAPPENS HERE: "fallbackData" replaces "initialData"
+  // SWR hydrates instantly using the server data, no loading spinners!
+  const { data: designProject, isLoading: isDesignLoading, mutate: mutateProject } = useSWR<DesignProject>(
+    `/api/subdomain/${subdomain.slug}/designs/${designId}`,
+    fetcher,
+    { fallbackData: initialDesignProject }
+  );
+
+  // Keep a local state for the image URL so we can hot-swap it upon upload
+  const [imageUrl, setImageUrl] = useState<string | null>(initialImageUrl);
+
+  const [selectedBrand, setSelectedBrand] = useState<BrandId>("sherwin_williams");
   const [selectedColor, setSelectedColor] = useState<PaintColor | null>(null);
   const [removeFurniture, setRemoveFurniture] = useState(false);
 
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-
-  const {
-    fetchSingleDesignProject,
-    designProject,
-    isDesignLoading,
-    mutateDesigns,
-    uploadImageToDesign,
-  } = useDesign();
-
-  useEffect(() => {
-    if (designId) {
-      fetchSingleDesignProject(designId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [designId]);
-
-  const imageUrl = designProject?.originalImageUrl || null;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -58,10 +59,13 @@ export default function SingleDesignStudio({ designId }: Props) {
     setIsUploading(true);
 
     try {
-      // Just call the context function! It handles S3 and the Database.
-      await uploadImageToDesign(designId, pendingFile);
+      // 🟢 uploadImageToDesign now returns the new S3 key
+      const newS3Key = await uploadImageToDesign(designId, pendingFile);
 
-      // Clear local states once successful
+      // Instantly update local SWR cache & image view
+      mutateProject((prev) => prev ? { ...prev, originalImageS3Key: newS3Key } : prev, false);
+      setImageUrl(URL.createObjectURL(pendingFile));
+      
       setPendingFile(null);
       setPreviewUrl(null);
     } catch (error) {
@@ -70,7 +74,8 @@ export default function SingleDesignStudio({ designId }: Props) {
       setIsUploading(false);
     }
   };
-  if (isDesignLoading && !designProject) {
+
+  if (isDesignLoading) {
     return (
       <div className="flex h-full min-h-[600px] w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 border-t-zinc-900" />
@@ -209,6 +214,18 @@ export default function SingleDesignStudio({ designId }: Props) {
           </div>
 
           <div className="flex items-center gap-3">
+            {customers?.length ? (
+              <select className="flex-1 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">
+                <option value="">Select Customer</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name || "—"} · {c.phone || "—"} · {c.email || "—"}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-sm text-zinc-400">No Customers</span>
+            )}
             <button
               onClick={() => setRemoveFurniture(!removeFurniture)}
               className="group flex items-center gap-3"
@@ -232,56 +249,14 @@ export default function SingleDesignStudio({ designId }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900">
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8m-4-6l-4-4m0 0L8 6m4-4v12"
-                />
-              </svg>{" "}
-              Share
-            </button>
-            <button className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900">
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                />
-              </svg>{" "}
-              Connect
-            </button>
             <div className="mx-1 h-5 w-px bg-zinc-200" />
             <button
               disabled={!selectedColor || !imageUrl}
               className={`group ml-1 flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 ${selectedColor && imageUrl ? "bg-zinc-900 text-white shadow-md shadow-zinc-900/10 hover:bg-zinc-800 hover:shadow-lg hover:shadow-zinc-900/20 active:scale-[0.98]" : "cursor-not-allowed bg-zinc-100 text-zinc-400"}`}
             >
-              <svg
-                className={`h-4 w-4 ${selectedColor && imageUrl ? "text-amber-400" : "text-zinc-300"}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"
-                />
-              </svg>{" "}
+              <Sparkles
+                className={`size-4 ${selectedColor && imageUrl ? "text-amber-400" : "text-zinc-300"}`}
+              />
               Generate
             </button>
           </div>

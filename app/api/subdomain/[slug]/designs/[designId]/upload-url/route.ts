@@ -34,17 +34,16 @@ export async function POST(req: Request, { params }: Params) {
     const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
     const key = `subdomains/${subdomain.id}/designs/${designId}/${Date.now()}-${safeFilename}`;
 
-    // GENERATE THE UPLOAD URL!
-    // Pass both the key AND the contentType
+    // Generate the upload URL!
     const uploadUrl = await getUploadPresignedUrl(key, contentType);
-
-    // Construct the final public URL 
-    const finalImageUrl = `https://${S3_BUCKET_NAME}.s3.amazonaws.com/${key}`;
 
     return NextResponse.json({
       uploadUrl,
-      finalImageUrl,
+      s3Key: key, // 🟢 Return the key instead of the URL
     });
+
+
+
 
   } catch (error) {
     console.error("Error generating presigned URL:", error);

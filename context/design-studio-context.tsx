@@ -1,6 +1,6 @@
 "use client";
 
-import { DesignProject } from "@/app/generated/prisma";
+import { Customer, DesignProject } from "@/app/generated/prisma";
 import { createContext, ReactNode, useContext, useState } from "react";
 import useSWR from "swr";
 import { useOwner } from "./owner-context";
@@ -11,38 +11,32 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 interface DesignContext {
   designs: DesignProject[];
   isDesignsLoading: boolean;
-  designsError: any;
-  mutateDesigns: () => void;
-  isDesignLoading: boolean;
-  setIsDesignLoading: (value: boolean) => void;
   isCreatingDesignProject: boolean;
-  designProjectId: string | null;
-  designProject: DesignProject | undefined; // added
+  selectedCustomer: Customer | null;
+  setSelectedCustomer: (value: Customer | null) => void;
   createDesignProject: () => Promise<void>;
-  fetchSingleDesignProject: (designId: string) => Promise<void>;
-  uploadImageToDesign: (designId: string, file: File) => Promise<void>
+  uploadImageToDesign: (designId: string, file: File) => Promise<string>; // 🟢 Note the return type!
 }
+
 const DesignStudioContext = createContext<DesignContext | undefined>(undefined);
 
 export function DesignProvider({ children }: { children: ReactNode }) {
   const { push } = useRouter();
   const { subdomain } = useOwner();
   const API_URL = `/api/subdomain/${subdomain.slug}`;
+
   const {
     data: designs,
     isLoading: isDesignsLoading,
-    error: designsError,
     mutate: mutateDesigns,
-  } = useSWR<DesignProject[]>(
-    `/api/subdomain/${subdomain.slug}/designs`,
-    fetcher,
-  );
+  } = useSWR<DesignProject[]>(`${API_URL}/designs`, fetcher, {
+    refreshInterval: 30 * 60 * 1000,
+  });
 
-  const [isDesignLoading, setIsDesignLoading] = useState<boolean>(false);
-  const [isCreatingDesignProject, setIsCreatingDesignProject] =
-    useState<boolean>(false);
-  const [designProjectId, setDesignProjectId] = useState<string | null>(null);
-  const [designProject, setDesignProject] = useState<DesignProject>();
+  const [isCreatingDesignProject, setIsCreatingDesignProject] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null,
+  );
 
   const createDesignProject = async () => {
     setIsCreatingDesignProject(true);
@@ -52,7 +46,6 @@ export function DesignProvider({ children }: { children: ReactNode }) {
       });
       if (res.ok) {
         const { designId } = await res.json();
-        setDesignProjectId(designId);
         await mutateDesigns();
         push(`/design-studio/${designId}`); // use designId directly, not designProjectId state — it's still null here
       }
@@ -64,79 +57,52 @@ export function DesignProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const fetchSingleDesignProject = async (designId: string) => {
-    setIsDesignLoading(true);
+  const uploadImageToDesign = async (
+    designId: string,
+    file: File,
+  ): Promise<string> => {
     try {
-      const res = await fetch(`${API_URL}/designs/${designId}`, {
-        method: "GET",
+      const urlRes = await fetch(`${API_URL}/designs/${designId}/upload-url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, contentType: file.type }),
       });
-      if (res.ok) {
-        const { designProject } = await res.json();
-        setDesignProject(designProject);
-      }
+
+      const { uploadUrl, s3Key } = await urlRes.json();
+
+      await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      await fetch(`${API_URL}/designs/${designId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ originalImageS3Key: s3Key }),
+      });
+
+      // Update the global list of designs in the background
+      await mutateDesigns();
+
+      // Return the key so the component calling this can update itself!
+      return s3Key;
     } catch (error) {
-      console.error(error);
+      console.error("Failed to upload image:", error);
       throw error;
-    } finally {
-      setIsDesignLoading(false);
     }
   };
-
-
-const uploadImageToDesign = async (designId: string, file: File) => {
-  try {
-    // Your API generates this using the AWS SDK, but DOES NOT process the file yet.
-    const urlRes = await fetch(`${API_URL}/designs/${designId}/upload-url`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        filename: file.name, 
-        contentType: file.type 
-      }),
-    });
-    
-    const { uploadUrl, finalImageUrl } = await urlRes.json();
-
-    await fetch(uploadUrl, {
-      method: "PUT",
-      body: file,
-      headers: { "Content-Type": file.type },
-    });
-
-    
-    await fetch(`${API_URL}/designs/${designId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ originalImageUrl: finalImageUrl }),
-    });
-
-   
-    setDesignProject((prev) => 
-      prev ? { ...prev, originalImageUrl: finalImageUrl } : prev
-    );
-    await mutateDesigns();
-
-  } catch (error) {
-    console.error("Failed to upload image:", error);
-    throw error;
-  }
-};
 
   return (
     <DesignStudioContext.Provider
       value={{
         designs: designs ?? [],
         isDesignsLoading,
-        designsError,
-        mutateDesigns,
-        isDesignLoading,
-        setIsDesignLoading,
         isCreatingDesignProject,
-        designProjectId,
-        designProject,        // added
+        selectedCustomer,
+        setSelectedCustomer,
         createDesignProject,
-        fetchSingleDesignProject,
-        uploadImageToDesign
+        uploadImageToDesign,
       }}
     >
       {children}

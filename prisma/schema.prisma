@@ -35,7 +35,7 @@ model DesignProject {
   name String? @default("Untitled Design")
 
   // The Base Canvas
-  originalImageUrl String? // The URL returned from your S3 upload
+  originalImageS3Key String? // The URL returned from your S3 upload
 
   // Active Settings (Saves their progress)
   activeBrand     String?

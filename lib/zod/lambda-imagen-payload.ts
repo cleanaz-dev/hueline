@@ -3,13 +3,8 @@ import { z } from "zod";
 export const lambdaPayloadSchema = z.object({
   customerId: z.string().min(1),
   imageUrl: z.url(),
-  targetColor: z.object({
-    name: z.string(),
-    code: z.string(),
-    hex: z.string(),
-    brand: z.string(),
-  }),
-  huelineId: z.string().min(1),
+  colorSwatchUrl: z.string(),
+  huelineId: z.string().min(1).optional(),
   subdomainId: z.string().min(1),
   action: z.string(),
   systemTaskId: z.string().min(1),
