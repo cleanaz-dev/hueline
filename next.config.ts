@@ -30,6 +30,13 @@ const nextConfig: NextConfig = {
       allowedOrigins: ["lvh.me:5000", "*.lvh.me:5000", "localhost:5000"],
     },
   },
+  turbopack: {
+    ignoreIssue: [
+      {
+        path: /generated\//,
+      },
+    ],
+  },
 };
 
 export default nextConfig;
