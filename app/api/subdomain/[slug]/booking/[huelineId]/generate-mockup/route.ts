@@ -1,4 +1,6 @@
 import { handleNewS3Key, getPresignedUrl } from "@/lib/aws/s3";
+import { BrandId } from "@/lib/desing-studio-config";
+import { getColorSwatchPresignedUrl } from "@/lib/lambda-utils/color-swatch-url";
 import { getNewMockUpColorMoonshot } from "@/lib/moonshot";
 import { resolveNewColor } from "@/lib/moonshot/services/resolve-color";
 import { prisma } from "@/lib/prisma";
@@ -94,6 +96,12 @@ export async function POST(req: Request, { params }: Params) {
 
     console.log("New Color:", newColor);
 
+    const { colorSwatchKey, colorSwatchUrl } = await getColorSwatchPresignedUrl(
+      newColor.brand as BrandId,
+      newColor.name,
+      newColor.code,
+    );
+
     const systemTask = await prisma.systemTask.create({
       data: {
         initiator: "CLIENT",
@@ -114,11 +122,12 @@ export async function POST(req: Request, { params }: Params) {
     const generatePayload: LambdaImagenPayload = {
       customerId: booking.customer?.id,
       imageUrl: originalImageUrl,
-      targetColor: newColor,
       huelineId: huelineId,
       subdomainId: subdomain.id,
       action: "CLIENT_IMAGEN",
       systemTaskId: systemTask.id,
+      deliveryMethod: "SMS",
+      colorSwatchUrl,
     };
 
     const parsed = lambdaPayloadSchema.safeParse(generatePayload);

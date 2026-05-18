@@ -4,6 +4,8 @@ import axios from "axios";
 import { pickColor } from "@/lib/moonshot/services/pick-color";
 import { getPresignedUrl } from "@/lib/aws/s3";
 import { type LambdaImagenPayload, lambdaPayloadSchema } from "@/lib/zod";
+import { getColorSwatchPresignedUrl } from "@/lib/lambda-utils/color-swatch-url";
+import { BrandId } from "@/lib/desing-studio-config";
 
 const LAMBDA_URL = process.env.LAMBDA_IMAGEN_URL!;
 const apiKey = process.env.INTERNAL_API_KEY!;
@@ -111,14 +113,21 @@ export async function POST(req: Request) {
             },
           });
 
+          const { colorSwatchKey, colorSwatchUrl } = await getColorSwatchPresignedUrl(
+            smartColor.brand as BrandId,
+            smartColor.name,
+            smartColor.code,
+          )
+
           const lambdaPayload: LambdaImagenPayload = {
             action: "FOLLOWUP_IMAGEN",
             customerId: client.id,
             huelineId: subData.huelineId,
             imageUrl: presignedUrl,
-            targetColor: smartColor,
             systemTaskId: systemTask.id,
             subdomainId: client.subdomainId,
+            colorSwatchUrl,
+            deliveryMethod: "SMS"
           };
 
           const parsed = lambdaPayloadSchema.safeParse(lambdaPayload);
