@@ -66,19 +66,19 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const body = await req.json();
-  console.log("DS body:", body)
-  
+  console.log("DS body:", body);
+
   // 2. Parse the body
   const parsed = DesignStudioGenerateSchema.safeParse(body);
 
   if (!parsed.success) {
     // 3. Use Zod 4's top-level flattenError function
     const errorDetails = z.flattenError(parsed.error).fieldErrors;
-    
+
     // 4. Log exactly what failed and what the frontend sent
     console.error("❌ Zod Validation Failed! Payload:", body);
     console.error("❌ Zod Errors:", errorDetails);
-    
+
     return NextResponse.json(
       {
         message: "Invalid request",
@@ -97,10 +97,6 @@ export async function POST(req: Request, { params }: Params) {
     roomType,
     huelineId,
   } = parsed.data;
-
- 
-  
-  
 
   // --- Get presigned URLs ---
   const imageUrl = await getPresignedUrl(designProject.originalImageS3Key);
@@ -129,6 +125,7 @@ export async function POST(req: Request, { params }: Params) {
       cost: 0.14,
       operator: { connect: { id: subUser.id } },
       deliveryMethod: normalizedDelivery,
+      customer: { connect: { id: customerId } },
       metadata: {
         brand: color.brand,
         code: color.code,
@@ -152,7 +149,7 @@ export async function POST(req: Request, { params }: Params) {
     colorSwatchUrl,
     subdomainId: subdomain.id,
     systemTaskId: systemTask.id,
-    deliveryMethod: normalizedDelivery
+    deliveryMethod: normalizedDelivery,
   };
 
   try {

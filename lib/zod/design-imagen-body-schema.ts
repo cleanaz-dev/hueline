@@ -16,7 +16,7 @@ export type DesignImagenBody = z.infer<typeof designImagenBodySchema>
 
 
 export const designImagenLambdaIngestSchema = z.object({
-  s3Key: z.string(),
+  newImagenS3Key: z.string(),
   systemTaskId: z.string(),
   action: z.enum(["OPERATOR_IMAGEN", "FOLLOWUP_IMAGEN", "CLIENT_IMAGEN", "NEW_DESIGN_STUDIO_IMAGEN", "EXISTING_DESIGN_STUDIO_IMAGEN", "AI_IMAGEN"]),
 })
