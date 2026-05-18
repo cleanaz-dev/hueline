@@ -5,6 +5,7 @@ import axios from "axios";
 import { NextResponse } from "next/server";
 import { lambdaPayloadSchema, type LambdaImagenPayload } from "@/lib/zod";
 import { getPresignedUrl } from "@/lib/aws/s3";
+import { getColorSwatchPresignedUrl } from "@/lib/lambda-utils/color-swatch-url";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -73,23 +74,25 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
-    const imageUrl = await getPresignedUrl(mediaUrl, 3600);
 
-    const targetColor = {
-      brand,
-      hex: color.hex,
-      code: color.code,
-      name: color.name,
-    };
+
+    const normalizedDelivery = deliveryMethod.toUpperCase() as "SMS" | "EMAIL";
+    const imageUrl = await getPresignedUrl(mediaUrl, 3600);
+    const { colorSwatchKey, colorSwatchUrl } = await getColorSwatchPresignedUrl(
+    color.brand,
+    color.name,
+    color.code,
+  );
 
     const lambdaPayload: LambdaImagenPayload = {
       action: "OPERATOR_IMAGEN",
       customerId: customer.id,
       subdomainId: operator.subdomainId,
       imageUrl,
-      targetColor,
+      colorSwatchUrl,
       systemTaskId: systemTask.id,
       huelineId,
+      deliveryMethod: normalizedDelivery
     };
 
     const parsed = lambdaPayloadSchema.safeParse(lambdaPayload);
