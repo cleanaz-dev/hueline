@@ -80,7 +80,7 @@ export function SubBookingHero({
                 icon={Calendar}
                 label="Date"
                 // 🔥 FIX: Wrap in new Date() to handle both string and Date types
-                value={new Date(booking.dateTime).toLocaleDateString(
+                value={new Date(booking.createdAt).toLocaleDateString(
                   undefined,
                   {
                     month: "short",
