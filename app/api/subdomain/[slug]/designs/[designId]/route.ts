@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { getPresignedUrl } from "@/lib/aws/s3";
 
 interface Params {
   params: Promise<{
@@ -21,10 +22,31 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
+    // Changed to 'include' so you don't lose the base DesignProject fields
     const designProject = await prisma.designProject.findUnique({
       where: { id: designId },
-      select: { customer: true },
+      include: { 
+        customer: true,
+        booking: true,
+        mockups: true,
+      }
     });
+
+    if (!designProject) {
+      return NextResponse.json({ message: "Design Project not found" }, { status: 404 });
+    }
+
+    // Resolve Presigned URLs for all mockups concurrently
+    if (designProject.mockups && designProject.mockups.length > 0) {
+      designProject.mockups = await Promise.all(
+        designProject.mockups.map(async (mockup) => ({
+          ...mockup,
+          presignedUrl: await getPresignedUrl(mockup.s3Key)
+        }))
+      );
+    }
+
+   
 
     return NextResponse.json(designProject);
   } catch (error) {
@@ -35,7 +57,6 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 }
-
 export async function PATCH(req: Request, { params }: Params) {
   try {
     const { slug, designId } = await params;
