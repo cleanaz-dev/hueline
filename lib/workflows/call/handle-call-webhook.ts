@@ -5,7 +5,7 @@ import {
 import { callWebhookBodySchema } from "@/lib/zod/call-webhook-body-schema";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { CallTriggerSource } from "@/lib/zod/job-voice-metadata";
+
 
 export async function handleCallWebhook(
   body: any,

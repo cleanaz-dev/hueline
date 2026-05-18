@@ -5,26 +5,18 @@ import { authOptions } from "@/lib/auth";
 import axios from "axios";
 import { LambdaImagenPayload } from "@/lib/zod";
 import { getPresignedUrl } from "@/lib/aws/s3";
-import { getColorSwatchUrl } from "@/lib/lambda-utils/color-swatch-url";
+import { getColorSwatchPresignedUrl } from "@/lib/lambda-utils/color-swatch-url";
 import { S3_BUCKET_NAME } from "@/lib/aws/s3";
 import { BrandId } from "@/lib/desing-studio-config";
+import { DesignStudioMetadata } from "@/lib/zod/design-studio-metadata";
+import { DesignStudioGenerateSchema } from "@/lib/zod/design-studio-endpoint-schema";
+import z from "zod";
 
 interface Params {
   params: Promise<{
     slug: string;
     designId: string;
   }>;
-}
-
-interface PayloadProps {
-  brand: BrandId;
-  code: string;
-  hex: string;
-  name: string;
-  removeFurniture: boolean;
-  huelineId?: string;
-  customerId?: string;
-  deliveryMethod: "SMS" | "EMAIL" | null;
 }
 
 const LAMBDA_IMAGEN_URL = process.env.LAMBDA_IMAGEN_URL;
@@ -46,6 +38,7 @@ export async function POST(req: Request, { params }: Params) {
   const userEmail = session.user.email;
   const { slug, designId } = await params;
 
+  // --- Validate subdomain, user, and design project ---
   const [subdomain, designProject] = await Promise.all([
     prisma.subdomain.findUnique({
       where: { slug },
@@ -73,20 +66,58 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const body = await req.json();
+  console.log("DS body:", body)
+  
+  // 2. Parse the body
+  const parsed = DesignStudioGenerateSchema.safeParse(body);
+
+  if (!parsed.success) {
+    // 3. Use Zod 4's top-level flattenError function
+    const errorDetails = z.flattenError(parsed.error).fieldErrors;
+    
+    // 4. Log exactly what failed and what the frontend sent
+    console.error("❌ Zod Validation Failed! Payload:", body);
+    console.error("❌ Zod Errors:", errorDetails);
+    
+    return NextResponse.json(
+      {
+        message: "Invalid request",
+        errors: errorDetails,
+      },
+      { status: 400 },
+    );
+  }
+  // --- Parse & validate body ---
+
   const {
-    brand,
-    code,
-    name,
-    hex,
+    color,
     removeFurniture,
-    huelineId,
     customerId,
     deliveryMethod,
-  }: PayloadProps = body;
+    roomType,
+    huelineId,
+  } = parsed.data;
 
+ 
+  
+  
+
+  // --- Get presigned URLs ---
   const imageUrl = await getPresignedUrl(designProject.originalImageS3Key);
-  const colorSwatchUrl = getColorSwatchUrl(brand, name, code, BUCKET_NAME);
+  const { colorSwatchKey, colorSwatchUrl } = await getColorSwatchPresignedUrl(
+    color.brand,
+    color.name,
+    color.code,
+  );
 
+  // --- Normalize delivery method to uppercase for DB/Lambda ---
+  const normalizedDelivery = deliveryMethod.toUpperCase() as "SMS" | "EMAIL";
+
+  const taskAction: LambdaImagenPayload["action"] = huelineId
+    ? "EXISTING_DESIGN_STUDIO_IMAGEN"
+    : "NEW_DESIGN_STUDIO_IMAGEN";
+
+  // --- Create system task ---
   const systemTask = await prisma.systemTask.create({
     data: {
       subdomain: { connect: { id: subdomain.id } },
@@ -94,27 +125,34 @@ export async function POST(req: Request, { params }: Params) {
       status: "PENDING",
       type: "IMAGEN",
       metadataSource: "IMAGEN",
+      model: "openai/gpt-image-2",
+      cost: 0.14,
       operator: { connect: { id: subUser.id } },
-      deliveryMethod,
+      deliveryMethod: normalizedDelivery,
       metadata: {
-        brand,
-        code,
-        name,
-        hex,
+        brand: color.brand,
+        code: color.code,
+        name: color.name,
+        hex: color.hex,
         removeFurniture,
+        roomType,
         imageS3Key: designProject.originalImageS3Key,
-      },
+        designProjectId: designId,
+        colorSwatchKey,
+      } satisfies DesignStudioMetadata,
     },
   });
 
+  // --- Fire Lambda ---
   const lambdaImagePayload: LambdaImagenPayload = {
-    action: "",
-    customerId: customerId ?? "",
+    action: taskAction,
+    customerId: customerId,
     huelineId: huelineId ?? "",
     imageUrl,
+    colorSwatchUrl,
     subdomainId: subdomain.id,
     systemTaskId: systemTask.id,
-    colorSwatchUrl,
+    deliveryMethod: normalizedDelivery
   };
 
   try {
@@ -127,5 +165,12 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ message: "ok" }, { status: 200 });
+  return NextResponse.json(
+    {
+      message: "Generation started",
+      systemTaskId: systemTask.id,
+      status: "PENDING",
+    },
+    { status: 200 },
+  );
 }

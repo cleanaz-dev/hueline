@@ -1,16 +1,28 @@
-
 import { prisma } from "@/lib/prisma";
 import { twilioClient } from "@/lib/twilio/config";
 import { getPresignedUrl } from "@/lib/aws/s3";
-import { CommunicationRole, ClientActivityType, LogActor, SystemTask, CommunicationType, Customer } from "@/app/generated/prisma";
+import {
+  CommunicationRole,
+  ClientActivityType,
+  LogActor,
+  SystemTask,
+  CommunicationType,
+  Customer,
+} from "@/app/generated/prisma";
 import { sendEmail, SendMockUpEmail } from "@/lib/resend";
+import { designImagenLambdaIngestSchema } from "@/lib/zod/design-imagen-body-schema";
+import z from "zod";
+import { DesignStudioMetadata } from "@/lib/zod/design-studio-metadata";
+import { createNewSubBooking } from "./mutations/create-new-subbooking";
 
 // ─── Trigger Source ───────────────────────────────────────────────────────────
-export type ImagenTriggerSource = "FOLLOWUP_IMAGEN" | "OPERATOR_IMAGEN" | "CLIENT_IMAGEN";
+export type ImagenTriggerSource = z.infer<
+  typeof designImagenLambdaIngestSchema
+>["action"];
 
 // ─── Dynamic Context ──────────────────────────────────────────────────────────
 export interface ImagenContext {
-  brandName: string;
+  colorBrand: string;
   colorName: string;
   colorHex: string;
   colorCode: string;
@@ -18,6 +30,8 @@ export interface ImagenContext {
   roomType: string;
   portalLink: string;
   originalSmsBody?: string;
+  removeFurniture?: boolean;
+  pin?: string;
 }
 
 // ─── Trigger Config ───────────────────────────────────────────────────────────
@@ -39,47 +53,128 @@ const TRIGGER_CONFIG: Record<ImagenTriggerSource, TriggerConfig> = {
   CLIENT_IMAGEN: {
     logActor: "CLIENT",
     role: "CLIENT",
-    logTitle: (ctx) => `Client Imagen — ${ctx.brandName} ${ctx.colorName}`,
-    logDescription: (ctx) => `${ctx.recipientName} generated a ${ctx.roomType} preview using ${ctx.brandName} ${ctx.colorName}.`,
+    logTitle: (ctx) => `Client Imagen — ${ctx.colorBrand} ${ctx.colorName}`,
+    logDescription: (ctx) =>
+      `${ctx.recipientName} generated a ${ctx.roomType} preview using ${ctx.colorBrand} ${ctx.colorName}.`,
     activityType: "GENERATED_IMAGE",
     activityTitle: (ctx) => `Imagen — ${ctx.colorName}`,
-    activityDescription: (ctx) => `${ctx.recipientName} generated ${ctx.brandName} ${ctx.colorName} on their ${ctx.roomType}`,
+    activityDescription: (ctx) =>
+      `${ctx.recipientName} generated ${ctx.colorBrand} ${ctx.colorName} on their ${ctx.roomType}`,
     markFirstFollowupComplete: false,
-    getSmsBody: (ctx) => `Your requested mockup featuring ${ctx.brandName} in ${ctx.colorName} is ready! View your portal here: ${ctx.portalLink}`,
+    getSmsBody: (ctx) =>
+      `Your requested mockup featuring ${ctx.colorBrand} in ${ctx.colorName} is ready! View your portal here: ${ctx.portalLink}`,
     getEmailSubject: (ctx) => `Your New Room Mockup - ${ctx.colorName}`,
-    getEmailHtml: (ctx) => `<p>Your requested mockup featuring ${ctx.brandName} in ${ctx.colorName} is ready!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>`,
+    getEmailHtml: (ctx) =>
+      `<p>Your requested mockup featuring ${ctx.colorBrand} in ${ctx.colorName} is ready!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>`,
   },
-
- FOLLOWUP_IMAGEN: {
+  FOLLOWUP_IMAGEN: {
     logActor: "SYSTEM",
     role: "OPERATOR",
-    logTitle: (ctx) => `Followup Imagen — ${ctx.brandName} ${ctx.colorName}`,
-    logDescription: (ctx) => `System sent automated followup for ${ctx.recipientName} — ${ctx.brandName} ${ctx.colorName}.`,
+    logTitle: (ctx) => `Followup Imagen — ${ctx.colorBrand} ${ctx.colorName}`,
+    logDescription: (ctx) =>
+      `System sent automated followup for ${ctx.recipientName} — ${ctx.colorBrand} ${ctx.colorName}.`,
     activityType: "FOLLOWUP_IMAGE_SENT",
     activityTitle: (ctx) => `Followup Imagen — ${ctx.colorName}`,
-    activityDescription: (ctx) => `Automated followup imagen sent to ${ctx.recipientName} using ${ctx.brandName} ${ctx.colorName}`,
+    activityDescription: (ctx) =>
+      `Automated followup imagen sent to ${ctx.recipientName} using ${ctx.colorBrand} ${ctx.colorName}`,
     markFirstFollowupComplete: true,
-    
-    // NEW AI COPY HERE:
-    getSmsBody: (ctx) => `Hey! It's been 24 hours since you tested our demo! Based on the colors you tried earlier, our AI design assistant thought ${ctx.brandName} ${ctx.colorName} (${ctx.colorCode}) would look incredible in your space. What do you think?\n\nView your new mockup here: ${ctx.portalLink}`,
+    getSmsBody: (ctx) =>
+      `Hey! It's been 24 hours since you tested our demo! Based on the colors you tried earlier, our AI design assistant thought ${ctx.colorBrand} ${ctx.colorName} (${ctx.colorCode}) would look incredible in your space. What do you think?\n\nView your new mockup here: ${ctx.portalLink}`,
     getEmailSubject: (ctx) => `Your AI Room Preview - ${ctx.colorName}`,
-    getEmailHtml: (ctx) => `<p>Hey! It's been 24 hours since you tested our demo! Based on the colors you tried earlier, our AI design assistant thought ${ctx.brandName} ${ctx.colorName} (${ctx.colorCode}) would look incredible in your space. What do you think?</p><p><a href="${ctx.portalLink}">View your new mockup here</a></p>`,
+    getEmailHtml: (ctx) =>
+      `<p>Hey! It's been 24 hours since you tested our demo! Based on the colors you tried earlier, our AI design assistant thought ${ctx.colorBrand} ${ctx.colorName} (${ctx.colorCode}) would look incredible in your space. What do you think?</p><p><a href="${ctx.portalLink}">View your new mockup here</a></p>`,
   },
-
   OPERATOR_IMAGEN: {
     logActor: "PAINTER",
     role: "OPERATOR",
-    logTitle: (ctx) => `Operator Imagen — ${ctx.brandName} ${ctx.colorName}`,
-    logDescription: (ctx) => `Operator generated a ${ctx.roomType} preview for ${ctx.recipientName} using ${ctx.brandName} ${ctx.colorName}.`,
+    logTitle: (ctx) => `Operator Imagen — ${ctx.colorBrand} ${ctx.colorName}`,
+    logDescription: (ctx) =>
+      `Operator generated a ${ctx.roomType} preview for ${ctx.recipientName} using ${ctx.colorBrand} ${ctx.colorName}.`,
     activityType: "GENERATED_IMAGE",
     activityTitle: (ctx) => `Operator Imagen — ${ctx.colorName}`,
-    activityDescription: (ctx) => `Operator sent ${ctx.recipientName} a ${ctx.roomType} preview — ${ctx.brandName} ${ctx.colorName}`,
+    activityDescription: (ctx) =>
+      `Operator sent ${ctx.recipientName} a ${ctx.roomType} preview — ${ctx.colorBrand} ${ctx.colorName}`,
     markFirstFollowupComplete: false,
-    getSmsBody: (ctx) => `Here is your new mockup featuring the ${ctx.brandName} palette in ${ctx.colorName}! View your portal here: ${ctx.portalLink}`,
+    getSmsBody: (ctx) =>
+      `Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}! View your portal here: ${ctx.portalLink}`,
     getEmailSubject: (ctx) => `New Room Mockup - ${ctx.colorName}`,
-    getEmailHtml: (ctx) => `<p>Here is your new mockup featuring the ${ctx.brandName} palette in ${ctx.colorName}!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>`,
+    getEmailHtml: (ctx) =>
+      `<p>Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>`,
+  },
+  AI_IMAGEN: {
+    logActor: "AI",
+    role: "AI",
+    logTitle: (ctx) => `AI Imagen — ${ctx.colorBrand} ${ctx.colorName}`,
+    logDescription: (ctx) =>
+      `AI generated a ${ctx.roomType} preview for ${ctx.recipientName} using ${ctx.colorBrand} ${ctx.colorName}.`,
+    activityType: "GENERATED_IMAGE",
+    activityTitle: (ctx) => `AI Imagen — ${ctx.colorName}`,
+    activityDescription: (ctx) =>
+      `AI sent ${ctx.recipientName} a ${ctx.roomType} preview — ${ctx.colorBrand} ${ctx.colorName}`,
+    markFirstFollowupComplete: false,
+    getSmsBody: (ctx) =>
+      `Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}! View your portal here: ${ctx.portalLink}`,
+    getEmailSubject: (ctx) => `New Room Mockup - ${ctx.colorName}`,
+    getEmailHtml: (ctx) =>
+      `<p>Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>`,
+  },
+  EXISTING_DESIGN_STUDIO_IMAGEN: {
+    logActor: "AI",
+    role: "AI",
+    logTitle: (ctx) => `AI Imagen — ${ctx.colorBrand} ${ctx.colorName}`,
+    logDescription: (ctx) =>
+      `AI generated a ${ctx.roomType} preview for ${ctx.recipientName} using ${ctx.colorBrand} ${ctx.colorName}.`,
+    activityType: "GENERATED_IMAGE",
+    activityTitle: (ctx) => `AI Imagen — ${ctx.colorName}`,
+    activityDescription: (ctx) =>
+      `AI sent ${ctx.recipientName} a ${ctx.roomType} preview — ${ctx.colorBrand} ${ctx.colorName}`,
+    markFirstFollowupComplete: false,
+    getSmsBody: (ctx) =>
+      `Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}! View your portal here: ${ctx.portalLink}`,
+    getEmailSubject: (ctx) => `New Room Mockup - ${ctx.colorName}`,
+    getEmailHtml: (ctx) =>
+      `<p>Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>`,
+  },
+  NEW_DESIGN_STUDIO_IMAGEN: {
+    logActor: "AI",
+    role: "AI",
+    logTitle: (ctx) => `AI Imagen — ${ctx.colorBrand} ${ctx.colorName}`,
+    logDescription: (ctx) =>
+      `AI generated a ${ctx.roomType} preview for ${ctx.recipientName} using ${ctx.colorBrand} ${ctx.colorName}.`,
+    activityType: "GENERATED_IMAGE",
+    activityTitle: (ctx) => `AI Imagen — ${ctx.colorName}`,
+    activityDescription: (ctx) =>
+      `AI sent ${ctx.recipientName} a ${ctx.roomType} preview — ${ctx.colorBrand} ${ctx.colorName}`,
+    markFirstFollowupComplete: false,
+    getSmsBody: (ctx) =>
+      `Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}! View your portal here: ${ctx.portalLink}${ctx.pin ? `\n\nYour secure PIN to access the portal is: ${ctx.pin}` : ''}`,
+    getEmailSubject: (ctx) => `New Room Mockup - ${ctx.colorName}`,
+    getEmailHtml: (ctx) =>
+      `<p>Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>${ctx.pin ? `<p>Your secure PIN to access the portal is: <strong>${ctx.pin}</strong></p>` : ''}`,
   },
 };
+
+// ─── Universal Input Zod Schema ───────────────────────────────────────────────
+const WorkflowDataSchema = z.object({
+  colorBrand: z.string(),
+  colorName: z.string(),
+  colorCode: z.string(),
+  colorHex: z.string(),
+  roomType: z.string(),
+  originalImageS3Key: z.string(),
+  colorSwatchKey: z.string().optional(),
+  removeFurniture: z.boolean().optional(),
+  huelineId: z.string().nullable().optional(),
+  customerId: z.string(),
+  customerEmail: z.string().nullable().optional(),
+  customerName: z.string().nullable().optional().transform(v => v || "Client"),
+  customerPhone: z.string().nullable().optional(),
+  subdomainId: z.string({ message: "Missing subdomainId" }),
+  designId: z.string({ message: "Missing designProjectId" }),
+  newImagenS3Key: z.string({ message: "Missing newImagenKey" }),
+  deliveryMethod: z.enum(["SMS", "EMAIL"], { message: "Missing deliveryMethod" }),
+  operatorId: z.string().nullable().optional(),
+});
 
 // ─── Main Function ────────────────────────────────────────────────────────────
 
@@ -91,64 +186,116 @@ interface ProcessImagenArgs {
   operatorId?: string | null;
 }
 
-export async function processImagenWorkflow({ webhookBody, triggerSource, job, customer, operatorId }: ProcessImagenArgs) {
+export async function processImagenWorkflow({
+  webhookBody,
+  triggerSource,
+  job,
+  customer,
+}: ProcessImagenArgs) {
   const config = TRIGGER_CONFIG[triggerSource];
 
   try {
-    // 1. Normalize Payload Data seamlessly 
-    const activeColor = webhookBody.targetColor || webhookBody.color || {};
-    const brandName = webhookBody.brand || activeColor.brand || "RAL";
-    const colorName = activeColor.name || "Selected Color";
-    const colorCode = activeColor.code || "";
-    const colorHex = activeColor.hex || "";
-    const roomType = webhookBody.roomType || "Room";
-    const s3Key = webhookBody.s3Key;
-    const huelineId = webhookBody.huelineId;
+    const metadata = job.metadata as DesignStudioMetadata;
 
-    // Determine strict delivery method
-    const deliveryMethod = job.deliveryMethod as CommunicationType
-    if(!deliveryMethod) {
-      throw new Error
-    }
+    // 1. Normalize and Validate Payload Data with Zod
+    const p = WorkflowDataSchema.parse({
+      colorBrand: metadata.brand,
+      colorName: metadata.name,
+      colorCode: metadata.code,
+      colorHex: metadata.hex,
+      roomType: metadata.roomType,
+      originalImageS3Key: metadata.imageS3Key,
+      colorSwatchKey: metadata.colorSwatchKey,
+      removeFurniture: metadata.removeFurniture,
+      huelineId: job.huelineId,
+      customerId: customer.id,
+      customerEmail: customer.email,
+      customerName: customer.name,
+      customerPhone: customer.phone,
+      subdomainId: job.subdomainId,
+      designId: metadata.designProjectId,
+      newImagenS3Key: webhookBody.newImagenKey,
+      deliveryMethod: job.deliveryMethod,
+      operatorId: job.operatorId,
+    });
 
-    // 2. UNIVERSAL DATABASE SAVE (Happens every time, no exceptions)
-    const subBookingData = await prisma.subBookingData.update({
-      where: { huelineId },
-      include: { subdomain: true },
-      data: {
-        mockups: {
-          create: {
-            s3Key, roomType,
-            brand: brandName,
-            code: colorCode,
-            name: colorName,
-            hex: colorHex,
-          },
-        },
-        paintColors: {
-          create: {
-            brand: brandName,
-            code: colorCode,
-            name: colorName,
-            hex: colorHex,
-          },
-        },
+    const subdomain = await prisma.subdomain.findUnique({
+      where: { id: p.subdomainId },
+      select: {
+        id: true,
+        slug: true,
       },
     });
 
+    if (!subdomain) {
+      throw new Error(`Subdomain with ID ${p.subdomainId} not found.`);
+    }
+
+    // 2. UNIVERSAL DATABASE SAVE 
+    let activeHuelineId = p.huelineId;
+    let generatedPin: string | undefined = undefined;
+
+    if (!activeHuelineId && triggerSource === "NEW_DESIGN_STUDIO_IMAGEN") {
+      const subBookingData = await createNewSubBooking({
+        colorBrand: p.colorBrand,
+        colorName: p.colorName,
+        colorCode: p.colorCode,
+        colorHex: p.colorHex,
+        roomType: p.roomType,
+        originalImageS3Key: p.originalImageS3Key,
+        newImagenS3Key: p.newImagenS3Key,
+        customerId: p.customerId,
+        customerName: p.customerName,
+        customerPhone: p.customerPhone || "",
+        subdomainId: p.subdomainId,
+        designId: p.designId,
+      });
+      // Capture the generated huelineId and pin
+      activeHuelineId = subBookingData.huelineId;
+      generatedPin = subBookingData.pin;
+    } else if (activeHuelineId) {
+      await prisma.subBookingData.update({
+        where: { huelineId: activeHuelineId },
+        data: {
+          mockups: {
+            create: {
+              s3Key: p.newImagenS3Key,
+              roomType: p.roomType,
+              brand: p.colorBrand,
+              code: p.colorCode,
+              name: p.colorName,
+              hex: p.colorHex,
+            },
+          },
+          paintColors: {
+            create: {
+              brand: p.colorBrand,
+              code: p.colorCode,
+              name: p.colorName,
+              hex: p.colorHex,
+            },
+          },
+        },
+      });
+    } else {
+      throw new Error("Missing huelineId and TriggerSource is not NEW_DESIGN_STUDIO_IMAGEN");
+    }
+
     // 3. Generate Context & Presigned URL
-    const portalLink = `https://${subBookingData.subdomain.slug}.hue-line.com/j/${huelineId}`;
-    const presignedUrl = await getPresignedUrl(s3Key);
+    const portalLink = `https://${subdomain.slug}.hue-line.com/j/${activeHuelineId}`;
+    const presignedUrl = await getPresignedUrl(p.newImagenS3Key);
 
     const context: ImagenContext = {
-      brandName,
-      colorName,
-      colorHex,
-      colorCode,
-      recipientName: customer.name || "Client",
-      roomType,
+      colorBrand: p.colorBrand,
+      colorName: p.colorName,
+      colorHex: p.colorHex,
+      colorCode: p.colorCode,
+      recipientName: p.customerName,
+      roomType: p.roomType,
       portalLink,
       originalSmsBody: webhookBody.smsBody,
+      removeFurniture: p.removeFurniture,
+      pin: generatedPin,
     };
 
     // 4. Get Text/Email Content from Config
@@ -157,20 +304,25 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, c
     const emailHtml = config.getEmailHtml(context);
 
     // 5. Send Message (Only ONE fires)
-    if (deliveryMethod === "SMS" && customer.phone) {
+    if (p.deliveryMethod === "SMS" && p.customerPhone) {
       await twilioClient.messages.create({
-        to: customer.phone,
+        to: p.customerPhone,
         from: process.env.TWILIO_PHONE_NUMBER,
         body: smsBody,
         mediaUrl: [presignedUrl],
       });
-    } else if (deliveryMethod === "EMAIL" && customer.email) {
+    } else if (p.deliveryMethod === "EMAIL" && p.customerEmail) {
       await sendEmail({
-        to: customer.email,
+        to: p.customerEmail,
         subject: emailSubject,
         template: SendMockUpEmail({
           clientName: context.recipientName,
-          colors: { brand: brandName, code: colorCode, hex: colorHex, name: colorName },
+          colors: {
+            brand: p.colorBrand,
+            code: p.colorCode,
+            hex: p.colorHex,
+            name: p.colorName,
+          },
           subject: emailSubject,
           body: emailHtml,
         }),
@@ -182,18 +334,18 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, c
       // A. Communication Record
       await tx.clientCommunication.create({
         data: {
-          body: deliveryMethod === "SMS" ? smsBody : emailSubject,
+          body: p.deliveryMethod === "SMS" ? smsBody : emailSubject,
           role: config.role,
-          type: deliveryMethod, 
-          customer: { connect: { id: customer.id } },
-          ...(operatorId ? { operator: { connect: { id: operatorId } } } : {}),
+          type: p.deliveryMethod,
+          customer: { connect: { id: p.customerId } },
+          ...(p.operatorId ? { operator: { connect: { id: p.operatorId } } } : {}),
           mediaAttachments: {
             create: {
-              filename: `${brandName}-mockup.jpg`,
+              filename: `${p.colorBrand}-${p.colorName}-${p.colorCode}-mockup.jpg`,
               size: 0,
               mimeType: "image/jpeg",
               mediaSource: "S3",
-              mediaUrl: s3Key,
+              mediaUrl: p.newImagenS3Key,
             },
           },
         },
@@ -204,8 +356,8 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, c
         data: {
           type: config.activityType,
           title: config.activityTitle(context),
-          description: `${config.activityDescription(context)} (via ${deliveryMethod})`,
-          metadata: { huelineId, jobId: job.id },
+          description: `${config.activityDescription(context)} (via ${p.deliveryMethod})`,
+          metadata: { huelineId: activeHuelineId, jobId: job.id },
           customer: { connect: { id: customer.id } },
         },
       });
@@ -216,8 +368,8 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, c
           title: config.logTitle(context),
           type: "MOCKUP",
           actor: config.logActor,
-          description: `${config.logDescription(context)} (via ${deliveryMethod})`,
-          subdomain: { connect: { id: subBookingData.subdomain.id } },
+          description: `${config.logDescription(context)} (via ${p.deliveryMethod})`,
+          subdomain: { connect: { id: subdomain.id } },
         },
       });
 
@@ -231,7 +383,6 @@ export async function processImagenWorkflow({ webhookBody, triggerSource, job, c
     });
 
     return { success: true };
-
   } catch (error) {
     console.error(`[processImagenWorkflow] Failed for ${customer.id}:`, error);
     throw new Error("Failed to process Imagen workflow");

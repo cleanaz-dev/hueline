@@ -5,9 +5,9 @@ export interface PaintColor {
   code: string;
   hex: string;
   brand?: string;
-  family: string;
-  tone: "warm" | "cool" | "neutral";
-  lightness: "light" | "medium" | "dark";
+  family?: string;
+  tone?: "warm" | "cool" | "neutral";
+  lightness?: "light" | "medium" | "dark";
 }
 
 export type BrandId = "sherwin_williams" | "benjamin_moore" | "behr" | "ral";

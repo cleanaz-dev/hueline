@@ -1,12 +1,25 @@
 "use client";
 
 import { Customer, DesignProject } from "@/app/generated/prisma";
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useState } from "react";
 import useSWR from "swr";
 import { useOwner } from "./owner-context";
 import { useRouter } from "next/navigation";
+import { PaintColor } from "@/lib/desing-studio-config";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+
+interface GeneratePayload {
+  designId: string;
+  deliveryMethod: "sms" | "email";
+  selectedColor: PaintColor | null;
+  removeFurniture: boolean;
+  customerId?: string | null;
+  roomType: string;
+}
+
+
 
 interface DesignContext {
   designs: DesignProject[];
@@ -14,8 +27,17 @@ interface DesignContext {
   isCreatingDesignProject: boolean;
   selectedCustomer: Customer | null;
   setSelectedCustomer: (value: Customer | null) => void;
-  createDesignProject: () => Promise<void>;
-  uploadImageToDesign: (designId: string, file: File) => Promise<string>; // 🟢 Note the return type!
+  createDesignProject: (payload: {
+    customerMode: "existing" | "new";
+    customerId?: string;
+    newCustomer?: { name: string; phone: string; email: string };
+  }) => Promise<void>;
+  uploadImageToDesign: (designId: string, file: File) => Promise<string>;
+
+  // Generate
+  isGeneratingProjectImage: boolean;
+  setIsGeneratingProjectImage: (val: boolean) => void;
+  generateDesignProjectImage: (payload: GeneratePayload) => Promise<void>;
 }
 
 const DesignStudioContext = createContext<DesignContext | undefined>(undefined);
@@ -34,20 +56,29 @@ export function DesignProvider({ children }: { children: ReactNode }) {
   });
 
   const [isCreatingDesignProject, setIsCreatingDesignProject] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null,
-  );
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isGeneratingProjectImage, setIsGeneratingProjectImage] = useState(false);
 
-  const createDesignProject = async () => {
+  const createDesignProject = async (payload: {
+    customerMode: "existing" | "new";
+    customerId?: string;
+    newCustomer?: { name: string; phone: string; email: string };
+  }) => {
     setIsCreatingDesignProject(true);
     try {
       const res = await fetch(`${API_URL}/designs/create`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" }, // 🟢 Added headers so JSON parses correctly on the backend
+        body: JSON.stringify(payload),
       });
+      
       if (res.ok) {
         const { designId } = await res.json();
         await mutateDesigns();
-        push(`/design-studio/${designId}`); // use designId directly, not designProjectId state — it's still null here
+        // Adjust this route to match your structure (e.g. `/my/design-studio/...` if applicable)
+        push(`/my/design-studio/${designId}`); 
+      } else {
+        throw new Error("Failed to create design project");
       }
     } catch (error) {
       console.error(error);
@@ -93,6 +124,49 @@ export function DesignProvider({ children }: { children: ReactNode }) {
     }
   };
 
+ const generateDesignProjectImage = useCallback(
+    async (payload: GeneratePayload): Promise<void> => {
+      const { designId, deliveryMethod, selectedColor, removeFurniture, customerId, roomType } = payload;
+
+      if (!selectedColor) throw new Error("No color selected");
+
+      setIsGeneratingProjectImage(true);
+
+      try {
+        const res = await fetch(
+          `/api/subdomain/${subdomain.slug}/designs/${designId}/generate-image`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              deliveryMethod,
+              removeFurniture,
+              customerId,
+              roomType,
+              color: {
+                brand: selectedColor.brand,
+                name: selectedColor.name,
+                hex: selectedColor.hex,
+                code: selectedColor.code,
+              },
+            }),
+          }
+        );
+
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({}));
+          throw new Error(error.message || "Generation failed");
+        }
+
+        const data = await res.json();
+        return data;
+      } finally {
+        setIsGeneratingProjectImage(false);
+      }
+    },
+    [subdomain.slug]
+  );
+
   return (
     <DesignStudioContext.Provider
       value={{
@@ -103,6 +177,9 @@ export function DesignProvider({ children }: { children: ReactNode }) {
         setSelectedCustomer,
         createDesignProject,
         uploadImageToDesign,
+        generateDesignProjectImage,
+        isGeneratingProjectImage,
+        setIsGeneratingProjectImage
       }}
     >
       {children}

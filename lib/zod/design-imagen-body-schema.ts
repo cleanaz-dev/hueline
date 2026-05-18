@@ -1,5 +1,5 @@
 import z from "zod";
-import { BrandId } from "../desing-studio-config";
+
 
 export const designImagenBodySchema = z.object({
   brand: z.enum(["sherwin_williams", "benjamin_moore", "behr", "ral"] as const),
@@ -13,3 +13,12 @@ export const designImagenBodySchema = z.object({
 });
 
 export type DesignImagenBody = z.infer<typeof designImagenBodySchema>
+
+
+export const designImagenLambdaIngestSchema = z.object({
+  s3Key: z.string(),
+  systemTaskId: z.string(),
+  action: z.enum(["OPERATOR_IMAGEN", "FOLLOWUP_IMAGEN", "CLIENT_IMAGEN", "NEW_DESIGN_STUDIO_IMAGEN", "EXISTING_DESIGN_STUDIO_IMAGEN", "AI_IMAGEN"]),
+})
+
+export type DesignImagenLambdaIngestBody = z.infer<typeof designImagenLambdaIngestSchema>

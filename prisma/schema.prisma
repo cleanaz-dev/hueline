@@ -54,6 +54,10 @@ model DesignProject {
   bookingId String?         @db.ObjectId
   booking   SubBookingData? @relation(fields: [bookingId], references: [id])
 
+  // Connect Customer
+  customerId String?   @db.ObjectId
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
   // The generated images (reusing your existing Mockup model)
   mockups Mockup[]
 
@@ -312,9 +316,9 @@ model SubBookingData {
   originalImages String
   summary        String
   dimensions     String?
-  dateTime       DateTime
+  dateTime       DateTime?
   pin            String
-  expiresAt      Int
+  expiresAt      Int?
 
   // ... The "Perfect Sauce" Logic ...
 
@@ -408,6 +412,7 @@ model Customer {
   systemTasks      SystemTask[]
   customerType     CustomerType     @default(RESIDENTIAL)
   calls            Call[]
+  designProjects   DesignProject[]
 }
 
 enum CustomerType {
@@ -482,6 +487,8 @@ enum SystemTaskType {
   VIDEO
   VOICE_MOCKUP
   VOICE
+  STUDIO_IMAGEN
+  STUDIO_UPSCALE
 }
 
 model MediaAttachment {

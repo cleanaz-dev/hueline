@@ -22,7 +22,6 @@ const VALID_UPSCALE_ACTIONS = new Set<UpscaleTriggerSource>([
   "OPERATOR_UPSCALE",
 ]);
 
-
 export async function POST(req: Request, { params }: Params) {
   const { systemTaskId } = await params;
 
@@ -38,7 +37,10 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     if (!systemTask) {
-      return NextResponse.json({ message: "systemTask not found" }, { status: 404 });
+      return NextResponse.json(
+        { message: "systemTask not found" },
+        { status: 404 },
+      );
     }
 
     if (!systemTask.customer) {
@@ -52,29 +54,15 @@ export async function POST(req: Request, { params }: Params) {
 
     switch (systemTask.type) {
       case "IMAGEN": {
-        const triggerSource = body.action as ImagenTriggerSource;
-
-        if (!VALID_IMAGEN_ACTIONS.has(triggerSource)) {
-          return NextResponse.json(
-            {
-              message: `Unknown action: "${body.action}". Expected: ${[...VALID_IMAGEN_ACTIONS].join(", ")}`,
-            },
-            { status: 400 },
-          );
-        }
-
-        return await handleImagenWebhook(
-          body,
-          triggerSource,
-          systemTask,
-          systemTask.customer,
-        );
+        return await handleImagenWebhook(body, systemTask, systemTask.customer);
       }
 
-      case "UPSCALE": { // <-- Added brackets here to safely scope variables
-        // If Python sent {"status": "failed"}, we default triggerSource to CLIENT_UPSCALE 
+      case "UPSCALE": {
+        // <-- Added brackets here to safely scope variables
+        // If Python sent {"status": "failed"}, we default triggerSource to CLIENT_UPSCALE
         // just to get it through the router, then handle the failure inside the handler.
-        const triggerSource = (body.action || "CLIENT_UPSCALE") as UpscaleTriggerSource;
+        const triggerSource = (body.action ||
+          "CLIENT_UPSCALE") as UpscaleTriggerSource;
 
         if (!VALID_UPSCALE_ACTIONS.has(triggerSource)) {
           return NextResponse.json(
@@ -90,7 +78,7 @@ export async function POST(req: Request, { params }: Params) {
           body,
           systemTask,
           systemTask.customer,
-          triggerSource
+          triggerSource,
         );
       }
 
@@ -100,24 +88,24 @@ export async function POST(req: Request, { params }: Params) {
           { status: 501 },
         );
 
-
       case "VOICE": {
-       return await handleCallWebhook(body, systemTask, systemTask.customer);
+        return await handleCallWebhook(body, systemTask, systemTask.customer);
       }
       case "VOICE_MOCKUP": {
-      const triggerSource = body.action || "LIVEKIT_AGENT";
-        
+        const triggerSource = body.action || "LIVEKIT_AGENT";
+
         return await handleVoiceMockupWebhook(
           body,
           systemTask,
           systemTask.customer, // <-- Using the newly renamed Customer model!
-          triggerSource
+          triggerSource,
         );
       }
-        
 
       default:
-        console.warn(`Unhandled systemTask type: ${systemTask.type} for systemTask: ${systemTaskId}`);
+        console.warn(
+          `Unhandled systemTask type: ${systemTask.type} for systemTask: ${systemTaskId}`,
+        );
         return NextResponse.json(
           { message: "Unhandled systemTask Type" },
           { status: 400 },

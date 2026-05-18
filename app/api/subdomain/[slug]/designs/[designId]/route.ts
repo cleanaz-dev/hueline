@@ -23,9 +23,9 @@ export async function GET(req: Request, { params }: Params) {
 
     const designProject = await prisma.designProject.findUnique({
       where: { id: designId },
+      select: { customer: true },
     });
 
-    
     return NextResponse.json(designProject);
   } catch (error) {
     console.error(error);
@@ -36,8 +36,8 @@ export async function GET(req: Request, { params }: Params) {
   }
 }
 
-export async function PATCH(req:Request, {params}: Params) {
- try {
+export async function PATCH(req: Request, { params }: Params) {
+  try {
     const { slug, designId } = await params;
 
     const subdomain = await prisma.subdomain.findUnique({
@@ -49,15 +49,15 @@ export async function PATCH(req:Request, {params}: Params) {
       return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
     }
 
-    const body = await req.json()
+    const body = await req.json();
 
-    const { originalImageS3Key } = body
+    const { originalImageS3Key } = body;
 
     const updatedDesignProject = await prisma.designProject.update({
       where: { id: designId },
       data: {
-        originalImageS3Key: originalImageS3Key
-      }
+        originalImageS3Key: originalImageS3Key,
+      },
     });
     return NextResponse.json(updatedDesignProject.originalImageS3Key);
   } catch (error) {
