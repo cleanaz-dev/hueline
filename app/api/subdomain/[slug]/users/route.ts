@@ -20,7 +20,5 @@ export async function GET(req: Request, { params }: Params) {
     });
   }
 
-  console.log("Users:", users);
-
   return NextResponse.json({ users: users });
 }

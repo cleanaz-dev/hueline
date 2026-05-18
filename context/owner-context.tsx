@@ -200,7 +200,7 @@ export function OwnerProvider({
     setIsAiLoading(true);
     try {
       const res = await fetch(
-        `/api/subdomain/${subdomain.slug}/ai-suggestion?customerId=${customerId}`,
+        `/api/subdomain/${subdomain.slug}/customers/${customerId}/ai-chat-suggestions`,
       );
       const data: AiSuggestionData = await res.json();
       setAiSuggestions((prev) => ({ ...prev, [customerId]: data }));

@@ -30,9 +30,7 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Missing file details" }, { status: 400 });
     }
 
-    // Create a unique S3 Key
-    const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const key = `subdomains/${subdomain.id}/designs/${designId}/${Date.now()}-${safeFilename}`;
+    const key = `subdomains/${subdomain.id}/designs/${designId}/${Date.now()}`;
 
     // Generate the upload URL!
     const uploadUrl = await getUploadPresignedUrl(key, contentType);
@@ -41,9 +39,6 @@ export async function POST(req: Request, { params }: Params) {
       uploadUrl,
       s3Key: key, // 🟢 Return the key instead of the URL
     });
-
-
-
 
   } catch (error) {
     console.error("Error generating presigned URL:", error);

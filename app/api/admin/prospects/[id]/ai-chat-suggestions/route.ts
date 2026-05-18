@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { MOCK_PROSPECTS } from "@/components/admin/prospects/mock-data";
 
 // 👇 Update this import path to wherever your function lives

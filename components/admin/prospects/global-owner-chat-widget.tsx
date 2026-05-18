@@ -14,11 +14,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { ChatBubble } from "./chat-bubble";
-import { AdvancedChatInput } from "./advanced-chat-input";
-import { useSuperAdmin } from "@/context/super-admin-context";
+
 import { DrawerToast } from "./drawer-toast";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useOwner } from "@/context/owner-context";
+import { OwnerAdvancedChatInput } from "@/components/owner/owner-advanced-chat-input";
+import { OwnerChatBubble } from "@/components/owner/owner-chat-bubble";
 
 // A buttery smooth spring configuration for the morphing
 const morphTransition = {
@@ -65,8 +66,9 @@ export function GlobalOwnerChatWidget() {
     if (!customer?.id) return;
     if (!isBackgroundPoll) setLoading(true);
     try {
+      // ⬇️ Update 'messages' to 'communications' ⬇️
       const res = await fetch(
-        `/api/subdomain/${subdomain.slug}/${customer.id}/messages`,
+        `/api/subdomain/${subdomain.slug}/customers/${customer.id}/communications`,
       );
       const data = await res.json();
       setMessages(data);
@@ -372,7 +374,7 @@ export function GlobalOwnerChatWidget() {
                           nextMsg.type !== msg.type;
 
                         return (
-                          <ChatBubble
+                          <OwnerChatBubble
                             key={msg.id || index}
                             msg={msg}
                             prospectName={customer?.name}
@@ -391,7 +393,7 @@ export function GlobalOwnerChatWidget() {
 
               {/* Input Area */}
               <div className="shrink-0 bg-background border-t">
-                <AdvancedChatInput
+                <OwnerAdvancedChatInput
                   isLoading={isSendingSMS || isSendingEmail}
                   onSend={handleSendMessage}
                   clientId={customer?.id}

@@ -223,11 +223,12 @@ export async function processImagenWorkflow({
       select: {
         id: true,
         slug: true,
+        twilioPhoneNumber: true
       },
     });
 
-    if (!subdomain) {
-      throw new Error(`Subdomain with ID ${p.subdomainId} not found.`);
+    if (!subdomain || !subdomain.twilioPhoneNumber) {
+      throw new Error(`Subdomain Data Invalid`);
     }
 
     // 2. UNIVERSAL DATABASE SAVE 
@@ -305,7 +306,7 @@ export async function processImagenWorkflow({
     if (p.deliveryMethod === "SMS" && p.customerPhone) {
       await twilioClient.messages.create({
         to: p.customerPhone,
-        from: process.env.TWILIO_PHONE_NUMBER,
+        from: subdomain.twilioPhoneNumber,
         body: smsBody,
         mediaUrl: [presignedUrl],
       });
