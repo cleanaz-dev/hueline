@@ -10,7 +10,7 @@ import {
   Customer,
 } from "@/app/generated/prisma";
 import { sendEmail, SendMockUpEmail } from "@/lib/resend";
-import { designImagenLambdaIngestSchema } from "@/lib/zod/design-imagen-body-schema";
+import { DesignImagenLambdaIngestBody, designImagenLambdaIngestSchema } from "@/lib/zod/design-imagen-body-schema";
 import z from "zod";
 import { DesignStudioMetadata } from "@/lib/zod/design-studio-metadata";
 import { createNewSubBooking } from "./mutations/create-new-subbooking";
@@ -29,7 +29,6 @@ export interface ImagenContext {
   recipientName: string;
   roomType: string;
   portalLink: string;
-  originalSmsBody?: string;
   removeFurniture?: boolean;
   pin?: string;
 }
@@ -179,7 +178,7 @@ const WorkflowDataSchema = z.object({
 // ─── Main Function ────────────────────────────────────────────────────────────
 
 interface ProcessImagenArgs {
-  webhookBody: any;
+  webhookBody: DesignImagenLambdaIngestBody;
   triggerSource: ImagenTriggerSource;
   job: SystemTask;
   customer: Customer;
@@ -214,7 +213,7 @@ export async function processImagenWorkflow({
       customerPhone: customer.phone,
       subdomainId: job.subdomainId,
       designId: metadata.designProjectId,
-      newImagenS3Key: webhookBody.newImagenKey,
+      newImagenS3Key: webhookBody.newImagenS3Key,
       deliveryMethod: job.deliveryMethod,
       operatorId: job.operatorId,
     });
@@ -293,7 +292,6 @@ export async function processImagenWorkflow({
       recipientName: p.customerName,
       roomType: p.roomType,
       portalLink,
-      originalSmsBody: webhookBody.smsBody,
       removeFurniture: p.removeFurniture,
       pin: generatedPin,
     };
