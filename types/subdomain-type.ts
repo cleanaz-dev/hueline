@@ -123,9 +123,8 @@ export interface BookingData {
   originalImages: string;
   summary: string;
   dimensions: string | null;
-  dateTime: Date | string;
-  pin: string;
-  expiresAt: number;
+  dateTime: string | Date | null;
+  expiresAt: number | null;
   status: BookingStatus | null;
   // --- PULSE / STATUS FIELDS ---
 
