@@ -9,7 +9,11 @@ import { CurrentColor, TargetColor } from "@/types/paint-types";
 import axios from "axios";
 import { NextResponse } from "next/server";
 import { ClientImagenMetadata } from "@/lib/zod/client-imagen-metadata";
-import { acquireResourceLock, releaseResourceLock, updateLockWithTaskId } from "@/lib/redis"
+import {
+  acquireResourceLock,
+  releaseResourceLock,
+  updateLockWithTaskId,
+} from "@/lib/redis";
 
 interface Params {
   params: Promise<{
@@ -38,14 +42,20 @@ export async function POST(req: Request, { params }: Params) {
 
     // 2. CHEAP VALIDATION FIRST: Don't bother locking if the payload is garbage
     if (!option || !color) {
-      return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Missing required fields" },
+        { status: 400 },
+      );
     }
 
     // 3. ACQUIRE LOCK: Now that we know the payload is decent, lock the resource
     lockKey = await acquireResourceLock(resourceId, "IMAGEN");
 
     if (!lockKey) {
-      return NextResponse.json({ message: "Task already running for this project!" }, { status: 429 });
+      return NextResponse.json(
+        { message: "Task already running for this project!" },
+        { status: 429 },
+      );
     }
 
     // 4. EXPENSIVE DB CHECKS
@@ -61,7 +71,10 @@ export async function POST(req: Request, { params }: Params) {
 
     if (!subdomain || !booking || !booking.customer?.id) {
       await releaseResourceLock(lockKey); // <--- RELEASE BEFORE EARLY RETURN
-      return NextResponse.json({ message: "Missing required data" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Missing required data" },
+        { status: 400 },
+      );
     }
 
     const { originalImageUrl, roomType } = await getOriginalImageUrl(huelineId);
@@ -88,6 +101,7 @@ export async function POST(req: Request, { params }: Params) {
         deliveryMethod: "SMS",
         lockKey,
         customer: { connect: { id: booking.customer?.id } },
+        subdomain: { connect: { id: subdomain.id } },
         metadataSource: "IMAGEN",
         metadata: {
           huelineId: huelineId,
@@ -124,25 +138,24 @@ export async function POST(req: Request, { params }: Params) {
     // 6. FIRE LAMBDA
     await axios.post(lambdaUrl, generatePayload);
 
-    await updateLockWithTaskId(lockKey, systemTask.id)
+    await updateLockWithTaskId(lockKey, systemTask.id);
 
     // CRITICAL: DO NOT release the lock here! We want it to stay locked until the webhook finishes.
     return NextResponse.json(
       { message: "success", systemTaskId: systemTask.id },
-      { status: 200 }
+      { status: 200 },
     );
-
   } catch (error) {
     console.error("Error in color generation:", error);
-    
+
     // 7. SAFE CATCH: Because lockKey is outside the try block, this works perfectly.
     if (lockKey) {
       await releaseResourceLock(lockKey);
     }
-    
+
     return NextResponse.json(
       { message: "Error Generating New Mockup", error: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

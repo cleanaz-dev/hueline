@@ -87,10 +87,11 @@ export async function POST(req: Request, { params }: Params) {
     select: {
       id: true,
       customer: true,
+      subdomainId: true,
     },
   });
 
-  if (!booking || !booking.customer) {
+  if (!booking || !booking.customer || !booking?.subdomainId) {
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
   let lockKey: string | null = null;
@@ -123,6 +124,7 @@ export async function POST(req: Request, { params }: Params) {
         lockKey,
         deliveryMethod: "SMS",
         customer: { connect: { id: booking.customer.id } },
+        subdomain: { connect: { id: booking.subdomainId } },
         metadataSource: "UPSCALE",
         metadata: {
           resolution: resolution,
