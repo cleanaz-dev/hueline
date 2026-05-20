@@ -6,11 +6,12 @@ const redis = Redis.fromEnv();
 interface Params {
   params: Promise<{
     resourceId: string;
+    slug: string
   }>;
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const { resourceId } = await params;
+  const { resourceId, slug } = await params;
   const { searchParams } = new URL(req.url);
   const lockContext = searchParams.get("context") ?? "IMAGEN";
 

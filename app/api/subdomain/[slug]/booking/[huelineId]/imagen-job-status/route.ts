@@ -34,7 +34,6 @@ export async function GET(req: Request, { params }: Params) {
 
     const systemTask = await prisma.systemTask.findFirst({
       where: {
-        huelineId,
         type: "IMAGEN",
         status: { in: ["PENDING", "PROCESSING"] },
       },
