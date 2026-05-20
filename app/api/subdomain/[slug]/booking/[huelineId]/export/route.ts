@@ -128,6 +128,7 @@ export async function POST(req: Request, { params }: Params) {
         metadataSource: "UPSCALE",
         metadata: {
           resolution: resolution,
+          huelineId,
           exportId: exportData.id,
           imageCount: imageKeys.length,
           twilioFromNumber: subdomain.twilioPhoneNumber,

@@ -7,7 +7,8 @@ export const upscaleMetadata = z.object({
   twilioFromNumber: z.string().startsWith("+"),
   phoneNumber: z.string().startsWith("+"),
   s3Keys: z.array(z.string()),
-  roomType: z.string()
+  roomType: z.string(),
+  huelineId: z.string()
 });
 
 export type ImageUpscaleMetadata = z.infer<typeof upscaleMetadata>

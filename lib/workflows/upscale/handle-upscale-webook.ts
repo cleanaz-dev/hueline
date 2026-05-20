@@ -41,9 +41,7 @@ export async function handleUpscaleWebhook(
     if (!validPayload.s3Key) {
       return NextResponse.json({ message: "Missing s3Key in successful payload" }, { status: 400 });
     }
-    if (!job.huelineId) { // Check the DB job, not the webhook body!
-      return NextResponse.json({ message: "Job is missing huelineId" }, { status: 400 });
-    }
+
     if (!customer.phone) {
       return NextResponse.json({ message: "No contact method found for client" }, { status: 400 });
     }

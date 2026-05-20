@@ -112,11 +112,8 @@ export async function processUpscaleWorkflow({
     const imageCount = metadata.imageCount;
     const roomType = metadata.roomType;
     const recipientName = customer.name || "There";
-    const huelineId = job.huelineId;
+    const huelineId = metadata.huelineId;
 
-    if (!job.huelineId) {
-      throw new Error("Missing huelineId");
-    }
 
     // Determine strict delivery method
     const deliveryMethod = job.deliveryMethod as CommunicationType;
@@ -125,7 +122,7 @@ export async function processUpscaleWorkflow({
     }
 
     const subBookingData = await prisma.subBookingData.findUnique({
-      where: { huelineId: job.huelineId },
+      where: { huelineId: huelineId },
       select: {
         subdomain: {
           select: {
