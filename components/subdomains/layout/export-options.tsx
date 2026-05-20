@@ -8,7 +8,7 @@ import Link from "next/link";
 import { Export } from "@/app/generated/prisma";
 
 export default function ExportOptions() {
-  const { setIsExportDialogOpen, booking, hasActiveUpscaleJob, activeUpscaleJob } = useBooking();
+  const { setIsExportDialogOpen, booking, hasActiveUpscaleJob,  } = useBooking();
 
   const exports: Export[] = booking?.exports || [];
 
@@ -32,7 +32,7 @@ export default function ExportOptions() {
               <BsBadge8K className="w-6 h-6 text-primary animate-pulse" />
             </div>
             <span className="text-xs font-semibold text-muted-foreground text-center text-balance">
-              {activeUpscaleJob?.status === "PROCESSING" ? "Upscaling..." : "Queued"}
+              Upscaling...
             </span>
           </div>
         ) : hasProcessingOrCompleted ? (
