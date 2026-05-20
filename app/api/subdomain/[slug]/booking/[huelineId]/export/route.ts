@@ -9,6 +9,7 @@ import {
 } from "@/lib/zod/lambda-upscale-payload";
 import { getPresignedUrls } from "@/lib/aws/s3/services/get-presigned-url";
 import { ImageUpscaleMetadata } from "@/lib/zod/job-upscale-metadata";
+import { acquireResourceLock, releaseResourceLock } from "@/lib/redis";
 
 interface Params {
   params: Promise<{
@@ -51,49 +52,56 @@ export async function GET(req: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const { huelineId, slug } = await params;
 
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const { imageKeys, resolution, phone, roomType } = body;
+
+  if (!imageKeys?.length || !resolution || !phone || !roomType) {
+    return NextResponse.json(
+      { error: "Missing required fields" },
+      { status: 400 },
+    );
+  }
+
+  const subdomain = await prisma.subdomain.findUnique({
+    where: { slug },
+    select: {
+      twilioPhoneNumber: true,
+      id: true,
+    },
+  });
+
+  if (!subdomain || !subdomain.twilioPhoneNumber) {
+    return NextResponse.json(
+      { error: "Invalid Data Request" },
+      { status: 400 },
+    );
+  }
+
+  const booking = await prisma.subBookingData.findUnique({
+    where: { huelineId },
+    select: {
+      id: true,
+      customer: true,
+    },
+  });
+
+  if (!booking || !booking.customer) {
+    return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+  }
+  let lockKey: string | null = null;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await req.json();
-    const { imageKeys, resolution, phone, roomType } = body;
-
-    if (!imageKeys?.length || !resolution || !phone || !roomType) {
+    lockKey = await acquireResourceLock(huelineId, "IMAGEN");
+    if (!lockKey) {
       return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
+        { message: "Task already running for this project!" },
+        { status: 429 },
       );
     }
-
-    const subdomain = await prisma.subdomain.findUnique({
-      where: { slug },
-      select: {
-        twilioPhoneNumber: true,
-        id: true,
-      },
-    });
-
-    if (!subdomain || !subdomain.twilioPhoneNumber) {
-      return NextResponse.json(
-        { error: "Invalid Data Request" },
-        { status: 400 },
-      );
-    }
-
-    const booking = await prisma.subBookingData.findUnique({
-      where: { huelineId },
-      select: {
-        id: true,
-        customer: true,
-      },
-    });
-
-    if (!booking || !booking.customer) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-    }
-
     const imageUrls = await getPresignedUrls(imageKeys, 3600);
 
     const exportData = await prisma.export.create({
@@ -112,7 +120,7 @@ export async function POST(req: Request, { params }: Params) {
         status: "PENDING",
         model: "novita/image-upscaler",
         cost: 0.01,
-        huelineId,
+        lockKey,
         deliveryMethod: "SMS",
         customer: { connect: { id: booking.customer.id } },
         metadataSource: "UPSCALE",
@@ -175,6 +183,7 @@ export async function POST(req: Request, { params }: Params) {
     });
   } catch (error) {
     console.error("Export error:", error);
+    if (lockKey) await releaseResourceLock(lockKey);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },
