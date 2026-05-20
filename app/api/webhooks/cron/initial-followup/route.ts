@@ -6,6 +6,8 @@ import { getPresignedUrl } from "@/lib/aws/s3";
 import { type LambdaImagenPayload, lambdaPayloadSchema } from "@/lib/zod";
 import { getColorSwatchPresignedUrl } from "@/lib/lambda-utils/color-swatch-url";
 import { BrandId } from "@/lib/desing-studio-config";
+import { acquireResourceLock, releaseResourceLock } from "@/lib/redis";
+import { StandardImageMetadata } from "@/lib/zod/imagen-metadata/standard-imagen-metadata-schema";
 
 const LAMBDA_URL = process.env.LAMBDA_IMAGEN_URL!;
 const apiKey = process.env.INTERNAL_API_KEY!;
@@ -34,8 +36,8 @@ export async function POST(req: Request) {
         subBookingData: {
           include: {
             paintColors: true,
-            mockups: true
-          }
+            mockups: true,
+          },
         },
       },
     });
@@ -64,8 +66,20 @@ export async function POST(req: Request) {
           continue;
         }
 
+        let lockKey: string | null = null;
+
         try {
-          const presignedUrl = await getPresignedUrl(subData.originalImages, 3600);
+          const presignedUrl = await getPresignedUrl(
+            subData.originalImages,
+            3600,
+          );
+          lockKey = await acquireResourceLock(subData.huelineId, "IMAGEN");
+          if (!lockKey) {
+            return NextResponse.json(
+              { message: "Task already running for this project!" },
+              { status: 429 },
+            );
+          }
 
           const rawColors = [
             ...subData.paintColors.map((pc: any) => ({
@@ -96,28 +110,35 @@ export async function POST(req: Request) {
             };
           }
 
+          const { colorSwatchKey, colorSwatchUrl } =
+            await getColorSwatchPresignedUrl(
+              smartColor.brand as BrandId,
+              smartColor.name,
+              smartColor.code,
+            );
+
           const systemTask = await prisma.systemTask.create({
             data: {
+              lockKey,
               initiator: "SYSTEM",
               type: "IMAGEN",
-              brand: smartColor.brand,
-              name: smartColor.name,
-              code: smartColor.code,
-              hex: smartColor.hex,
-              cost: 0.13,
+              cost: 0.15,
               deliveryMethod: "SMS",
               customer: { connect: { id: client.id } },
-              huelineId: subData.huelineId,
               status: "PENDING",
-              model: "openai/gtp-image-2",
+              model: "google/nano-banana-pro",
+              metadataSource: "IMAGEN",
+              metadata: {
+                brand: smartColor.brand,
+                name: smartColor.name,
+                code: smartColor.code,
+                hex: smartColor.hex,
+                imageS3Key: subData.originalImages,
+                colorSwatchKey,
+                huelinedId: subData.huelineId,
+              } satisfies StandardImageMetadata,
             },
           });
-
-          const { colorSwatchKey, colorSwatchUrl } = await getColorSwatchPresignedUrl(
-            smartColor.brand as BrandId,
-            smartColor.name,
-            smartColor.code,
-          )
 
           const lambdaPayload: LambdaImagenPayload = {
             action: "FOLLOWUP_IMAGEN",
@@ -127,7 +148,7 @@ export async function POST(req: Request) {
             systemTaskId: systemTask.id,
             subdomainId: client.subdomainId,
             colorSwatchUrl,
-            deliveryMethod: "SMS"
+            deliveryMethod: "SMS",
           };
 
           const parsed = lambdaPayloadSchema.safeParse(lambdaPayload);
@@ -145,6 +166,7 @@ export async function POST(req: Request) {
             successCount++;
           }
         } catch (err) {
+          if(lockKey) await releaseResourceLock(lockKey)
           console.error(
             `Failed to process subBookingData ${subData.id} for client ${client.id}:`,
             err,
