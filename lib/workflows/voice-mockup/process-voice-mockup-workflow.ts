@@ -96,12 +96,8 @@ export async function processMockupWorkflow({
 
     const webhook = parsedWebhook.data;
 
-    if (!job.huelineId) {
-      throw new Error("Missing huelineId on job");
-    }
-
     const subBookingData = await prisma.subBookingData.findUnique({
-      where: { huelineId: job.huelineId },
+      where: { huelineId: webhook.huelineId },
       select: {
         roomType: true,
         subdomain: {
@@ -112,7 +108,7 @@ export async function processMockupWorkflow({
 
     if (!subBookingData) {
       throw new Error(
-        "SubBookingData not found for huelineId: " + job.huelineId,
+        "SubBookingData not found for huelineId: " + webhook.huelineId,
       );
     }
 
@@ -124,7 +120,7 @@ export async function processMockupWorkflow({
       roomType: webhook.roomType,
       callerName: customer.name ?? "Unknown",
       callerPhone: customer.phone ?? "",
-      huelineId: job.huelineId,
+      huelineId: webhook.huelineId,
       imageS3Key: webhook.imageS3Key,
       imageSize: webhook.size ?? 0,
       imageType: "image/jpeg",
@@ -133,7 +129,7 @@ export async function processMockupWorkflow({
     const smsBody = config.communicationBody(context);
 
     await createMockupBooking({
-      huelineId: job.huelineId!,
+      huelineId: webhook.huelineId,
       subdomainId: subBookingData.subdomain.id,
       slug: subBookingData.subdomain.slug,
       name: customer.name ?? "",
@@ -181,7 +177,7 @@ export async function processMockupWorkflow({
           type: config.activityType,
           title: config.activityTitle(context),
           description: config.activityDescription(context),
-          metadata: { huelineId: job.huelineId, jobId: job.id },
+          metadata: { huelineId: webhook.huelineId, jobId: job.id },
           customer: { connect: { id: customer.id } },
         },
       });
