@@ -23,7 +23,9 @@ interface PendingMessage {
 
 interface OwnerContextValue {
   subdomain: OwnerData;
+  me: SubdomainUser | undefined;
   users: SubdomainUser[] | undefined;
+  isMeLoading: boolean;
   isUsersLoading: boolean;
   customers: Customer[] | undefined;
   isCustomersLoading: boolean;
@@ -35,7 +37,7 @@ interface OwnerContextValue {
   inviteMember: (
     memberName: string,
     memberPhone: string,
-    memberEmail: string
+    memberEmail: string,
   ) => Promise<boolean>;
   addCustomerDialogOpen: boolean;
   setAddCustomerDialogOpen: (open: boolean) => void;
@@ -45,10 +47,7 @@ interface OwnerContextValue {
   isReportingTask: boolean;
   reportTaskDialogOpen: boolean;
   setReportTaskDialogOpen: (open: boolean) => void;
-  reportTask: (
-    taskId: string,
-    text: string
-  ) => Promise<boolean>
+  reportTask: (taskId: string, text: string) => Promise<boolean>;
   refreshCustomers: () => void;
   refreshUsers: () => void;
   isSendingSMS: boolean;
@@ -114,6 +113,16 @@ export function OwnerProvider({
     { revalidateOnFocus: false },
   );
 
+  const {
+    data: meData,
+    isLoading: isMeLoading,
+    mutate: mutateMe,
+  } = useSWR<{ me: SubdomainUser }>(
+    `/api/subdomain/${subdomain.slug}/me`,
+    fetcher,
+    { revalidateOnFocus: false },
+  );
+
   // --- Action state ---
   const [isSendingSMS, setIsSendingSMS] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -126,9 +135,9 @@ export function OwnerProvider({
   const [addCustomerDialogOpen, setAddCustomerDialogOpen] = useState(false);
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
   const [isInvitingMember, setIsInvitingMember] = useState(false);
-  const [ inviteMemberDialogOpen, setInviteMemberDialogOpen ] = useState(false)
-  const [ reportTaskDialogOpen, setReportTaskDialogOpen ] = useState(false)
-  const [ isReportingTask, setIsReportingTask ] = useState(false)
+  const [inviteMemberDialogOpen, setInviteMemberDialogOpen] = useState(false);
+  const [reportTaskDialogOpen, setReportTaskDialogOpen] = useState(false);
+  const [isReportingTask, setIsReportingTask] = useState(false);
 
   // --- Success banners ---
   const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
@@ -145,6 +154,7 @@ export function OwnerProvider({
   >("icon");
 
   const users = userData?.users;
+  const me = meData?.me;
 
   const openChat = (prospect: CustomerChat) => {
     setActiveChatProspect(prospect);
@@ -294,20 +304,19 @@ export function OwnerProvider({
     }
   };
 
-    const reportTask = async (
-    taskId: string,
-    text: string
-    
-  ) => {
+  const reportTask = async (taskId: string, text: string) => {
     try {
       setIsReportingTask(true);
 
-      const res = await fetch(`/api/subdomain/${subdomain.slug}/system-tasks/report-issue/${taskId}`, {
-        method: "POST",
-        body: JSON.stringify({
-          text
-        }),
-      });
+      const res = await fetch(
+        `/api/subdomain/${subdomain.slug}/system-tasks/report-issue/${taskId}`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            text,
+          }),
+        },
+      );
 
       if (!res.ok) {
         throw new Error();
@@ -323,7 +332,9 @@ export function OwnerProvider({
     <OwnerContext.Provider
       value={{
         subdomain,
-        users: userData?.users,
+        me,
+        users,
+        isMeLoading,
         isUsersLoading,
         customers: customersData?.customers,
         isCustomersLoading,

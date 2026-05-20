@@ -160,7 +160,7 @@ export function DesignStudioPalette({
                       <span className="font-mono font-bold text-zinc-900">{huelineId}</span>
                     </div>
                     <Link                       
-                      href={`/bookings/${huelineId}`} 
+                      href={`/booking/${huelineId}`} 
                       target="_blank"
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3.5 text-sm font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]"
                     >
@@ -259,7 +259,7 @@ export function DesignStudioPalette({
             </div>
 
             {/* Bottom Sticky Status Bar */}
-            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between border-t border-black/5 bg-white/95 p-4 backdrop-blur-xl">
+            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between border-t border-black/5 bg-white/95 p-4 backdrop-blur-xl rounded-b-xl">
               <div>
                 <p className="text-sm font-bold text-zinc-900">{selectedColor ? selectedColor.name : "Select a Color"}</p>
                 <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-zinc-500">

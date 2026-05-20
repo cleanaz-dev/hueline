@@ -11,6 +11,7 @@ import { BrandId } from "@/lib/desing-studio-config";
 import { DesignStudioMetadata } from "@/lib/zod/design-studio-metadata";
 import { DesignStudioGenerateSchema } from "@/lib/zod/design-studio-endpoint-schema";
 import z from "zod";
+import { acquireResourceLock } from "@/lib/redis";
 
 interface Params {
   params: Promise<{
@@ -37,6 +38,15 @@ export async function POST(req: Request, { params }: Params) {
 
   const userEmail = session.user.email;
   const { slug, designId } = await params;
+
+  const resourceId = designId;
+
+  if (!resourceId) {
+    return NextResponse.json({ error: "No resource ID" }, { status: 400 });
+  }
+
+  // 1. Declare lockKey OUTSIDE the try/catch so the catch block can access it!
+  let lockKey: string | null = null;
 
   // --- Validate subdomain, user, and design project ---
   const [subdomain, designProject] = await Promise.all([
@@ -113,16 +123,27 @@ export async function POST(req: Request, { params }: Params) {
     ? "EXISTING_DESIGN_STUDIO_IMAGEN"
     : "NEW_DESIGN_STUDIO_IMAGEN";
 
+  // 3. ACQUIRE LOCK: Now that we know the payload is decent, lock the resource
+  lockKey = await acquireResourceLock(resourceId, "IMAGEN");
+
+  if (!lockKey) {
+    return NextResponse.json(
+      { message: "Task already running for this project!" },
+      { status: 429 },
+    );
+  }
+
   // --- Create system task ---
   const systemTask = await prisma.systemTask.create({
     data: {
+      lockKey,
       subdomain: { connect: { id: subdomain.id } },
       initiator: "OPERATOR",
       status: "PENDING",
       type: "IMAGEN",
       metadataSource: "IMAGEN",
-      model: "openai/gpt-image-2",
-      cost: 0.14,
+      model: "google/nano-banana-pro",
+      cost: 0.15,
       operator: { connect: { id: subUser.id } },
       deliveryMethod: normalizedDelivery,
       customer: { connect: { id: customerId } },

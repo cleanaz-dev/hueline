@@ -442,23 +442,18 @@ model ClientCommunication {
 }
 
 model SystemTask {
-  id        String           @id @default(auto()) @map("_id") @db.ObjectId
-  status    SystemTaskStatus
-  huelineId String?
-  type      SystemTaskType // <-- We will use this in our Switch statement!
-  model     String?
-  cost      Float?
+  id     String           @id @default(auto()) @map("_id") @db.ObjectId
+  status SystemTaskStatus
+
+  type       SystemTaskType // <-- We will use this in our Switch statement!
+  model      String?
+  cost       Float?
+  lockKey    String
 
   initiator      SystemTaskRole
   operator       SubdomainUser? @relation(fields: [operatorId], references: [id])
   operatorId     String?        @db.ObjectId
   deliveryMethod String?
-
-  // colors for imagen
-  brand String?
-  code  String?
-  hex   String?
-  name  String?
 
   metadata       Json?
   metadataSource MetadataSource?

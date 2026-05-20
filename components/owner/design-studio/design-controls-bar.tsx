@@ -178,7 +178,7 @@ export function DesignControlsBar({
           }`}
         >
           <Sparkles className={`mr-2 h-4 w-4 ${canGenerate ? "text-amber-400" : "text-zinc-300"}`} />
-          Generate Portal
+          Generate Image
         </Button>
       </div>
     </div>
