@@ -10,10 +10,14 @@ import {
   Customer,
 } from "@/app/generated/prisma";
 import { sendEmail, SendMockUpEmail } from "@/lib/resend";
-import { DesignImagenLambdaIngestBody, designImagenLambdaIngestSchema } from "@/lib/zod/design-imagen-body-schema";
+import {
+  DesignImagenLambdaIngestBody,
+  designImagenLambdaIngestSchema,
+} from "@/lib/zod/design-imagen-body-schema";
 import z from "zod";
-import { DesignStudioMetadata } from "@/lib/zod/design-studio-metadata";
+import { DesignStudioMetadata, designStudioMetadataSchema } from "@/lib/zod/design-studio-metadata";
 import { createNewSubBooking } from "./mutations/create-new-subbooking";
+import { StandardImageMetadata, standardImagenMetadataSchema } from "@/lib/zod/imagen-metadata/standard-imagen-metadata-schema";
 
 // ─── Trigger Source ───────────────────────────────────────────────────────────
 export type ImagenTriggerSource = z.infer<
@@ -146,34 +150,12 @@ const TRIGGER_CONFIG: Record<ImagenTriggerSource, TriggerConfig> = {
       `AI sent ${ctx.recipientName} a ${ctx.roomType} preview — ${ctx.colorBrand} ${ctx.colorName}`,
     markFirstFollowupComplete: false,
     getSmsBody: (ctx) =>
-      `Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}! View your portal here: ${ctx.portalLink}${ctx.pin ? `\n\nYour secure PIN to access the portal is: ${ctx.pin}` : ''}`,
+      `Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}! View your portal here: ${ctx.portalLink}${ctx.pin ? `\n\nYour secure PIN to access the portal is: ${ctx.pin}` : ""}`,
     getEmailSubject: (ctx) => `New Room Mockup - ${ctx.colorName}`,
     getEmailHtml: (ctx) =>
-      `<p>Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>${ctx.pin ? `<p>Your secure PIN to access the portal is: <strong>${ctx.pin}</strong></p>` : ''}`,
+      `<p>Here is your new mockup featuring the ${ctx.colorBrand} palette in ${ctx.colorName}!</p><p><a href="${ctx.portalLink}">View your portal here</a></p>${ctx.pin ? `<p>Your secure PIN to access the portal is: <strong>${ctx.pin}</strong></p>` : ""}`,
   },
 };
-
-// ─── Universal Input Zod Schema ───────────────────────────────────────────────
-const WorkflowDataSchema = z.object({
-  colorBrand: z.string(),
-  colorName: z.string(),
-  colorCode: z.string(),
-  colorHex: z.string(),
-  roomType: z.string(),
-  originalImageS3Key: z.string(),
-  colorSwatchKey: z.string().optional(),
-  removeFurniture: z.boolean().optional(),
-  huelineId: z.string().nullable().optional(),
-  customerId: z.string(),
-  customerEmail: z.string().nullable().optional(),
-  customerName: z.string().nullable().optional().transform(v => v || "Client"),
-  customerPhone: z.string().nullable().optional(),
-  subdomainId: z.string({ message: "Missing subdomainId" }),
-  designId: z.string({ message: "Missing designProjectId" }),
-  newImagenS3Key: z.string({ message: "Missing newImagenKey" }),
-  deliveryMethod: z.enum(["SMS", "EMAIL"], { message: "Missing deliveryMethod" }),
-  operatorId: z.string().nullable().optional(),
-});
 
 // ─── Main Function ────────────────────────────────────────────────────────────
 
@@ -194,133 +176,122 @@ export async function processImagenWorkflow({
   const config = TRIGGER_CONFIG[triggerSource];
 
   try {
-    const metadata = job.metadata as DesignStudioMetadata;
+    // 1. Parse ONLY the unstructured metadata using specific Zod schemas
+    const isNewDesignStudio = triggerSource === "NEW_DESIGN_STUDIO_IMAGEN";
+    
+    // NOTE: You should export actual Zod schemas for these from your metadata schema files.
+    // e.g., `designStudioMetadataSchema` and `standardImageMetadataSchema`.
+    // We avoid `as Type` assertions so Zod can actually throw if data is malformed.
+    const metadata = isNewDesignStudio
+      ? designStudioMetadataSchema.parse(job.metadata) 
+      : standardImagenMetadataSchema.parse(job.metadata);
 
-    // 1. Normalize and Validate Payload Data with Zod
-    const p = WorkflowDataSchema.parse({
-      colorBrand: metadata.brand,
-      colorName: metadata.name,
-      colorCode: metadata.code,
-      colorHex: metadata.hex,
-      roomType: metadata.roomType,
-      originalImageS3Key: metadata.imageS3Key,
-      colorSwatchKey: metadata.colorSwatchKey,
-      removeFurniture: metadata.removeFurniture,
-      huelineId: job.huelineId,
-      customerId: customer.id,
-      customerEmail: customer.email,
-      customerName: customer.name,
-      customerPhone: customer.phone,
-      subdomainId: job.subdomainId,
-      designId: metadata.designProjectId,
-      newImagenS3Key: webhookBody.newImagenS3Key,
-      deliveryMethod: job.deliveryMethod,
-      operatorId: job.operatorId,
-    });
-
+    // 2. Validate Subdomain
     const subdomain = await prisma.subdomain.findUnique({
-      where: { id: p.subdomainId },
+      where: { id: job.subdomainId },
       select: {
         id: true,
         slug: true,
-        twilioPhoneNumber: true
+        twilioPhoneNumber: true,
       },
     });
 
-    if (!subdomain || !subdomain.twilioPhoneNumber) {
-      throw new Error(`Subdomain Data Invalid`);
+    if (!subdomain?.twilioPhoneNumber) {
+      throw new Error(`Subdomain Data Invalid or missing Twilio phone number`);
     }
 
-    // 2. UNIVERSAL DATABASE SAVE 
-    let activeHuelineId = p.huelineId;
+    // 3. Database Save & Hueline ID Assignment
+    let activeHuelineId: string;
     let generatedPin: string | undefined = undefined;
 
-    if (!activeHuelineId && triggerSource === "NEW_DESIGN_STUDIO_IMAGEN") {
+    if (isNewDesignStudio) {
+      // It's a new design studio; we know we must generate a new sub-booking
       const subBookingData = await createNewSubBooking({
-        colorBrand: p.colorBrand,
-        colorName: p.colorName,
-        colorCode: p.colorCode,
-        colorHex: p.colorHex,
-        roomType: p.roomType,
-        originalImageS3Key: p.originalImageS3Key,
-        newImagenS3Key: p.newImagenS3Key,
-        customerId: p.customerId,
-        customerName: p.customerName,
-        customerPhone: p.customerPhone || "",
-        subdomainId: p.subdomainId,
-        designId: p.designId,
+        colorBrand: metadata.brand,
+        colorName: metadata.name,
+        colorCode: metadata.code,
+        colorHex: metadata.hex,
+        roomType: metadata.roomType,
+        originalImageS3Key: metadata.imageS3Key,
+        newImagenS3Key: webhookBody.newImagenS3Key,
+        customerId: customer.id,
+        customerName: customer.name || "Customer",
+        customerPhone: customer.phone || "",
+        subdomainId: job.subdomainId,
+        designId: (metadata as DesignStudioMetadata).designProjectId, 
       });
-      // Capture the generated huelineId and pin
+      
       activeHuelineId = subBookingData.huelineId;
       generatedPin = subBookingData.pin;
-    } else if (activeHuelineId) {
+    } else {
+      // It's standard; standardImageMetadataSchema ensures huelineId exists
+      activeHuelineId = (metadata as StandardImageMetadata).huelineId;
+      
       await prisma.subBookingData.update({
         where: { huelineId: activeHuelineId },
         data: {
           mockups: {
             create: {
-              s3Key: p.newImagenS3Key,
-              roomType: p.roomType,
-              brand: p.colorBrand,
-              code: p.colorCode,
-              name: p.colorName,
-              hex: p.colorHex,
+              s3Key: webhookBody.newImagenS3Key,
+              roomType: metadata.roomType,
+              brand: metadata.brand,
+              code: metadata.code,
+              name: metadata.name,
+              hex: metadata.hex,
             },
           },
           paintColors: {
             create: {
-              brand: p.colorBrand,
-              code: p.colorCode,
-              name: p.colorName,
-              hex: p.colorHex,
+              brand: metadata.brand,
+              code: metadata.code,
+              name: metadata.name,
+              hex: metadata.hex,
             },
           },
         },
       });
-    } else {
-      throw new Error("Missing huelineId and TriggerSource is not NEW_DESIGN_STUDIO_IMAGEN");
     }
 
-    // 3. Generate Context & Presigned URL
+    // 4. Generate Context & Presigned URL
     const portalLink = `https://${subdomain.slug}.hue-line.com/j/${activeHuelineId}`;
-    const presignedUrl = await getPresignedUrl(p.newImagenS3Key);
+    const presignedUrl = await getPresignedUrl(webhookBody.newImagenS3Key);
 
     const context: ImagenContext = {
-      colorBrand: p.colorBrand,
-      colorName: p.colorName,
-      colorHex: p.colorHex,
-      colorCode: p.colorCode,
-      recipientName: p.customerName,
-      roomType: p.roomType,
+      colorBrand: metadata.brand,
+      colorName: metadata.name,
+      colorHex: metadata.hex,
+      colorCode: metadata.code,
+      recipientName: customer.name || "Customer",
+      roomType: metadata.roomType,
       portalLink,
-      removeFurniture: p.removeFurniture,
+      removeFurniture: metadata.removeFurniture,
       pin: generatedPin,
     };
 
-    // 4. Get Text/Email Content from Config
+    // 5. Get Text/Email Content from Config
     const smsBody = config.getSmsBody(context);
     const emailSubject = config.getEmailSubject(context);
     const emailHtml = config.getEmailHtml(context);
 
-    // 5. Send Message (Only ONE fires)
-    if (p.deliveryMethod === "SMS" && p.customerPhone) {
+    // 6. Send Message
+    if (job.deliveryMethod === "SMS" && customer.phone) {
       await twilioClient.messages.create({
-        to: p.customerPhone,
+        to: customer.phone,
         from: subdomain.twilioPhoneNumber,
         body: smsBody,
         mediaUrl: [presignedUrl],
       });
-    } else if (p.deliveryMethod === "EMAIL" && p.customerEmail) {
+    } else if (job.deliveryMethod === "EMAIL" && customer.email) {
       await sendEmail({
-        to: p.customerEmail,
+        to: customer.email,
         subject: emailSubject,
         template: SendMockUpEmail({
           clientName: context.recipientName,
           colors: {
-            brand: p.colorBrand,
-            code: p.colorCode,
-            hex: p.colorHex,
-            name: p.colorName,
+            brand: metadata.brand,
+            code: metadata.code,
+            hex: metadata.hex,
+            name: metadata.name,
           },
           subject: emailSubject,
           body: emailHtml,
@@ -328,23 +299,25 @@ export async function processImagenWorkflow({
       });
     }
 
-    // 6. Database Transaction (Logs & Activity)
+    // 7. Database Transaction (Logs & Activity)
     await prisma.$transaction(async (tx) => {
       // A. Communication Record
       await tx.clientCommunication.create({
         data: {
-          body: p.deliveryMethod === "SMS" ? smsBody : emailSubject,
+          body: job.deliveryMethod === "SMS" ? smsBody : emailSubject,
           role: config.role,
-          type: p.deliveryMethod,
-          customer: { connect: { id: p.customerId } },
-          ...(p.operatorId ? { operator: { connect: { id: p.operatorId } } } : {}),
+          type: job.deliveryMethod as CommunicationType,
+          customer: { connect: { id: customer.id } },
+          ...(job.operatorId
+            ? { operator: { connect: { id: job.operatorId } } }
+            : {}),
           mediaAttachments: {
             create: {
-              filename: `${p.colorBrand}-${p.colorName}-${p.colorCode}-mockup.jpg`,
+              filename: `${metadata.brand}-${metadata.name}-${metadata.code}-mockup.jpg`,
               size: 0,
               mimeType: "image/jpeg",
               mediaSource: "S3",
-              mediaUrl: p.newImagenS3Key,
+              mediaUrl: webhookBody.newImagenS3Key,
             },
           },
         },
@@ -355,7 +328,7 @@ export async function processImagenWorkflow({
         data: {
           type: config.activityType,
           title: config.activityTitle(context),
-          description: `${config.activityDescription(context)} (via ${p.deliveryMethod})`,
+          description: `${config.activityDescription(context)} (via ${job.deliveryMethod})`,
           metadata: { huelineId: activeHuelineId, jobId: job.id },
           customer: { connect: { id: customer.id } },
         },
@@ -367,7 +340,7 @@ export async function processImagenWorkflow({
           title: config.logTitle(context),
           type: "MOCKUP",
           actor: config.logActor,
-          description: `${config.logDescription(context)} (via ${p.deliveryMethod})`,
+          description: `${config.logDescription(context)} (via ${job.deliveryMethod})`,
           subdomain: { connect: { id: subdomain.id } },
         },
       });

@@ -125,6 +125,7 @@ export async function POST(req: Request) {
               cost: 0.15,
               deliveryMethod: "SMS",
               customer: { connect: { id: client.id } },
+              subdomain: { connect: { id: subData.subdomainId } },
               status: "PENDING",
               model: "google/nano-banana-pro",
               metadataSource: "IMAGEN",
@@ -135,7 +136,9 @@ export async function POST(req: Request) {
                 hex: smartColor.hex,
                 imageS3Key: subData.originalImages,
                 colorSwatchKey,
-                huelinedId: subData.huelineId,
+                huelineId: subData.huelineId,
+                roomType: subData.roomType,
+                removeFurniture: false
               } satisfies StandardImageMetadata,
             },
           });
@@ -166,7 +169,7 @@ export async function POST(req: Request) {
             successCount++;
           }
         } catch (err) {
-          if(lockKey) await releaseResourceLock(lockKey)
+          if (lockKey) await releaseResourceLock(lockKey);
           console.error(
             `Failed to process subBookingData ${subData.id} for client ${client.id}:`,
             err,

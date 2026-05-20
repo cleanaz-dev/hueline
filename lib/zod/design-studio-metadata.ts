@@ -9,7 +9,7 @@ export const designStudioMetadataSchema = z.object({
   imageS3Key: z.string(),
   roomType: z.string(),
   colorSwatchKey: z.string(),
-  designProjectId: z.string()
+  designProjectId: z.string(),
 });
 
 

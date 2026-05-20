@@ -7,8 +7,11 @@ export const standardImagenMetadataSchema = z.object({
   hex: z.string(),
   imageS3Key: z.string(),
   colorSwatchKey: z.string(),
-  huelinedId: z.string().optional()
+  huelineId: z.string(),
+  roomType: z.string(),
+  removeFurniture: z.boolean().default(false),
 });
 
-
-export type StandardImageMetadata = z.infer<typeof standardImagenMetadataSchema>
+export type StandardImageMetadata = z.infer<
+  typeof standardImagenMetadataSchema
+>;

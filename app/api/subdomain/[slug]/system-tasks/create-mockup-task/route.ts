@@ -51,14 +51,14 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     // 3. ACQUIRE LOCK: Now that we know the payload is decent, lock the resource
-      lockKey = await acquireResourceLock(resourceId, "IMAGEN");
-    
-      if (!lockKey) {
-        return NextResponse.json(
-          { message: "Task already running for this project!" },
-          { status: 429 },
-        );
-      }
+    lockKey = await acquireResourceLock(resourceId, "IMAGEN");
+
+    if (!lockKey) {
+      return NextResponse.json(
+        { message: "Task already running for this project!" },
+        { status: 429 },
+      );
+    }
     const newSystemTask = await prisma.systemTask.create({
       data: {
         lockKey,
@@ -67,6 +67,8 @@ export async function POST(req: Request, { params }: Params) {
         status: "PROCESSING",
         model: "google/nano-banana",
         cost: 0.04,
+        deliveryMethod: "NONE",
+        subdomain: { connect: { id: subdomain.id } },
         customer: { connect: { id: newCusomter.id } },
       },
     });

@@ -30,14 +30,21 @@ export async function POST(req: Request, { params }: Params) {
     select: { id: true, subdomainId: true },
   });
   if (!operator) {
-    return NextResponse.json({ message: "Operator not found" }, { status: 400 });
+    return NextResponse.json(
+      { message: "Operator not found" },
+      { status: 400 },
+    );
   }
 
   // ---- Body ----
-  const { mediaUrl, brand, color, deliveryMethod, huelineId } = await req.json();
+  const { mediaUrl, brand, color, deliveryMethod, huelineId } =
+    await req.json();
   if (!mediaUrl || !brand || !color || !deliveryMethod || !huelineId) {
     return NextResponse.json(
-      { message: "Missing required fields (mediaUrl, brand, color, deliveryMethod, huelineId)" },
+      {
+        message:
+          "Missing required fields (mediaUrl, brand, color, deliveryMethod, huelineId)",
+      },
       { status: 400 },
     );
   }
@@ -47,7 +54,16 @@ export async function POST(req: Request, { params }: Params) {
     where: { id },
     select: { id: true },
   });
-  if (!customer) {
+
+  const booking = await prisma.subBookingData.findUnique({
+    where: {
+      huelineId,
+    },
+    select: {
+      subdomainId: true,
+    },
+  });
+  if (!customer || !booking?.subdomainId) {
     return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
   }
 
@@ -82,6 +98,7 @@ export async function POST(req: Request, { params }: Params) {
         deliveryMethod,
         initiator: "OPERATOR",
         operator: { connect: { id: operator.id } },
+        subdomain: { connect: { id: booking.subdomainId } },
         status: "PENDING",
         metadataSource: "IMAGEN",
         metadata: {
@@ -91,7 +108,7 @@ export async function POST(req: Request, { params }: Params) {
           name: color.name,
           imageS3Key: huelineId,
           colorSwatchKey,
-        } satisfies ChatImagenMetadata
+        } satisfies ChatImagenMetadata,
       },
     });
 
@@ -117,10 +134,15 @@ export async function POST(req: Request, { params }: Params) {
     await axios.post(lambdaUrl, lambdaPayload);
 
     return NextResponse.json({ message: "Success" }, { status: 200 });
-
   } catch (error: any) {
-    console.error("Operator Imagen Error:", error.response?.data || error.message || error);
+    console.error(
+      "Operator Imagen Error:",
+      error.response?.data || error.message || error,
+    );
     if (lockKey) await releaseResourceLock(lockKey); // only release on failure
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
