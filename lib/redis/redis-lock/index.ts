@@ -1,6 +1,9 @@
 import { Redis } from "@upstash/redis";
 
-const redis = Redis.fromEnv();
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 // We use 'context' so you can lock IMAGEN and SMS separately if needed!
 type LockContext = "IMAGEN" | "UPSCALE" | "QUOTE"
@@ -21,5 +24,6 @@ export async function updateLockWithTaskId(lockKey: string, taskId: string) {
 }
 
 export async function releaseResourceLock(lockKey: string) {
+  if (!lockKey) return; 
   await redis.del(lockKey);
 }
