@@ -263,6 +263,7 @@ model Subdomain {
   customers        Customer[]
   systemTasks      SystemTask[]
   designProjects   DesignProject[]
+  errorLogs        ErrorLog[]
 }
 
 model RoomIntelligence {
@@ -413,6 +414,7 @@ model Customer {
   customerType     CustomerType     @default(RESIDENTIAL)
   calls            Call[]
   designProjects   DesignProject[]
+  errorLogs        ErrorLog[]
 }
 
 enum CustomerType {
@@ -445,10 +447,10 @@ model SystemTask {
   id     String           @id @default(auto()) @map("_id") @db.ObjectId
   status SystemTaskStatus
 
-  type       SystemTaskType // <-- We will use this in our Switch statement!
-  model      String?
-  cost       Float?
-  lockKey    String
+  type    SystemTaskType // <-- We will use this in our Switch statement!
+  model   String?
+  cost    Float?
+  lockKey String
 
   initiator      SystemTaskRole
   operator       SubdomainUser? @relation(fields: [operatorId], references: [id])
@@ -461,8 +463,8 @@ model SystemTask {
   // 🌟 NEW: Let the Job know exactly who it is for!
   demoClientId String?     @db.ObjectId
   demoClient   DemoClient? @relation(fields: [demoClientId], references: [id], onDelete: Cascade)
-  subdomain    Subdomain  @relation(fields: [subdomainId], references: [id])
-  subdomainId  String     @db.ObjectId
+  subdomain    Subdomain   @relation(fields: [subdomainId], references: [id])
+  subdomainId  String      @db.ObjectId
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -787,4 +789,25 @@ enum CallOutcome {
   POSITIVE
   NEUTRAL
   NEGATIVE
+}
+
+model ErrorLog {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  source   String // "imagen-lambda", "voice-ai", etc
+  stage    String // "PREDICTION", "S3", "WEBHOOK"
+  error    String
+  resolved Boolean @default(false)
+
+  // Context
+  systemTaskId String? @db.ObjectId
+  huelineId    String?
+  messageId    String?
+
+  // Relations
+  customer    Customer?  @relation(fields: [customerId], references: [id])
+  customerId  String?    @db.ObjectId
+  subdomain   Subdomain? @relation(fields: [subdomainId], references: [id])
+  subdomainId String?    @db.ObjectId
+
+  createdAt DateTime @default(now())
 }

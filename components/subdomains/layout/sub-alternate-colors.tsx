@@ -52,7 +52,12 @@ export default function SubAlternateDesign({
   const [generateStatus, setGenerateStatus] = useState<
     "idle" | "generating" | "success" | "error"
   >("idle");
-  const { setIsShareDialogOpen, subdomain } = useBooking();
+  const {
+    setIsShareDialogOpen,
+    subdomain,
+    hasActiveImagenJob,
+    refreshImagenJob,
+  } = useBooking();
   const hasSharedAccess = true;
 
   const options = [
@@ -73,7 +78,7 @@ export default function SubAlternateDesign({
   };
 
   const handleGenerateClick = async () => {
-    if (!selectedOption || hasGeneratedImage || !hasSharedAccess) return;
+    if (!selectedOption || hasGeneratedImage || !hasSharedAccess || !hasActiveImagenJob) return;
 
     setShowGenerateDialog(true);
     setGenerateStatus("generating");
@@ -125,6 +130,14 @@ export default function SubAlternateDesign({
     setShowGenerateDialog(false);
     window.location.reload();
   };
+
+  if(hasActiveImagenJob) {
+    return (
+      <div>
+Busy....
+      </div>
+    )
+  }
 
   // --- Locked view ---
   if (!hasSharedAccess) {

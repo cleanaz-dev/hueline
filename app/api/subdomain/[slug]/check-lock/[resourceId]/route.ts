@@ -13,9 +13,9 @@ interface Params {
 export async function GET(req: Request, { params }: Params) {
   const { resourceId, slug } = await params;
   const { searchParams } = new URL(req.url);
-  const lockContext = searchParams.get("context") ?? "IMAGEN";
+  const context = searchParams.get("context") ?? "IMAGEN";
 
-  const lock = await redis.get(`lock:${lockContext}:${resourceId}`);
+  const lock = await redis.get(`lock:${context}:${resourceId}`);
 
   return NextResponse.json({ isGenerating: !!lock });
 }
