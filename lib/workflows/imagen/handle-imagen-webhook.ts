@@ -7,7 +7,7 @@ import { designImagenBodySchema, designImagenLambdaIngestSchema } from "@/lib/zo
 import { Redis } from "@upstash/redis";
 import { releaseResourceLock } from "@/lib/redis";
 
-const redis = Redis.fromEnv(); // 2. Initialize Redis Client
+
 
 export async function handleImagenWebhook(body: any, job: SystemTask, customer: Customer) {
   const parsedBody = designImagenLambdaIngestSchema.safeParse(body);

@@ -56,7 +56,15 @@ export async function POST(req: Request, { params }: Params) {
     }),
     prisma.designProject.findUnique({
       where: { id: designId },
-      select: { originalImageS3Key: true },
+      select: { 
+        originalImageS3Key: true,
+        booking: {
+          select: {
+            huelineId: true,
+          }
+        }
+      },
+
     }),
   ]);
 
@@ -119,7 +127,7 @@ export async function POST(req: Request, { params }: Params) {
   // --- Normalize delivery method to uppercase for DB/Lambda ---
   const normalizedDelivery = deliveryMethod.toUpperCase() as "SMS" | "EMAIL";
 
-  const taskAction: LambdaImagenPayload["action"] = huelineId
+  const taskAction: LambdaImagenPayload["action"] = designProject.booking?.huelineId
     ? "EXISTING_DESIGN_STUDIO_IMAGEN"
     : "NEW_DESIGN_STUDIO_IMAGEN";
 
