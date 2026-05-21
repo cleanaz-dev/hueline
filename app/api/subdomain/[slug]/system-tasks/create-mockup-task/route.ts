@@ -74,7 +74,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     return NextResponse.json(
-      { sytemTaskId: newSystemTask.id, customerId: newCusomter.id },
+      { sytem_task_id: newSystemTask.id, customer_Id: newCusomter.id },
       { status: 200 },
     );
   } catch (error) {

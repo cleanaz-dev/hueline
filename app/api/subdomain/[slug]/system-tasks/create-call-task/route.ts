@@ -88,7 +88,7 @@ export async function POST(req: Request, { params }: Params) {
       system_task_id: newSystemTask.id,
     });
 
-    return NextResponse.json({ systemTask_id: newSystemTask.id }, { status: 200 });
+    return NextResponse.json({ system_task_id: newSystemTask.id }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
