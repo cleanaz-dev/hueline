@@ -10,23 +10,32 @@ import { acquireResourceLock, releaseResourceLock } from "@/lib/redis";
 import { ChatImagenMetadata } from "@/lib/zod/chat-imagen-metadata-schema";
 
 interface Params {
-  params: Promise<{ id: string }>;
+  params: Promise<{ customerId: string; slug: string }>;
 }
 
 const lambdaUrl = process.env.LAMBDA_IMAGEN_URL!;
 
 export async function POST(req: Request, { params }: Params) {
-  const { id } = await params;
+  const { customerId, slug } = await params;
 
   // ---- Auth ----
   const session = await getServerSession(authOptions);
-  if (!session?.user || session.role !== "SUPER_ADMIN") {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const user = session?.user;
+
+  if (!session || !user)
+    return NextResponse.json({ message: "Not Authorized" }, { status: 401 });
+
+  if (!customerId || !slug)
+    return NextResponse.json({ message: "Invalid Request" }, { status: 400 });
 
   // ---- Operator ----
   const operator = await prisma.subdomainUser.findFirst({
-    where: { email: session.user.email! },
+    where: { 
+      email: session.user.email!,
+      subdomain: {
+        slug
+      }
+    },
     select: { id: true, subdomainId: true },
   });
   if (!operator) {
@@ -51,7 +60,7 @@ export async function POST(req: Request, { params }: Params) {
 
   // ---- Customer ----
   const customer = await prisma.customer.findUnique({
-    where: { id },
+    where: { id: customerId },
     select: { id: true },
   });
 
