@@ -2,20 +2,31 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import useSWR from "swr";
-import { BookingData, SubdomainAccountData } from "@/types/subdomain-type";
+import { SubdomainAccountData } from "@/types/subdomain-type";
 import { DashboardStats } from "@/types/dashboard-types";
 import IntelligenceDialog from "@/components/subdomains/dashboard/intelligence-dialog";
+// 1. Import Prisma namespace
+import { Prisma } from "@/app/generated/prisma";
+
+// 2. 🔥 Create the REAL Prisma Type that includes all the nested data you need!
+export type ExtendedBookingData = Prisma.SubBookingDataGetPayload<{
+  include: {
+    mockups: true;
+    rooms: true;
+    calls: {
+      include: { intelligence: true }
+    };
+  }
+}>;
 
 interface DashboardContextType {
-  bookings: BookingData[];
+  bookings: ExtendedBookingData[]; // <-- Updated
   subdomain: SubdomainAccountData;
   stats: DashboardStats | undefined;
   isLoading: boolean;
   isStatsLoading: boolean;
   refreshBookings: () => void;
-  
-  // NEW: Global Dialog Actions
-  openIntelligence: (booking: BookingData) => void;
+  openIntelligence: (booking: ExtendedBookingData) => void; // <-- Updated
   closeIntelligence: () => void;
 }
 
@@ -23,7 +34,7 @@ const DashboardContext = createContext<DashboardContextType | undefined>(undefin
 
 interface DashboardProviderProps {
   children: ReactNode;
-  initialBookings: BookingData[];
+  initialBookings: ExtendedBookingData[]; // <-- Updated
   subdomain: SubdomainAccountData;
 }
 
@@ -34,75 +45,74 @@ export function DashboardProvider({
   initialBookings,
   subdomain,
 }: DashboardProviderProps) {
-  const [bookings, setBookings] = useState<BookingData[]>(initialBookings);
+  const [bookings, setBookings] = useState<ExtendedBookingData[]>(initialBookings);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- GLOBAL DIALOG STATE ---
-  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<ExtendedBookingData | null>(null);
   const [isIntelOpen, setIsIntelOpen] = useState(false);
 
-  // Fetch stats with SWR
   const { data: stats, isLoading: isStatsLoading } = useSWR<DashboardStats>(
     `/api/subdomain/${subdomain.slug}/stats`,
     fetcher
   );
 
-  // Helper to fetch images (Keeping this logic here is fine)
-  const fetchUrlsForBooking = async (booking: BookingData) => {
-  try {
-    const res = await fetch(
-      `/api/subdomain/${subdomain.slug}/booking/${booking.huelineId}/get-presigned-urls`
-    );
-    
-    // Safety check: if API errors, return booking as-is without crashing
-    if (!res.ok) {
-      console.warn(`API Error for ${booking.huelineId}: ${res.status}`);
-      return booking;
-    }
-    
-    const data = await res.json();
-    
-    // Safety check: ensure we actually got the arrays we expect
-    const originalImages = Array.isArray(data.originalImages) ? data.originalImages : [];
-    const newMockups = Array.isArray(data.mockups) ? data.mockups : [];
-    
-    return {
-      ...booking,
-      // If the API returns presigned URLs for original images, update them. 
-      // Note: Depending on your Type definition, this might need to remain S3 keys 
-      // or you might need a new field like 'originalImageUrls'. 
-      // For now, assuming your UI handles URLs in this field:
-      originalImages: originalImages.length > 0 ? originalImages : booking.originalImages,
-      
-      // Merge mockups safer
-      mockups: newMockups.map((mockup: any) => {
-        // Find existing mockup data if needed, or just use the fresh API data
-        const existing = booking.mockups?.find(m => m.id === mockup.id) || {};
-        return {
-          ...existing,
-          ...mockup, 
-        };
-      }),
-    };
-  } catch (e) {
-    console.error(`Failed to enrich booking ${booking.huelineId}`, e);
-    return booking;
-  }
-};
   useEffect(() => {
     let isMounted = true;
 
     const enrichAllBookings = async () => {
-      // 1. Fetch Images
-      const promises = initialBookings.map((b) => fetchUrlsForBooking(b));
-      const enriched = await Promise.all(promises);
+      const keysToSign = new Set<string>();
+      
+      initialBookings.forEach((b) => {
+        if (b.compressOriginalImages) keysToSign.add(b.compressOriginalImages);
+        
+        // ✨ Look! No more (b as any)! TypeScript knows mockups exists!
+        if (Array.isArray(b.mockups)) {
+          b.mockups.forEach((m) => {
+            if (m.compressedS3Key) keysToSign.add(m.compressedS3Key);
+          });
+        }
+      });
+
+      const keysArray = Array.from(keysToSign);
+      let urlMap: Record<string, string> = {};
+
+      if (keysArray.length > 0) {
+        try {
+          const res = await fetch('/api/s3/bulk-presign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keys: keysArray })
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            urlMap = data.urls || {}; 
+          }
+        } catch (e) {
+          console.error("Failed to fetch bulk presigned urls", e);
+        }
+      }
 
       if (isMounted) {
-        // 2. Sort by "Last Active" (using our new DB field)
+        const enriched = initialBookings.map((b) => ({
+          ...b,
+          originalImages: b.compressOriginalImages && urlMap[b.compressOriginalImages]
+            ? urlMap[b.compressOriginalImages]
+            : b.originalImages,
+            
+          // ✨ Clean mapping, completely type-safe
+          mockups: b.mockups.map((m) => ({
+            ...m,
+            presignedUrl: m.compressedS3Key && urlMap[m.compressedS3Key]
+              ? urlMap[m.compressedS3Key]
+              : m.presignedUrl
+          })),
+        }));
+
         const sorted = enriched.sort((a, b) => {
           const dateA = new Date(a.lastCallAt || a.createdAt).getTime();
           const dateB = new Date(b.lastCallAt || b.createdAt).getTime();
-          return dateB - dateA; // Newest first
+          return dateB - dateA; 
         });
 
         setBookings(sorted);
@@ -115,17 +125,15 @@ export function DashboardProvider({
     return () => {
       isMounted = false;
     };
-  }, [subdomain.slug]);
+  }, [initialBookings]);
 
-  // Actions
-  const openIntelligence = (booking: BookingData) => {
+  const openIntelligence = (booking: ExtendedBookingData) => {
     setSelectedBooking(booking);
     setIsIntelOpen(true);
   };
 
   const closeIntelligence = () => {
     setIsIntelOpen(false);
-    // Small timeout to clear data after animation creates a smoother close
     setTimeout(() => setSelectedBooking(null), 300);
   };
 
@@ -143,8 +151,6 @@ export function DashboardProvider({
       }}
     >
       {children}
-
-      {/* RENDER DIALOG GLOBALLY HERE */}
       {selectedBooking && (
         <IntelligenceDialog 
           isOpen={isIntelOpen} 
@@ -152,7 +158,6 @@ export function DashboardProvider({
           booking={selectedBooking} 
         />
       )}
-
     </DashboardContext.Provider>
   );
 }

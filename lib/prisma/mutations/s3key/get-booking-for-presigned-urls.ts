@@ -6,9 +6,11 @@ export async function getBookingForPresignedUrls(huelineId: string, slug: string
     where: { huelineId },
     select: {
       originalImages: true,
+      compressOriginalImages:true,
       mockups: {
         select: {
           s3Key: true,
+          compressedS3Key: true,
           id: true,
         },
       },

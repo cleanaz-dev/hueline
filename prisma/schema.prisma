@@ -35,7 +35,8 @@ model DesignProject {
   name String? @default("Untitled Design")
 
   // The Base Canvas
-  originalImageS3Key String? // The URL returned from your S3 upload
+  originalImageS3Key   String?
+  compressedImageS3Key String?
 
   // Active Settings (Saves their progress)
   activeBrand     String?
@@ -310,16 +311,17 @@ model SubBookingData {
   status      BookingStatus? @default(PENDING)
 
   // ... Client Details ...
-  name           String
-  phone          String
-  roomType       String
-  prompt         String
-  originalImages String
-  summary        String
-  dimensions     String?
-  dateTime       DateTime?
-  pin            String
-  expiresAt      Int?
+  name                   String
+  phone                  String
+  roomType               String
+  prompt                 String
+  originalImages         String
+  compressOriginalImages String?
+  summary                String
+  dimensions             String?
+  dateTime               DateTime?
+  pin                    String
+  expiresAt              Int?
 
   // ... The "Perfect Sauce" Logic ...
 
@@ -654,9 +656,10 @@ model Mockup {
   bookingDataId String         @db.ObjectId
   bookingData   SubBookingData @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
 
-  s3Key        String
-  roomType     String
-  presignedUrl String?
+  s3Key           String
+  compressedS3Key String?
+  roomType        String
+  presignedUrl    String?
 
   // --- NEW FIELDS ---
   colorBrand String? // Made optional temporarily for migration

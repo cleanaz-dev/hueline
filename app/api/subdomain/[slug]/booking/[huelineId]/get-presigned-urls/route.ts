@@ -12,20 +12,26 @@ export async function GET(
     const { slug, huelineId } = await params;
 
     const booking = await getBookingForPresignedUrls(huelineId, slug);
-    if (!booking) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    
+    // This check guarantees compressOriginalImages is a truthy string
+    if (!booking || !booking.compressOriginalImages) {
+      return NextResponse.json({ error: "Booking not found or missing image" }, { status: 404 });
     }
 
     // Generate presigned URL for original image
-    const originalImages = await getPresignedUrl(booking.originalImages);
+    const originalImages = await getPresignedUrl(booking.compressOriginalImages);
+    
     // Generate presigned URLs for all mockups
     const mockups = await Promise.all(
       booking.mockups.map(async (mockup) => ({
         ...mockup,
-        presignedUrl: await getPresignedUrl(mockup.s3Key),
+        // ✅ FIX: Check if the key exists before fetching the URL
+        presignedUrl: mockup.compressedS3Key 
+          ? await getPresignedUrl(mockup.compressedS3Key) 
+          : null,
       }))
     );
-    // console.log("mockups:", mockups)
+
     return NextResponse.json({
       originalImages,
       mockups,

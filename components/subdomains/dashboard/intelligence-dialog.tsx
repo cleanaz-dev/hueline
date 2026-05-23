@@ -13,7 +13,7 @@ import {
   ScrollText, 
   Loader2 
 } from "lucide-react"; 
-import { BookingData } from "@/types/subdomain-type";
+
 import { formatProjectScope, getEstimatedValueRange } from "@/lib/utils/dashboard-utils";
 import { useRoomScopes } from "@/hooks/use-room-scopes";
 import { useOwner } from "@/context/owner-context";
@@ -22,10 +22,13 @@ import { IntelRoom } from "./intel-room";
 import { IntelCall } from "./intel-call";
 import { IntelLogs } from "./intel-logs";
 
+// 1. 🔥 Import the new type we just made! (Adjust path as needed)
+import { ExtendedBookingData } from "@/context/dashboard-context";
+
 interface IntelligenceDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  booking: BookingData; 
+  booking: ExtendedBookingData; // 2. 🔥 Replace SubBookingData here
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -38,13 +41,11 @@ export default function IntelligenceDialog({
   const { subdomain } = useOwner();
   const slug = subdomain?.slug || "";
 
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       const originalOverflow = document.body.style.overflow;
       const originalPaddingRight = document.body.style.paddingRight;
       
-      // Get scrollbar width to prevent layout shift
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       
       document.body.style.overflow = 'hidden';
@@ -59,24 +60,22 @@ export default function IntelligenceDialog({
     }
   }, [isOpen]);
 
-  // 1. Fetch Logs (EXCLUDE NOTES)
   const { data: allLogs, isLoading: loadingLogs } = useSWR(
     isOpen ? `/api/subdomain/${slug}/booking/${booking.huelineId}/logs` : null,
     fetcher,
     { revalidateOnFocus: false }
   );
 
-  // 🔥 FILTER OUT NOTES FROM LOGS
   const logs = useMemo(() => 
     allLogs?.filter((log: any) => log.type !== "NOTE") || [],
     [allLogs]
   );
 
-  // 2. Fetch Rooms
+  // ✨ TypeScript now knows booking.rooms exists!
   const roomId = booking.rooms?.[0]?.roomKey || "";
   const { presignedUrls } = useRoomScopes(slug, roomId);
 
-  // 3. Sort Calls
+  // ✨ TypeScript now knows booking.calls exists!
   const sortedCalls = useMemo(
     () => [...(booking.calls || [])].sort(
         (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -84,26 +83,25 @@ export default function IntelligenceDialog({
     [booking.calls]
   );
 
-  // --- STATS CALCULATION ---
   const totalValue = sortedCalls.reduce((sum: number, c: any) => sum + (c.intelligence?.estimatedAdditionalValue || 0), 0);
   
-  // Specific Counts
   const callCount = sortedCalls.length;
   const roomCount = booking.rooms?.length || 0;
   const logCount = logs?.length || 0;
 
-  const scope = booking.projectScope || "UNKNOWN";
-  const type = (booking as any).projectType || "RESIDENTIAL";
+  // ✨ TypeScript now knows booking.projectType exists directly on the model! No more "as any"
+  const scope = booking.projectScope[0] || "UNKNOWN"; // Array check
+  const type = booking.projectType || "RESIDENTIAL";
   const TypeIcon = type === "COMMERCIAL" ? Building2 : Home;
   
   const hasCalls = callCount > 0;
   const hasRooms = roomCount > 0;
   const hasLogs = logCount > 0;
 
-  // Early return AFTER all hooks
   if (!isOpen) return null;
 
   return (
+    // ... [REST OF YOUR JSX REMAINS EXACTLY THE SAME] ...
     // WRAPPER: 
     // - Mobile: items-end (slide up feel), no padding
     // - Desktop: items-center, p-4

@@ -30,7 +30,7 @@ import {
   XCircle, // Added for LOST
   Clock, // Added for PENDING
 } from "lucide-react";
-import { BookingData } from "@/types/subdomain-type";
+
 import { useDashboard } from "@/context/dashboard-context";
 import Link from "next/link";
 import Image from "next/image";
@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/dialog";
 import { SecureVideoPlayer } from "@/components/rooms/video/secure-video-player";
 import { ClientTableMobile } from "./client-table-mobile";
-import { BookingStatus } from "@/app/generated/prisma";
+import { BookingStatus, SubBookingData } from "@/app/generated/prisma";
 
 // EXPORT Helper for use in Mobile Component
 export const formatImageUrl = (url: string | null | undefined): string => {
@@ -60,10 +60,13 @@ export const formatImageUrl = (url: string | null | undefined): string => {
 };
 
 // EXPORT Type for use in Mobile Component
-export type TableBooking = BookingData & {
+export type TableBooking = SubBookingData & {
   thumbnailUrl: string;
   totalHiddenValue: number;
   status?: BookingStatus | null;
+  paintColors?: { brand: string; code: string; name: string; hex: string }[];
+  mockups?: { presignedUrl?: string | null; [key: string]: unknown }[];
+  calls?: { intelligence?: { estimatedAdditionalValue?: number } | null; [key: string]: unknown }[];
   rooms?: {
     roomKey: string;
     recordingUrl?: string | null;
@@ -433,7 +436,7 @@ export default function ClientTable() {
             onMouseDown={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => openIntelligence(info.row.original)}
+              onClick={() => openIntelligence(info.row.original as unknown as Parameters<typeof openIntelligence>[0])}
               className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-purple-100 bg-purple-50 text-purple-600 hover:bg-purple-100 transition-all group cursor-pointer"
             >
               <Database className="w-4 h-4 group-hover:scale-110 transition-transform" />
@@ -602,11 +605,11 @@ export default function ClientTable() {
       </div>
 
       {/* --- MOBILE VIEW --- */}
-      <ClientTableMobile
-        table={table}
-        formatImageUrl={formatImageUrl}
-        openIntelligence={openIntelligence}
-      />
+<ClientTableMobile
+  table={table}
+  formatImageUrl={formatImageUrl}
+  openIntelligence={openIntelligence as unknown as (booking: TableBooking) => void}
+/>
 
       {/* --- PAGINATION --- */}
       <div className="flex items-center justify-between px-2">
