@@ -1,13 +1,14 @@
 // components/subdomains/dashboard/client-dashboard-page.tsx
 "use client";
 
-import { BookingData, SubdomainAccountData } from "@/types/subdomain-type";
-import { DashboardProvider } from "@/context/dashboard-context";
+import {SubdomainAccountData } from "@/types/subdomain-type";
+import { DashboardProvider, ExtendedBookingData } from "@/context/dashboard-context";
 import DashboardContent from "@/components/subdomains/dashboard/dashboard-content";
+import { SubBookingData } from "@/app/generated/prisma";
 
 
 interface Props {
-  bookingData: BookingData[]
+  bookingData: ExtendedBookingData[]
   accountData: SubdomainAccountData
 }
 

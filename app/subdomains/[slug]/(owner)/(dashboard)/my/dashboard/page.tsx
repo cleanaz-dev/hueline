@@ -2,8 +2,7 @@ import SubdomainDashboardPage from "@/components/subdomains/dashboard/client-das
 import { checkSubdomainExists } from "@/lib/auth/guard/check-if-subdomain-exists";
 import { getSubDomainData } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
-import type { BookingData } from "@/types/subdomain-type";
-
+import { ExtendedBookingData } from "@/context/dashboard-context"; // 👈 import this
 
 interface PageProps {
   params: Promise<{
@@ -19,16 +18,12 @@ export default async function Page({ params }: PageProps) {
     redirect(`${process.env.NEXTAUTH_URL}/login`);
   }
 
-
   const subDomainData = await getSubDomainData(slug);
   if (!subDomainData) notFound();
 
-  // console.log("Domain Data:", JSON.stringify(subDomainData, null, 2));
-  
-
   return (
     <SubdomainDashboardPage
-      bookingData={subDomainData.bookings as BookingData[]}
+      bookingData={subDomainData.bookings as unknown as ExtendedBookingData[]} // 👈 cast to the right type
       accountData={subDomainData}
     />
   );
