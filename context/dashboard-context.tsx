@@ -46,7 +46,7 @@ export function DashboardProvider({
   subdomain,
 }: DashboardProviderProps) {
   const [bookings, setBookings] = useState<ExtendedBookingData[]>(initialBookings);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [selectedBooking, setSelectedBooking] = useState<ExtendedBookingData | null>(null);
   const [isIntelOpen, setIsIntelOpen] = useState(false);
@@ -56,76 +56,7 @@ export function DashboardProvider({
     fetcher
   );
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const enrichAllBookings = async () => {
-      const keysToSign = new Set<string>();
-      
-      initialBookings.forEach((b) => {
-        if (b.compressOriginalImages) keysToSign.add(b.compressOriginalImages);
-        
-        // ✨ Look! No more (b as any)! TypeScript knows mockups exists!
-        if (Array.isArray(b.mockups)) {
-          b.mockups.forEach((m) => {
-            if (m.compressedS3Key) keysToSign.add(m.compressedS3Key);
-          });
-        }
-      });
-
-      const keysArray = Array.from(keysToSign);
-      let urlMap: Record<string, string> = {};
-
-      if (keysArray.length > 0) {
-        try {
-          const res = await fetch('/api/s3/bulk-presign', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keys: keysArray })
-          });
-          
-          if (res.ok) {
-            const data = await res.json();
-            urlMap = data.urls || {}; 
-          }
-        } catch (e) {
-          console.error("Failed to fetch bulk presigned urls", e);
-        }
-      }
-
-      if (isMounted) {
-        const enriched = initialBookings.map((b) => ({
-          ...b,
-          originalImages: b.compressOriginalImages && urlMap[b.compressOriginalImages]
-            ? urlMap[b.compressOriginalImages]
-            : b.originalImages,
-            
-          // ✨ Clean mapping, completely type-safe
-          mockups: b.mockups.map((m) => ({
-            ...m,
-            presignedUrl: m.compressedS3Key && urlMap[m.compressedS3Key]
-              ? urlMap[m.compressedS3Key]
-              : m.presignedUrl
-          })),
-        }));
-
-        const sorted = enriched.sort((a, b) => {
-          const dateA = new Date(a.lastCallAt || a.createdAt).getTime();
-          const dateB = new Date(b.lastCallAt || b.createdAt).getTime();
-          return dateB - dateA; 
-        });
-
-        setBookings(sorted);
-        setIsLoading(false);
-      }
-    };
-
-    enrichAllBookings();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [initialBookings]);
+ 
 
   const openIntelligence = (booking: ExtendedBookingData) => {
     setSelectedBooking(booking);

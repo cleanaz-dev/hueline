@@ -59,11 +59,11 @@ const navMain = [
   { title: "Dashboard", url: "/my/dashboard", icon: LayoutDashboard },
   { title: "Customers", url: "/my/customers", icon: PersonStanding },
   { title: "Team", url: "/my/team", icon: Users2 },
-  { title: "Rooms", url: "/my/rooms", icon: DoorOpen },
+  // { title: "Rooms", url: "/my/rooms", icon: DoorOpen },
   { title: "Calls", url: "/my/calls", icon: Phone },
   { title: "Intelligence", url: "/my/intelligence", icon: Cpu },
   { title: "Design Studio", url: "/my/design-studio", icon: Palette },
-  { title: "System Tasks", url: "/my/system-tasks", icon: HatGlasses },
+  // { title: "System Tasks", url: "/my/system-tasks", icon: HatGlasses },
 ];
 
 function AppSidebar() {
