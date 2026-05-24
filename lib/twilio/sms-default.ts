@@ -3,14 +3,12 @@ import { moonshot, twilioClient } from "./config";
 
 interface SendSMSDefault {
   to: string;
-  recipientName: string;
   body: string;
   customerId: string; // Added missing field
 }
 
 export async function sendDefaultSMS({
   to,
-  recipientName,
   body,
   customerId, // Added missing parameter
 }: SendSMSDefault) {

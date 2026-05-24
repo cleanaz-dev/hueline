@@ -175,7 +175,7 @@ export function OwnerProvider({
   ): Promise<boolean> => {
     setIsSendingSMS(true);
     try {
-      const res = await fetch(`/api/subdomain/${subdomain.slug}/sms`, {
+      const res = await fetch(`/api/subdomain/${subdomain.slug}/customers/${customerId}/sms`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId, body }),

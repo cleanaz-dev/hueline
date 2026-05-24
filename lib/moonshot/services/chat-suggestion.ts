@@ -37,7 +37,7 @@ You MUST respond with this exact JSON shape and nothing else:
   "thinking": "brief internal reasoning",
   "decision": "exact action to take",
   "contactRequired": true,
-  "suggestedSms": "Hey [Name], ...",
+  "suggestedSms": "Hey <use client name>, ...",
   "suggestedEmail": {
     "subject": "...",
     "body": "..."
