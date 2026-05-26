@@ -18,6 +18,8 @@ export async function POST(req: Request) {
       accountId,
     } = body;
 
+    console.log("Zoho Mail Webhook:", body);
+
     const domain = extractDomainFromEmail(toAddress);
 
     const isDomain = await prisma.subdomain.findFirst({
@@ -76,7 +78,6 @@ export async function POST(req: Request) {
       }
     }
 
-    console.log("Zoho Mail Webhook:", body);
     return NextResponse.json({ message: "Success" }, { status: 200 });
   } catch (error) {
     console.warn("Webhook Error:", error);
