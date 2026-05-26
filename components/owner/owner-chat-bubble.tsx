@@ -15,17 +15,23 @@ import {
 import { cn } from "@/lib/utils";
 import { OwnerChatAttachments } from "./owner-chat-attachements";
 import { SystemActivityEvent } from "../admin/prospects/system-activity-event";
- 
+
+// Omnichannel formatting
+import Markdown from "react-markdown";
+import DOMPurify from "dompurify";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 
 type Role = "CLIENT" | "AI" | "OPERATOR" | "SYSTEM";
 type Type = "SMS" | "EMAIL" | "PHONE" | "DEMO" | "MEETING" | "ACTIVITY";
 
 interface ChatBubbleProps {
   msg: {
-    id: string; 
+    id: string;
     body: string;
-    description?: string; 
-    activityType?: string; 
+    subject?: string;
+    description?: string;
+    activityType?: string;
     role: Role;
     type: Type;
     createdAt: Date | string;
@@ -39,12 +45,12 @@ interface ChatBubbleProps {
       size: number;
     }[];
   };
- 
-  huelineId?: string
+
+  huelineId?: string;
   prospectName?: string;
   prospectId?: string;
   isPending?: boolean;
-  isGroupStart?: boolean; 
+  isGroupStart?: boolean;
   isGroupEnd?: boolean;
 }
 
@@ -81,16 +87,18 @@ const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
   ACTIVITY: { icon: Activity, label: "Activity" },
 };
 
-export function OwnerChatBubble({ 
+// Helper function to detect if string contains HTML tags
+const containsHTML = (str: string) => /<[a-z][\s\S]*>/i.test(str);
+
+export function OwnerChatBubble({
   msg,
   huelineId,
-  prospectName, 
-  isPending, 
+  prospectName,
+  isPending,
   prospectId,
-  isGroupStart = true, 
-  isGroupEnd = true 
+  isGroupStart = true,
+  isGroupEnd = true,
 }: ChatBubbleProps) {
-  
   const time = new Date(msg.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
@@ -105,24 +113,25 @@ export function OwnerChatBubble({
   const typeInfo = TYPE_CONFIG[msg.type];
   const TypeIcon = typeInfo.icon;
 
-  const displayName = isRight ? (prospectName ?? "Client") : meta.label;
+  const displayName = isRight ? prospectName ?? "Client" : meta.label;
+  const emailSubject = msg.subject || msg.metadata?.subject;
 
   return (
     <div
       className={cn(
         "flex w-full transition-all duration-300",
         isRight ? "justify-end" : "justify-start",
-        isGroupEnd ? "mb-6" : "mb-2", // Tight gap for grouped, large gap for new senders
-        isPending && "opacity-60",
+        isGroupEnd ? "mb-6" : "mb-2",
+        isPending && "opacity-60"
       )}
     >
       <div
         className={cn(
-          "flex max-w-[85%] md:max-w-[95%]", // Kept your original wide widths
-          isRight ? "flex-row-reverse" : "flex-row",
+          "flex max-w-[85%] md:max-w-[95%]",
+          isRight ? "flex-row-reverse" : "flex-row"
         )}
       >
-        {/* Avatar Column - Fixed width to keep bubbles aligned even if avatar is hidden */}
+        {/* Avatar Column */}
         <div className="flex flex-col items-center shrink-0 w-8 mx-3 mt-0.5">
           {isGroupStart && (
             <Avatar className="h-8 w-8 shadow-sm border border-zinc-200 dark:border-zinc-700">
@@ -131,7 +140,7 @@ export function OwnerChatBubble({
                   "bg-background",
                   msg.role === "AI" && "text-indigo-800 dark:text-indigo-400",
                   msg.role === "OPERATOR" && "text-blue-600 dark:text-blue-400",
-                  msg.role === "CLIENT" && "text-zinc-600 dark:text-zinc-400",
+                  msg.role === "CLIENT" && "text-zinc-600 dark:text-zinc-400"
                 )}
               >
                 <meta.icon size={16} />
@@ -144,10 +153,10 @@ export function OwnerChatBubble({
         <div
           className={cn(
             "flex flex-col gap-1.5 min-w-0",
-            isRight ? "items-end" : "items-start",
+            isRight ? "items-end" : "items-start"
           )}
         >
-          {/* Header - Only show Name and Time on the first message of a group */}
+          {/* Header */}
           {isGroupStart && (
             <div className="flex items-baseline gap-2 px-1">
               <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
@@ -165,18 +174,17 @@ export function OwnerChatBubble({
             </div>
           )}
 
-          {/* Bubble - Kept your exact styling, borders, and inner labels */}
+          {/* Bubble */}
           <div
             className={cn(
-              "relative flex flex-col px-4 py-3 rounded-2xl text-[14px] leading-relaxed shadow-sm break-words w-full",
+              "relative flex flex-col px-4 py-3 rounded-2xl text-[14.5px] shadow-sm break-words w-full",
               meta.bubble,
-              // Tweak corners slightly to show grouping, but keep your heavy borders
-              isRight 
-                ? cn(isGroupStart ? "rounded-tr-sm" : "rounded-tr-xl") 
+              isRight
+                ? cn(isGroupStart ? "rounded-tr-sm" : "rounded-tr-xl")
                 : cn(isGroupStart ? "rounded-tl-sm" : "rounded-tl-xl")
             )}
           >
-            {/* The inner label you wanted to keep */}
+            {/* Inner Label */}
             <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-current/10 opacity-70">
               <TypeIcon size={14} strokeWidth={2.5} />
               <span className="text-[10px] uppercase tracking-widest font-bold">
@@ -185,9 +193,49 @@ export function OwnerChatBubble({
             </div>
 
             {/* Attachments */}
-            <OwnerChatAttachments attachments={msg.mediaAttachments || []} prospectId={prospectId} />
+            <OwnerChatAttachments
+              attachments={msg.mediaAttachments || []}
+              prospectId={prospectId}
+            />
+
+            {/* NEW CLEANER: Email Subject Line */}
+            {msg.type === "EMAIL" && (
+              <div className="mb-3 pb-3 border-b border-current/10 flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-wider font-bold opacity-50">
+                  Subject
+                </span>
+                <span
+                  className={cn(
+                    "font-medium leading-snug",
+                    !emailSubject && "italic opacity-60"
+                  )}
+                >
+                  {emailSubject || "No subject"}
+                </span>
+              </div>
+            )}
+
             {/* Message Body */}
-            <div className="whitespace-pre-wrap">{msg.body}</div>
+            {msg.type === "EMAIL" ? (
+              // Improved spacing, line-height, and automatic link styling
+              <div className="flex flex-col text-[14px] leading-relaxed opacity-90 [&_p]:mb-3 last:[&_p]:mb-0 [&_a]:underline [&_a]:font-medium hover:[&_a]:opacity-80 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5">
+                {containsHTML(msg.body) ? (
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(msg.body),
+                    }}
+                  />
+                ) : (
+                  <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                    {msg.body}
+                  </Markdown>
+                )}
+              </div>
+            ) : (
+              <div className="whitespace-pre-wrap leading-relaxed opacity-90">
+                {msg.body}
+              </div>
+            )}
           </div>
         </div>
       </div>

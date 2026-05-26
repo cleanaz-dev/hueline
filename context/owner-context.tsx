@@ -194,7 +194,7 @@ export function OwnerProvider({
   ): Promise<boolean> => {
     setIsSendingEmail(true);
     try {
-      const res = await fetch(`/api/subdomain/${subdomain.slug}/email`, {
+      const res = await fetch(`/api/subdomain/${subdomain.slug}/customers/${customerId}/email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId, body, subject }),

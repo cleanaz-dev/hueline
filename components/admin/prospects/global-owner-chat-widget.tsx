@@ -13,9 +13,6 @@ import {
   MessageSquare,
   ChevronRight,
 } from "lucide-react";
-import { ChatBubble } from "./chat-bubble";
-
-import { DrawerToast } from "./drawer-toast";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useOwner } from "@/context/owner-context";
 import { OwnerAdvancedChatInput } from "@/components/owner/owner-advanced-chat-input";
@@ -117,6 +114,7 @@ export function GlobalOwnerChatWidget() {
   const handleSendMessage = async (
     message: string,
     channel: "SMS" | "EMAIL",
+    subject?: string,
   ) => {
     setTimeout(
       () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
@@ -125,7 +123,7 @@ export function GlobalOwnerChatWidget() {
     const success =
       channel === "SMS"
         ? await sendSMS(customer!.id, message)
-        : await sendEmail(customer!.id, message, "Quote Update");
+        : await sendEmail(customer!.id, message, subject);
     if (success) fetchMessages();
   };
 
@@ -284,7 +282,7 @@ export function GlobalOwnerChatWidget() {
             layoutId="chat-widget-morph"
             key="open-window"
             transition={morphTransition}
-            className="flex flex-col w-[380px] sm:w-[420px] h-[calc(100vh-48px)] bg-background shadow-2xl rounded-3xl overflow-hidden border border-border pointer-events-auto"
+            className="flex flex-col w-[328px] sm:w-[525px] h-[calc(100vh-48px)] bg-background/85 shadow-2xl rounded-3xl overflow-hidden border border-border pointer-events-auto"
           >
             <motion.div
               initial={{ opacity: 0 }}
@@ -400,7 +398,7 @@ export function GlobalOwnerChatWidget() {
                 />
               </div>
 
-              <DrawerToast message={smsSuccess ?? emailSuccess} />
+              {/* <DrawerToast message={smsSuccess ?? emailSuccess} /> */}
             </motion.div>
           </motion.div>
         )}

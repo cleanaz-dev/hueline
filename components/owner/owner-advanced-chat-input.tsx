@@ -7,7 +7,7 @@ import { Send, MessageSquare, Mail, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "../admin/prospects/rich-text-editor";
 import { AiActionDock } from "../admin/prospects/ai-action-dock";
-import { useOwner } from "@/context/owner-context"; // <-- 1. Swapped to useOwner
+import { useOwner } from "@/context/owner-context";
 
 interface OwnerAdvancedChatInputProps {
   clientId?: string;
@@ -19,22 +19,17 @@ export function OwnerAdvancedChatInput({
   clientId,
   onSend,
   isLoading,
-}: OwnerAdvancedChatInputProps) { // <-- 2. Renamed component
+}: OwnerAdvancedChatInputProps) {
   const [text, setText] = React.useState("");
   const [subject, setSubject] = React.useState("");
   const [channel, setChannel] = React.useState<"SMS" | "EMAIL">("SMS");
   const [isUndocked, setIsUndocked] = React.useState(false);
-  
-  // 3. Destructure from useOwner instead of useSuperAdmin
-  const {
-    aiSuggestions,
-    fetchAiSuggestion,
-    clearAiSuggestion,
-    isAiLoading
-  } = useOwner();
 
-  // Safely grab the suggestion only if clientId exists
-  const currentSuggestion = clientId && aiSuggestions ? aiSuggestions[clientId] : null;
+  const { aiSuggestions, fetchAiSuggestion, clearAiSuggestion, isAiLoading } =
+    useOwner();
+
+  const currentSuggestion =
+    clientId && aiSuggestions ? aiSuggestions[clientId] : null;
 
   const handleSend = () => {
     const plainText = text.replace(/<[^>]*>?/gm, "").trim();
@@ -60,47 +55,8 @@ export function OwnerAdvancedChatInput({
       setIsUndocked(false);
     }
   };
-  
+
   const isEmpty = !text.replace(/<[^>]*>?/gm, "").trim();
-
-  // ─── Subject field (shared between docked + undocked) ─────────────────────
-  const SubjectField = () => (
-    <div className="flex items-center border-t border-border/50">
-      <span className="text-xs text-muted-foreground px-3 border-r border-border/50 h-9 flex items-center shrink-0">
-        Subject
-      </span>
-      <input
-        type="text"
-        value={subject}
-        onChange={(e) => setSubject(e.target.value)}
-        placeholder="Add a subject…"
-        disabled={isLoading}
-        className="flex-1 h-9 px-3 text-sm bg-transparent focus:outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
-      />
-    </div>
-  );
-
-  // ─── Send button (shared) ──────────────────────────────────────────────────
-  const SendButton = () => (
-    <Button
-      onClick={handleSend}
-      disabled={isEmpty || isLoading}
-      size="sm"
-      className="h-8 gap-2 rounded-lg"
-    >
-      {isLoading ? (
-        <>
-          <Loader2 size={14} className="animate-spin" />
-          <span>Sending...</span>
-        </>
-      ) : (
-        <>
-          <span>Send</span>
-          <Send size={14} />
-        </>
-      )}
-    </Button>
-  );
 
   return (
     <>
@@ -123,7 +79,7 @@ export function OwnerAdvancedChatInput({
               initial={{ opacity: 0, scale: 0.96, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 16 }}
-              transition={{ duration: 0.22, ease:[0.32, 0.72, 0, 1] }}
+              transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
               className="fixed z-[61] hidden md:flex flex-col"
               style={{
                 top: "50%",
@@ -157,10 +113,41 @@ export function OwnerAdvancedChatInput({
                   onDock={() => setIsUndocked(false)}
                 />
 
-                <SubjectField />
+                {/* Undocked subject field */}
+                <div className="flex items-center border-t border-border/50">
+                  <span className="text-xs text-muted-foreground px-3 border-r border-border/50 h-9 flex items-center shrink-0">
+                    Subject
+                  </span>
+                  <input
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="Add a subject…"
+                    disabled={isLoading}
+                    className="flex-1 h-9 px-3 text-sm bg-transparent focus:outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+                  />
+                </div>
 
                 <div className="flex justify-end px-3 py-2.5 border-t bg-muted/20">
-                  <SendButton />
+                  {/* Undocked send button */}
+                  <Button
+                    onClick={handleSend}
+                    disabled={isEmpty || isLoading}
+                    size="sm"
+                    className="h-8 gap-2 rounded-lg"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Send</span>
+                        <Send size={14} />
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             </motion.div>
@@ -170,9 +157,8 @@ export function OwnerAdvancedChatInput({
 
       {/* ─── Docked input (always visible) ───────────────────────────────── */}
       <div className="p-4 bg-background border-t shadow-[0_-4px_15px_-5px_rgba(0,0,0,0.05)]">
-        
-        {/* ─── AI ACTION DOCK LIVES HERE ─────────────────────────────────── */}
-        <AiActionDock 
+        {/* ─── AI ACTION DOCK ────────────────────────────────────────────── */}
+        <AiActionDock
           isLoading={isAiLoading}
           suggestion={currentSuggestion}
           onAnalyze={() => clientId && fetchAiSuggestion && fetchAiSuggestion(clientId)}
@@ -187,7 +173,7 @@ export function OwnerAdvancedChatInput({
             setChannel("EMAIL");
             setSubject(aiSubject);
             setText(aiBody);
-            setIsUndocked(false); 
+            setIsUndocked(false);
           }}
         />
 
@@ -264,7 +250,20 @@ export function OwnerAdvancedChatInput({
                   onUndock={() => setIsUndocked(true)}
                 />
 
-                <SubjectField />
+                {/* Docked subject field */}
+                <div className="flex items-center border-t border-border/50">
+                  <span className="text-xs text-muted-foreground px-3 border-r border-border/50 h-9 flex items-center shrink-0">
+                    Subject
+                  </span>
+                  <input
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="Add a subject…"
+                    disabled={isLoading}
+                    className="flex-1 h-9 px-3 text-sm bg-transparent focus:outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+                  />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -273,7 +272,25 @@ export function OwnerAdvancedChatInput({
             layout
             className="flex justify-end p-2 pt-0 mt-1 bg-background shrink-0"
           >
-            <SendButton />
+            {/* Docked send button */}
+            <Button
+              onClick={handleSend}
+              disabled={isEmpty || isLoading}
+              size="sm"
+              className="h-8 gap-2 rounded-lg"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Sending...</span>
+                </>
+              ) : (
+                <>
+                  <span>Send</span>
+                  <Send size={14} />
+                </>
+              )}
+            </Button>
           </motion.div>
         </motion.div>
       </div>

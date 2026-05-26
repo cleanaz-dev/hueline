@@ -430,6 +430,7 @@ enum CustomerType {
 model ClientCommunication {
   id               String            @id @default(auto()) @map("_id") @db.ObjectId
   body             String
+  subject          String?
   role             CommunicationRole
   type             CommunicationType
   demoClientId     String?           @db.ObjectId
