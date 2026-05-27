@@ -11,7 +11,6 @@ export interface ChatThreadModel {
   id: string;
   customerId: string;
   customer?: {
-    
     id: string;
     name: string;
     phone?: string;
@@ -97,8 +96,8 @@ interface OwnerContextValue {
     subject?: string,
   ) => Promise<boolean>;
 
-  fetchAiSuggestion: (customerId: string) => Promise<void>;
-  clearAiSuggestion: (customerId: string) => void;
+  fetchAiSuggestion: (customerId: string, threadId: string) => Promise<void>;
+  clearAiSuggestion: (customerId: string, threadId: string) => void;
   generateImage: (
     prospectId: string,
     mediaUrl: string,
@@ -229,7 +228,7 @@ export function OwnerProvider({
 
   const sendEmail = async (
     customerId: string,
-    threadId: string, 
+    threadId: string,
     body: string,
     subject?: string,
   ): Promise<boolean> => {
@@ -250,11 +249,14 @@ export function OwnerProvider({
     }
   };
 
-  const fetchAiSuggestion = async (customerId: string): Promise<void> => {
+  const fetchAiSuggestion = async (
+    customerId: string,
+    threadId: string,
+  ): Promise<void> => {
     setIsAiLoading(true);
     try {
       const res = await fetch(
-        `/api/subdomain/${subdomain.slug}/customers/${customerId}/ai-chat-suggestions`,
+        `/api/subdomain/${subdomain.slug}/customers/${customerId}/${threadId}/ai-chat-suggestions`,
       );
       const data: AiSuggestionData = await res.json();
       setAiSuggestions((prev) => ({ ...prev, [customerId]: data }));

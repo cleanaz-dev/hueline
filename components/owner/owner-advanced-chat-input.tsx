@@ -25,7 +25,7 @@ export function OwnerAdvancedChatInput({
   const [channel, setChannel] = React.useState<"SMS" | "EMAIL">("SMS");
   const [isUndocked, setIsUndocked] = React.useState(false);
 
-  const { aiSuggestions, fetchAiSuggestion, clearAiSuggestion, isAiLoading } =
+  const { aiSuggestions, fetchAiSuggestion, clearAiSuggestion, isAiLoading, activeThread} =
     useOwner();
 
   const currentSuggestion =
@@ -161,8 +161,8 @@ export function OwnerAdvancedChatInput({
         <AiActionDock
           isLoading={isAiLoading}
           suggestion={currentSuggestion}
-          onAnalyze={() => clientId && fetchAiSuggestion && fetchAiSuggestion(clientId)}
-          onClear={() => clientId && clearAiSuggestion && clearAiSuggestion(clientId)}
+          onAnalyze={() => clientId && fetchAiSuggestion && fetchAiSuggestion(clientId, activeThread?.threadId!)}
+          onClear={() => clientId && clearAiSuggestion && clearAiSuggestion(clientId, activeThread?.threadId!)}
           onUseSms={(aiText) => {
             setChannel("SMS");
             setSubject("");
