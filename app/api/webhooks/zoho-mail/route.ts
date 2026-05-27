@@ -1,9 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import {
-  extractDomainFromEmail,
-  handleZohoAttachmentDownloadS3Upload,
-} from "./config";
+import { handleZohoAttachmentDownloadS3Upload } from "./config";
 
 export async function POST(req: Request) {
   try {
@@ -12,6 +9,7 @@ export async function POST(req: Request) {
     const {
       fromAddress,
       toAddress,
+      subject,
       summary,
       hasAttachment,
       messageId,
@@ -20,44 +18,71 @@ export async function POST(req: Request) {
 
     console.log("Zoho Mail Webhook:", body);
 
-    const domain = extractDomainFromEmail(toAddress);
+    // Parse +tag from toAddress → slug + customerId
+    const cleanTo = toAddress.replace(/[<>]/g, "");
+    const tagMatch = cleanTo.match(/\+([^@]+)@/);
 
-    const isDomain = await prisma.subdomain.findFirst({
-      where: {
-        domain: domain,
-      },
-      select: { id: true },
-    });
-
-    if (!isDomain) {
-      console.warn("Not Admin Domain");
-      return NextResponse.json({ message: "Not admin domain" }, { status: 200 });
+    if (!tagMatch) {
+      console.warn("No +tag found in toAddress");
+      return NextResponse.json(
+        { message: "Invalid address format" },
+        { status: 200 },
+      );
     }
 
-    const existingCustomer = await prisma.customer.findFirst({
+    const [slug, customerId] = tagMatch[1].split("_");
+
+    if (!slug || !customerId) {
+      console.warn("Could not parse slug or customerId from tag");
+      return NextResponse.json(
+        { message: "Invalid tag format" },
+        { status: 200 },
+      );
+    }
+
+    // Verify customer exists under this subdomain
+    const customer = await prisma.customer.findFirst({
       where: {
-        email: fromAddress,
+        id: customerId,
+        subdomain: { slug },
       },
       select: {
         id: true,
+        subdomainId: true,
       },
     });
 
-    if (!existingCustomer) {
-      console.warn("Not a client")
-      return NextResponse.json({ message: "Not a client" }, { status: 200 });
+    if (!customer || !customer.id || !customer.subdomainId) {
+      console.warn("Customer not found for", { slug, customerId });
+      return NextResponse.json(
+        { message: "Customer not found" },
+        { status: 200 },
+      );
     }
+
+    const activity = await prisma.clientActivity.create({
+      data: {
+        type: "INBOUND_EMAIL",
+        subDomain: { connect: { id: customer.subdomainId } },
+        customer: { connect: { id: customer.id } },
+        body: summary,
+        description: "Cx sent Email",
+        title: "Inbound Email",
+      },
+    });
 
     const communication = await prisma.clientCommunication.create({
       data: {
         body: summary,
+        subject,
         role: "CLIENT",
         type: "EMAIL",
-        customer: { connect: { id: existingCustomer.id } },
+        fromEmail: fromAddress,
+        customer: { connect: { id: customer.id } },
       },
     });
 
-    if (hasAttachment) {
+    if (hasAttachment === "Yes") {
       const attachmentResults = await handleZohoAttachmentDownloadS3Upload(
         accountId,
         messageId,

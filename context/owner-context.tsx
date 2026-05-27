@@ -6,15 +6,31 @@ import { AiSuggestionData } from "@/lib/moonshot";
 import { OwnerData } from "@/types/owner";
 import useSWR from "swr";
 
+// 1. NEW THREAD LOGIC: Define your Thread model interface
+export interface ChatThreadModel {
+  id: string; // The actual threadId
+  customerId: string;
+  customer?: {
+    // The customer details attached to the thread
+    id: string;
+    name: string;
+    phone?: string;
+    email?: string;
+  };
+  createdAt?: string | Date;
+}
+
 interface CustomerChat {
-  id: string;
+  id: string; // We map customerId here so the widget's "customer.id" works
   name: string;
   phone?: string;
+  threadId: string; // Enforce threadId
   [key: string]: any;
 }
+
 interface PendingMessage {
   id: string;
-  customerId: string; // <-- Keeps track of who the message is for
+  customerId: string;
   body: string;
   role: "OPERATOR";
   type: "SMS" | "EMAIL";
@@ -29,6 +45,12 @@ interface OwnerContextValue {
   isUsersLoading: boolean;
   customers: Customer[] | undefined;
   isCustomersLoading: boolean;
+
+  // 2. NEW THREAD LOGIC: Expose threads
+  chatThreads: ChatThreadModel[];
+  isThreadsLoading: boolean;
+  refreshThreads: () => void;
+
   addCustomer: (
     customerName: string,
     customerPhone: string,
@@ -60,14 +82,20 @@ interface OwnerContextValue {
   smsSuccess: string | null;
   emailSuccess: string | null;
   generateImageSuccess: string | null;
-  activeChatProspect: CustomerChat | null;
+  activeThread: CustomerChat | null;
   chatWindowState: "list" | "open" | "minimized" | "icon";
-  sendSMS: (customerId: string, body: string) => Promise<boolean>;
+  sendSMS: (
+    customerId: string,
+    threadId: string,
+    body: string,
+  ) => Promise<boolean>;
   sendEmail: (
     customerId: string,
+    threadId: string,
     body: string,
     subject?: string,
   ) => Promise<boolean>;
+
   fetchAiSuggestion: (customerId: string) => Promise<void>;
   clearAiSuggestion: (customerId: string) => void;
   generateImage: (
@@ -92,14 +120,13 @@ export function OwnerProvider({
   children: ReactNode;
   subdomain: OwnerData;
 }) {
-  // --- SWR ---
   const {
     data: userData,
     isLoading: isUsersLoading,
     mutate: mutateUsers,
   } = useSWR<{ users: SubdomainUser[] }>(
     `/api/subdomain/${subdomain.slug}/users`,
-    fetcher, // ✅ fix: was `fetcher.`
+    fetcher,
     { revalidateOnFocus: false },
   );
 
@@ -123,7 +150,18 @@ export function OwnerProvider({
     { revalidateOnFocus: false },
   );
 
-  // --- Action state ---
+  // 3. NEW THREAD LOGIC: SWR to fetch your recent chat threads.
+  // Make sure you create this backend API route if you haven't yet!
+  const {
+    data: threadsData,
+    isLoading: isThreadsLoading,
+    mutate: mutateThreads,
+  } = useSWR<{ threads: ChatThreadModel[] }>(
+    `/api/subdomain/${subdomain.slug}/chat-threads`,
+    fetcher,
+    { revalidateOnFocus: false },
+  );
+
   const [isSendingSMS, setIsSendingSMS] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -139,16 +177,13 @@ export function OwnerProvider({
   const [reportTaskDialogOpen, setReportTaskDialogOpen] = useState(false);
   const [isReportingTask, setIsReportingTask] = useState(false);
 
-  // --- Success banners ---
   const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
   const [generateImageSuccess, setGenerateImageSuccess] = useState<
     string | null
   >(null);
 
-  // --- Chat widget ---
-  const [activeChatProspect, setActiveChatProspect] =
-    useState<CustomerChat | null>(null);
+  const [activeThread, setActiveThread] = useState<CustomerChat | null>(null);
   const [chatWindowState, setChatWindowState] = useState<
     "icon" | "list" | "open" | "minimized"
   >("icon");
@@ -157,29 +192,33 @@ export function OwnerProvider({
   const me = meData?.me;
 
   const openChat = (prospect: CustomerChat) => {
-    setActiveChatProspect(prospect);
+    setActiveThread(prospect);
     setChatWindowState("open");
   };
   const closeChat = () => {
-    setActiveChatProspect(null);
+    setActiveThread(null);
     setChatWindowState("icon");
   };
   const toggleMinimize = () =>
     setChatWindowState((prev) => (prev === "minimized" ? "open" : "minimized"));
   const openChatList = () => setChatWindowState("list");
 
-  // --- Handlers (swap in real endpoints) ---
+  // Keep all your original API handler logic...
   const sendSMS = async (
     customerId: string,
+    threadId: string,
     body: string,
   ): Promise<boolean> => {
     setIsSendingSMS(true);
     try {
-      const res = await fetch(`/api/subdomain/${subdomain.slug}/customers/${customerId}/sms`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId, body }),
-      });
+      const res = await fetch(
+        `/api/subdomain/${subdomain.slug}/customers/${customerId}/sms`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customerId, threadId, body }),
+        },
+      );
       if (res.ok) setSmsSuccess(customerId);
       return res.ok;
     } finally {
@@ -189,16 +228,20 @@ export function OwnerProvider({
 
   const sendEmail = async (
     customerId: string,
+    threadId: string, 
     body: string,
     subject?: string,
   ): Promise<boolean> => {
     setIsSendingEmail(true);
     try {
-      const res = await fetch(`/api/subdomain/${subdomain.slug}/customers/${customerId}/email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId, body, subject }),
-      });
+      const res = await fetch(
+        `/api/subdomain/${subdomain.slug}/customers/${customerId}/email`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customerId, threadId, body, subject }),
+        },
+      );
       if (res.ok) setEmailSuccess(customerId);
       return res.ok;
     } finally {
@@ -259,19 +302,11 @@ export function OwnerProvider({
   ) => {
     try {
       setIsAddingCustomer(true);
-
       const res = await fetch(`/api/subdomain/${subdomain.slug}/customers`, {
         method: "POST",
-        body: JSON.stringify({
-          customerName,
-          customerEmail,
-          customerPhone,
-        }),
+        body: JSON.stringify({ customerName, customerEmail, customerPhone }),
       });
-
-      if (!res.ok) {
-        throw new Error();
-      }
+      if (!res.ok) throw new Error();
       return res.ok;
     } finally {
       setIsAddingCustomer(false);
@@ -285,19 +320,11 @@ export function OwnerProvider({
   ) => {
     try {
       setIsInvitingMember(true);
-
       const res = await fetch(`/api/subdomain/${subdomain.slug}/customers`, {
         method: "POST",
-        body: JSON.stringify({
-          memberName,
-          memberPhone,
-          memberEmail,
-        }),
+        body: JSON.stringify({ memberName, memberPhone, memberEmail }),
       });
-
-      if (!res.ok) {
-        throw new Error();
-      }
+      if (!res.ok) throw new Error();
       return res.ok;
     } finally {
       setIsInvitingMember(false);
@@ -307,27 +334,20 @@ export function OwnerProvider({
   const reportTask = async (taskId: string, text: string) => {
     try {
       setIsReportingTask(true);
-
       const res = await fetch(
         `/api/subdomain/${subdomain.slug}/system-tasks/report-issue/${taskId}`,
         {
           method: "POST",
-          body: JSON.stringify({
-            text,
-          }),
+          body: JSON.stringify({ text }),
         },
       );
-
-      if (!res.ok) {
-        throw new Error();
-      }
+      if (!res.ok) throw new Error();
       return res.ok;
     } finally {
       setIsReportingTask(false);
     }
   };
 
-  // ✅ fix: was `value` (undefined variable)
   return (
     <OwnerContext.Provider
       value={{
@@ -338,6 +358,12 @@ export function OwnerProvider({
         isUsersLoading,
         customers: customersData?.customers,
         isCustomersLoading,
+
+        // 4. NEW THREAD LOGIC: Provide Threads
+        chatThreads: threadsData?.threads ?? [],
+        isThreadsLoading,
+        refreshThreads: () => mutateThreads(),
+
         isInvitingMember,
         addCustomerDialogOpen,
         setAddCustomerDialogOpen,
@@ -361,7 +387,7 @@ export function OwnerProvider({
         smsSuccess,
         emailSuccess,
         generateImageSuccess,
-        activeChatProspect,
+        activeThread,
         chatWindowState,
         sendSMS,
         sendEmail,

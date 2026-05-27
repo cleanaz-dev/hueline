@@ -13,14 +13,14 @@ export async function POST(req: Request, { params }: Params) {
   const { slug, customerId } = await params;
 
   try {
-    const { customerId, body } = await req.json();
+    const { customerId, threadId, body } = await req.json();
     console.log("Test SMS SEND FROM PROSPECTS:", body);
 
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },
     });
 
-    if (!body || !customer || !customer.name || !customer.phone) {
+    if (!body || !customer || !customer.name || !customer.phone || !threadId) {
       return NextResponse.json(
         { message: "Invalid Request - message and customer required" },
         { status: 400 },
@@ -30,7 +30,26 @@ export async function POST(req: Request, { params }: Params) {
     await sendDefaultSMS({
       to: customer.phone,
       body: body,
-      customerId,
+    });
+
+    await prisma.clientCommunication.create({
+      data: {
+        body,
+        role: "OPERATOR", // You might want to set a proper role here
+        type: "SMS",
+        customerId,
+        chatThreadId: threadId,
+      },
+    });
+
+    await prisma.clientActivity.create({
+      data: {
+        type: "SMS_SENT",
+        chatThreadId: threadId,
+        customerId,
+        subDomain: { connect: { slug } },
+        title: "SMS Sent"
+      },
     });
 
     // ✅ Added missing success response

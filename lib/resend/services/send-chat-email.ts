@@ -8,19 +8,21 @@ export async function sendChatEmail({
   to,
   subject,
   body,
+  replyTo,
   attachmentUrl,
 }: {
   to: string;
   subject: string;
   body: string;
+  replyTo: string;
   attachmentUrl?: string;
 }) {
   try {
     const { data, error } = await resend.emails.send({
-      from: "Hue-Line <info@hue-line.com>", // Make sure info@hue-line.com is verified in Resend!
+      replyTo, // <-- Leave it exactly like this!
+      from: "Hue-Line <info@hue-line.com>",
       to: [to],
       subject: subject,
-      // Resend magically takes the React component directly! No rendering required.
       react: ChatEmailTemplate({ subject, body, attachmentUrl }),
     });
 

@@ -18,7 +18,6 @@ import { useOwner } from "@/context/owner-context";
 import { OwnerAdvancedChatInput } from "@/components/owner/owner-advanced-chat-input";
 import { OwnerChatBubble } from "@/components/owner/owner-chat-bubble";
 
-// A buttery smooth spring configuration for the morphing
 const morphTransition = {
   type: "spring" as const,
   stiffness: 350,
@@ -28,28 +27,24 @@ const morphTransition = {
 export function GlobalOwnerChatWidget() {
   const {
     subdomain,
-    customers,
     pendingMessages,
-    activeChatProspect: customer,
+    activeThread: customer,
     chatWindowState,
     sendSMS,
     isSendingSMS,
     sendEmail,
     isSendingEmail,
-    isAiLoading,
     openChat,
     closeChat,
     toggleMinimize,
-    globalProspects,
     openChatList,
-    smsSuccess,
-    emailSuccess,
+    // 1. NEW THREAD LOGIC: Pull in threads instead of globalProspects
+    chatThreads,
+    isThreadsLoading,
   } = useOwner();
 
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Placeholder for the "List" view data
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const prevMessageCount = useRef(0);
@@ -58,14 +53,14 @@ export function GlobalOwnerChatWidget() {
     (m) => m.customerId === customer?.id,
   );
 
-  // FETCH MESSAGES LOGIC
   const fetchMessages = async (isBackgroundPoll = false) => {
-    if (!customer?.id) return;
+    // 2. NEW THREAD LOGIC: Make sure we have both customerId AND threadId
+    if (!customer?.id || !customer?.threadId) return;
+
     if (!isBackgroundPoll) setLoading(true);
     try {
-      // ⬇️ Update 'messages' to 'communications' ⬇️
       const res = await fetch(
-        `/api/subdomain/${subdomain.slug}/customers/${customer.id}/communications`,
+        `/api/subdomain/${subdomain.slug}/customers/${customer.id}/${customer.threadId}`,
       );
       const data = await res.json();
       setMessages(data);
@@ -77,10 +72,10 @@ export function GlobalOwnerChatWidget() {
   };
 
   useEffect(() => {
-    // Run if open OR minimized
     if (
       (chatWindowState !== "open" && chatWindowState !== "minimized") ||
-      !customer?.id
+      !customer?.id ||
+      !customer?.threadId
     )
       return;
 
@@ -89,7 +84,7 @@ export function GlobalOwnerChatWidget() {
 
     const pollInterval = setInterval(() => fetchMessages(true), 10000);
     return () => clearInterval(pollInterval);
-  }, [chatWindowState, customer?.id]);
+  }, [chatWindowState, customer?.id, customer?.threadId]);
 
   const combinedMessages = useMemo(() => {
     return [
@@ -122,8 +117,8 @@ export function GlobalOwnerChatWidget() {
     );
     const success =
       channel === "SMS"
-        ? await sendSMS(customer!.id, message)
-        : await sendEmail(customer!.id, message, subject);
+        ? await sendSMS(customer!.id, customer!.threadId, message)
+        : await sendEmail(customer!.id, customer!.threadId , message, subject);
     if (success) fetchMessages();
   };
 
@@ -137,7 +132,6 @@ export function GlobalOwnerChatWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">
       <AnimatePresence mode="wait">
-        {/* ─── STATE 1: THE ICON (DEFAULT) ─────────────────────────── */}
         {chatWindowState === "icon" && (
           <motion.button
             layoutId="chat-widget-morph"
@@ -171,7 +165,7 @@ export function GlobalOwnerChatWidget() {
               className="flex flex-col h-full"
             >
               <div className="flex items-center justify-between px-5 py-4 border-b bg-muted/40 shrink-0">
-                <h3 className="font-bold text-sm">Recent Chats</h3>
+                <h3 className="font-bold text-sm">Recent Threads</h3>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -182,21 +176,25 @@ export function GlobalOwnerChatWidget() {
                 </Button>
               </div>
               <ScrollArea className="flex-1 p-2">
-                {globalProspects.length === 0 ? (
+                {/* 3. NEW THREAD LOGIC: Render threads from chatThreads instead of globalProspects */}
+                {isThreadsLoading ? (
                   <p className="text-center text-muted-foreground text-xs mt-10">
-                    Loading chats...
+                    Loading threads...
+                  </p>
+                ) : chatThreads.length === 0 ? (
+                  <p className="text-center text-muted-foreground text-xs mt-10">
+                    No active threads found.
                   </p>
                 ) : (
-                  globalProspects.slice(0, 10).map((chat) => (
+                  chatThreads.slice(0, 10).map((thread) => (
                     <div
-                      key={chat.id}
+                      key={thread.id}
                       onClick={() =>
                         openChat({
-                          ...chat,
-                          name: chat.name ?? chat.phone ?? "Unknown",
-                          phone: chat.phone ?? undefined,
-                          email: chat.email ?? undefined, // if needed
-                          createdAt: chat.createdAt ?? undefined, // if needed
+                          id: thread.customerId, // Map customer ID so widget's API fetch works
+                          threadId: thread.id, // Pass the threadID so we pull the right convo
+                          name: thread.customer?.name ?? "Unknown",
+                          phone: thread.customer?.phone ?? undefined,
                         })
                       }
                       className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-xl cursor-pointer transition-colors"
@@ -204,15 +202,17 @@ export function GlobalOwnerChatWidget() {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
                           <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                            {chat.name?.slice(0, 2).toUpperCase()}
+                            {thread.customer?.name
+                              ?.slice(0, 2)
+                              .toUpperCase() ?? <UserRound size={16} />}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold line-clamp-1">
-                            {chat.name}
+                            {thread.customer?.name ?? "Unknown"}
                           </span>
                           <span className="text-[10px] text-muted-foreground">
-                            Tap to view
+                            Tap to view thread
                           </span>
                         </div>
                       </div>
@@ -228,7 +228,7 @@ export function GlobalOwnerChatWidget() {
           </motion.div>
         )}
 
-        {/* ─── STATE 3: MINIMIZED STATE (THE PILL) ─────────────────── */}
+        {/* --- STATE 3 & STATE 4 ARE UNCHANGED --- */}
         {chatWindowState === "minimized" && (
           <motion.div
             layoutId="chat-widget-morph"
@@ -242,7 +242,6 @@ export function GlobalOwnerChatWidget() {
               transition={{ delay: 0.1 }}
               className="flex items-center"
             >
-              {/* Clickable Area to Expand */}
               <div
                 className="flex items-center gap-3 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 px-2 py-1 rounded-full transition-colors"
                 onClick={toggleMinimize}
@@ -265,7 +264,6 @@ export function GlobalOwnerChatWidget() {
                 </div>
               </div>
 
-              {/* The New Close Button to morph back to Icon */}
               <button
                 onClick={closeChat}
                 className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-black/20 dark:hover:bg-white/20 transition-colors shrink-0 ml-1"
@@ -276,13 +274,12 @@ export function GlobalOwnerChatWidget() {
           </motion.div>
         )}
 
-        {/* ─── STATE 4: OPEN STATE (THE WINDOW) ───────────────────── */}
         {chatWindowState === "open" && (
           <motion.div
             layoutId="chat-widget-morph"
             key="open-window"
             transition={morphTransition}
-            className="flex flex-col w-[328px] sm:w-[525px] h-[calc(100vh-48px)] bg-background/85 shadow-2xl rounded-3xl overflow-hidden border border-border pointer-events-auto"
+            className="flex flex-col w-[328px] sm:w-[550px] h-[calc(100vh-48px)] bg-background/85 shadow-2xl rounded-3xl overflow-hidden border border-border pointer-events-auto"
           >
             <motion.div
               initial={{ opacity: 0 }}
@@ -290,7 +287,6 @@ export function GlobalOwnerChatWidget() {
               transition={{ delay: 0.15 }}
               className="flex flex-col h-full"
             >
-              {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/40 shrink-0">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-9 w-9">
@@ -305,6 +301,16 @@ export function GlobalOwnerChatWidget() {
                     <p className="text-xs text-muted-foreground">
                       {customer?.phone}
                     </p>
+
+                    {customer?.threadId && (
+                      <Badge
+                        
+                        className="text-[8px] px-1 py-0 h-4 font-mono text-muted-foreground"
+                      >
+                        Thread: {customer.threadId.slice(-6)}{" "}
+                        {/* slices to show just the last 6 chars so it looks clean */}
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
@@ -345,7 +351,6 @@ export function GlobalOwnerChatWidget() {
                 </div>
               </div>
 
-              {/* Chat Area */}
               <div className="flex-1 min-h-0 flex flex-col bg-slate-50/50 dark:bg-zinc-950/50">
                 <ScrollArea className="h-full px-1.5">
                   <div className="py-5 space-y-1">
@@ -389,7 +394,6 @@ export function GlobalOwnerChatWidget() {
                 </ScrollArea>
               </div>
 
-              {/* Input Area */}
               <div className="shrink-0 bg-background border-t">
                 <OwnerAdvancedChatInput
                   isLoading={isSendingSMS || isSendingEmail}
@@ -397,8 +401,6 @@ export function GlobalOwnerChatWidget() {
                   clientId={customer?.id}
                 />
               </div>
-
-              {/* <DrawerToast message={smsSuccess ?? emailSuccess} /> */}
             </motion.div>
           </motion.div>
         )}

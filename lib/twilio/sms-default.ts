@@ -1,16 +1,15 @@
-import { prisma } from "@/lib/prisma";
-import { moonshot, twilioClient } from "./config";
+
+import {twilioClient } from "./config";
 
 interface SendSMSDefault {
   to: string;
   body: string;
-  customerId: string; // Added missing field
 }
 
 export async function sendDefaultSMS({
   to,
   body,
-  customerId, // Added missing parameter
+
 }: SendSMSDefault) {
   // Fixed syntax: added closing parenthesis
   try {
@@ -20,14 +19,7 @@ export async function sendDefaultSMS({
       body,
     });
 
-    await prisma.clientCommunication.create({
-      data: {
-        body,
-        role: "OPERATOR", // You might want to set a proper role here
-        type: "SMS",
-        customerId,
-      },
-    });
+  
 
     return message;
   } catch (error) {
