@@ -77,7 +77,6 @@ export async function POST(req: Request) {
         subject,
         role: "CLIENT",
         type: "EMAIL",
-        fromEmail: fromAddress,
         customer: { connect: { id: thread.customer.id } },
         chatThreadId: threadId,
       },
