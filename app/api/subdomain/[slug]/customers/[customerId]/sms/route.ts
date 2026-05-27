@@ -1,5 +1,7 @@
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendDefaultSMS } from "@/lib/twilio/sms-default";
+import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
 interface Params {
@@ -11,10 +13,30 @@ interface Params {
 
 export async function POST(req: Request, { params }: Params) {
   const { slug, customerId } = await params;
+  const session = await getServerSession(authOptions);
+
+  const user = session?.user;
+
+  if (!user || !user.email) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const isOperatorValid = await prisma.subdomainUser.findFirst({
+    where: {
+      email: user.email,
+    },
+    select: {
+      id: true,
+      email: true
+    }
+  });
+
+  if (!isOperatorValid)
+    return NextResponse.json({ message: "No Access" }, { status: 401 });
 
   try {
     const { customerId, threadId, body } = await req.json();
-    console.log("Test SMS SEND FROM PROSPECTS:", body);
+    console.log("Test SMS SEND FROM Chat Thread:", body);
 
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },
@@ -35,10 +57,11 @@ export async function POST(req: Request, { params }: Params) {
     await prisma.clientCommunication.create({
       data: {
         body,
-        role: "OPERATOR", // You might want to set a proper role here
+        role: "OPERATOR",
         type: "SMS",
         customerId,
         chatThreadId: threadId,
+        operator: { connect: { id: isOperatorValid.email } },
       },
     });
 
@@ -48,7 +71,7 @@ export async function POST(req: Request, { params }: Params) {
         chatThreadId: threadId,
         customerId,
         subDomain: { connect: { slug } },
-        title: "SMS Sent"
+        title: "SMS Sent",
       },
     });
 

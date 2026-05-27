@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { FileText, Download, FileArchive } from "lucide-react";
 import { InteractiveChatImage } from "../admin/prospects/interactive-chat-image";
 import { useOwner } from "@/context/owner-context";

@@ -8,10 +8,10 @@ import useSWR from "swr";
 
 // 1. NEW THREAD LOGIC: Define your Thread model interface
 export interface ChatThreadModel {
-  id: string; // The actual threadId
+  id: string;
   customerId: string;
   customer?: {
-    // The customer details attached to the thread
+    
     id: string;
     name: string;
     phone?: string;
@@ -24,6 +24,7 @@ interface CustomerChat {
   id: string; // We map customerId here so the widget's "customer.id" works
   name: string;
   phone?: string;
+  email?: string;
   threadId: string; // Enforce threadId
   [key: string]: any;
 }
@@ -151,7 +152,7 @@ export function OwnerProvider({
   );
 
   // 3. NEW THREAD LOGIC: SWR to fetch your recent chat threads.
-  // Make sure you create this backend API route if you haven't yet!
+
   const {
     data: threadsData,
     isLoading: isThreadsLoading,
@@ -277,7 +278,7 @@ export function OwnerProvider({
     setIsGeneratingImage(true);
     try {
       const res = await fetch(
-        `/api/subdomain/${subdomain.slug}/jobs/create-image-job`,
+        `/api/subdomain/${subdomain.slug}/system-tasks/create-image-task`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -118,7 +118,7 @@ export function GlobalOwnerChatWidget() {
     const success =
       channel === "SMS"
         ? await sendSMS(customer!.id, customer!.threadId, message)
-        : await sendEmail(customer!.id, customer!.threadId , message, subject);
+        : await sendEmail(customer!.id, customer!.threadId, message, subject);
     if (success) fetchMessages();
   };
 
@@ -191,10 +191,11 @@ export function GlobalOwnerChatWidget() {
                       key={thread.id}
                       onClick={() =>
                         openChat({
-                          id: thread.customerId, // Map customer ID so widget's API fetch works
-                          threadId: thread.id, // Pass the threadID so we pull the right convo
+                          id: thread.customerId,
+                          threadId: thread.id,
                           name: thread.customer?.name ?? "Unknown",
                           phone: thread.customer?.phone ?? undefined,
+                          email: thread.customer?.email ?? undefined, // 👈 this line is missing
                         })
                       }
                       className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-xl cursor-pointer transition-colors"
@@ -298,18 +299,17 @@ export function GlobalOwnerChatWidget() {
                     <p className="text-sm font-semibold leading-tight">
                       {customer?.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {customer?.phone}
-                    </p>
-
+                    <div className="flex gap-2 items-center">
+                      <p className="text-xs text-muted-foreground">
+                        {customer?.phone}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{customer?.email}</p>
+                    </div>
                     {customer?.threadId && (
-                      <Badge
-                        
-                        className="text-[8px] px-1 py-0 h-4 font-mono text-muted-foreground"
-                      >
+                      <p className="text-[10px] px-1 py-0 h-4 font-mono text-muted-foreground">
                         Thread: {customer.threadId.slice(-6)}{" "}
                         {/* slices to show just the last 6 chars so it looks clean */}
-                      </Badge>
+                      </p>
                     )}
                   </div>
                 </div>
