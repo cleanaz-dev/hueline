@@ -12,7 +12,9 @@ export default async function page({ params }: Params) {
   //  run redis on data
 
   return (
-    // component would get here if using dynamic routes..pass data from redis to component if no data render page expired or invite no longeer wtv..
+    // component would get here if using dynamic routes..
+    // pass data from redis to component 
+    // if no data render page expired or invite no longeer wtv..
     <div>Hello</div>
   );
 }
