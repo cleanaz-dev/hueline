@@ -30,9 +30,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const [slug, customerId] = tagMatch[1].split("_");
+    const [threadId, slug] = tagMatch[1].split("_");
 
-    if (!slug || !customerId) {
+    if (!threadId || !slug) {
       console.warn("Could not parse slug or customerId from tag");
       return NextResponse.json(
         { message: "Invalid tag format" },
@@ -41,19 +41,19 @@ export async function POST(req: Request) {
     }
 
     // Verify customer exists under this subdomain
-    const customer = await prisma.customer.findFirst({
-      where: {
-        id: customerId,
-        subdomain: { slug },
-      },
+    const thread = await prisma.chatThread.findUnique({
+      where: { id: threadId },
       select: {
-        id: true,
+        customer: true,
         subdomainId: true,
       },
     });
 
-    if (!customer || !customer.id || !customer.subdomainId) {
-      console.warn("Customer not found for", { slug, customerId });
+    if (!thread?.customer || !thread.customer.id || !thread.subdomainId) {
+      console.warn("Customer not found for", {
+        slug,
+        thread: thread?.customer.id,
+      });
       return NextResponse.json(
         { message: "Customer not found" },
         { status: 200 },
@@ -63,9 +63,9 @@ export async function POST(req: Request) {
     const activity = await prisma.clientActivity.create({
       data: {
         type: "INBOUND_EMAIL",
-        subDomain: { connect: { id: customer.subdomainId } },
-        customer: { connect: { id: customer.id } },
-        body: summary,
+        subDomain: { connect: { id: thread.subdomainId } },
+        customer: { connect: { id: thread.customer.id } },
+        chatThreadId: threadId,
         description: "Cx sent Email",
         title: "Inbound Email",
       },
@@ -78,7 +78,8 @@ export async function POST(req: Request) {
         role: "CLIENT",
         type: "EMAIL",
         fromEmail: fromAddress,
-        customer: { connect: { id: customer.id } },
+        customer: { connect: { id: thread.customer.id } },
+        chatThreadId: threadId,
       },
     });
 
