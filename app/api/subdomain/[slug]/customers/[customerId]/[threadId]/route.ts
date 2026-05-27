@@ -56,15 +56,19 @@ export async function GET(
       rawCommunications.map(async (comm) => {
         const processedAttachments = await Promise.all(
           comm.mediaAttachments.map(async (attachment) => {
-            // Only generate presigned URL if the source is S3
             if (attachment.mediaSource === "S3") {
-              const presignedUrl = await getPresignedUrl(attachment.mediaUrl);
+              const isImage = attachment.mimeType.startsWith("image/");
+              const keyToSign =
+                isImage && attachment.compressedKey
+                  ? attachment.compressedKey
+                  : attachment.mediaUrl; // mediaUrl is already the raw S3 key
+
+              const presignedUrl = await getPresignedUrl(keyToSign);
               return {
                 ...attachment,
-                mediaUrl: presignedUrl, // Replace the raw key with the temporary URL
+                mediaUrl: presignedUrl,
               };
             }
-            // If it's EXTERNAL (or something else), just leave it as is
             return attachment;
           }),
         );

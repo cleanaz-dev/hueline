@@ -318,6 +318,7 @@ export async function processImagenWorkflow({
               mimeType: "image/jpeg",
               mediaSource: "S3",
               mediaUrl: webhookBody.newImagenS3Key,
+              compressedKey: webhookBody.compressedS3Key
             },
           },
         },

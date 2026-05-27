@@ -1,10 +1,9 @@
-import { z } from "zod";
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { processImagenWorkflow } from "./process-imagen-workflow";
 import { SystemTask, Customer } from "@/app/generated/prisma";
-import { designImagenBodySchema, designImagenLambdaIngestSchema } from "@/lib/zod/design-imagen-body-schema";
-import { Redis } from "@upstash/redis";
+import { designImagenLambdaIngestSchema } from "@/lib/zod/design-imagen-body-schema";
 import { releaseResourceLock } from "@/lib/redis";
 
 
