@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const mockupUrlSchema = z.object({
   s3_key:    z.string(),
-  room_type: z.string(),
+  room_type: z.string()
 });
 
 export const voiceMockupWebhookBodySchema = z.object({

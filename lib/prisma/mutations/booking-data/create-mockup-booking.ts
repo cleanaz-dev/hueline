@@ -3,6 +3,7 @@ import { prisma } from "../../config";
 interface MockupUrl {
   s3_key:    string;
   room_type: string;
+ 
 }
 
 interface CreateMockupBookingPayload {
@@ -25,6 +26,7 @@ interface CreateMockupBookingPayload {
   dateTime:       string;
   pin:            string;
   callSid:        string;
+  compressedKey:  string;
 }
 
 export async function createMockupBooking(payload: CreateMockupBookingPayload) {
@@ -45,6 +47,7 @@ export async function createMockupBooking(payload: CreateMockupBookingPayload) {
     dimensions,
     dateTime,
     pin,
+    compressedKey
   } = payload;
 
   console.log("Creating Mockup Booking for:", payload);
@@ -53,6 +56,7 @@ export async function createMockupBooking(payload: CreateMockupBookingPayload) {
 
   const mockupData = mockupUrls.map((mockup) => ({
     s3Key:    mockup.s3_key,
+    compressedS3Key: compressedKey, 
     roomType: mockup.room_type,
     brand:    colorBrand,
     code:     colorCode,

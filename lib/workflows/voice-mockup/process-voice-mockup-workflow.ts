@@ -132,6 +132,7 @@ export async function processMockupWorkflow({
       dateTime: webhook.dateTime,
       pin: webhook.pin,
       callSid: webhook.callSid,
+      compressedKey: webhook.compressedKey
     });
 
     await prisma.$transaction(async (tx) => {
