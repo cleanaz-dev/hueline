@@ -293,6 +293,22 @@ model Subdomain {
   designProjects   DesignProject[]
   errorLogs        ErrorLog[]
   chatThreads      ChatThread[]
+  branding         Branding?
+}
+
+model Branding {
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  logo           String?
+  logoWidth      Int?    @default(130)
+  logoHeight     Int?    @default(130)
+  splashScreen   String?
+  primaryColor   String?
+  secondaryColor String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  subdomain   Subdomain @relation(fields: [subdomainId], references: [id], onDelete: Cascade)
+  subdomainId String    @unique @db.ObjectId
 }
 
 model RoomIntelligence {
