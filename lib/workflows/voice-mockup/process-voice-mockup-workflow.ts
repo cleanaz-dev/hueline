@@ -96,22 +96,6 @@ export async function processMockupWorkflow({
 
     const webhook = parsedWebhook.data;
 
-    const subBookingData = await prisma.subBookingData.findUnique({
-      where: { huelineId: webhook.huelineId },
-      select: {
-        roomType: true,
-        subdomain: {
-          select: { id: true, slug: true },
-        },
-      },
-    });
-
-    if (!subBookingData) {
-      throw new Error(
-        "SubBookingData not found for huelineId: " + webhook.huelineId,
-      );
-    }
-
     const context: MockupContext = {
       colorBrand: webhook.colorBrand,
       colorName: webhook.colorName,
@@ -130,8 +114,8 @@ export async function processMockupWorkflow({
 
     await createMockupBooking({
       huelineId: webhook.huelineId,
-      subdomainId: subBookingData.subdomain.id,
-      slug: subBookingData.subdomain.slug,
+      subdomainId: webhook.subdomainId,
+      slug: webhook.slug,
       name: customer.name ?? "",
       phone: customer.phone ?? "",
       roomType: webhook.roomType,
@@ -151,6 +135,13 @@ export async function processMockupWorkflow({
     });
 
     await prisma.$transaction(async (tx) => {
+      const thread = await prisma.chatThread.create({
+        data: {
+          customerId: customer.id,
+          subdomainId: webhook.subdomainId,
+          title: `New Thread: ${customer.name}`,
+        },
+      });
       // Communication + media attachment (the mockup image)
       await tx.clientCommunication.create({
         data: {
@@ -168,6 +159,7 @@ export async function processMockupWorkflow({
               mediaUrl: webhook.imageS3Key,
             },
           },
+          chatThread: { connect: { id: thread.id } },
         },
       });
 
@@ -179,6 +171,7 @@ export async function processMockupWorkflow({
           description: config.activityDescription(context),
           metadata: { huelineId: webhook.huelineId, jobId: job.id },
           customer: { connect: { id: customer.id } },
+          chatThread: { connect: { id: thread.id } },
         },
       });
 
@@ -189,7 +182,7 @@ export async function processMockupWorkflow({
           type: "MOCKUP",
           actor: config.logActor,
           description: config.logDescription(context),
-          subdomain: { connect: { id: subBookingData.subdomain.id } },
+          subdomain: { connect: { id: webhook.subdomainId } },
         },
       });
     });

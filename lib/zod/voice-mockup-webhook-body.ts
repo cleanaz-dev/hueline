@@ -25,6 +25,7 @@ export const voiceMockupWebhookBodySchema = z.object({
   callSid:      z.string(),
   callDuration: z.string(),
   dateTime:     z.string(),
+  compressedKey: z.string(),
   size:         z.number().optional(),
   mockupUrls:   z.array(mockupUrlSchema),
   action:       z.literal("LIVEKIT_AGENT"),
