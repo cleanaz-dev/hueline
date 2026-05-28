@@ -132,7 +132,7 @@ export async function processMockupWorkflow({
       dateTime: webhook.dateTime,
       pin: webhook.pin,
       callSid: webhook.callSid,
-      compressedKey: webhook.compressedKey
+      compressedKey: webhook.compressedKey,
     });
 
     await prisma.$transaction(async (tx) => {
@@ -173,6 +173,7 @@ export async function processMockupWorkflow({
           metadata: { huelineId: webhook.huelineId, jobId: job.id },
           customer: { connect: { id: customer.id } },
           chatThread: { connect: { id: thread.id } },
+          subDomain: { connect: { id: webhook.subdomainId } },
         },
       });
 
