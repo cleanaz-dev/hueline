@@ -2,7 +2,7 @@
 
 import { Phone, Mail, Clock, CheckCircle2 } from "lucide-react"
 
-import BookingCard, { Booking } from "./booking-card"
+import BookingCard, { Booking, Call } from "./booking-card"
 import ChatThreadsSidebar, { ChatThread } from "./chat-thread-sidebar"
 import DesignProjectsBar, { DesignProject } from "./design-projects-bar"
 
@@ -20,13 +20,13 @@ const sanitizeCustomer = (customer: NonNullCustomerData) => ({
   customerType: customer.customerType ?? "Residential",
   createdAt: customer.createdAt ?? new Date().toISOString(),
   subBookingData: (customer.subBookingData ?? []) as Booking[],
-  calls: customer.calls ?? [],
+  calls: (customer.calls ?? []) as Call[],
   chatThreads: (customer.chatThreads ?? []) as ChatThread[],
   designProjects: (customer.designProjects ?? []) as DesignProject[],
 })
 
 // ----------------------------------------------------------------------
-// StatusBadge (stays here — only used by this page)
+// StatusBadge
 // ----------------------------------------------------------------------
 const StatusBadge = ({ status }: { status: string }) => {
   const isPending = status.toUpperCase() === "PENDING"
@@ -61,8 +61,8 @@ export default function CustomerSinglePage({
   const data = sanitizeCustomer(customer)
 
   return (
-    <div className="space-y-6 w-full animate-in fade-in duration-500">
-
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
+      
       {/* 1. Client bar */}
       <div className="bg-white rounded-[20px] shadow-sm border border-gray-100 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -89,35 +89,54 @@ export default function CustomerSinglePage({
         <StatusBadge status={data.status} />
       </div>
 
-      {/* 2 & 3. Middle grid: Bookings + Threads sidebar */}
+      {/* 2 & 3. Middle grid: 2-Column Main Area + 1-Column Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* LEFT MAIN AREA (Spans 2 cols) - Contains Bookings AND Design Projects */}
+        <div className="lg:col-span-2 flex flex-col gap-8">
+          
+          {/* Bookings */}
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider px-1">
+              Booking Requests
+            </h2>
 
-        {/* Bookings */}
-        <div className="lg:col-span-2 space-y-5">
-          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider px-1">
-            Booking Requests
-          </h2>
+            {data.subBookingData.length > 0 ? (
+              data.subBookingData.map((booking: Booking, idx: number) => {
+                const mappedCalls = data.calls.filter((c: Call) => c.bookingDataId === booking.id)
+                if (idx === 0) {
+                  const unassignedCalls = data.calls.filter((c: Call) => !c.bookingDataId)
+                  mappedCalls.push(...unassignedCalls)
+                }
 
-          {data.subBookingData.length > 0 ? (
-            data.subBookingData.map((booking: Booking) => (
-              <BookingCard key={booking.id} booking={booking} />
-            ))
-          ) : (
-            <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-12 text-center flex flex-col items-center">
-              <p className="text-gray-500 font-medium text-sm">
-                No visualizations requested yet.
-              </p>
-            </div>
-          )}
+                return (
+                  <BookingCard 
+                    key={booking.id} 
+                    booking={booking} 
+                    calls={mappedCalls} 
+                  />
+                )
+              })
+            ) : (
+              <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-12 text-center flex flex-col items-center">
+                <p className="text-gray-500 font-medium text-sm">
+                  No visualizations requested yet.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Design Projects (Now perfectly matching the width above) */}
+          <DesignProjectsBar projects={data.designProjects} />
+          
         </div>
 
-        {/* Chat threads sidebar */}
-        <ChatThreadsSidebar threads={data.chatThreads} />
+        {/* RIGHT SIDEBAR - Chat threads */}
+        <div>
+          <ChatThreadsSidebar threads={data.chatThreads} />
+        </div>
+        
       </div>
-
-      {/* 4. Design projects bottom bar */}
-      <DesignProjectsBar projects={data.designProjects} />
-
     </div>
   )
 }

@@ -1,7 +1,9 @@
+// app/.../[customerId]/page.tsx
+
 import CustomerSinglePage from "@/components/owner/customers/single-customer-page";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getCustomer } from "@/lib/prisma/queries/customer/get-customer";
+import { getCustomerWithUrls } from "@/lib/prisma/queries/customer/get-customer";
 import { getServerSession } from "next-auth";
 import { notFound } from "next/navigation";
 
@@ -14,12 +16,10 @@ interface Params {
 export default async function Page({ params }: Params) {
   const { customerId } = await params;
 
-  const customer = await getCustomer(customerId);
-  console.dir(customer, { depth: null });
-  
-
   const session = await getServerSession(authOptions);
   const user = session?.user;
+
+  const customer = await getCustomerWithUrls(customerId);
 
   const isOperatorValid = await prisma.subdomainUser.findFirst({
     where: {
@@ -29,8 +29,6 @@ export default async function Page({ params }: Params) {
   });
 
   if (!isOperatorValid) return notFound();
-
-
 
   return <CustomerSinglePage customer={customer} />;
 }
