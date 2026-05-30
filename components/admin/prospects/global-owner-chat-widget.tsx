@@ -280,7 +280,7 @@ export function GlobalOwnerChatWidget() {
             layoutId="chat-widget-morph"
             key="open-window"
             transition={morphTransition}
-            className="flex flex-col w-[328px] sm:w-[550px] h-[calc(100vh-48px)] bg-background/85 shadow-2xl rounded-3xl overflow-hidden border border-border pointer-events-auto"
+            className="flex flex-col w-[95%] sm:w-[550px] h-[calc(100vh-48px)] bg-background/85 shadow-2xl rounded-3xl overflow-hidden border border-border pointer-events-auto"
           >
             <motion.div
               initial={{ opacity: 0 }}

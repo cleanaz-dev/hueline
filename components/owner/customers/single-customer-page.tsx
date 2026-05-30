@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { Phone, Mail, Clock, CheckCircle2 } from "lucide-react"
+import { Phone, Mail, Clock, CheckCircle2 } from "lucide-react";
 
-import BookingCard, { Booking, Call } from "./booking-card"
-import ChatThreadsSidebar, { ChatThread } from "./chat-thread-sidebar"
-import DesignProjectsBar, { DesignProject } from "./design-projects-bar"
+import BookingCard, { Booking, Call } from "./booking-card";
+import ChatThreadsSidebar, { EnrichedChatThread } from "./chat-thread-sidebar";
+import DesignProjectsBar, { DesignProject } from "./design-projects-bar";
 
 // ----------------------------------------------------------------------
 // Types & Sanitization
 // ----------------------------------------------------------------------
-type NonNullCustomerData = any // Replace with your actual Prisma type
+type NonNullCustomerData = any; // Replace with your actual Prisma type
 
 const sanitizeCustomer = (customer: NonNullCustomerData) => ({
   ...customer,
@@ -21,15 +21,15 @@ const sanitizeCustomer = (customer: NonNullCustomerData) => ({
   createdAt: customer.createdAt ?? new Date().toISOString(),
   subBookingData: (customer.subBookingData ?? []) as Booking[],
   calls: (customer.calls ?? []) as Call[],
-  chatThreads: (customer.chatThreads ?? []) as ChatThread[],
+  chatThreads: (customer.chatThreads ?? []) as EnrichedChatThread[],
   designProjects: (customer.designProjects ?? []) as DesignProject[],
-})
+});
 
 // ----------------------------------------------------------------------
 // StatusBadge
 // ----------------------------------------------------------------------
 const StatusBadge = ({ status }: { status: string }) => {
-  const isPending = status.toUpperCase() === "PENDING"
+  const isPending = status.toUpperCase() === "PENDING";
   return (
     <div
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider border ${
@@ -45,8 +45,8 @@ const StatusBadge = ({ status }: { status: string }) => {
       )}
       <span>{status}</span>
     </div>
-  )
-}
+  );
+};
 
 // ----------------------------------------------------------------------
 // Page
@@ -54,15 +54,14 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function CustomerSinglePage({
   customer,
 }: {
-  customer: NonNullCustomerData
+  customer: NonNullCustomerData;
 }) {
-  if (!customer) return null
+  if (!customer) return null;
 
-  const data = sanitizeCustomer(customer)
+  const data = sanitizeCustomer(customer);
 
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
-      
       {/* 1. Client bar */}
       <div className="bg-white rounded-[20px] shadow-sm border border-gray-100 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -71,7 +70,9 @@ export default function CustomerSinglePage({
           </div>
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-xl font-bold text-gray-900 leading-none">{data.name}</h1>
+              <h1 className="text-xl font-bold text-gray-900 leading-none">
+                {data.name}
+              </h1>
               <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-wider rounded">
                 {data.customerType}
               </span>
@@ -91,10 +92,8 @@ export default function CustomerSinglePage({
 
       {/* 2 & 3. Middle grid: 2-Column Main Area + 1-Column Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* LEFT MAIN AREA (Spans 2 cols) - Contains Bookings AND Design Projects */}
         <div className="lg:col-span-2 flex flex-col gap-8">
-          
           {/* Bookings */}
           <div className="space-y-4">
             <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider px-1">
@@ -103,19 +102,23 @@ export default function CustomerSinglePage({
 
             {data.subBookingData.length > 0 ? (
               data.subBookingData.map((booking: Booking, idx: number) => {
-                const mappedCalls = data.calls.filter((c: Call) => c.bookingDataId === booking.id)
+                const mappedCalls = data.calls.filter(
+                  (c: Call) => c.bookingDataId === booking.id,
+                );
                 if (idx === 0) {
-                  const unassignedCalls = data.calls.filter((c: Call) => !c.bookingDataId)
-                  mappedCalls.push(...unassignedCalls)
+                  const unassignedCalls = data.calls.filter(
+                    (c: Call) => !c.bookingDataId,
+                  );
+                  mappedCalls.push(...unassignedCalls);
                 }
 
                 return (
-                  <BookingCard 
-                    key={booking.id} 
-                    booking={booking} 
-                    calls={mappedCalls} 
+                  <BookingCard
+                    key={booking.id}
+                    booking={booking}
+                    calls={mappedCalls}
                   />
-                )
+                );
               })
             ) : (
               <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-12 text-center flex flex-col items-center">
@@ -126,17 +129,22 @@ export default function CustomerSinglePage({
             )}
           </div>
 
-          {/* Design Projects (Now perfectly matching the width above) */}
+          {/* Design Projects */}
           <DesignProjectsBar projects={data.designProjects} />
-          
         </div>
 
         {/* RIGHT SIDEBAR - Chat threads */}
-        <div>
-          <ChatThreadsSidebar threads={data.chatThreads} />
+        {/* THE FIX: Added `h-full min-h-0 flex flex-col` so it is forced to lock to the grid height */}
+        <div className="h-full min-h-0 flex flex-col">
+          <ChatThreadsSidebar
+            threads={data.chatThreads}
+            callsCount={data.calls.length}
+            customerName={data.name}
+            customerPhone={data.phone}
+            customerEmail={data.email}
+          />
         </div>
-        
       </div>
     </div>
-  )
+  );
 }
