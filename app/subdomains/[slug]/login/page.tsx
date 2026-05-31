@@ -8,7 +8,8 @@ interface PageProps {
     slug: string
   }>;
   searchParams: Promise<{ 
-    huelineId?: string 
+    huelineId?: string;
+    callbackUrl?: string; // Add this
   }>;
 }
 
@@ -18,7 +19,7 @@ export default async function SubdomainLoginPage({
 }: PageProps) {
 
   const { slug } = await params;
-  const { huelineId } = await searchParams;
+  const { huelineId, callbackUrl } = await searchParams; // Extract it
 
   const logo = await getSubdomainLogo(slug);
 
@@ -32,6 +33,7 @@ export default async function SubdomainLoginPage({
         logo={logo} 
         slug={slug}
         huelineId={huelineId}
+        callbackUrl={callbackUrl} // Pass it down to the form
       />
     </Suspense>
   );

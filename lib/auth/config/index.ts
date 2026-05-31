@@ -66,7 +66,7 @@ export const authOptions: NextAuthOptions = {
         };
       },
     }),
-    CredentialsProvider({
+   CredentialsProvider({
       id: "booking-portal",
       name: "Booking Access",
       credentials: {
@@ -78,14 +78,21 @@ export const authOptions: NextAuthOptions = {
           where: {
             huelineId: { equals: credentials?.huelineId, mode: "insensitive" },
           },
-          include: { subdomain: true },
+          // Make sure we have the customer data if needed, 
+          // though customerId is likely a direct field on subBookingData
+          include: { subdomain: true }, 
         });
+
         if (!dbBooking || String(dbBooking.pin) !== String(credentials?.pin))
           return null;
+
         return {
-          id: dbBooking.huelineId,
+          // Fallback to huelineId if customerId doesn't exist yet for older records
+          id: dbBooking.customerId || dbBooking.huelineId, 
           role: "customer",
           subdomainSlug: dbBooking.subdomain?.slug,
+          huelineId: dbBooking.huelineId, 
+          customerId: dbBooking.customerId, // 🔥 ADD THIS: Pass customerId
         };
       },
     }),
@@ -97,6 +104,8 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.subdomainSlug = (user as any).subdomainSlug;
+        token.huelineId = (user as any).huelineId;
+        token.customerId = (user as any).customerId; // 🔥 Pass to token
       }
       return token;
     },
@@ -106,9 +115,8 @@ export const authOptions: NextAuthOptions = {
         session.role = token.role as string;
         session.user.subdomainSlug = token.subdomainSlug as string;
 
-        // 🔥 ADD THIS LINE 🔥
-        // We map the token ID to huelineId so your page logic works
-        (session.user as any).huelineId = token.id as string;
+        (session.user as any).huelineId = token.huelineId as string;
+        (session.user as any).customerId = token.customerId as string; // 🔥 Pass to session
       }
       return session;
     },

@@ -365,6 +365,7 @@ model SubBookingData {
   dimensions             String?
   dateTime               DateTime?
   pin                    String
+  guestPins              String[]
   expiresAt              Int?
 
   // ... The "Perfect Sauce" Logic ...
@@ -414,7 +415,7 @@ model Quote {
   huelineId  String
   version    Int             @default(1)
   status     QuoteStatus     @default(DRAFT)
-  items      Json[]
+  items      Json?           @db.Json
   totalAmount Float?         @default(0)
 
   createdAt DateTime @default(now())

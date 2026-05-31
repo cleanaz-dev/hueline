@@ -6,15 +6,16 @@ import { Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { useRouter } from "next/navigation";
 
 interface PinEntryFormProps {
   logo: string | null;
   slug: string;
   huelineId?: string;
+  callbackUrl?: string; // Captures the return URL if they came from a quote
 }
 
-export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProps) {
+export default function PinEntryForm({ logo, slug, huelineId, callbackUrl }: PinEntryFormProps) {
   const { data: session, status, update } = useSession();
   const router = useRouter();
   
@@ -22,24 +23,24 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // 1. AUTO REDIRECT (Only for returning users, not during active submission)
+  // 1. AUTO REDIRECT (For returning users who are already logged in)
   useEffect(() => {
-    // If we are currently submitting, let the submit handler handle the redirect to avoid race conditions
     if (isSubmitting) return;
 
     if (status === "authenticated" && session?.user && huelineId) {
-      // Ensure strict type matching and casing
-      const sessionProjectId = (session.user as any).huelineId || ""; // Type assertion if needed
+      const sessionProjectId = (session.user as any).huelineId || ""; 
       
+      // If they are already authenticated for this project
       if (sessionProjectId.toLowerCase() === huelineId.toLowerCase()) {
-        router.replace(`/booking/${huelineId}`); // Use replace to prevent back-button loops
+        // Push to callbackUrl if it exists, otherwise fallback to booking page
+        router.replace(callbackUrl || `/booking/${huelineId}`); 
       }
     }
-  }, [status, session, huelineId, isSubmitting, router]);
+  }, [status, session, huelineId, isSubmitting, router, callbackUrl]);
 
   // 2. SUBMIT LOGIC
   const handlePinSubmit = async (pinOverride?: string[]) => {
-    if (isSubmitting) return; // Prevent double firing
+    if (isSubmitting) return; 
 
     const currentPinArray = pinOverride || pin; 
     const pinValue = currentPinArray.join("");
@@ -72,14 +73,11 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
       }
 
       // 3. SUCCESS HANDLING
-      // Force a session update on the client
       await update();
-      
-      // Refresh router to ensure server components see the new cookie
       router.refresh();
       
-      // Navigate
-      window.location.href = `/booking/${huelineId}`;
+      // Send them to the Quote if callbackUrl exists, else Dashboard
+      window.location.href = callbackUrl || `/booking/${huelineId}`;
 
     } catch (error) {
       console.error(error);
@@ -88,7 +86,7 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
     }
   };
 
-  // INPUT HANDLER
+  // INPUT HANDLERS
   const handleChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
 
@@ -151,7 +149,12 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
               <Lock className="w-6 h-6" />
             </div>
           )}
-          <h1 className="text-xl font-bold text-gray-900">Private Project</h1>
+          
+          {/* Dynamic Title */}
+          <h1 className="text-xl font-bold text-gray-900">
+            {callbackUrl ? "Private Quote" : "Private Project"}
+          </h1>
+          
           {huelineId && (
             <p className="text-sm text-gray-500 mt-2 font-mono bg-gray-100 inline-block px-2 py-1 rounded">
               ID: {huelineId}
@@ -195,6 +198,8 @@ export default function PinEntryForm({ logo, slug, huelineId }: PinEntryFormProp
                 <Loader2 className="animate-spin w-5 h-5 mr-2" />
                 Verifying...
               </>
+            ) : callbackUrl ? (
+              "Access Quote" // Dynamic Button Text
             ) : (
               "Access Project"
             )}

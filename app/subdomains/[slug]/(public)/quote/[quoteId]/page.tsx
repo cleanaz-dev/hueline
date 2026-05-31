@@ -1,112 +1,66 @@
-import { notFound } from "next/navigation";
-import { CheckCircle, Download, Printer } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { notFound, redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth/config";
+import SingleQuoteIdPage from "@/components/owner/quote/single-quote-id-page";
+import { getQuote } from "@/lib/prisma/queries/quote/get-quote";
 
-interface ItemProps {
-  name: string;
-  description: string;
-  qty: string;
-  price: string;
+interface Params {
+  params: Promise<{
+    quoteId: string;
+  }>;
 }
 
-export default async function CustomerQuotePage({
-  params,
-}: {
-  params: { quoteId: string };
-}) {
-  const quote = await prisma.quote.findUnique({
-    where: { id: params.quoteId },
-    include: { booking: true, customer: true }, // assuming these relations exist
-  });
+export default async function Page({ params }: Params) {
+  const { quoteId } = await params;
 
+  // 1. FETCH QUOTE DATA
+  const quote = await getQuote(quoteId);
   if (!quote || !quote.customer || !quote.booking) notFound();
 
-  return (
-    <div className="min-h-screen bg-zinc-50 py-12 px-4 font-sans text-zinc-900">
-      {/* WEB-ONLY: Top Action Bar (Hides when printing to PDF) */}
-      <div className="max-w-3xl mx-auto mb-6 flex justify-between items-center print:hidden">
-        <div className="text-sm font-medium text-zinc-500">
-          Prepared for {quote.customer.name}
-        </div>
-        <button
-          onClick={() => window.print()} // The easiest PDF generator ever
-          className="flex items-center gap-2 bg-white border border-zinc-200 shadow-sm px-4 py-2 rounded-lg text-sm font-bold hover:bg-zinc-50 transition-all"
-        >
-          <Download className="w-4 h-4" />
-          Save as PDF
-        </button>
-      </div>
+  // 2. 🔒 SECURITY CHECK
+  const session = await getServerSession(authOptions);
 
-      {/* THE ACTUAL QUOTE / "PAPER" */}
-      <div className="max-w-3xl mx-auto bg-white border border-zinc-200 shadow-xl rounded-2xl overflow-hidden print:shadow-none print:border-none print:m-0">
-        {/* Header Section */}
-        <div className="bg-zinc-900 text-white p-10 flex justify-between items-end">
-          <div>
-            <h1 className="text-4xl font-black mb-2">HUE-LINE</h1>
-            <p className="text-zinc-400 font-medium">Painting Estimate</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xl font-bold">${quote.totalAmount || "0.00"}</p>
-            <p className="text-sm text-zinc-400">
-              Quote #{quote.id.slice(-6).toUpperCase()}
-            </p>
-          </div>
-        </div>
+  const sessionCustomerId = (session?.user as any)?.customerId;
+  const sessionHuelineId = (session?.user as any)?.huelineId?.toLowerCase();
+  const sessionSlug = session?.user?.subdomainSlug?.toLowerCase();
+  
+  const customerSubdomainSlug = quote.booking.subdomain?.slug?.toLowerCase();
 
-        <div className="p-10">
-          {/* Include the Visualizer Images they requested! */}
-          <div className="mb-10">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">
-              Proposed Vision
-            </h3>
-            <div className="flex gap-4">
-              {/* Render the selected mockup next to the original */}
-              <div className="flex-1 h-48 bg-zinc-100 rounded-xl overflow-hidden">
-                <img
-                  src={quote.booking.compressOriginalImages}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {/* ... mockup image ... */}
-            </div>
-          </div>
+  // AUTH CONDITIONS
+  // 1. Logged in customer matches quote's customer profile
+  const isAuthorizedCustomer = Boolean(sessionCustomerId && sessionCustomerId === quote.customer.id);
+  
+  // 2. Fallback: Logged in specifically using this quote's booking ID
+  const isAuthorizedBooking = Boolean(sessionHuelineId && sessionHuelineId === quote.booking.huelineId?.toLowerCase());
+  
+  // 3. Operator viewing quote within their own subdomain
+  const isAccountOperator =
+    sessionSlug === customerSubdomainSlug && 
+    session?.role && 
+    session.role !== "customer"; 
+    
+  // 4. Global Admin
+  const isSuperAdmin = session?.role === "SUPER_ADMIN";
 
-          {/* Line Items Table */}
-          <div className="mb-10">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-4">
-              Line Items
-            </h3>
-            <div className="border border-zinc-100 rounded-xl overflow-hidden">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-zinc-50 text-zinc-500 font-medium border-b border-zinc-100">
-                  <tr>
-                    <th className="p-4">Description</th>
-                    <th className="p-4 text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 font-medium">
-                  {quote.items?.map((item: ItemProps, i: number) => (
-                    <tr key={i}>
-                      <td className="p-4 text-zinc-900">{item.description}</td>
-                      <td className="p-4 text-right text-zinc-900">
-                        ${item.price}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+  const isAuthorized = isAuthorizedCustomer || isAuthorizedBooking || isAccountOperator || isSuperAdmin;
 
-        {/* WEB-ONLY: Accept Button (Hides when printing to PDF) */}
-        <div className="bg-zinc-50 p-6 border-t border-zinc-100 flex justify-end print:hidden">
-          <button className="bg-[#007AFF] text-white px-8 py-3 rounded-xl font-bold shadow-md hover:bg-blue-600 transition-all flex items-center gap-2">
-            <CheckCircle className="w-5 h-5" />
-            Accept Estimate
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+ if (!isAuthorized) {
+    const returnTo = encodeURIComponent(`/quote/${quoteId}`);
+    
+    // 1. Determine environment
+    const isProd = process.env.NODE_ENV === "production";
+    const protocol = isProd ? "https" : "http";
+    
+    // 2. Base domain (make sure to match your dev port, usually 3000)
+    const baseDomain = isProd ? "hue-line.com" : "lvh.me:3000"; 
+    
+    // 3. Construct absolute URL: http://acme.lvh.me:3000/login?huelineId=123&callbackUrl=/quote/123
+    const loginUrl = `${protocol}://${customerSubdomainSlug}.${baseDomain}/login?huelineId=${quote.booking.huelineId}&callbackUrl=${returnTo}`;
+    
+    // 4. Send them there!
+    redirect(loginUrl);
+  }
+
+  // 3. RENDER PAGE
+  return <SingleQuoteIdPage quote={quote} />;
 }
