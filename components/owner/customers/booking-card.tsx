@@ -4,17 +4,12 @@ import React, { useState } from "react";
 import { Calendar, Image as ImageIcon, PhoneCall } from "lucide-react";
 import BookingTab from "./booking-tab";
 import CallTab from "./call-tab";
+import { Mockup } from "@/app/generated/prisma";
 
 // ----------------------------------------------------------------------
 // Types
 // ----------------------------------------------------------------------
-export type Mockup = {
-  hex?: string;
-  brand?: string;
-  code?: string;
-  name?: string;
-  compressedS3Key?: string;
-};
+
 
 export type PaintColor = {
   hex: string;
@@ -45,7 +40,9 @@ export type Call = {
 
 export type Booking = {
   id: string;
-  huelineId?: string;
+  customerId: string;
+  bookingId?: string;
+  huelineId: string;
   compressOriginalImages?: string;
   createdAt: string;
   prompt?: string;

@@ -3,21 +3,23 @@
 import { useState, useEffect } from "react";
 import {
   Clock,
-  MessageSquare,
   Image as ImageIcon,
   Mail,
-  Smartphone,
   Bot,
-  User,
   ArrowRight,
-  UserCircle,
   Activity,
   Phone,
+  UserRound,
+  Headset,
+  MessageSquare,
+  Video,
+  Calendar,
 } from "lucide-react";
 import { ChatThread as PrismaChatThread } from "@/app/generated/prisma";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useOwner } from "@/context/owner-context";
+import { cn } from "@/lib/utils";
 
 export type EnrichedChatThread = PrismaChatThread & {
   activities: { type: string; createdAt: string | Date }[];
@@ -26,6 +28,8 @@ export type EnrichedChatThread = PrismaChatThread & {
     role: string;
     type: string;
     createdAt: string | Date;
+    subject?: string; // Added to support emails
+    metadata?: any;   // Added to support emails
   }[];
 };
 
@@ -40,11 +44,17 @@ function getLastMessage(comms: EnrichedChatThread["communications"]) {
 }
 
 function stripHtml(html: string) {
-  return html.replace(/<[^>]*>/g, "").trim();
-}
-
-function truncate(str: string, len: number) {
-  return str.length > len ? str.slice(0, len) + "…" : str;
+  if (!html) return "";
+  // Strip tags and decode basic HTML entities for a clean snippet
+  let text = html.replace(/<[^>]*>/g, " ");
+  text = text
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+  return text.replace(/\s+/g, " ").trim();
 }
 
 function getRoleInfo(role: string) {
@@ -52,41 +62,49 @@ function getRoleInfo(role: string) {
     case "AI":
       return {
         label: "AI Assistant",
-        icon: <Bot className="w-4 h-4" />,
-        color: "text-violet-600 bg-violet-50 border-violet-100",
+        bubbleClass: "bg-indigo-50 text-indigo-900 border border-indigo-100",
+        icon: Bot,
+        side: "left",
       };
     case "OPERATOR":
       return {
         label: "Team Member",
-        icon: <User className="w-4 h-4" />,
-        color: "text-[#007AFF] bg-[#007AFF]/10 border-[#007AFF]/20",
+        bubbleClass: "bg-blue-50 text-blue-900 border border-blue-100",
+        icon: Headset,
+        side: "left",
       };
     case "CUSTOMER":
+    case "CLIENT":
       return {
         label: "Customer",
-        icon: <UserCircle className="w-4 h-4" />,
-        color: "text-emerald-600 bg-emerald-50 border-emerald-100",
+        bubbleClass: "bg-zinc-100 text-zinc-900 border border-zinc-200",
+        icon: UserRound,
+        side: "right",
       };
     default:
       return {
         label: "System",
-        icon: <Activity className="w-4 h-4" />,
-        color: "text-slate-600 bg-slate-50 border-slate-200",
+        bubbleClass: "bg-slate-50 text-slate-600 border border-slate-200",
+        icon: Activity,
+        side: "center",
       };
   }
 }
 
-function getChannelInfo(type: string) {
+function getTypeInfo(type: string) {
   switch (type) {
     case "SMS":
-      return { label: "via SMS", icon: <Smartphone className="w-3.5 h-3.5" /> };
+      return { icon: MessageSquare, label: "SMS" };
     case "EMAIL":
-      return { label: "via Email", icon: <Mail className="w-3.5 h-3.5" /> };
+      return { icon: Mail, label: "Email" };
+    case "PHONE":
+      return { icon: Phone, label: "Call Log" };
+    case "DEMO":
+      return { icon: Video, label: "Demo" };
+    case "MEETING":
+      return { icon: Calendar, label: "Meeting" };
     default:
-      return {
-        label: "via System",
-        icon: <MessageSquare className="w-3.5 h-3.5" />,
-      };
+      return { icon: Activity, label: "Activity" };
   }
 }
 
@@ -119,7 +137,7 @@ export default function ChatThreadsSidebar({
 
   return (
     <div className="h-[685px] flex flex-col space-y-4 min-h-0">
-      {/* External Title Row (fixed height) */}
+      {/* External Title Row */}
       <div className="flex items-center gap-2 px-1 shrink-0">
         <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
           Recent Threads
@@ -131,10 +149,8 @@ export default function ChatThreadsSidebar({
         )}
       </div>
 
-      {/* Main Unified Component */}
-
       <div className="bg-white rounded-[24px] shadow-sm border border-slate-200 flex-1 flex flex-col overflow-hidden min-h-0">
-        {/* ---- TABS SECTION (fixed height) ---- */}
+        {/* ---- TABS SECTION ---- */}
         {threads.length > 1 && (
           <div className="flex overflow-x-auto border-b border-slate-100 shrink-0 px-2 pt-2 scrollbar-hide">
             {threads.map((thread) => {
@@ -162,33 +178,34 @@ export default function ChatThreadsSidebar({
           </div>
         )}
 
-        {/* ---- TAB SCROLLABLE CONTENT AREA ---- */}
-        {/* THE FIX: `flex-1 overflow-y-auto min-h-0` ensures THIS is the only part that scrolls and stops expanding */}
+        {/* ---- CONTENT AREA ---- */}
         <div className="flex-1 overflow-y-auto min-h-0 bg-white p-6">
           {activeThread ? (
             <>
               {/* Thread Header Info */}
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-1">
-                    {activeThread.title}
-                  </h3>
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
-                    <Clock className="w-3.5 h-3.5" />
-                    Updated{" "}
-                    {formatDistanceToNow(new Date(activeThread.updatedAt), {
-                      addSuffix: true,
-                    })}
+              {(() => {
+                const lastMsg = getLastMessage(activeThread.communications);
+                
+                
+                return (
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-muted-foreground mb-1">
+                        {activeThread.title}
+                      </h3>
+                     
+                    </div>
+                    <span className="px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md shrink-0">
+                      {activeThread.status}
+                    </span>
                   </div>
-                </div>
-                <span className="px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md shrink-0">
-                  {activeThread.status}
-                </span>
-              </div>
+                );
+              })()}
 
               {/* Latest Message Breakdown */}
               {(() => {
                 const lastMsg = getLastMessage(activeThread.communications);
+                
                 if (!lastMsg)
                   return (
                     <div className="bg-slate-50 rounded-xl p-4 text-center text-sm text-slate-500 border border-slate-100 mb-6">
@@ -197,45 +214,60 @@ export default function ChatThreadsSidebar({
                   );
 
                 const roleInfo = getRoleInfo(lastMsg.role);
-                const channelInfo = getChannelInfo(lastMsg.type);
+                const typeInfo = getTypeInfo(lastMsg.type);
+                const isRight = roleInfo.side === "right";
+                
+                const senderName = isRight ? (customerName || "Customer") : roleInfo.label;
+                const receiverName = isRight ? "Team" : (customerName || "Customer");
+                const emailSubject = lastMsg.subject || lastMsg.metadata?.subject;
 
                 return (
                   <div className="mb-8">
-                    <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">
-                      Last Communication
-                    </h4>
-
-                    <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
-                      <div className="bg-slate-50/50 border-b border-slate-100 px-4 py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <div
-                            className={`p-1.5 rounded-lg border ${roleInfo.color}`}
-                          >
-                            {roleInfo.icon}
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold text-slate-900 leading-none mb-1">
-                              {roleInfo.label}
-                            </div>
-                            <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 mt-1">
-                              {channelInfo.icon}
-                              {channelInfo.label}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-xs text-slate-400 font-medium">
-                          {formatDistanceToNow(new Date(lastMsg.createdAt), {
-                            addSuffix: true,
-                          })}
-                        </div>
+                    {/* Clear direction header to stop confusion */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100 text-[11px] font-bold text-slate-500">
+                        <span className={cn(isRight && "text-slate-800")}>{senderName}</span>
+                        <ArrowRight className="w-3 h-3 text-slate-300" />
+                        <span className={cn(!isRight && "text-slate-800")}>{receiverName}</span>
                       </div>
-                      <div className="p-4 bg-white text-sm text-slate-600 leading-relaxed">
-                        {truncate(
-                          lastMsg.type === "EMAIL"
-                            ? stripHtml(lastMsg.body)
-                            : lastMsg.body,
-                          160,
+                      <span className="text-xs font-medium text-slate-400">
+                         {formatDistanceToNow(new Date(lastMsg.createdAt), { addSuffix: true })}
+                      </span>
+                    </div>
+
+                    {/* Omni Chat Bubble Design Preview */}
+                    <div className={cn("flex w-full", isRight ? "justify-end" : "justify-start")}>
+                      <div
+                        className={cn(
+                          "relative flex flex-col px-4 py-3 rounded-2xl text-[13px] shadow-sm break-words w-[90%]",
+                          roleInfo.bubbleClass,
+                          isRight ? "rounded-tr-sm" : "rounded-tl-sm"
                         )}
+                      >
+                        {/* Inner Type Label */}
+                        <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-current/10 opacity-70">
+                          <typeInfo.icon size={14} strokeWidth={2.5} />
+                          <span className="text-[10px] uppercase tracking-widest font-bold">
+                            {typeInfo.label}
+                          </span>
+                        </div>
+
+                        {/* Clean Email Formatting */}
+                        {lastMsg.type === "EMAIL" && (
+                          <div className="mb-2 pb-2 border-b border-current/10 flex flex-col gap-0.5">
+                            <span className="text-[9px] uppercase tracking-wider font-bold opacity-50">
+                              Subject
+                            </span>
+                            <span className={cn("font-medium leading-snug truncate", !emailSubject && "italic opacity-60")}>
+                              {emailSubject || "No subject"}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Message Snippet Wrapper */}
+                        <div className="line-clamp-3 leading-relaxed opacity-90 whitespace-pre-wrap">
+                          {stripHtml(lastMsg.body)}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -251,11 +283,7 @@ export default function ChatThreadsSidebar({
                   <div className="bg-violet-50 rounded-2xl p-4 border border-violet-100/50 flex flex-col items-center justify-center text-center hover:shadow-sm transition-all">
                     <ImageIcon className="w-5 h-5 text-violet-500 mb-2" />
                     <span className="text-xl font-black text-violet-700 leading-none mb-1">
-                      {
-                        activeThread.activities.filter(
-                          (a) => a.type === "GENERATED_IMAGE",
-                        ).length
-                      }
+                      {activeThread.activities.filter((a) => a.type === "GENERATED_IMAGE").length}
                     </span>
                     <span className="text-[10px] font-bold text-violet-600 uppercase tracking-wider opacity-80">
                       Images
@@ -265,11 +293,7 @@ export default function ChatThreadsSidebar({
                   <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100/50 flex flex-col items-center justify-center text-center hover:shadow-sm transition-all">
                     <Mail className="w-5 h-5 text-orange-500 mb-2" />
                     <span className="text-xl font-black text-orange-700 leading-none mb-1">
-                      {
-                        activeThread.activities.filter(
-                          (a) => a.type === "EMAIL_SENT",
-                        ).length
-                      }
+                      {activeThread.activities.filter((a) => a.type === "EMAIL_SENT").length}
                     </span>
                     <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider opacity-80">
                       Emails
@@ -314,7 +338,6 @@ export default function ChatThreadsSidebar({
         </div>
 
         {/* ---- FIXED FOOTER ---- */}
-        {/* Pushed outside the scroll area so it always stays locked at the bottom of the white box! */}
         {activeThread && (
           <div className="shrink-0 p-6 pt-4 border-t border-slate-100 bg-white mt-auto">
             <Button
