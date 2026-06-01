@@ -12,7 +12,9 @@ interface Params {
   }>;
 }
 
-export async function POST({ params }: Params) {
+
+
+export async function POST(req:Request, { params }: Params) {
   const { slug, quoteId } = await params;
 
   const session = await getServerSession(authOptions);
@@ -75,6 +77,7 @@ export async function POST({ params }: Params) {
         totalAmount: totalAmount,
       },
     });
+
     return NextResponse.json({ message: "Quote generated successfully!" });
   } catch (error) {
     console.error("Error generating quote:", error);

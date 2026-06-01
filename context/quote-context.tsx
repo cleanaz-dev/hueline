@@ -12,25 +12,34 @@ import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-// 1. Updated Interface to include the generation state and function
 interface QuoteContextType {
-  quote: Quote | null; 
+  quote: Quote | null;
   isLoading: boolean;
   error: any;
   generatingQuote: boolean;
+  slug: string; // Expose the slug just in case child components need it
   handleQuoteGeneration: (quoteId: string) => Promise<void>;
 }
 
 const QuoteContext = createContext<QuoteContextType | undefined>(undefined);
 
-export function QuoteProvider({ children }: { children: ReactNode }) {
+// 1. Add slug to the Provider props
+interface QuoteProviderProps {
+  children: ReactNode;
+  slug: string; 
+}
+
+export function QuoteProvider({ children, slug }: QuoteProviderProps) {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [generatingQuote, setGeneratingQuote] = useState<boolean>(false);
   
-  const { data, error, isLoading } = useSWR("/api/quote/current", fetcher);
+  // 2. SWR can fetch instantly because `slug` is already available from props!
+  const { data, error, isLoading } = useSWR(
+    `/api/subdomain/${slug}/quote/current`, 
+    fetcher
+  );
     
   useEffect(() => {
-    // Safely check if data and data.quote exist
     if (data?.quote) {
       setQuote(data.quote);
     }
@@ -39,7 +48,8 @@ export function QuoteProvider({ children }: { children: ReactNode }) {
   const handleQuoteGeneration = async (quoteId: string) => {
     setGeneratingQuote(true);
     try {
-      const response = await fetch(`/api/quote/generate?quoteId=${quoteId}`, {
+      // 3. Use the slug prop directly in your API call
+      const response = await fetch(`/api/subdomain/${slug}/quotes/${quoteId}/generate`, {
         method: "POST",
       });
       const result = await response.json();
@@ -54,7 +64,6 @@ export function QuoteProvider({ children }: { children: ReactNode }) {
       setGeneratingQuote(false);
     }
   };
-  // 2. Removed the stray `}` that was right here
 
   return (
     <QuoteContext.Provider 
@@ -62,8 +71,9 @@ export function QuoteProvider({ children }: { children: ReactNode }) {
         quote, 
         isLoading, 
         error,
-        generatingQuote,          // 3. Exposed to children
-        handleQuoteGeneration     // 3. Exposed to children
+        generatingQuote,
+        slug,
+        handleQuoteGeneration
       }}
     >
       {children}
