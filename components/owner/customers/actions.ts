@@ -29,6 +29,7 @@ export async function createOrOpenQuote(customerId: string, huelineId: string) {
     // 4. Save to DB
     const quote = await prisma.quote.create({
       data: {
+        subdomain: {connect: { id: booking?.subdomainId ?? "" }},
         huelineId,
         customer: { connect: { id: customerId } },
         booking: { connect: { huelineId } },
