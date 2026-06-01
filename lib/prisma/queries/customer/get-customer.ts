@@ -7,7 +7,7 @@ export const getCustomer = (customerId: string) =>
   prisma.customer.findUnique({
     where: { id: customerId },
     include: {
-      quotes: true,
+      
       chatThreads: {
         include: {
           activities: true,
@@ -28,6 +28,7 @@ export const getCustomer = (customerId: string) =>
         include: {
           mockups: true,
           paintColors: true,
+          quotes: true
         },
       },
       subdomain: {

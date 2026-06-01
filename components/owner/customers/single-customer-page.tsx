@@ -5,6 +5,7 @@ import { Phone, Mail, Clock, CheckCircle2 } from "lucide-react";
 import BookingCard, { Booking, Call } from "./booking-card";
 import ChatThreadsSidebar, { EnrichedChatThread } from "./chat-thread-sidebar";
 import DesignProjectsBar, { DesignProject } from "./design-projects-bar";
+import { Quote } from "@/app/generated/prisma/wasm";
 
 // ----------------------------------------------------------------------
 // Types & Sanitization
@@ -23,8 +24,8 @@ const sanitizeCustomer = (customer: NonNullCustomerData) => ({
   calls: (customer.calls ?? []) as Call[],
   chatThreads: (customer.chatThreads ?? []) as EnrichedChatThread[],
   designProjects: (customer.designProjects ?? []) as DesignProject[],
+  quotes: (customer.quotes ?? []) as Quote[], // Replace with actual Quote type
 });
-
 // ----------------------------------------------------------------------
 // StatusBadge
 // ----------------------------------------------------------------------

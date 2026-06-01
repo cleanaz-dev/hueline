@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Image as ImageIcon,
   MessageSquare,
@@ -9,10 +9,11 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Booking } from "./booking-card";
-import { Mockup } from "@/app/generated/prisma";
+import { Mockup, Quote } from "@/app/generated/prisma";
 import { useTransition } from "react";
 import { createOrOpenQuote } from "./actions"; // Import your action
 import { Loader2 } from "lucide-react";
+import { GenerateQuoteButton } from "./generate-quote-button";
 
 // ----------------------------------------------------------------------
 // Helpers
@@ -306,30 +307,16 @@ export default function BookingTab({ booking }: { booking: Booking }) {
               Next Step
             </span>
           </div>
-
-          <button
-            onClick={handleGenerateQuote}
-            disabled={isPending}
-            className="w-full flex items-center justify-between bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl px-3 py-2.5 transition-all duration-200 shadow-sm active:scale-[0.98] group disabled:opacity-70"
-          >
-            <div className="flex flex-col items-start overflow-hidden">
-              <span className="text-xs font-bold leading-tight mb-0.5">
-                {isPending ? "Generating..." : "Generate Quote"}
-              </span>
-              <span className="text-[9px] text-zinc-400 font-medium leading-tight truncate max-w-[160px]">
-                {selectedMockup
-                  ? `For ${selectedMockup.name}`
-                  : "Standard Estimate"}
-              </span>
-            </div>
-            <div className="bg-white/10 p-1.5 rounded-lg group-hover:bg-white/20 transition-colors shrink-0">
-              {isPending ? (
-                <Loader2 className="h-3.5 w-3.5 text-white animate-spin" />
-              ) : (
-                <ArrowRight className="h-3.5 w-3.5 text-white" />
-              )}
-            </div>
-          </button>
+          <GenerateQuoteButton
+            customerId={booking.customerId}
+            huelineId={booking.huelineId}
+            hasExistingQuote={!!booking.quotes && booking.quotes.length > 0}
+            quoteId={
+              booking.quotes && booking.quotes.length > 0
+                ? booking.quotes[0].id
+                : undefined
+            }
+          />
         </div>
       </div>
     </div>

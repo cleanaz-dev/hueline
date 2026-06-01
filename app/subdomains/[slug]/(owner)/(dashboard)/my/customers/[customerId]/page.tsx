@@ -29,6 +29,8 @@ export default async function Page({ params }: Params) {
     }),
   ]);
 
+  console.log("Fetched customer:", customer);
+
   if (!customer) return notFound();
   if (!operator) return unauthorized();
   if (operator.subdomainId !== customer.subdomain?.id) return forbidden();

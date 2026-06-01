@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Calendar, Image as ImageIcon, PhoneCall } from "lucide-react";
 import BookingTab from "./booking-tab";
 import CallTab from "./call-tab";
-import { Mockup } from "@/app/generated/prisma";
+import { Mockup, Quote } from "@/app/generated/prisma";
 
 // ----------------------------------------------------------------------
 // Types
@@ -49,6 +49,7 @@ export type Booking = {
   mockups?: Mockup[];
   paintColors?: PaintColor[];
   designProjects?: { id: string }[];
+  quotes?: Quote[];
 };
 
 // ----------------------------------------------------------------------

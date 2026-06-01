@@ -22,7 +22,7 @@ export default async function Page({ params }: Params) {
 
   const sessionCustomerId = (session?.user as any)?.customerId;
   const sessionHuelineId = (session?.user as any)?.huelineId?.toLowerCase();
-  const sessionSlug = session?.user?.subdomainSlug?.toLowerCase();
+  const sessionSlug = (session?.user as any)?.subdomainSlug?.toLowerCase();
   
   const customerSubdomainSlug = quote.booking.subdomain?.slug?.toLowerCase();
 
@@ -33,18 +33,21 @@ export default async function Page({ params }: Params) {
   // 2. Fallback: Logged in specifically using this quote's booking ID
   const isAuthorizedBooking = Boolean(sessionHuelineId && sessionHuelineId === quote.booking.huelineId?.toLowerCase());
   
-  // 3. Operator viewing quote within their own subdomain
-  const isAccountOperator =
+  // 3. Operator viewing quote within their own subdomain (Painter/Owner)
+  const isAccountOperator = Boolean(
     sessionSlug === customerSubdomainSlug && 
     session?.role && 
-    session.role !== "customer"; 
+    session.role !== "customer" && 
+    session.role !== "customer-guest"
+  ); 
     
   // 4. Global Admin
   const isSuperAdmin = session?.role === "SUPER_ADMIN";
 
+  // FINAL AUTHORIZATION
   const isAuthorized = isAuthorizedCustomer || isAuthorizedBooking || isAccountOperator || isSuperAdmin;
 
- if (!isAuthorized) {
+  if (!isAuthorized) {
     const returnTo = encodeURIComponent(`/quote/${quoteId}`);
     
     // 1. Determine environment
@@ -61,6 +64,10 @@ export default async function Page({ params }: Params) {
     redirect(loginUrl);
   }
 
-  // 3. RENDER PAGE
-  return <SingleQuoteIdPage quote={quote} />;
+  // 3. DETERMINE EDIT PERMISSIONS
+  // If they are an operator or super admin, they get owner privileges (editing capability)
+  const isOwner = isAccountOperator || isSuperAdmin;
+
+  // 4. RENDER PAGE
+  return <SingleQuoteIdPage quote={quote} isOwner={isOwner} />;
 }
