@@ -10,7 +10,7 @@ interface Params {
     quoteId: string;
   }>;
 }
-export async function GET({ params }: Params) {
+export async function GET(req:Request,{ params }: Params) {
   const { slug, quoteId } = await params;
   const session = await getServerSession(authOptions);
   const userEmail = session?.user?.email;
