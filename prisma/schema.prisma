@@ -294,6 +294,7 @@ model Subdomain {
   errorLogs        ErrorLog[]
   chatThreads      ChatThread[]
   branding         Branding?
+  quotes           Quote[]
 }
 
 model Branding {
@@ -407,16 +408,18 @@ model SubBookingData {
 }
 
 model Quote {
-  id         String          @id @default(auto()) @map("_id") @db.ObjectId
-  customer   Customer?       @relation(fields: [customerId], references: [id])
-  customerId String?         @db.ObjectId
-  booking    SubBookingData? @relation(fields: [bookingId], references: [id])
-  bookingId  String?         @db.ObjectId
-  huelineId  String
-  version    Int             @default(1)
-  status     QuoteStatus     @default(DRAFT)
-  items      Json?           @db.Json
-  totalAmount Float?         @default(0)
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  customer    Customer?       @relation(fields: [customerId], references: [id])
+  customerId  String?         @db.ObjectId
+  booking     SubBookingData? @relation(fields: [bookingId], references: [id])
+  bookingId   String?         @db.ObjectId
+  subdomain   Subdomain       @relation(fields: [subdomainId], references: [id])
+  subdomainId String          @db.ObjectId
+  huelineId   String
+  version     Int             @default(1)
+  status      QuoteStatus     @default(DRAFT)
+  items       Json?           @db.Json
+  totalAmount Float?          @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

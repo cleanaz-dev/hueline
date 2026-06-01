@@ -11,7 +11,7 @@ interface Params {
   }>;
 }
 export async function GET(req:Request,{ params }: Params) {
-  const { slug, quoteId } = await params;
+  const { slug } = await params;
   const session = await getServerSession(authOptions);
   const userEmail = session?.user?.email;
 
@@ -26,7 +26,11 @@ export async function GET(req:Request,{ params }: Params) {
   }
 
   try {
-    const quotes = await prisma.quote.findMany()
+    const quotes = await prisma.quote.findMany({
+      where: {
+        subdomain: { slug }
+      }
+    });
 
     return NextResponse.json(quotes);
   } catch (error) {
