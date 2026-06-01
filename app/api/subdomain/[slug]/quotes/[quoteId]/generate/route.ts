@@ -19,13 +19,13 @@ export async function POST({ params }: Params) {
   const userEmail = session?.user?.email;
 
   if (!session || !userEmail) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   const operatorAccess = await isOperatorValid(userEmail, slug);
 
   if (!operatorAccess) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
   try {
@@ -51,7 +51,7 @@ export async function POST({ params }: Params) {
       !quote.booking.prompt
     ) {
       return NextResponse.json(
-        { error: "Invalid quote data" },
+        { message: "Invalid quote data" },
         { status: 404 },
       );
     }
@@ -79,7 +79,7 @@ export async function POST({ params }: Params) {
   } catch (error) {
     console.error("Error generating quote:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { message: "Internal Server Error" },
       { status: 500 },
     );
   }
