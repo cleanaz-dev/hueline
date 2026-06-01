@@ -7,10 +7,10 @@ import { prisma } from "@/lib/prisma";
 interface Params {
   params: Promise<{
     slug: string;
-    quoteId: string;
   }>;
 }
-export async function GET(req:Request,{ params }: Params) {
+
+export async function GET(req: Request, { params }: Params) {
   const { slug } = await params;
   const session = await getServerSession(authOptions);
   const userEmail = session?.user?.email;
@@ -38,4 +38,3 @@ export async function GET(req:Request,{ params }: Params) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
