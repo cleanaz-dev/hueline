@@ -1,3 +1,5 @@
+// api/subdomain/[slug]/check-lock/[resourceId]/route.ts
+
 import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
 

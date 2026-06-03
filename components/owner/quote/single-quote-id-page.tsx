@@ -16,7 +16,7 @@ interface Props {
 }
 
 export default function SingleQuoteIdPage({ quote: serverQuote, isOwner }: Props) {
-  const { generatingQuote, handleQuoteGeneration, quote: contextQuote } = useQuote();
+  const { generatingQuote, handleQuoteGeneration, quote: contextQuote,  } = useQuote();
 
   // SIMPLIFIED FALLBACK LOGIC: 
   // If SWR has loaded the quote, use it. Otherwise use the initial server data!
@@ -114,6 +114,7 @@ export default function SingleQuoteIdPage({ quote: serverQuote, isOwner }: Props
             items={items}
             totalAmount={quote?.totalAmount || 0}
             isOwner={isOwner}
+            generatingQuote={generatingQuote}
           />
         </div>
 
