@@ -177,29 +177,32 @@ export async function processQuoteWorkflow({
     console.log("Email Actions Here....");
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.clientCommunication.create({
-      data: {
-        body: "",
-        role: config.role,
-        type: "QUOTE",
-        customer: { connect: { id: customer.id } },
-        ...(job.operatorId
-          ? { operator: { connect: { id: job.operatorId } } }
-          : {}),
-      },
-    });
-    await tx.clientActivity.create({
-      data: {
-        type: config.activityType,
-        title: config.activityTitle(context),
-        description: `${config.activityDescription(context)} (via ${job.deliveryMethod})`,
-        metadata: { huelineId: "", jobId: job.id },
-        customer: { connect: { id: customer.id } },
-        subDomain: { connect: { id: job.subdomainId } },
-      },
-    });
-     await tx.logs.create({
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.clientCommunication.create({
+        data: {
+          body: "",
+          role: config.role,
+          type: "QUOTE",
+          customer: { connect: { id: customer.id } },
+          ...(job.operatorId
+            ? { operator: { connect: { id: job.operatorId } } }
+            : {}),
+        },
+      });
+
+      await tx.clientActivity.create({
+        data: {
+          type: config.activityType,
+          title: config.activityTitle(context),
+          description: `${config.activityDescription(context)} (via ${job.deliveryMethod})`,
+          metadata: { huelineId: "", jobId: job.id },
+          customer: { connect: { id: customer.id } },
+          subDomain: { connect: { id: job.subdomainId } },
+        },
+      });
+
+      await tx.logs.create({
         data: {
           title: config.logTitle(context),
           type: "QUOTE",
@@ -208,7 +211,11 @@ export async function processQuoteWorkflow({
           subdomain: { connect: { id: subdomain.id } },
         },
       });
-  });
 
-  
+      return { success: true };
+    });
+  } catch (error) {
+    console.error(`[processQuoteWorkflow] Failed for ${customer.id}:`, error);
+    throw new Error("Failed to process quote workflow");
+  }
 }
