@@ -1,4 +1,4 @@
-import { LLM_MODELS, novitaAI } from "../config"
+import { LLM_MODELS, novitaAI } from "../config";
 
 interface QuoteItem {
   title: string;
@@ -20,14 +20,22 @@ interface GenerateQuoteResult {
   totalAmount: number;
 }
 
-export async function generateQuote(context: QuoteContext): Promise<GenerateQuoteResult> {
-  const { roomType = "Interior Room", prompt = "Paint the room", colorNames = "Standard White" } = context;
+export async function generateQuote(
+  context: QuoteContext,
+): Promise<GenerateQuoteResult> {
+  const {
+    roomType = "Interior Room",
+    prompt = "Paint the room",
+    colorNames = "Standard White",
+  } = context;
 
   const systemPrompt = `You are a professional painting contractor estimator.
 Generate a realistic, detailed quote based on this customer info:
 - Room Type: ${roomType}
 - Customer Request: "${prompt}"
 - Colors Chosen: ${colorNames}
+
+
 
 Output ONLY valid JSON with an "items" array. Each item must have:
 - title (string)
@@ -74,16 +82,23 @@ Example output:
 `;
 
   const completion = await novitaAI.chat.completions.create({
-    model: LLM_MODELS.MINI_MAX_M3,
+    model: LLM_MODELS.DEEPSEEK_V4_FLASH,
     messages: [{ role: "system", content: systemPrompt }],
-    response_format: { type: "json_object" },
+    response_format: { type: "text" },
+    max_tokens: 70000,
+    stream: false,
+    temperature: 1,
   });
 
   const raw = completion.choices[0].message.content ?? "{}";
+  console.log("Raw AI Response:", raw);
   const parsed = JSON.parse(raw);
 
   const items: QuoteItem[] = Array.isArray(parsed.items) ? parsed.items : [];
-  const totalAmount = items.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+  const totalAmount = items.reduce(
+    (sum, item) => sum + (Number(item.price) || 0),
+    0,
+  );
 
   return { items, totalAmount };
 }

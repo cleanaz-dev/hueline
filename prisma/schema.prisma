@@ -541,6 +541,7 @@ enum MetadataSource {
   IMAGEN
   UPSCALE
   VOICE
+  QUOTE_GENERATION
 }
 
 enum SystemTaskType {
@@ -551,6 +552,7 @@ enum SystemTaskType {
   VOICE
   STUDIO_IMAGEN
   STUDIO_UPSCALE
+  QUOTE_GENERATION
 }
 
 model MediaAttachment {

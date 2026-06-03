@@ -1,13 +1,7 @@
 "use client"
 
 import { Quote } from "@/app/generated/prisma/client";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -17,46 +11,43 @@ interface QuoteContextType {
   isLoading: boolean;
   error: any;
   generatingQuote: boolean;
-  slug: string; // Expose the slug just in case child components need it
+  slug: string;
   handleQuoteGeneration: (quoteId: string) => Promise<void>;
 }
 
 const QuoteContext = createContext<QuoteContextType | undefined>(undefined);
 
-// 1. Add slug to the Provider props
 interface QuoteProviderProps {
   children: ReactNode;
-  slug: string; 
+  slug: string;
+  quoteId?: string;
 }
 
-export function QuoteProvider({ children, slug }: QuoteProviderProps) {
-  const [quote, setQuote] = useState<Quote | null>(null);
+export function QuoteProvider({ children, slug, quoteId }: QuoteProviderProps) {
   const [generatingQuote, setGeneratingQuote] = useState<boolean>(false);
-  
-  // 2. SWR can fetch instantly because `slug` is already available from props!
-  const { data, error, isLoading } = useSWR(
-    `/api/subdomain/${slug}/quote/current`, 
+
+  const { data, error, isLoading, mutate } = useSWR(
+    quoteId ? `/api/subdomain/${slug}/quotes/${quoteId}` : null,
     fetcher
   );
-    
-  useEffect(() => {
-    if (data?.quote) {
-      setQuote(data.quote);
-    }
-  }, [data]);
+
+  const quote = data?.quote || null;
 
   const handleQuoteGeneration = async (quoteId: string) => {
     setGeneratingQuote(true);
     try {
-      // 3. Use the slug prop directly in your API call
       const response = await fetch(`/api/subdomain/${slug}/quotes/${quoteId}/generate`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quoteId }),
       });
-      const result = await response.json();
+
       if (response.ok) {
-        setQuote(result.quote);
+        const result = await response.json();
+        await mutate({ quote: result.quote }, { revalidate: false });
       } else {
-        console.error("Error generating quote:", result.error);
+        const result = await response.json();
+        console.error("Error generating quote:", result.error || result.message);
       }
     } catch (err) {
       console.error("Network error:", err);
@@ -66,14 +57,14 @@ export function QuoteProvider({ children, slug }: QuoteProviderProps) {
   };
 
   return (
-    <QuoteContext.Provider 
-      value={{ 
-        quote, 
-        isLoading, 
+    <QuoteContext.Provider
+      value={{
+        quote,
+        isLoading,
         error,
         generatingQuote,
         slug,
-        handleQuoteGeneration
+        handleQuoteGeneration,
       }}
     >
       {children}
@@ -83,8 +74,6 @@ export function QuoteProvider({ children, slug }: QuoteProviderProps) {
 
 export function useQuote() {
   const context = useContext(QuoteContext);
-  if (context === undefined) {
-    throw new Error("useQuote must be used within a QuoteProvider");
-  }
+  if (context === undefined) throw new Error("useQuote must be used within a QuoteProvider");
   return context;
 }

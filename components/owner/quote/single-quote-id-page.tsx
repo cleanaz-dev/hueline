@@ -1,12 +1,12 @@
 "use client";
-import { CheckCircle, Save, Loader2 } from "lucide-react"; // Removed Mail, Phone, Calendar (moved to QuoteDetails)
+import { CheckCircle, Save, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
 import { PrintButton } from "@/components/owner/quote/print-button";
 import { QuoteList, QuoteItem } from "@/components/owner/quote/quote-list";
 import { QuoteImages } from "@/components/owner/quote/quote-images";
-import { QuoteDetails } from "@/components/owner/quote/quote-details"; // <-- Import the new component
+import { QuoteDetails } from "@/components/owner/quote/quote-details";
 import { QuoteData } from "@/lib/prisma/queries/quote/get-quote";
 import { useQuote } from "@/context/quote-context";
 
@@ -18,9 +18,10 @@ interface Props {
 export default function SingleQuoteIdPage({ quote: serverQuote, isOwner }: Props) {
   const { generatingQuote, handleQuoteGeneration, quote: contextQuote } = useQuote();
 
-  const quote = (contextQuote?.id === serverQuote?.id && contextQuote) 
-    ? (contextQuote as QuoteData) 
-    : serverQuote;
+  // SIMPLIFIED FALLBACK LOGIC: 
+  // If SWR has loaded the quote, use it. Otherwise use the initial server data!
+  // This automatically pushes updates to your list when mutate() runs.
+  const quote = (contextQuote as QuoteData) ?? serverQuote;
 
   const items = (quote?.items as QuoteItem[]) ?? [];
   const customer = quote?.customer;
@@ -39,9 +40,8 @@ export default function SingleQuoteIdPage({ quote: serverQuote, isOwner }: Props
       setIsLoadingImages(true);
       try {
         const promises = [];
-
-        // TypeScript Fix implemented here!
         const originalImageKey = quote?.booking?.compressOriginalImages;
+        
         if (originalImageKey) {
           promises.push(
             axios
@@ -86,7 +86,6 @@ export default function SingleQuoteIdPage({ quote: serverQuote, isOwner }: Props
 
   return (
     <div className="min-h-screen bg-zinc-50 py-12 px-4 font-sans text-zinc-900 print:bg-white print:py-0 print:px-0">
-      {/* WEB-ONLY: Top Action Bar */}
       <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center print:hidden">
         <div className="text-sm font-medium text-zinc-500">
           Prepared for {customer?.name}
@@ -94,10 +93,8 @@ export default function SingleQuoteIdPage({ quote: serverQuote, isOwner }: Props
         <PrintButton />
       </div>
 
-      {/* THE ACTUAL QUOTE / "PAPER" */}
       <div className="max-w-4xl mx-auto bg-white border border-zinc-200 shadow-xl rounded-2xl overflow-hidden print:shadow-none print:border-none print:m-0 print:rounded-none">
         
-        {/* Extracted Header, Customer, and Colors */}
         <QuoteDetails 
           quote={quote} 
           companyName={companyName} 
@@ -105,7 +102,6 @@ export default function SingleQuoteIdPage({ quote: serverQuote, isOwner }: Props
           paintColors={paintColors} 
         />
 
-        {/* The bottom half: Images & Line Items */}
         <div className="px-10 pb-10 print:px-8 print:pb-8">
           <QuoteImages
             originalImageUrl={originalImageUrl}
@@ -121,17 +117,12 @@ export default function SingleQuoteIdPage({ quote: serverQuote, isOwner }: Props
           />
         </div>
 
-        {/* WEB-ONLY: Accept / Generate Button */}
         <div className="bg-zinc-50 p-6 border-t border-zinc-200 flex justify-end print:hidden">
           {isOwner ? (
             <button
               disabled={generatingQuote || !quote?.id}
               className="bg-[#007AFF] text-white px-8 py-3 rounded-xl font-bold shadow-md hover:bg-blue-600 transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-              onClick={() => {
-                if (quote?.id) {
-                  handleQuoteGeneration(quote.id);
-                }
-              }}
+              onClick={() => quote?.id && handleQuoteGeneration(quote.id)}
             >
               {generatingQuote ? (
                 <>

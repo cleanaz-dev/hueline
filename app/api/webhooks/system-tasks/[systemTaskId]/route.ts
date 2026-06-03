@@ -87,6 +87,12 @@ export async function POST(req: Request, { params }: Params) {
           { message: "Video workflow pending" },
           { status: 501 },
         );
+      
+      case "QUOTE_GENERATION":
+        return NextResponse.json(
+          { message: "Quote generation workflow pending" },
+          { status: 501 },
+        );
 
       case "VOICE": {
         return await handleCallWebhook(body, systemTask, systemTask.customer);

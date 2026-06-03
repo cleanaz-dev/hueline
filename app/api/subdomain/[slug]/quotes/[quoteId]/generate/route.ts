@@ -1,7 +1,8 @@
 import { authOptions } from "@/lib/auth";
 import { isOperatorValid } from "@/lib/auth/guard/is-operator-valid";
-import { generateQuote } from "@/lib/novita";
 import { prisma } from "@/lib/prisma/config";
+import { acquireResourceLock, releaseResourceLock } from "@/lib/redis";
+import axios from "axios";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
@@ -12,10 +13,18 @@ interface Params {
   }>;
 }
 
-
-
-export async function POST(req:Request, { params }: Params) {
+export async function POST(req: Request, { params }: Params) {
   const { slug, quoteId } = await params;
+
+  // Validate env config early
+  const apiUrl = process.env.LAMBDA_QUOTE_GENERATION_URL;
+  if (!apiUrl) {
+    console.error("LAMBDA_QUOTE_GENERATION_URL is not set");
+    return NextResponse.json(
+      { message: "Service misconfigured" },
+      { status: 500 },
+    );
+  }
 
   const session = await getServerSession(authOptions);
   const userEmail = session?.user?.email;
@@ -31,15 +40,18 @@ export async function POST(req:Request, { params }: Params) {
   }
 
   try {
+    // Validate quote data before any further work
     const quote = await prisma.quote.findUnique({
       where: { id: quoteId },
       include: {
+        customer: true,
         booking: {
           select: {
             roomType: true,
             prompt: true,
             paintColors: true,
             dimensions: true,
+            subdomainId: true,
           },
         },
       },
@@ -47,10 +59,11 @@ export async function POST(req:Request, { params }: Params) {
 
     if (
       !quote ||
-      !quote.booking?.paintColors ||
       !quote.booking ||
+      !quote.booking.paintColors ||
       !quote.booking.roomType ||
-      !quote.booking.prompt
+      !quote.booking.prompt ||
+      !quote.customer
     ) {
       return NextResponse.json(
         { message: "Invalid quote data" },
@@ -58,27 +71,67 @@ export async function POST(req:Request, { params }: Params) {
       );
     }
 
-    const response = await generateQuote({
-      roomType: quote.booking.roomType || undefined,
-      prompt: quote.booking.prompt || undefined,
-      colorNames: quote.booking.paintColors
-        .map((color) => color.name)
-        .join(", "),
-    });
-
-    console.log("Quote generation response:", response);
-
-    const { items, totalAmount } = response;
-
-    await prisma.quote.update({
-      where: { id: quoteId },
-      data: {
-        items: items as any,
-        totalAmount: totalAmount,
+    // Resolve operator only after quote is confirmed valid
+    const operator = await prisma.subdomainUser.findFirst({
+      where: {
+        email: userEmail,
+        subdomain: { slug },
       },
+      select: { id: true },
     });
 
-    return NextResponse.json({ message: "Quote generated successfully!" });
+    console.log("⏱️ Quote generation started...");
+
+    const lockKey = await acquireResourceLock(quoteId, "QUOTE");
+
+    if (!lockKey) {
+      return NextResponse.json(
+        { message: "Task already running for this project!" },
+        { status: 429 },
+      );
+    }
+
+    let systemTask;
+
+    try {
+      systemTask = await prisma.systemTask.create({
+        data: {
+          deliveryMethod: "NONE",
+          initiator: "OPERATOR",
+          type: "QUOTE_GENERATION",
+          status: "PROCESSING",
+          lockKey,
+          customer: { connect: { id: quote.customer.id } },
+          subdomain: { connect: { id: quote.booking.subdomainId } },
+          ...(operator ? { operator: { connect: { id: operator.id } } } : {}),
+          metadataSource: "QUOTE_GENERATION",
+          metadata: {
+            quoteId: quote.id,
+            bookingPrompt: quote.booking.prompt,
+            roomType: quote.booking.roomType,
+            colorNames: quote.booking.paintColors.map((c) => c.name).join(", "),
+            squareFeet: quote.booking.dimensions,
+          },
+        },
+      });
+
+      const lambdaPayload = systemTask.metadata as Record<string, unknown>;
+
+      await axios.post(apiUrl, {
+        systemTaskId: systemTask.id,
+        ...lambdaPayload,
+        action: "GENERATE_QUOTE",
+      });
+    } catch (innerError) {
+      // Release the lock so retries aren't permanently blocked
+      await releaseResourceLock(lockKey);
+      throw innerError;
+    }
+
+    return NextResponse.json(
+      { message: "Quote generation initiated" },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Error generating quote:", error);
     return NextResponse.json(
