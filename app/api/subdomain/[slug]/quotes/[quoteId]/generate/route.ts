@@ -2,6 +2,7 @@ import { authOptions } from "@/lib/auth";
 import { isOperatorValid } from "@/lib/auth/guard/is-operator-valid";
 import { prisma } from "@/lib/prisma/config";
 import { acquireResourceLock, releaseResourceLock } from "@/lib/redis";
+import { QuoteGenerationMetadata } from "@/lib/zod/quotes/handler-quote-webhook-schema";
 import axios from "axios";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -17,9 +18,9 @@ export async function POST(req: Request, { params }: Params) {
   const { slug, quoteId } = await params;
 
   // Validate env config early
-  const apiUrl = process.env.LAMBDA_QUOTE_GENERATION_URL;
+  const apiUrl = process.env.LAMBDA_QUOTE_GENERATION_FUNCTION_URL;
   if (!apiUrl) {
-    console.error("LAMBDA_QUOTE_GENERATION_URL is not set");
+    console.error("LAMBDA_QUOTE_GENERATION_FUNCTION_URL is not set");
     return NextResponse.json(
       { message: "Service misconfigured" },
       { status: 500 },
@@ -38,6 +39,13 @@ export async function POST(req: Request, { params }: Params) {
   if (!operatorAccess) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
+
+  const operator = await prisma.subdomainUser.findFirst({
+    where: {
+      email: userEmail,
+      subdomain: { slug },
+    },
+  });
 
   try {
     // Validate quote data before any further work
@@ -111,7 +119,8 @@ export async function POST(req: Request, { params }: Params) {
             roomType: quote.booking.roomType,
             colorNames: quote.booking.paintColors.map((c) => c.name).join(", "),
             squareFeet: quote.booking.dimensions,
-          },
+            operatorId: operator?.id
+          } satisfies QuoteGenerationMetadata,
         },
       });
 
@@ -120,7 +129,7 @@ export async function POST(req: Request, { params }: Params) {
       await axios.post(apiUrl, {
         systemTaskId: systemTask.id,
         ...lambdaPayload,
-        action: "GENERATE_QUOTE",
+        action: "OPERATOR_QUOTE_GENERATION",
       });
     } catch (innerError) {
       // Release the lock so retries aren't permanently blocked

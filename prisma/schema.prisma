@@ -196,6 +196,7 @@ enum ClientActivityType {
   VOICE_OUTBOUND
   VOICE_INBOUND
   SMS_INBOUND
+  QUOTE_GENERATION
 }
 
 model ChatThread {
@@ -415,7 +416,7 @@ model Quote {
   bookingId   String?         @db.ObjectId
   subdomain   Subdomain       @relation(fields: [subdomainId], references: [id])
   subdomainId String          @db.ObjectId
-  huelineId   String
+  huelineId   String?
   version     Int             @default(1)
   status      QuoteStatus     @default(DRAFT)
   items       Json?           @db.Json
@@ -604,6 +605,7 @@ enum CommunicationType {
   EMAIL
   IMAGEN
   AI_SUGESSTION
+  QUOTE
 }
 
 enum BookingStatus {
@@ -845,6 +847,7 @@ enum LogType {
   UPSCALE
   VIDEO
   MEETING
+  QUOTE
 }
 
 enum LogActor {

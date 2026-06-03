@@ -6,6 +6,7 @@ import { UpscaleTriggerSource } from "@/lib/workflows/upscale/process-upscale-wo
 import { handleUpscaleWebhook } from "@/lib/workflows/upscale/handle-upscale-webook";
 import { handleVoiceMockupWebhook } from "@/lib/workflows/voice-mockup/handle-voice-mockup-webhook";
 import { handleCallWebhook } from "@/lib/workflows/call/handle-call-webhook";
+import { handleQuoteGenerationWebhook } from "@/lib/workflows/quote/handle-quote-webhook";
 
 interface Params {
   params: Promise<{ systemTaskId: string }>;
@@ -89,10 +90,7 @@ export async function POST(req: Request, { params }: Params) {
         );
       
       case "QUOTE_GENERATION":
-        return NextResponse.json(
-          { message: "Quote generation workflow pending" },
-          { status: 501 },
-        );
+        return await handleQuoteGenerationWebhook(body, systemTask, systemTask.customer);
 
       case "VOICE": {
         return await handleCallWebhook(body, systemTask, systemTask.customer);
