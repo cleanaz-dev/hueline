@@ -55,7 +55,7 @@ export function QuoteDetails({
             ${quote?.totalAmount?.toFixed(2) || "0.00"}
           </p>
           <p className="text-sm text-zinc-400 font-mono print:text-zinc-500">
-            QUOTE #{(quote?.id || "").slice(-6).toUpperCase()}
+            QUOTE #{(quote?.id || "").slice(-6).toUpperCase()} Ver.{quote?.version}
           </p>
         </div>
       </div>

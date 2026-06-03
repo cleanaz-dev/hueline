@@ -48,6 +48,7 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   try {
+    
     // Validate quote data before any further work
     const quote = await prisma.quote.findUnique({
       where: { id: quoteId },
@@ -60,6 +61,7 @@ export async function POST(req: Request, { params }: Params) {
             paintColors: true,
             dimensions: true,
             subdomainId: true,
+            relatedThreadId: true
           },
         },
       },
@@ -119,7 +121,8 @@ export async function POST(req: Request, { params }: Params) {
             roomType: quote.booking.roomType,
             colorNames: quote.booking.paintColors.map((c) => c.name).join(", "),
             squareFeet: quote.booking.dimensions,
-            operatorId: operator?.id
+            operatorId: operator?.id,
+            chatThreadId: quote.booking.relatedThreadId ?? undefined
           } satisfies QuoteGenerationMetadata,
         },
       });

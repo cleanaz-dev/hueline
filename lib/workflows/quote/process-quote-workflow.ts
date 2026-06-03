@@ -185,9 +185,11 @@ export async function processQuoteWorkflow({
           role: config.role,
           type: "QUOTE",
           customer: { connect: { id: customer.id } },
+
           ...(job.operatorId
             ? { operator: { connect: { id: job.operatorId } } }
             : {}),
+          chatThread: { connect: { id: metadata.chatThreadId } },
         },
       });
 
@@ -199,6 +201,7 @@ export async function processQuoteWorkflow({
           metadata: { huelineId: "", jobId: job.id },
           customer: { connect: { id: customer.id } },
           subDomain: { connect: { id: job.subdomainId } },
+          chatThread: { connect: { id: metadata.chatThreadId } },
         },
       });
 

@@ -215,8 +215,9 @@ model ChatThread {
   activities     ClientActivity[]
   communications ClientCommunication[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt // Push to top of UI when new message arrives
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt // Push to top of UI when new message arrives
+  subBookingDatas SubBookingData[]
 }
 
 model ClientActivity {
@@ -399,13 +400,15 @@ model SubBookingData {
   logs            Logs[]
   rooms           Room[]
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  demoClient     DemoClient?
-  customer       Customer?       @relation(fields: [customerId], references: [id])
-  customerId     String?         @db.ObjectId
-  designProjects DesignProject[]
-  quotes         Quote[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  demoClient      DemoClient?
+  customer        Customer?       @relation(fields: [customerId], references: [id])
+  customerId      String?         @db.ObjectId
+  designProjects  DesignProject[]
+  quotes          Quote[]
+  relatedThreadId String?         @db.ObjectId
+  relatedThread   ChatThread?     @relation(fields: [relatedThreadId], references: [id])
 }
 
 model Quote {

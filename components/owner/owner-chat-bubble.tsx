@@ -11,6 +11,7 @@ import {
   Calendar,
   Loader2,
   Activity,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OwnerChatAttachments } from "./owner-chat-attachements";
@@ -23,7 +24,14 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 
 type Role = "CLIENT" | "AI" | "OPERATOR" | "SYSTEM";
-type Type = "SMS" | "EMAIL" | "PHONE" | "DEMO" | "MEETING" | "ACTIVITY";
+type Type =
+  | "SMS"
+  | "EMAIL"
+  | "PHONE"
+  | "DEMO"
+  | "MEETING"
+  | "ACTIVITY"
+  | "QUOTE";
 
 interface ChatBubbleProps {
   msg: {
@@ -85,6 +93,7 @@ const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
   DEMO: { icon: Video, label: "Demo" },
   MEETING: { icon: Calendar, label: "Meeting" },
   ACTIVITY: { icon: Activity, label: "Activity" },
+  QUOTE: { icon: Receipt, label: "Quote" },
 };
 
 // Helper function to detect if string contains HTML tags
@@ -113,7 +122,7 @@ export function OwnerChatBubble({
   const typeInfo = TYPE_CONFIG[msg.type];
   const TypeIcon = typeInfo.icon;
 
-  const displayName = isRight ? prospectName ?? "Client" : meta.label;
+  const displayName = isRight ? (prospectName ?? "Client") : meta.label;
   const emailSubject = msg.subject || msg.metadata?.subject;
 
   return (
@@ -122,13 +131,13 @@ export function OwnerChatBubble({
         "flex w-full transition-all duration-300",
         isRight ? "justify-end" : "justify-start",
         isGroupEnd ? "mb-6" : "mb-2",
-        isPending && "opacity-60"
+        isPending && "opacity-60",
       )}
     >
       <div
         className={cn(
           "flex max-w-[85%] md:max-w-[95%]",
-          isRight ? "flex-row-reverse" : "flex-row"
+          isRight ? "flex-row-reverse" : "flex-row",
         )}
       >
         {/* Avatar Column */}
@@ -140,7 +149,7 @@ export function OwnerChatBubble({
                   "bg-background",
                   msg.role === "AI" && "text-indigo-800 dark:text-indigo-400",
                   msg.role === "OPERATOR" && "text-blue-600 dark:text-blue-400",
-                  msg.role === "CLIENT" && "text-zinc-600 dark:text-zinc-400"
+                  msg.role === "CLIENT" && "text-zinc-600 dark:text-zinc-400",
                 )}
               >
                 <meta.icon size={16} />
@@ -153,7 +162,7 @@ export function OwnerChatBubble({
         <div
           className={cn(
             "flex flex-col gap-1.5 min-w-0",
-            isRight ? "items-end" : "items-start"
+            isRight ? "items-end" : "items-start",
           )}
         >
           {/* Header */}
@@ -181,7 +190,7 @@ export function OwnerChatBubble({
               meta.bubble,
               isRight
                 ? cn(isGroupStart ? "rounded-tr-sm" : "rounded-tr-xl")
-                : cn(isGroupStart ? "rounded-tl-sm" : "rounded-tl-xl")
+                : cn(isGroupStart ? "rounded-tl-sm" : "rounded-tl-xl"),
             )}
           >
             {/* Inner Label */}
@@ -207,7 +216,7 @@ export function OwnerChatBubble({
                 <span
                   className={cn(
                     "font-medium leading-snug",
-                    !emailSubject && "italic opacity-60"
+                    !emailSubject && "italic opacity-60",
                   )}
                 >
                   {emailSubject || "No subject"}

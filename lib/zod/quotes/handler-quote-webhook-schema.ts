@@ -27,7 +27,8 @@ export const quoteGenerationMetadataSchema = z.object({
   colorNames: z.string(),
   squareFeet: z.unknown().optional(),
   huelineId: z.string().optional(),
-  operatorId: z.string().optional()
+  operatorId: z.string().optional(),
+  chatThreadId: z.string().optional()
 });
 
 export type QuoteGenerationMetadata = z.infer<typeof quoteGenerationMetadataSchema>;
