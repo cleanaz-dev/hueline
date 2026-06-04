@@ -8,7 +8,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ slug: string; threadId: string; trigger: string }> }
 ) {
-  const { threadId, trigger } = await params;
+  const { threadId, trigger, slug } = await params;
 
   // 1. Fetch the thread to check Autopilot status
   const thread = await prisma.chatThread.findUnique({
@@ -16,7 +16,7 @@ export async function POST(
     select: { isAutoPilot: true }
   });
 
-  if (!thread) {
+  if (!thread || !slug) {
     return NextResponse.json({ error: "Thread not found" }, { status: 404 });
   }
 
