@@ -49,7 +49,6 @@ export async function handleHueClawComms(
       metadata: {
         threadId,
         trigger: "comms",
-        ...body
       }
     }
   });

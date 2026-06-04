@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { releaseResourceLock } from "@/lib/redis";
+import { hueclawCommsMetadataSchema } from "@/lib/zod/hueclaw/comms-metadata";
+
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -25,18 +27,17 @@ export async function POST(req: Request) {
 
     // FIX: Correct type annotation syntax
     let msgBody: string | null = null;
-    let msgSubject: string | null = null
+    let msgSubject: string | null = null;
 
     if (deliveryMethod === "SMS") {
       msgBody = result.suggestedSms;
     }
     if (deliveryMethod === "EMAIL") {
-        msgBody = result.suggestedEmail
-        msgSubject = result.suggestedEmailSubject
+      msgBody = result.suggestedEmail;
+      msgSubject = result.suggestedEmailSubject;
     }
 
     console.log(msgBody, msgSubject);
-
 
     // TODO: Add your business logic here (e.g., save to database, trigger events)
     const task = await prisma.systemTask.findUnique({
@@ -51,7 +52,11 @@ export async function POST(req: Request) {
     });
 
     const metadata = task?.metadata;
+
+    // FIX: Use .parse() or .safeParse() instead of calling the schema as a function
+    const parsedMetadata = hueclawCommsMetadataSchema.parse(metadata);
     const lockKey = task?.lockKey;
+    const threadId = parsedMetadata.threadId; // Now correctly typed as string
 
     if (lockKey) {
       await releaseResourceLock(lockKey);
