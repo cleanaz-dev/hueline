@@ -6,7 +6,7 @@ const redis = new Redis({
 });
 
 // We use 'context' so you can lock IMAGEN and SMS separately if needed!
-type LockContext = "IMAGEN" | "UPSCALE" | "QUOTE"
+type LockContext = "IMAGEN" | "UPSCALE" | "QUOTE" | "COMMS"
 
 export async function acquireResourceLock(resourceId: string, context: LockContext = "IMAGEN") {
   const lockKey = `lock:${context}:${resourceId}`;

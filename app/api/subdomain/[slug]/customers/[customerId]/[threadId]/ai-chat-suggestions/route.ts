@@ -68,6 +68,11 @@ export async function GET(
             createdAt: true,
           },
         },
+        bookingData: {
+          include: {
+            paintColors: true,
+          }
+        }
       },
     });
 
