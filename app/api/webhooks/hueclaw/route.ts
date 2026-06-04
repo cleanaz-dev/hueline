@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 
 // Best practice: Move this to your .env file later (e.g., process.env.WEBHOOK_SECRET)
-const WEBHOOK_SECRET = 'our-little-secret';
+
 
 export async function POST(req: Request) {
     // 1. Verify the webhook secret
+    const WEBHOOK_SECRET = process.env.LAMBDA_WEBHOOK_SECRET
     const authHeader = req.headers.get('x-webhook-secret');
 
     if (authHeader !== WEBHOOK_SECRET) {
