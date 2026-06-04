@@ -54,7 +54,6 @@ export async function handleHueClawComms(
     webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/hueclaw`,
     deliveryMethod:  "NONE",
     customerName: thread.customer.name,
-    customer: thread.customer,
     recentMessages: timeline.slice(-15).map((m) => ({
       role: m.role,
       type: m.type,
