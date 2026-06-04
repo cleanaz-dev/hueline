@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, MessageSquare, Mail, Loader2, X } from "lucide-react";
+import { Send, MessageSquare, Mail, Loader2, X, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "../admin/prospects/rich-text-editor";
 import { AiActionDock } from "../admin/prospects/ai-action-dock";
@@ -25,8 +25,14 @@ export function OwnerAdvancedChatInput({
   const [channel, setChannel] = React.useState<"SMS" | "EMAIL">("SMS");
   const [isUndocked, setIsUndocked] = React.useState(false);
 
-  const { aiSuggestions, fetchAiSuggestion, clearAiSuggestion, isAiLoading, activeThread} =
-    useOwner();
+  const {
+    aiSuggestions,
+    fetchAiSuggestion,
+    clearAiSuggestion,
+    isAiLoading,
+    activeThread,
+    hueClawAi
+  } = useOwner();
 
   const currentSuggestion =
     clientId && aiSuggestions ? aiSuggestions[clientId] : null;
@@ -161,8 +167,16 @@ export function OwnerAdvancedChatInput({
         <AiActionDock
           isLoading={isAiLoading}
           suggestion={currentSuggestion}
-          onAnalyze={() => clientId && fetchAiSuggestion && fetchAiSuggestion(clientId, activeThread?.threadId!)}
-          onClear={() => clientId && clearAiSuggestion && clearAiSuggestion(clientId, activeThread?.threadId!)}
+          onAnalyze={() =>
+            clientId &&
+            fetchAiSuggestion &&
+            fetchAiSuggestion(clientId, activeThread?.threadId!)
+          }
+          onClear={() =>
+            clientId &&
+            clearAiSuggestion &&
+            clearAiSuggestion(clientId, activeThread?.threadId!)
+          }
           onUseSms={(aiText) => {
             setChannel("SMS");
             setSubject("");
@@ -203,6 +217,22 @@ export function OwnerAdvancedChatInput({
               <Mail size={13} /> Email
             </button>
           </div>
+
+          <button
+            onClick={() => hueClawAi(clientId!, activeThread?.threadId!, "comms")}
+            className={cn(
+              "relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 cursor-pointer",
+              "bg-violet-950 text-violet-200 border border-violet-700/60",
+              "hover:bg-violet-900 hover:border-violet-500 hover:text-white hover:shadow-[0_0_12px_2px_rgba(139,92,246,0.4)]",
+              "active:scale-95",
+              "before:absolute before:inset-0 before:rounded-md before:animate-pulse before:bg-violet-500/10",
+            )}
+          >
+            <span className="relative z-10 flex items-center gap-1.5">
+              <Sparkles size={13} className="text-violet-400" />
+              Wake HueClaw
+            </span>
+          </button>
         </div>
 
         {/* Input Area */}

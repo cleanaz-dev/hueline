@@ -1,7 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 
-const lambda = new LambdaClient({ region: "us-east-1" });
+const lambda = new LambdaClient({
+  region: "us-east-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
 
 export async function handleHueClawComms(
   threadId: string, 
@@ -32,27 +38,25 @@ export async function handleHueClawComms(
 
   const systemTask = await prisma.systemTask.create({
     data: {
-        deliveryMethod: "NONE",
-        initiator: "HUECLAW",
-        lockKey,
-        type: "COMMUNICATION",
-        status: "PROCESSING",
-        customer: {connect: {id: thread.customerId}},
-        subdomain: {connect: {id: thread.subdomainId}},
-        metadataSource: "COMMUNICATION",
-        metadata: {
-            threadId,
-            trigger: "comms",
-            ...body
-
-        }
-
+      deliveryMethod: "NONE",
+      initiator: "HUECLAW",
+      lockKey,
+      type: "COMMUNICATION",
+      status: "PROCESSING",
+      customer: { connect: { id: thread.customerId } },
+      subdomain: { connect: { id: thread.subdomainId } },
+      metadataSource: "COMMUNICATION",
+      metadata: {
+        threadId,
+        trigger: "comms",
+        ...body
+      }
     }
-  })
+  });
 
   const payload = {
     webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/hueclaw`,
-    deliveryMethod:  "NONE",
+    deliveryMethod: "NONE",
     customerName: thread.customer.name,
     recentMessages: timeline.slice(-15).map((m) => ({
       role: m.role,

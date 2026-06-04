@@ -5,6 +5,7 @@ import { Customer, SubdomainUser } from "@/app/generated/prisma";
 import { AiSuggestionData } from "@/lib/moonshot";
 import { OwnerData } from "@/types/owner";
 import useSWR from "swr";
+import axios from "axios";
 
 // 1. NEW THREAD LOGIC: Define your Thread model interface
 export interface ChatThreadModel {
@@ -108,6 +109,7 @@ interface OwnerContextValue {
   toggleMinimize: () => void;
   openChatList: () => void;
   globalProspects: Customer[];
+  hueClawAi: (customerId: string, threadId: string, trigger: string) => Promise<void>
 }
 
 const OwnerContext = createContext<OwnerContextValue | null>(null);
@@ -265,6 +267,21 @@ export function OwnerProvider({
     }
   };
 
+  const hueClawAi = async (
+    customerId: string,
+    threadId: string,
+    trigger: string,
+  ): Promise<void> => {
+    try {
+      const { data } = await axios.post<AiSuggestionData>(
+        `/api/subdomain/${subdomain.slug}/hue-claw/${threadId}/${trigger}`,
+      );
+      setAiSuggestions((prev) => ({ ...prev, [customerId]: data }));
+    } finally {
+      console.log("Hue Claw in Action!");
+    }
+  };
+
   const clearAiSuggestion = (customerId: string) =>
     setAiSuggestions((prev) => {
       const next = { ...prev };
@@ -402,6 +419,7 @@ export function OwnerProvider({
         toggleMinimize,
         openChatList,
         globalProspects: customersData?.customers ?? [],
+        hueClawAi
       }}
     >
       {children}
