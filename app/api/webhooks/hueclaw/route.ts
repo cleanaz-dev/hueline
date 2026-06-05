@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { releaseResourceLock } from "@/lib/redis";
+import { clearHueClawStatus, releaseResourceLock } from "@/lib/redis";
 import { hueclawCommsMetadataSchema } from "@/lib/zod/hueclaw/comms-metadata";
-
 import { NextResponse } from "next/server";
+import { handleHueClawImagen } from "@/lib/hueclaw/handlers/imagen";
+import { handleHueClawCommunication } from "@/lib/hueclaw/handlers/communication";
 
 export async function POST(req: Request) {
-  // 1. Verify the webhook secret
   const WEBHOOK_SECRET = process.env.LAMBDA_WEBHOOK_SECRET;
   const authHeader = req.headers.get("x-webhook-secret");
 
@@ -13,66 +13,138 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Parse the body safely
+  let lockKey: string | null | undefined = null;
+
+  let threadId: string | null | undefined = null;
+
   try {
     const body = await req.json();
-    console.log("Webhook Body:", body);
+    console.log("[HueClaw Webhook] Body received:", body);
 
     const { systemTaskId, result, status, error } = body;
 
-    const thinking = result.thinking;
-    const decision = result.decision;
-    const contactRequired = result.contactRequired;
-    const deliveryMethod = result.suggestedDeliveryMethod;
-
-    // FIX: Correct type annotation syntax
-    let msgBody: string | null = null;
-    let msgSubject: string | null = null;
-
-    if (deliveryMethod === "SMS") {
-      msgBody = result.suggestedSms;
-    }
-    if (deliveryMethod === "EMAIL") {
-      msgBody = result.suggestedEmail;
-      msgSubject = result.suggestedEmailSubject;
-    }
-
-    console.log(msgBody, msgSubject);
-
-    // TODO: Add your business logic here (e.g., save to database, trigger events)
+    // 1. Fetch Task & Validate
     const task = await prisma.systemTask.findUnique({
       where: { id: systemTaskId },
-      include: {
-        subdomain: {
-          select: {
-            id: true,
-          },
-        },
-      },
     });
 
-    const metadata = task?.metadata;
+    if (!task) throw new Error("System task not found");
+    lockKey = task.lockKey; // Save to local scope for the catch block!
 
-    // FIX: Use .parse() or .safeParse() instead of calling the schema as a function
-    const parsedMetadata = hueclawCommsMetadataSchema.parse(metadata);
-    const lockKey = task?.lockKey;
-    const threadId = parsedMetadata.threadId; // Now correctly typed as string
+    const parsedMetadata = hueclawCommsMetadataSchema.safeParse(task.metadata);
+    if (!parsedMetadata.success) {
+      throw new Error("Invalid metadata format in SystemTask");
+    }
+    threadId = parsedMetadata.data.threadId;
 
+    // 2. Mark this initial COMMS task as completed
+    await prisma.systemTask.update({
+      where: { id: systemTaskId },
+      data: { status: "COMPLETED" },
+    });
+
+    // 3. Extract the AI's routing booleans and drafted text
+    const {
+      generateImage,
+      generateQuote,
+      contactRequired,
+      suggestedDeliveryMethod: deliveryMethod,
+      suggestedSms,
+      suggestedEmail,
+      suggestedEmailSubject,
+    } = result;
+
+    const msgBody = deliveryMethod === "SMS" ? suggestedSms : suggestedEmail;
+    const msgSubject =
+      deliveryMethod === "EMAIL" ? suggestedEmailSubject : null;
+
+    // 🎒 Create the "Backpack" to carry to the next step
+    const pendingMessage = {
+      deliveryMethod,
+      msgBody,
+      msgSubject,
+    };
+
+    // ==========================================
+    // 🚦 Single trigger from booleans
+    // ==========================================
+    const TRIGGERS = {
+      GENERATE_IMAGE: "generateImage",
+      GENERATE_QUOTE: "generateQuote",
+      NONE: "none",
+    } as const;
+
+    const trigger = generateImage
+      ? TRIGGERS.GENERATE_IMAGE
+      : generateQuote
+        ? TRIGGERS.GENERATE_QUOTE
+        : TRIGGERS.NONE;
+
+    // ==========================================
+    // 🚦 Routing switch
+    // ==========================================
+    switch (trigger) {
+      case TRIGGERS.GENERATE_IMAGE: {
+        console.log(
+          `[HueClaw] 🎨 Handoff to Imagen triggered for thread ${threadId}`,
+        );
+        await clearHueClawStatus(threadId);
+        await handleHueClawImagen(threadId, lockKey as string, pendingMessage);
+        // Lock stays owned → DO NOT RELEASE
+        return NextResponse.json({
+          success: true,
+          message: "Handed off to Imagen",
+        });
+      }
+
+      case TRIGGERS.GENERATE_QUOTE: {
+        console.log(
+          `[HueClaw] 💰 Handoff to Quote triggered for thread ${threadId}`,
+        );
+        await clearHueClawStatus(threadId);
+        // await handleHueClawQuote(threadId, lockKey as string, pendingMessage);
+        return NextResponse.json({
+          success: true,
+          message: "Handed off to Quote",
+        });
+      }
+
+      case TRIGGERS.NONE: {
+        console.log(`[HueClaw] 💬 Communication-only for thread ${threadId}`);
+        await clearHueClawStatus(threadId);
+        await handleHueClawCommunication(threadId, lockKey as string, pendingMessage);
+        return NextResponse.json({
+          success: true,
+          message: "Handed off to Communications",
+        });
+      }
+
+      default: {
+        // Should never happen, but safety net
+        await clearHueClawStatus(threadId);
+        console.warn(`[HueClaw] Unexpected trigger: ${trigger}`);
+        break;
+      }
+    }
+    return NextResponse.json({
+      success: true,
+      message: "Comms cycle complete",
+    });
+  } catch (error) {
+    console.error("[HueClaw] Webhook error:", error);
+
+    // 🚨 FAILSAFE: If anything crashes during routing, release the lock!
     if (lockKey) {
       await releaseResourceLock(lockKey);
+      console.log(`[HueClaw] 🔓 Lock released due to crash`);
+    }
+    if (threadId) {
+      await clearHueClawStatus(threadId);
     }
 
-    // 3. Return a success response
     return NextResponse.json(
-      { success: true, message: "Webhook processed successfully" },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.error("Error parsing webhook JSON:", error);
-
-    return NextResponse.json(
-      { error: "Invalid JSON payload" },
-      { status: 400 },
+      { error: "Failed to process webhook" },
+      { status: 500 },
     );
   }
 }

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { setHueClawStatus } from "@/lib/redis";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 
 const lambda = new LambdaClient({
@@ -65,11 +66,15 @@ export async function handleHueClawComms(
     systemTaskId: systemTask.id
   };
 
+  
+
   const command = new InvokeCommand({
     FunctionName: "hueline-hueclaw-comms-PROD",
     InvocationType: "Event",
     Payload: Buffer.from(JSON.stringify(payload)),
   });
+
+  await setHueClawStatus(threadId, "COMMUNICATION");
 
   await lambda.send(command);
 }

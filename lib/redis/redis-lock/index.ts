@@ -27,3 +27,20 @@ export async function releaseResourceLock(lockKey: string) {
   if (!lockKey) return; 
   await redis.del(lockKey);
 }
+
+
+// inside @/lib/redis.ts
+type HueClawStatus = "COMMUNICATION" | "IMAGEN" | "QUOTE"
+export async function setHueClawStatus(threadId: string, status: HueClawStatus = "COMMUNICATION" ) {
+  // Key format: hueclaw:status:12345
+  // TTL: 300 seconds (5 minutes)
+  await redis.setex(`hueclaw:status:${threadId}`, 300, status);
+}
+
+export async function getHueClawStatus(threadId: string) {
+  return await redis.get(`hueclaw:status:${threadId}`);
+}
+
+export async function clearHueClawStatus(threadId: string) {
+  await redis.del(`hueclaw:status:${threadId}`);
+}
