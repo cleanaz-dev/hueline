@@ -2,28 +2,21 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getRedisClient } from "@/lib/redis";
 import { twilioClient } from "@/lib/twilio/config";
-import { sendDynamicSms } from "@/lib/twilio/sms";
 
 const MAX_MESSAGES_PER_HOUR = 10;
 
-interface Params {
-  params: Promise<{ slug: string }>
-}
-
-export async function POST(req: Request, { params }: Params) {
+export async function POST(req: Request) {
   const redis = await getRedisClient();
-  const { slug } = await params;
 
   try {
-    // 1. PARSE JSON
-    const { incomingPhone, incomingMessage, twilioId } = await req.json();
+    const { incomingPhone, incomingMessage, twilioId, slug } = await req.json();
 
-    if (!incomingPhone || !incomingMessage) {
+    if (!incomingPhone || !incomingMessage || !slug) {
       return NextResponse.json({ error: "Missing data" }, { status: 400 });
     }
 
-    // 2. RATE LIMITING
-    const rateLimitKey = `sms_limit:${incomingPhone}`;
+    // 1. RATE LIMITING
+    const rateLimitKey = `sms_limit:${slug}:${incomingPhone}`;
     const currentCount = await redis.incr(rateLimitKey);
     if (currentCount === 1) await redis.expire(rateLimitKey, 3600);
 
@@ -38,61 +31,70 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ success: true, message: "Rate limited" });
     }
 
-    // 3. IDENTIFY USER
-    const customer = await prisma.customer.findFirst({ where: { phone: incomingPhone } });
+    // 2. IDENTIFY CUSTOMER — scoped to subdomain
+    const customer = await prisma.customer.findFirst({
+      where: {
+        phone: incomingPhone,
+        subDomain: { slug },
+      },
+    });
 
-    if (!customer || !customer.name) {
+    if (!customer) {
+      console.warn(`[incoming-sms] Unknown sender ${incomingPhone} for slug=${slug} — dropped`);
       return NextResponse.json({ success: true, message: "Unknown sender dropped" });
     }
 
-    
-    const recipientName = customer.name
+    // 3. FIND OPEN THREAD
+    const thread = await prisma.chatThread.findFirst({
+      where: {
+        customerId: customer.id,
+        status: "OPEN",
+      },
+    });
 
-    // 4. LOG INCOMING MESSAGE (Always log so the Operator sees it in the Chat Drawer)
+    if (!thread) {
+      console.warn(`[incoming-sms] No open thread for ${customer.name} — message orphaned`);
+      return NextResponse.json({ success: true, message: "No open thread" });
+    }
+
+    // 4. LOG COMMUNICATION + ACTIVITY — both connected to thread
     await prisma.clientCommunication.create({
       data: {
         body: incomingMessage,
         role: "CLIENT",
         type: "SMS",
+        customer: { connect: { id: customer.id } },
+        chatThread: { connect: { id: thread.id } },
       },
     });
 
-    // 5. CHECK FOR AI PAUSE (The "Muzzle")
-    // If the operator recently sent a manual message, this key will exist in Redis.
-    const pauseKey = `ai_paused:${incomingPhone}`;
+    await prisma.clientActivity.create({
+      data: {
+        type: "SMS_INBOUND",
+        customer: { connect: { id: customer.id } },
+        subDomain: { connect: { id: customer.subdomainId! } },
+        chatThread: { connect: { id: thread.id } },
+        description: `Inbound SMS from ${customer.name}`,
+        title: "Inbound SMS",
+      },
+    });
+
+    // 5. AI PAUSE CHECK
+    const pauseKey = `ai_paused:${slug}:${incomingPhone}`;
     const isPaused = await redis.get(pauseKey);
 
     if (isPaused) {
-      console.log(`[${slug}] AI is muzzled for ${incomingPhone}. Operator is in control.`);
+      console.log(`[incoming-sms] AI muzzled for ${incomingPhone} on ${slug}`);
       return NextResponse.json({ success: true, message: "AI paused by operator" });
     }
 
-    // 6. GET RECENT HISTORY (Last 5 messages for Kimi's context)
-    const previousMessages = await prisma.clientCommunication.findMany({
-      where: {customerId: customer.id},
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    });
-
-    const history = previousMessages.reverse().map((msg) => ({
-      role: msg.role === "AI" ? ("assistant" as const) : ("user" as const),
-      content: msg.body,
-    }));
-
-    // 7. TRIGGER THE BRAIN
-    await sendDynamicSms({
-      to: incomingPhone,
-      recipientName: recipientName,
-      promptType: "CONVERSATION",
-      context: incomingMessage,
-      customerId: customer.id,
-      history: history,
-    });
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, threadId: thread.id });
 
   } catch (error) {
-    console.error("Internal Service Error:", error);
-    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+    console.error("[incoming-sms] Internal error:", error);
+    return NextResponse.json(
+      { success: false, error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

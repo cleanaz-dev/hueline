@@ -1,6 +1,7 @@
 "use client";
 
 import useSWR from "swr";
+import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bot, Loader2, Image as ImageIcon, Calculator, BrainCircuit } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,77 +14,81 @@ interface HueClawStatusBubbleProps {
 }
 
 export function HueClawStatusBubble({ threadId }: HueClawStatusBubbleProps) {
-  const { subdomain } = useOwner()
+  const { subdomain } = useOwner();
   
-  // Polls every 2 seconds ONLY when the AI is actively working
   const { data } = useSWR(
-    // 🚨 THIS STRING MUST MATCH YOUR MUTATE CALL EXACTLY:
     `/api/subdomain/${subdomain.slug}/threads/${threadId}/hueclaw-status`,
     fetcher,
     {
       refreshInterval: (latestData) => (latestData?.isWorking ? 2000 : 0),
-      // 🚨 CHANGE THIS TO TRUE:
-      // Prevents the bubble from getting stuck if they switch tabs
       revalidateOnFocus: true, 
     }
   );
 
-  // If Redis says it's not working (or data is undefined), hide the component completely
-  if (!data?.isWorking) return null;
-
-  // Map the task type to cool UI states
   const STATUS_CONFIG: Record<string, { text: string; icon: any }> = {
-    COMMUNICATION: { text: "HueClaw is analyzing thread...", icon: BrainCircuit },
-    IMAGEN: { text: "HueClaw is generating an image...", icon: ImageIcon },
-    QUOTE: { text: "HueClaw is calculating a quote...", icon: Calculator },
+    COMMUNICATION: { text: "HueClaw is analyzing thread", icon: BrainCircuit },
+    IMAGEN: { text: "HueClaw is generating an image", icon: ImageIcon },
+    QUOTE: { text: "HueClaw is calculating a quote", icon: Calculator },
   };
 
-  const activeStatus = STATUS_CONFIG[data.taskType] || {
-    text: "HueClaw is thinking...",
+  const activeStatus = STATUS_CONFIG[data?.taskType] || {
+    text: "HueClaw is thinking",
     icon: Loader2,
   };
   
   const StatusIcon = activeStatus.icon;
+
   return (
-    <div className="flex w-full justify-start mb-6 transition-all duration-300">
-      <div className="flex max-w-[85%] md:max-w-[95%] flex-row">
-        
-        {/* Avatar matching your AI config */}
-        <div className="flex flex-col items-center shrink-0 w-8 mx-3 mt-0.5">
-          <Avatar className="h-8 w-8 shadow-sm border border-zinc-200 dark:border-zinc-700 animate-pulse">
-            <AvatarFallback className="bg-background text-indigo-800 dark:text-indigo-400">
-              <Bot size={16} />
-            </AvatarFallback>
-          </Avatar>
-        </div>
-
-        <div className="flex flex-col gap-1.5 min-w-0 items-start">
-          {/* Header */}
-          <div className="flex items-baseline gap-2 px-1">
-            <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              HueClaw Agent
-            </span>
-            <span className="text-[10px] font-medium text-indigo-500 animate-pulse">
-              Working...
-            </span>
-          </div>
-
-          {/* Bubble matching your AI config */}
-          <div className="relative flex flex-col px-4 py-3 rounded-2xl rounded-tl-sm text-[14.5px] shadow-sm break-words w-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-500/20">
+    // AnimatePresence tracks elements exiting the DOM to animate their removal
+    <AnimatePresence>
+      {data?.isWorking && (
+        <motion.div
+          initial={{ opacity: 0, y: 10, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="flex w-full justify-start mb-4 origin-bottom-left"
+        >
+          <div className="flex max-w-[85%] md:max-w-[95%] flex-row items-end gap-2 px-1">
             
-            <div className="flex items-center gap-3 opacity-90">
-              <StatusIcon 
-                size={16} 
-                className={cn("text-indigo-500", data.taskType === "COMMUNICATION" ? "animate-pulse" : "animate-bounce")} 
-              />
-              <span className="font-medium tracking-wide text-sm">
-                {activeStatus.text}
-              </span>
+            {/* Subtler, smaller Avatar */}
+            <div className="flex flex-col items-center shrink-0 w-6 h-6 mb-0.5 mx-2">
+              <Avatar className="h-6 w-6 shadow-sm border border-indigo-100 dark:border-indigo-800/50">
+                <AvatarFallback className="bg-indigo-50 dark:bg-indigo-950/50 text-indigo-500 dark:text-indigo-400">
+                  <Bot size={12} />
+                </AvatarFallback>
+              </Avatar>
             </div>
-            
+
+            <div className="flex flex-col gap-1 min-w-0 items-start">
+              {/* Sleeker, pill-like gradient bubble */}
+              <div className="relative flex items-center gap-2.5 px-3.5 py-2 rounded-2xl rounded-bl-sm text-[13px] shadow-sm bg-gradient-to-r from-indigo-50 to-white dark:from-indigo-500/10 dark:to-transparent border border-indigo-50/50 dark:border-indigo-500/10 text-indigo-800 dark:text-indigo-300">
+                
+                <StatusIcon 
+                  size={14} 
+                  className={cn(
+                    "text-indigo-400 dark:text-indigo-500", 
+                    // Use a soft spin for loaders/Imagen, and a gentle pulse for comms
+                    data?.taskType === "COMMUNICATION" ? "animate-pulse" : "animate-[spin_3s_linear_infinite]"
+                  )} 
+                />
+                
+                <span className="font-medium tracking-wide opacity-90">
+                  {activeStatus.text}
+                </span>
+                
+                {/* Elegant typing dots (...) instead of hardcoded text */}
+                <span className="flex gap-0.5 ml-0.5 opacity-70">
+                  <motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ repeat: Infinity, duration: 1.4, delay: 0 }} className="w-1 h-1 bg-indigo-400 rounded-full" />
+                  <motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ repeat: Infinity, duration: 1.4, delay: 0.2 }} className="w-1 h-1 bg-indigo-400 rounded-full" />
+                  <motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ repeat: Infinity, duration: 1.4, delay: 0.4 }} className="w-1 h-1 bg-indigo-400 rounded-full" />
+                </span>
+
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
