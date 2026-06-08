@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useOwner } from "@/context/owner-context";
 import { OwnerAdvancedChatInput } from "@/components/owner/owner-advanced-chat-input";
 import { OwnerChatBubble } from "@/components/owner/owner-chat-bubble";
+import { HueClawStatusBubble } from "@/components/owner/hueclaw/hueclaw-status-chatbubble";
 
 const morphTransition = {
   type: "spring" as const,
@@ -303,7 +304,9 @@ export function GlobalOwnerChatWidget() {
                       <p className="text-xs text-muted-foreground">
                         {customer?.phone}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate">{customer?.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {customer?.email}
+                      </p>
                     </div>
                     {customer?.threadId && (
                       <p className="text-[10px] px-1 py-0 h-4 font-mono text-muted-foreground">
@@ -388,6 +391,9 @@ export function GlobalOwnerChatWidget() {
                           />
                         );
                       })
+                    )}
+                    {customer?.threadId && (
+                      <HueClawStatusBubble threadId={customer?.threadId} />
                     )}
                     <div ref={bottomRef} className="h-2" />
                   </div>
