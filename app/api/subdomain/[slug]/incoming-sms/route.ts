@@ -40,8 +40,13 @@ export async function POST(req: Request) {
     });
 
     if (!customer) {
-      console.warn(`[incoming-sms] Unknown sender ${incomingPhone} for slug=${slug} — dropped`);
-      return NextResponse.json({ success: true, message: "Unknown sender dropped" });
+      console.warn(
+        `[incoming-sms] Unknown sender ${incomingPhone} for slug=${slug} — dropped`,
+      );
+      return NextResponse.json({
+        success: true,
+        message: "Unknown sender dropped",
+      });
     }
 
     // 3. FIND OPEN THREAD
@@ -53,7 +58,9 @@ export async function POST(req: Request) {
     });
 
     if (!thread) {
-      console.warn(`[incoming-sms] No open thread for ${customer.name} — message orphaned`);
+      console.warn(
+        `[incoming-sms] No open thread for ${customer.name} — message orphaned`,
+      );
       return NextResponse.json({ success: true, message: "No open thread" });
     }
 
@@ -79,22 +86,34 @@ export async function POST(req: Request) {
       },
     });
 
+    await prisma.logs.create({
+      data: {
+        title: "Inbound SMS",
+        type: "SMS",
+        actor: "CLIENT",
+        subdomain: { connect: { id: customer.subdomainId! } },
+        description: "Inbound SMS from Client",
+      },
+    });
+
     // 5. AI PAUSE CHECK
     const pauseKey = `ai_paused:${slug}:${incomingPhone}`;
     const isPaused = await redis.get(pauseKey);
 
     if (isPaused) {
       console.log(`[incoming-sms] AI muzzled for ${incomingPhone} on ${slug}`);
-      return NextResponse.json({ success: true, message: "AI paused by operator" });
+      return NextResponse.json({
+        success: true,
+        message: "AI paused by operator",
+      });
     }
 
     return NextResponse.json({ success: true, threadId: thread.id });
-
   } catch (error) {
     console.error("[incoming-sms] Internal error:", error);
     return NextResponse.json(
       { success: false, error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
