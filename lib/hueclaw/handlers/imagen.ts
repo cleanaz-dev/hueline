@@ -8,8 +8,8 @@ import { HueClawImageMetadata } from "@/lib/zod/imagen-metadata/hueclaw-imagen-m
 // 1. Define the exact shape of the backpack
 export type PendingMessagePayload = {
   deliveryMethod: "SMS" | "EMAIL" | "NONE";
-  msgBody: string | null;
-  msgSubject: string | null;
+  msgBody: string  | null 
+  msgSubject: string | null
 };
 
 export async function handleHueClawImagen(

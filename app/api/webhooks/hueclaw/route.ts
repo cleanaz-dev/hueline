@@ -4,6 +4,7 @@ import { hueclawCommsMetadataSchema } from "@/lib/zod/hueclaw/comms-metadata";
 import { NextResponse } from "next/server";
 import { handleHueClawImagen } from "@/lib/hueclaw/handlers/imagen";
 import { handleHueClawCommunication } from "@/lib/hueclaw/handlers/communication";
+import { aiResultSchema } from "@/lib/zod/hueclaw/result-payload";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.LAMBDA_WEBHOOK_SECRET;
@@ -43,25 +44,32 @@ export async function POST(req: Request) {
       data: { status: "COMPLETED" },
     });
 
-    // 3. Extract the AI's routing booleans and drafted text
+    const parsedResult = aiResultSchema.safeParse(result);
+
+    if (!parsedResult.success) {
+      console.error(
+        "[HueClaw] AI hallucinated the JSON structure:",
+        parsedResult.error,
+      );
+      throw new Error("Invalid AI payload structure");
+    }
+
     const {
       generateImage,
       generateQuote,
-      contactRequired,
       suggestedDeliveryMethod: deliveryMethod,
       suggestedSms,
       suggestedEmail,
+    } = parsedResult.data;
 
-    } = result;
-
-    const msgBody = 
-      deliveryMethod === "SMS" 
-        ? suggestedSms 
-        : suggestedEmail?.body; // Safely get the body string
+    const msgBody =
+      deliveryMethod === "SMS"
+        ? (suggestedSms ?? null)
+        : (suggestedEmail?.body ?? null); // ?. gives undefined; ?? null converts it
 
     const msgSubject =
-      deliveryMethod === "EMAIL" 
-        ? suggestedEmail?.subject // Safely get the subject string
+      deliveryMethod === "EMAIL"
+        ? (suggestedEmail?.subject ?? null) // same here
         : null;
 
     // 🎒 Create the "Backpack" to carry to the next step

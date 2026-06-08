@@ -18,7 +18,7 @@ export type HueClawCommsTrigger = "STANDARD_AI_REPLY";
 
 interface PendingMessage {
   deliveryMethod: "SMS" | "EMAIL";
-  msgBody: string;
+  msgBody: string | null
   msgSubject: string | null;
 }
 
@@ -108,7 +108,7 @@ export async function handleHueClawCommunication({
       customerName: thread.customer.name || "Customer",
       deliveryMethod,
       subject: msgSubject,
-      body: msgBody,
+      body: msgBody!,
     };
 
     // 3. Format the body safely for the DB (Preserve email subjects!)
@@ -121,13 +121,13 @@ export async function handleHueClawCommunication({
     if (deliveryMethod === "SMS") {
       await sendDefaultSMS({
         to: thread.customer.phone!,
-        body: msgBody,
+        body: msgBody!,
       });
     } else if (deliveryMethod === "EMAIL") {
       await sendChatEmail({
         to: thread.customer.email!,
         subject: msgSubject!,
-        body: msgBody,
+        body: msgBody!,
         replyTo: "", // Add if you have a dynamic reply-to logic
       });
     }
@@ -151,7 +151,7 @@ export async function handleHueClawCommunication({
         data: {
           type: config.commType(context),
           role: config.role,
-          body: formattedDbBody,
+          body: formattedDbBody!,
           chatThread: { connect: { id: threadId } },
           customer: { connect: { id: thread.customerId } },
         },
