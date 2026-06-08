@@ -66,6 +66,7 @@ export function OwnerAdvancedChatInput({
 
   const isEmpty = !text.replace(/<[^>]*>?/gm, "").trim();
 
+  
   return (
     <>
       {/* ─── Undocked overlay — md+ only ─────────────────────────────────── */}
@@ -165,8 +166,8 @@ export function OwnerAdvancedChatInput({
 
       {/* ─── Docked input (always visible) ───────────────────────────────── */}
       <div className="p-4 bg-background border-t shadow-[0_-4px_15px_-5px_rgba(0,0,0,0.05)]">
-        {/* ─── AI ACTION DOCK ────────────────────────────────────────────── */}
-        <AiActionDock
+ 
+        {/* <AiActionDock
           isLoading={isAiLoading}
           suggestion={currentSuggestion}
           onAnalyze={() =>
@@ -191,7 +192,7 @@ export function OwnerAdvancedChatInput({
             setText(aiBody);
             setIsUndocked(false);
           }}
-        />
+        /> */}
 
         {/* Channel Switcher */}
         <div className="flex items-center justify-between mb-2">

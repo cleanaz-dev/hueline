@@ -4,7 +4,7 @@ import { createContext, useContext, ReactNode, useState } from "react";
 import { Customer, SubdomainUser } from "@/app/generated/prisma";
 import { AiSuggestionData } from "@/lib/moonshot";
 import { OwnerData } from "@/types/owner";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import axios from "axios";
 
 // 1. NEW THREAD LOGIC: Define your Thread model interface
@@ -267,6 +267,7 @@ export function OwnerProvider({
     }
   };
 
+
   const hueClawAi = async (
     customerId: string,
     threadId: string,
@@ -277,6 +278,12 @@ export function OwnerProvider({
         `/api/subdomain/${subdomain.slug}/hue-claw/${threadId}/${trigger}`,
       );
       setAiSuggestions((prev) => ({ ...prev, [customerId]: data }));
+
+      // 🚨 ADD THIS LINE: 
+      // This tells SWR to instantly check the status, which will see 
+      // isWorking: true, making the bubble appear and start 2s polling!
+      mutate(`/api/subdomain/${subdomain.slug}/threads/${threadId}/hueclaw-status`);
+
     } finally {
       console.log("Hue Claw in Action!");
     }

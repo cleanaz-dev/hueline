@@ -856,6 +856,7 @@ enum LogType {
   VIDEO
   MEETING
   QUOTE
+  EMAIL
 }
 
 enum LogActor {

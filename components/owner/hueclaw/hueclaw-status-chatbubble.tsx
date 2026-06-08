@@ -14,17 +14,21 @@ interface HueClawStatusBubbleProps {
 
 export function HueClawStatusBubble({ threadId }: HueClawStatusBubbleProps) {
   const { subdomain } = useOwner()
+  
   // Polls every 2 seconds ONLY when the AI is actively working
   const { data } = useSWR(
-    `/api/subdomain/${subdomain.id}/threads/${threadId}/hueclaw-status`,
+    // 🚨 THIS STRING MUST MATCH YOUR MUTATE CALL EXACTLY:
+    `/api/subdomain/${subdomain.slug}/threads/${threadId}/hueclaw-status`,
     fetcher,
     {
       refreshInterval: (latestData) => (latestData?.isWorking ? 2000 : 0),
-      revalidateOnFocus: false,
+      // 🚨 CHANGE THIS TO TRUE:
+      // Prevents the bubble from getting stuck if they switch tabs
+      revalidateOnFocus: true, 
     }
   );
 
-  // If Redis says it's not working, hide the component completely
+  // If Redis says it's not working (or data is undefined), hide the component completely
   if (!data?.isWorking) return null;
 
   // Map the task type to cool UI states
@@ -40,7 +44,6 @@ export function HueClawStatusBubble({ threadId }: HueClawStatusBubbleProps) {
   };
   
   const StatusIcon = activeStatus.icon;
-
   return (
     <div className="flex w-full justify-start mb-6 transition-all duration-300">
       <div className="flex max-w-[85%] md:max-w-[95%] flex-row">

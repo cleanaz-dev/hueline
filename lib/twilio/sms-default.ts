@@ -1,16 +1,11 @@
-
-import {twilioClient } from "./config";
+import { twilioClient } from "./config";
 
 interface SendSMSDefault {
   to: string;
   body: string;
 }
 
-export async function sendDefaultSMS({
-  to,
-  body,
-
-}: SendSMSDefault) {
+export async function sendDefaultSMS({ to, body }: SendSMSDefault) {
   // Fixed syntax: added closing parenthesis
   try {
     const message = await twilioClient.messages.create({
@@ -18,8 +13,6 @@ export async function sendDefaultSMS({
       from: process.env.TWILIO_PHONE_NUMBER,
       body,
     });
-
-  
 
     return message;
   } catch (error) {

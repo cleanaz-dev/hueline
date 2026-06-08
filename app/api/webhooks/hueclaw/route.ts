@@ -51,12 +51,18 @@ export async function POST(req: Request) {
       suggestedDeliveryMethod: deliveryMethod,
       suggestedSms,
       suggestedEmail,
-      suggestedEmailSubject,
+
     } = result;
 
-    const msgBody = deliveryMethod === "SMS" ? suggestedSms : suggestedEmail;
+    const msgBody = 
+      deliveryMethod === "SMS" 
+        ? suggestedSms 
+        : suggestedEmail?.body; // Safely get the body string
+
     const msgSubject =
-      deliveryMethod === "EMAIL" ? suggestedEmailSubject : null;
+      deliveryMethod === "EMAIL" 
+        ? suggestedEmail?.subject // Safely get the subject string
+        : null;
 
     // 🎒 Create the "Backpack" to carry to the next step
     const pendingMessage = {
@@ -112,7 +118,7 @@ export async function POST(req: Request) {
       case TRIGGERS.NONE: {
         console.log(`[HueClaw] 💬 Communication-only for thread ${threadId}`);
         await clearHueClawStatus(threadId);
-        await handleHueClawCommunication(threadId, lockKey as string, pendingMessage);
+        await handleHueClawCommunication({ threadId, lockKey, pendingMessage });
         return NextResponse.json({
           success: true,
           message: "Handed off to Communications",

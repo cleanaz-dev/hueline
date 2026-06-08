@@ -29,7 +29,7 @@ export async function releaseResourceLock(lockKey: string) {
 }
 
 
-// inside @/lib/redis.ts
+
 type HueClawStatus = "COMMUNICATION" | "IMAGEN" | "QUOTE"
 export async function setHueClawStatus(threadId: string, status: HueClawStatus = "COMMUNICATION" ) {
   // Key format: hueclaw:status:12345
