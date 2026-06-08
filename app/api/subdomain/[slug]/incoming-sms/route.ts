@@ -65,6 +65,18 @@ export async function POST(req: Request) {
     }
 
     // 4. LOG COMMUNICATION + ACTIVITY — both connected to thread
+
+     await prisma.clientActivity.create({
+      data: {
+        type: "SMS_INBOUND",
+        customer: { connect: { id: customer.id } },
+        subDomain: { connect: { id: customer.subdomainId! } },
+        chatThread: { connect: { id: thread.id } },
+        description: `Inbound SMS from ${customer.name}`,
+        title: "Inbound SMS",
+      },
+    });
+    
     await prisma.clientCommunication.create({
       data: {
         body: incomingMessage,
@@ -75,16 +87,7 @@ export async function POST(req: Request) {
       },
     });
 
-    await prisma.clientActivity.create({
-      data: {
-        type: "SMS_INBOUND",
-        customer: { connect: { id: customer.id } },
-        subDomain: { connect: { id: customer.subdomainId! } },
-        chatThread: { connect: { id: thread.id } },
-        description: `Inbound SMS from ${customer.name}`,
-        title: "Inbound SMS",
-      },
-    });
+   
 
     await prisma.logs.create({
       data: {
