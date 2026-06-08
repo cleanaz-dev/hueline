@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     const customer = await prisma.customer.findFirst({
       where: {
         phone: incomingPhone,
-        subDomain: { slug },
+        subdomain: { slug },
       },
     });
 
