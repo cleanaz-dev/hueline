@@ -196,7 +196,7 @@ export function GlobalOwnerChatWidget() {
                           threadId: thread.id,
                           name: thread.customer?.name ?? "Unknown",
                           phone: thread.customer?.phone ?? undefined,
-                          email: thread.customer?.email ?? undefined, // 👈 this line is missing
+                          email: thread.customer?.email ?? undefined,
                         })
                       }
                       className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-xl cursor-pointer transition-colors"

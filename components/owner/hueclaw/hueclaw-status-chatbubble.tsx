@@ -4,6 +4,7 @@ import useSWR from "swr";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bot, Loader2, Image as ImageIcon, Calculator, BrainCircuit } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useOwner } from "@/context/owner-context";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -12,9 +13,10 @@ interface HueClawStatusBubbleProps {
 }
 
 export function HueClawStatusBubble({ threadId }: HueClawStatusBubbleProps) {
+  const { subdomain } = useOwner()
   // Polls every 2 seconds ONLY when the AI is actively working
   const { data } = useSWR(
-    `/api/threads/${threadId}/hueclaw-status`,
+    `/api/subdomain/${subdomain.id}/threads/${threadId}/hueclaw-status`,
     fetcher,
     {
       refreshInterval: (latestData) => (latestData?.isWorking ? 2000 : 0),
