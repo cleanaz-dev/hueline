@@ -549,6 +549,7 @@ enum MetadataSource {
   VOICE
   QUOTE_GENERATION
   COMMUNICATION
+  NUDGE
 }
 
 enum SystemTaskType {
@@ -561,6 +562,7 @@ enum SystemTaskType {
   STUDIO_UPSCALE
   QUOTE_GENERATION
   COMMUNICATION
+  NUDGE
 }
 
 model MediaAttachment {

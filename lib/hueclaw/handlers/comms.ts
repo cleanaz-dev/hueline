@@ -42,14 +42,14 @@ export async function handleHueClawComms(
       deliveryMethod: "NONE",
       initiator: "HUECLAW",
       lockKey,
-      type: "COMMUNICATION",
+      type: "NUDGE",
       status: "PROCESSING",
       customer: { connect: { id: thread.customerId } },
       subdomain: { connect: { id: thread.subdomainId } },
-      metadataSource: "COMMUNICATION",
+      metadataSource: "NUDGE",
       metadata: {
         threadId,
-        trigger: "comms",
+        trigger: "nudge",
       }
     }
   });
@@ -74,7 +74,7 @@ export async function handleHueClawComms(
     Payload: Buffer.from(JSON.stringify(payload)),
   });
 
-  await setHueClawStatus(threadId, "COMMUNICATION");
+  await setHueClawStatus(threadId, "NUDGE");
 
   await lambda.send(command);
 }

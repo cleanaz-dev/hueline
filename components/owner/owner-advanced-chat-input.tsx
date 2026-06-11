@@ -234,7 +234,7 @@ export function OwnerAdvancedChatInput({
             
             <button
               onClick={() =>
-                hueClawAi(clientId!, activeThread?.threadId!, "comms")
+                hueClawAi(clientId!, activeThread?.threadId!, "nudge")
               }
               className={cn(
                 "relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 cursor-pointer",

@@ -17,7 +17,7 @@ import { sendDefaultSMS } from "@/lib/twilio/sms-default";
 export type HueClawCommsTrigger = "STANDARD_AI_REPLY";
 
 interface PendingMessage {
-  deliveryMethod: "SMS" | "EMAIL";
+  deliveryMethod: "SMS" | "EMAIL" | "NONE"
   msgBody: string | null
   msgSubject: string | null;
 }
@@ -25,7 +25,7 @@ interface PendingMessage {
 // ─── Dynamic Context ──────────────────────────────────────────────────────────
 export interface CommsContext {
   customerName: string;
-  deliveryMethod: "SMS" | "EMAIL";
+  deliveryMethod: "SMS" | "EMAIL" | "NONE"
   subject: string | null;
   body: string;
 }

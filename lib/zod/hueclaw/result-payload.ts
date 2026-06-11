@@ -4,7 +4,7 @@ export const aiResultSchema = z.object({
   generateImage: z.boolean().default(false),
   generateQuote: z.boolean().default(false),
   contactRequired: z.boolean().default(false),
-  suggestedDeliveryMethod: z.enum(["SMS", "EMAIL"]),
+  suggestedDeliveryMethod: z.enum(["SMS", "EMAIL", "NONE"]),
   suggestedSms: z.string().nullable().optional(),
   suggestedEmail: z.object({
     subject: z.string(),

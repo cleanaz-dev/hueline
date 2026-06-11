@@ -67,7 +67,7 @@ export async function handleHueClawImagen(
 
   // 4. Send the ENTIRE context to the Imagen Lambda
   const payload = {
-    webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/hueclaw-imagen`,
+    webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/hueclaw`,
     systemTaskId: systemTask.id,
     threadHistory: thread.communications, 
     originalImageUrl: originalImage,

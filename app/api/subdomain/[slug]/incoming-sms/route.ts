@@ -76,7 +76,7 @@ export async function POST(req: Request) {
         title: "Inbound SMS",
       },
     });
-    
+
     await prisma.clientCommunication.create({
       data: {
         body: incomingMessage,
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
         type: "SMS",
         actor: "CLIENT",
         subdomain: { connect: { id: customer.subdomainId! } },
-        description: "Inbound SMS from Client",
+        description: "Inbound SMS",
       },
     });
 
