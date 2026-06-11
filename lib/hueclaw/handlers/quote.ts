@@ -66,7 +66,7 @@ export async function handleHueClawQuote(
   });
 
   const payload = {
-    webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/hueclaw?type=quote`,
+    webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/hueclaw`,
     systemTaskId: systemTask.id,
     roomType: booking?.roomType || "UNKNOWN",
     squareFeet: booking?.squareFeet || 0,

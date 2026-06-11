@@ -10,7 +10,7 @@ const lambda = new LambdaClient({
   },
 });
 
-export async function handleHueClawComms(
+export async function handleHueClawNudge(
   threadId: string, 
   lockKey: string,
   body: any

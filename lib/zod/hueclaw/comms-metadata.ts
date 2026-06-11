@@ -2,7 +2,7 @@ import z from "zod";
 
 export const hueclawCommsMetadataSchema = z.object({
     threadId: z.string(),
-    trigger: z.enum(['comms','imagen', 'quote'])
+    trigger: z.enum(['comms','imagen', 'quote', 'nudge'])
 })
 
 export type HueclawCommsMetadata = z.infer<typeof hueclawCommsMetadataSchema>

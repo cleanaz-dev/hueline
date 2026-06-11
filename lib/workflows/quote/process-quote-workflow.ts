@@ -11,7 +11,6 @@ import {
   handlerQuoteWebhookSchema,
   quoteGenerationMetadataSchema,
 } from "@/lib/zod/quotes/handler-quote-webhook-schema";
-import { connect } from "http2";
 import z from "zod";
 
 export type QuoteTriggerSource = z.infer<

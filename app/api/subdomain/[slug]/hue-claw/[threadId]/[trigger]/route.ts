@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { acquireResourceLock, releaseResourceLock } from "@/lib/redis";
-import { handleHueClawComms } from "@/lib/hueclaw/handlers/comms";
+import { handleHueClawNudge } from "@/lib/hueclaw/handlers/nudge";
 
 export async function POST(
   req: Request,
@@ -77,11 +77,11 @@ export async function POST(
 
     switch (trigger) {
       case "comms":
-        await handleHueClawComms(threadId, lockKey, body);
+        await handleHueClawNudge(threadId, lockKey, body);
         break;
 
       case "nudge":
-        await handleHueClawComms(threadId, lockKey, body);
+        await handleHueClawNudge(threadId, lockKey, body);
         break;
 
       case "imagen":
