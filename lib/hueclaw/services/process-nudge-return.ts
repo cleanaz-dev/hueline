@@ -32,6 +32,7 @@ export async function processNudgeReturn(task: any, rawResult: any) {
   }
 
   // Route: Direct Comms (End of flow)
+  // Figure this one out so its works
   await handleHueClawCommunication({ threadId, lockKey: task.lockKey, pendingMessage });
   return { releaseLock: true, threadId, message: "Direct comms executed" };
 }
