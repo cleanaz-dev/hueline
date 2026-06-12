@@ -36,7 +36,7 @@ export async function finalizeHueClawDelivery({
       subject: pendingMessage.msgSubject!,
       attachmentType: "image",
       imageUrl,
-      template: (                                   // ✅ was template: ""
+      template: (                                 
         <HueClawEmailTemplate
           subject={pendingMessage.msgSubject!}
           body={pendingMessage.msgBody ?? ""}

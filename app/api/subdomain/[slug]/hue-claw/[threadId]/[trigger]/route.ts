@@ -48,6 +48,7 @@ export async function POST(
     comms: "COMMS",
     imagen: "IMAGEN",
     nudge: "NUDGE",
+    quote: "QUOTE"
   };
 
   const lockContext = contextMap[trigger];
