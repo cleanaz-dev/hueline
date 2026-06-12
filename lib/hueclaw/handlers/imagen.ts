@@ -69,9 +69,9 @@ export async function handleHueClawImagen(
   // 4. Send the ENTIRE context to the Imagen Lambda
   const payload = {
     webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/hueclaw`,
-    systemTaskId: systemTask.id,
-    threadHistory: thread.communications, 
-    originalImageUrl: originalImage,
+    systemTaskId: systemTask.id, // Needed for hueclaw webhook endpoiint
+    threadHistory: thread.communications, // Not used right now, but can be in the future, the ai can scan conversation to pickup color details
+    originalImageUrl: originalImage, // NOT URL! S3 KEY!
     subdomainId: thread.subdomainId // So the Lambda can fetch custom colors!
   };
 
