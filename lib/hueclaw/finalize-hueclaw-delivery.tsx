@@ -40,7 +40,7 @@ export async function finalizeHueClawDelivery({
   newImagenCompressedKey,
   color,
 }: FinalizeArgs) {
-  const imageUrl = await getPresignedUrl(images);
+  const imageUrl = await getPresignedUrl(newImagenCompressedKey!);
 
   if (pendingMessage.deliveryMethod === "SMS") {
     const body = portalLink
