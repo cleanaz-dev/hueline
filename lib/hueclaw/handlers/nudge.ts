@@ -69,7 +69,7 @@ export async function handleHueClawNudge(
   
 
   const command = new InvokeCommand({
-    FunctionName: "hueline-hueclaw-comms-PROD",
+    FunctionName: "hueline-hueclaw-nudge-PROD",
     InvocationType: "Event",
     Payload: Buffer.from(JSON.stringify(payload)),
   });
