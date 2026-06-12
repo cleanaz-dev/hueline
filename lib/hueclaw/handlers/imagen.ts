@@ -30,7 +30,8 @@ export async function handleHueClawImagen(
             paintColors: true,
             originalImages: true,
             huelineId: true,
-            roomType: true
+            roomType: true,
+            dimensions: true,
         }
       }
     }
