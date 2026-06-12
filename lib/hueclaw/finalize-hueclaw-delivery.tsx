@@ -15,19 +15,25 @@ type FinalizeArgs = {
   pendingMessage: PendingMessagePayload;
   images: string;
   customer: Customer | null;
+  portalLink?: string | null | undefined
 };
 
 export async function finalizeHueClawDelivery({
   pendingMessage,
   images,
   customer,
+  portalLink
 }: FinalizeArgs) {
   const imageUrl = await getPresignedUrl(images);
 
-  if (pendingMessage.deliveryMethod === "SMS") {
+   if (pendingMessage.deliveryMethod === "SMS") {
+    const body = portalLink
+      ? `${pendingMessage.msgBody}\n\nView on your portal: ${portalLink}`
+      : pendingMessage.msgBody!;
+
     await SendImageSMS({
       to: customer?.phone!,
-      body: pendingMessage.msgBody!,
+      body,
       imageUrl: [imageUrl],
     });
   } else {
@@ -45,3 +51,4 @@ export async function finalizeHueClawDelivery({
     });
   }
 }
+

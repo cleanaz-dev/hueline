@@ -21,13 +21,26 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
     }
   })
 
+  const subdomain = await prisma.subdomain.findUnique({
+    where: {
+      id: task.subdomainId
+    },
+    select: {
+      slug: true,
+    }
+  })
+
   // 3. Update customer information with image and point colors
   await handleHueClawImagenReturn(result, metadata, task)
 
   // 4. Execute Final Delivery (Merge Backpack + S3 URLs)
   console.log(`Sending ${pendingMessage.deliveryMethod} with image:`, result.newImagenS3Key);
+  let portalLink: string | null = null;
+  if (subdomain?.slug) {
+    portalLink = `https://${subdomain.slug}.hue-line.com/j/${metadata.huelineId}`;
+  }
   
-  await finalizeHueClawDelivery({ pendingMessage, images: result.newImagenS3Key, customer });
+  await finalizeHueClawDelivery({ pendingMessage, images: result.newImagenS3Key, customer, portalLink });
 
   // 5. Signal gateway to clean up
   return { releaseLock: true, threadId, message: "Imagen delivery complete" };
