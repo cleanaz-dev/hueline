@@ -15,6 +15,7 @@ export async function sendEmail({ to, subject, template }: SendEmailProps) {
       to: [to],
       subject: subject,
       react: template, // 👈 Just drop the component right in here
+      
     });
 
     if (error) {

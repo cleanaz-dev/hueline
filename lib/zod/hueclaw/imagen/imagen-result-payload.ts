@@ -17,3 +17,5 @@ export const hueClawImagenResultPayloadSchema = z.object({
   selectedColorCode: z.string(),
   selectedColorBrand: z.string(),
 });
+
+export type HueClawImagenResultPaylod = z.infer<typeof hueClawImagenResultPayloadSchema>

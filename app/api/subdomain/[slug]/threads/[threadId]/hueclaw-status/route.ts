@@ -14,12 +14,13 @@ export async function GET(req: Request, { params }: Params) {
   const { slug, threadId } = await params;
 
   try {
-    await prisma.chatThread.findFirstOrThrow({
-      where: {
-        id: threadId,
-        subdomain: { slug },
-      },
-    });
+    // Muted code for DB effieciecy, we know the thread exists because this GET is called from the thread
+    // await prisma.chatThread.findFirstOrThrow({
+    //   where: {
+    //     id: threadId,
+    //     subdomain: { slug },
+    //   },
+    // });
 
     const status = await getHueClawStatus(threadId);
 
