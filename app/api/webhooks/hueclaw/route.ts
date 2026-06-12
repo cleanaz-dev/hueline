@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   let activeThreadId: string | null = null;
 
   try {
-    const { systemTaskId, result } = await req.json();
+    const { systemTaskId, result, status, error } = await req.json();
 
     // 1. Fetch & Verify Task
     const task = await prisma.systemTask.findUnique({

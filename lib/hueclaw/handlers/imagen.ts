@@ -75,7 +75,7 @@ export async function handleHueClawImagen(
   };
 
   const command = createCommand({
-    functionName: "hueline-hueclaw-imagen-PROD", 
+    functionName: "hueline-hueclaw-imagen-PROD",
     payload
   });
 
