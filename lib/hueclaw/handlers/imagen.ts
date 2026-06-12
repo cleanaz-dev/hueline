@@ -8,41 +8,49 @@ import { HueClawImageMetadata } from "@/lib/zod/imagen-metadata/hueclaw-imagen-m
 // 1. Define the exact shape of the backpack
 export type PendingMessagePayload = {
   deliveryMethod: "SMS" | "EMAIL" | "NONE";
-  msgBody: string  | null 
-  msgSubject: string | null
+  msgBody: string | null;
+  msgSubject: string | null;
 };
 
 export async function handleHueClawImagen(
-  threadId: string, 
-  lockKey: string, 
-  pendingMessage: PendingMessagePayload // <-- Strongly typed!
+  threadId: string,
+  lockKey: string,
+  pendingMessage: PendingMessagePayload, // <-- Strongly typed!
 ) {
   // 1. Fetch the entire thread
   const thread = await prisma.chatThread.findUnique({
     where: { id: threadId },
-    include: { 
-      communications: true, 
-      customer: true, 
-      subdomain: true, 
+    include: {
+      communications: true,
+      customer: true,
+      subdomain: true,
       bookingData: {
         select: {
-            id: true,
-            paintColors: true,
-            originalImages: true,
-            huelineId: true,
-            roomType: true,
-            dimensions: true,
-        }
-      }
-    }
+          id: true,
+          paintColors: true,
+          originalImages: true,
+          huelineId: true,
+          roomType: true,
+          dimensions: true,
+        },
+      },
+    },
   });
 
   if (!thread) throw new Error("Thread not found");
 
-  let originalImage: string = ""; // Default to empty string instead of null if S3 key expects string
+  let originalImage: string = "";
+
   if (thread.bookingData?.[0]?.originalImages) {
-    // Assuming originalImages might be an array or a direct string, adjust as needed
-    originalImage = thread.bookingData[0].originalImages[0] || thread.bookingData[0].originalImages;
+    const imagesData = thread.bookingData[0].originalImages;
+
+    // Check if it's an array before grabbing the first item
+    if (Array.isArray(imagesData)) {
+      originalImage = imagesData[0] || "";
+    } else if (typeof imagesData === "string") {
+      // If it's already a string, just use it directly
+      originalImage = imagesData;
+    }
   }
 
   // 3. Create the new SystemTask for the Specialist
@@ -55,15 +63,15 @@ export async function handleHueClawImagen(
       deliveryMethod: pendingMessage.deliveryMethod, // <-- Fixed: Pulled from the backpack
       status: "PROCESSING",
       initiator: "HUECLAW",
-      metadata: { 
+      metadata: {
         threadId,
         pendingMessage, // 🎒 <-- Fixed: Actually pack the backpack into the DB!
         imageS3Key: originalImage,
         removeFurniture: false,
         huelineId: thread.bookingData?.[0]?.huelineId || "",
-        roomType: thread.bookingData?.[0]?.roomType || "UNKNOWN"
-     } satisfies HueClawImageMetadata
-    }
+        roomType: thread.bookingData?.[0]?.roomType || "UNKNOWN",
+      } satisfies HueClawImageMetadata,
+    },
   });
 
   // 4. Send the ENTIRE context to the Imagen Lambda
@@ -72,12 +80,12 @@ export async function handleHueClawImagen(
     systemTaskId: systemTask.id, // Needed for hueclaw webhook endpoiint
     threadHistory: thread.communications, // Not used right now, but can be in the future, the ai can scan conversation to pickup color details
     originalImageUrl: originalImage, // NOT URL! S3 KEY!
-    subdomainId: thread.subdomainId // So the Lambda can fetch custom colors!
+    subdomainId: thread.subdomainId, // So the Lambda can fetch custom colors!
   };
 
   const command = createCommand({
     functionName: "hueline-hueclaw-imagen-PROD",
-    payload
+    payload,
   });
 
   await setHueClawStatus(threadId, "IMAGEN");
