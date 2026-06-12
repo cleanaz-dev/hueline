@@ -46,14 +46,13 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
   let portalLink: string | null = null;
   if (subdomain?.slug) {
     portalLink = `https://${subdomain.slug}.hue-line.com/j/${metadata.huelineId}`;
-    
   }
   const color = {
     brand: result.selectedColorBrand,
     name: result.selectedColorName,
     code: result.selectedColorCode,
-    hex: result.selectedColorHex
-  }
+    hex: result.selectedColorHex,
+  };
 
   await finalizeHueClawDelivery({
     pendingMessage,
@@ -61,8 +60,9 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
     customer,
     portalLink,
     threadId,
+    newImagenKey: result.newImagenS3Key, // ← add this
     newImagenCompressedKey: result.compressedS3Key,
-    color
+    color,
   });
 
   // 5. Signal gateway to clean up
