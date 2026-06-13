@@ -616,6 +616,7 @@ enum CommunicationType {
   IMAGEN
   AI_SUGESSTION
   QUOTE
+  NONE
 }
 
 enum BookingStatus {
