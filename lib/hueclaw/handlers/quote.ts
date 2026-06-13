@@ -46,6 +46,17 @@ export async function handleHueClawQuote(
 
   const booking = thread.bookingData?.[0];
 
+  const quote = await prisma.quote.create({
+    data: {
+      booking: {connect: {id: booking.id}},
+      huelineId: booking.huelineId,
+      customer: {connect: {id: thread.customerId}},
+      subdomain: {connect: {id: thread.subdomainId}},
+      status: "DRAFT",
+
+    }
+  })
+
   const systemTask = await prisma.systemTask.create({
     data: {
       type: "QUOTE_GENERATION",
@@ -56,6 +67,8 @@ export async function handleHueClawQuote(
       status: "PROCESSING",
       initiator: "HUECLAW",
       metadata: {
+        quoteId: quote.id,
+        bookingId: booking.id,
         threadId,
         pendingMessage,
         huelineId: booking?.huelineId || "",

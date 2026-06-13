@@ -19,6 +19,8 @@ export const hueClawQuoteMetadataSchema = z.object({
       hex: z.string(),
     })
   ),
+  quoteId: z.string(),
+  bookingId: z.string().optional()
 });
 
 

@@ -9,7 +9,7 @@ import { sendDefaultSMS } from "@/lib/twilio/sms-default";
 import { sendEmail } from "@/lib/resend";
 import { SendBasicEmail } from "@/lib/resend/services/send-email";
 import { hueClawQuoteResultSchema } from "@/lib/zod/hueclaw/quote/quote-result-schema";
-
+import { connect } from "http2";
 
 export async function processQuoteReturn(task: SystemTask, rawResult: any) {
   // 1. Unpack the backpack that handleHueClawQuote packed
@@ -21,6 +21,8 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
     roomType,
     squareFeet,
     huelineId,
+    quoteId,
+    bookingId,
   } = metadata;
 
   // 2. Fetch customer
@@ -46,33 +48,39 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
   const validPayload = hueClawQuoteResultSchema.parse(rawResult);
 
   // 4. Create Quote — no pre-generated quoteId in the HueClaw flow
-  const quote = await prisma.quote.create({
+  const quote = await prisma.quote.update({
+    where: { id: quoteId },
     data: {
-      customerId: customer.id,
-      subdomainId: task.subdomainId,
       items: validPayload.items,
       totalAmount: validPayload.totalAmount,
-      version: 1,
-      ...(metadata.huelineId ? { huelineId: metadata.huelineId } : {}),
+      version: { increment: 1 },
     },
   });
 
-  const quoteLink = `\nLink to qoute:\nhttps://${subdomain.slug}.hue-line.com/quote/${quote.id}`;
+  const quoteLink = `Link to qoute https://${subdomain.slug}.hue-line.com/quote/${quote.id}`;
 
   // 5. DB side effects
   await prisma.$transaction(async (tx) => {
-    await tx.clientCommunication.create({
+    await tx.clientActivity.create({
+      data: {
+        type: task.deliveryMethod === "SMS" ? "SMS_SENT" : "EMAIL_SENT",
+        title: task.deliveryMethod === "SMS" ? "SMS Sent" : "Email Sent",
+        description: `Quote link delivered to ${customer.name ?? "customer"} via ${task.deliveryMethod}. ${quoteLink}`,
+        metadata: { quoteId: quote.id },
+        customer: { connect: { id: customer.id } },
+        subDomain: { connect: { id: task.subdomainId } },
+        chatThread: { connect: { id: threadId } },
+      },
+    });
+   await tx.clientCommunication.create({
       data: {
         body: pendingMessage.msgBody!,
         role: "AI",
+        type: "QUOTE",
         ...(pendingMessage.deliveryMethod === "EMAIL" && {
           subject: pendingMessage.msgSubject,
         }),
-        type: pendingMessage.deliveryMethod!,
         customer: { connect: { id: customer.id } },
-        ...(task.operatorId
-          ? { operator: { connect: { id: task.operatorId } } }
-          : {}),
         chatThread: { connect: { id: threadId } },
       },
     });
@@ -81,8 +89,8 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
       data: {
         type: "QUOTE_GENERATION",
         title: `Automated Quote Generated: $${validPayload.totalAmount.toFixed(2)}`,
-        description: `An automated quote for ${validPayload.items.length} items was generated for ${customer.name ?? ""} (via ${task.deliveryMethod}).`,
-        metadata: { huelineId: metadata.huelineId, jobId: task.id },
+        description: `An automated quote for ${validPayload.items.length} items was generated for ${customer.name ?? ""} (via ${task.deliveryMethod}). ${quoteLink}`,
+        metadata: { huelineId: metadata.huelineId, jobId: task.id, quoteId: quote.id },
         customer: { connect: { id: customer.id } },
         subDomain: { connect: { id: task.subdomainId } },
         chatThread: { connect: { id: threadId } },
