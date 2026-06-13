@@ -2,6 +2,8 @@ import { createCommand, lambda } from "@/lib/aws/lambda";
 import { prisma } from "@/lib/prisma";
 import { setHueClawStatus } from "@/lib/redis";
 import { AiQuoteSchema } from "@/lib/zod/hueclaw/quote-payload";
+import { HueClawQuoteMetadata } from "@/lib/zod/hueclaw/quote/quote-metadata";
+
 
 
 type PendingMessagePayload = {
@@ -58,10 +60,10 @@ export async function handleHueClawQuote(
         pendingMessage,
         huelineId: booking?.huelineId || "",
         roomType: booking?.roomType || "UNKNOWN",
-        squareFeet: booking?.dimensions || 0,
+        squareFeet: Number(booking?.dimensions ?? 0),
         paintColors: booking?.paintColors || [],
         prompt: booking?.prompt || "",
-      },
+      } satisfies HueClawQuoteMetadata
     },
   });
 
