@@ -8,21 +8,8 @@ import { SystemTask } from "@/app/generated/prisma";
 import { sendDefaultSMS } from "@/lib/twilio/sms-default";
 import { sendEmail } from "@/lib/resend";
 import { SendBasicEmail } from "@/lib/resend/services/send-email";
+import { hueClawQuoteResultSchema } from "@/lib/zod/hueclaw/quote/quote-result-schema";
 
-// Matches exactly what handleHueClawQuote stores in systemTask.metadata
-// const hueClawQuoteMetadataSchema = z.object({
-//   threadId: z.string(),
-//   pendingMessage: z.object({
-//     deliveryMethod: z.enum(["SMS", "EMAIL", "NONE"]),
-//     msgBody: z.string().nullable(),
-//     msgSubject: z.string().nullable(),
-//   }),
-//   huelineId: z.string(),
-//   roomType: z.string(),
-//   squareFeet: z.number(),
-//   paintColors: z.array(z.string()),
-//   prompt: z.string(),
-// });
 
 export async function processQuoteReturn(task: SystemTask, rawResult: any) {
   // 1. Unpack the backpack that handleHueClawQuote packed
@@ -56,7 +43,7 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
     throw new Error(`Subdomain not found for ${task.subdomainId}`);
 
   // 3. Validate Lambda result
-  const validPayload = handlerQuoteWebhookSchema.parse(rawResult);
+  const validPayload = hueClawQuoteResultSchema.parse(rawResult);
 
   // 4. Create Quote — no pre-generated quoteId in the HueClaw flow
   const quote = await prisma.quote.create({
