@@ -12,6 +12,7 @@ import {
   Loader2,
   Activity,
   Receipt,
+  PersonStanding,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OwnerChatAttachments } from "./owner-chat-attachements";
@@ -68,7 +69,7 @@ const ROLE_CONFIG = {
     side: "right",
     bubble:
       "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700",
-    icon: UserRound,
+    icon: PersonStanding,
   },
   AI: {
     label: "AI Assistant",
@@ -141,20 +142,20 @@ export function OwnerChatBubble({
         )}
       >
         {/* Avatar Column */}
-        <div className="flex flex-col items-center shrink-0 w-8 mx-3 mt-0.5">
+        <div className="flex flex-col items-center shrink-0 w-8 mx-3 ">
           {isGroupStart && (
-            <Avatar className="h-8 w-8 shadow-sm border border-zinc-200 dark:border-zinc-700">
-              <AvatarFallback
+           
+              <div
                 className={cn(
                   "bg-background",
-                  msg.role === "AI" && "text-indigo-800 dark:text-indigo-400",
-                  msg.role === "OPERATOR" && "text-blue-600 dark:text-blue-400",
-                  msg.role === "CLIENT" && "text-zinc-600 dark:text-zinc-400",
+                  msg.role === "AI" && "text-indigo-600",
+                  msg.role === "OPERATOR" && "text-blue-600",
+                  msg.role === "CLIENT" && "text-zinc-600",
                 )}
               >
                 <meta.icon size={16} />
-              </AvatarFallback>
-            </Avatar>
+              </div>
+          
           )}
         </div>
 

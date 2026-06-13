@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react"; 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, MessageSquare, Mail, Loader2, X, Sparkles } from "lucide-react";
@@ -9,6 +9,7 @@ import { RichTextEditor } from "../admin/prospects/rich-text-editor";
 import { AiActionDock } from "../admin/prospects/ai-action-dock";
 import { useOwner } from "@/context/owner-context";
 import { Switch } from "../ui/switch";
+import { HueClawChatControls } from "./hueclaw/hueclaw-chat-controls";
 
 interface OwnerAdvancedChatInputProps {
   clientId?: string;
@@ -25,7 +26,7 @@ export function OwnerAdvancedChatInput({
   const [subject, setSubject] = useState("");
   const [channel, setChannel] = useState<"SMS" | "EMAIL">("SMS");
   const [isUndocked, setIsUndocked] = useState<boolean>(false);
-  const [isAutoPilot, setIsAutoPilt] = useState<boolean>(false)
+  const [isAutoPilot, setIsAutoPilot] = useState<boolean>(false);
 
   const {
     aiSuggestions,
@@ -66,7 +67,6 @@ export function OwnerAdvancedChatInput({
 
   const isEmpty = !text.replace(/<[^>]*>?/gm, "").trim();
 
-  
   return (
     <>
       {/* ─── Undocked overlay — md+ only ─────────────────────────────────── */}
@@ -166,7 +166,6 @@ export function OwnerAdvancedChatInput({
 
       {/* ─── Docked input (always visible) ───────────────────────────────── */}
       <div className="p-4 bg-background border-t shadow-[0_-4px_15px_-5px_rgba(0,0,0,0.05)]">
- 
         {/* <AiActionDock
           isLoading={isAiLoading}
           suggestion={currentSuggestion}
@@ -194,13 +193,13 @@ export function OwnerAdvancedChatInput({
           }}
         /> */}
 
-        {/* Channel Switcher */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex bg-muted/50 p-1 rounded-lg">
+        {/* Channel Switcher & AI Controls (h-10 locks the height so no bouncing) */}
+        <div className="flex items-center justify-between h-10 mb-2">
+          <div className="flex bg-muted/50 p-1 rounded-lg h-8 border border-border/50">
             <button
               onClick={() => handleSwitchChannel("SMS")}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                "flex items-center gap-1.5 px-3 rounded-md text-xs font-medium transition-all h-full",
                 channel === "SMS"
                   ? "bg-background shadow-sm text-foreground"
                   : "text-muted-foreground hover:text-foreground",
@@ -211,7 +210,7 @@ export function OwnerAdvancedChatInput({
             <button
               onClick={() => handleSwitchChannel("EMAIL")}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                "flex items-center gap-1.5 px-3 rounded-md text-xs font-medium transition-all h-full",
                 channel === "EMAIL"
                   ? "bg-background shadow-sm text-foreground"
                   : "text-muted-foreground hover:text-foreground",
@@ -220,36 +219,17 @@ export function OwnerAdvancedChatInput({
               <Mail size={13} /> Email
             </button>
           </div>
-          <div className="flex gap-2">
-            <div className="flex gap-1.5 items-center">
-              <p className="text-sm">
-                HueClaw Autopilot {isAutoPilot ? "ON" : "OFF"}
-              </p>
-            <Switch 
-                  onChange={(prev) => setIsAutoPilt(!prev)}
-            />
 
-            </div>
-
-            
-            <button
-              onClick={() =>
-                hueClawAi(clientId!, activeThread?.threadId!, "nudge")
-              }
-              className={cn(
-                "relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 cursor-pointer",
-                "bg-violet-950 text-violet-200 border border-violet-700/60",
-                "hover:bg-violet-900 hover:border-violet-500 hover:text-white hover:shadow-[0_0_12px_2px_rgba(139,92,246,0.4)]",
-                "active:scale-95",
-                "before:absolute before:inset-0 before:rounded-md before:animate-pulse before:bg-violet-500/10",
-              )}
-            >
-              <span className="relative z-10 flex items-center gap-1.5">
-                <Sparkles size={13} className="text-violet-400" />
-                Wake HueClaw
-              </span>
-            </button>
-          </div>
+          <HueClawChatControls
+            isAutoPilot={isAutoPilot}
+            setIsAutoPilot={setIsAutoPilot}
+            isAiLoading={isAiLoading}
+            customerId={clientId}
+            threadId={activeThread?.threadId}
+            onNudge={() =>
+              hueClawAi(clientId!, activeThread?.threadId!, "nudge")
+            }
+          />
         </div>
 
         {/* Input Area */}
