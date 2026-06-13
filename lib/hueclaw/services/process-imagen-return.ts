@@ -28,7 +28,7 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
 
   const subdomain = await prisma.subdomain.findUnique({
     where: {
-      id: task.subdomainId,
+      id: customer?.subdomainId!,
     },
     select: {
       slug: true,
