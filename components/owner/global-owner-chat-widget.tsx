@@ -396,7 +396,6 @@ export function GlobalOwnerChatWidget() {
                     {customer?.threadId && (
                       <HueClawStatusBubble
                         threadId={customer?.threadId}
-                        // ADD THIS LINE: Pass the autopilot state down
                         isAutoPilot={customer?.isAutoPilot}
                       />
                     )}
