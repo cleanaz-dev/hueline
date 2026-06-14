@@ -9,7 +9,7 @@ import axios from "axios";
 import { useOwner } from "@/context/owner-context";
 
 interface HueClawControlsProps {
-  isAutoPilot: boolean;
+  isAutoPilot?: boolean;
   setIsAutoPilot: (val: boolean) => void;
   onNudge: () => void;
   isAiLoading?: boolean;

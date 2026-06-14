@@ -221,7 +221,7 @@ export function OwnerAdvancedChatInput({
           </div>
 
           <HueClawChatControls
-            isAutoPilot={isAutoPilot}
+            isAutoPilot={activeThread?.isAutoPilot}
             setIsAutoPilot={setIsAutoPilot}
             isAiLoading={isAiLoading}
             customerId={clientId}

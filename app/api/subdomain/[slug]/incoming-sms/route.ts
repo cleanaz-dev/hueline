@@ -67,8 +67,40 @@ export async function POST(req: Request) {
 
     if (thread.isAutoPilot) {
       //4. trigger nudge here
+
+      // 5. LOG COMMUNICATION + ACTIVITY — both connected to thread IF NO AUTOPILOT
+
+      await prisma.clientActivity.create({
+        data: {
+          type: "SMS_INBOUND",
+          customer: { connect: { id: customer.id } },
+          subDomain: { connect: { id: customer.subdomainId! } },
+          chatThread: { connect: { id: thread.id } },
+          description: `Inbound SMS from ${customer.name}`,
+          title: "Inbound SMS",
+        },
+      });
+      await prisma.clientCommunication.create({
+        data: {
+          body: incomingMessage,
+          role: "CLIENT",
+          type: "SMS",
+          customer: { connect: { id: customer.id } },
+          chatThread: { connect: { id: thread.id } },
+        },
+      });
+
+      await prisma.logs.create({
+        data: {
+          title: "Inbound SMS",
+          type: "SMS",
+          actor: "CLIENT",
+          subdomain: { connect: { id: customer.subdomainId! } },
+          description: "Inbound SMS",
+        },
+      });
       const delay = Math.floor(Math.random() * 3000) + 2000;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
       await axios.post(
         `${process.env.NEXT_PUBLIC_APP_URL}/api/subdomain/${slug}/hue-claw/${thread.id}/nudge`,
       );
