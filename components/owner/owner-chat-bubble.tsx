@@ -225,9 +225,43 @@ export function OwnerChatBubble({
               </div>
             )}
 
-            {/* Message Body */}
-            {msg.type === "EMAIL" ? (
-              // Improved spacing, line-height, and automatic link styling
+           {/* Message Body */}
+            {msg.type === "QUOTE" && msg.metadata?.quoteId ? (
+              // ✨ NEW: VISUAL QUOTE CARD
+              <div className="flex flex-col gap-3 min-w-[240px] sm:min-w-[280px]">
+                {/* The conversational text (cleaning out the raw URL for a cleaner UI) */}
+                <div className="whitespace-pre-wrap leading-relaxed opacity-90 text-[14px]">
+                  {msg.body.replace(msg.metadata.quoteLink, "").trim()}
+                </div>
+                
+                {/* The actual visual card */}
+                <div className="bg-background/60 dark:bg-background/40 border border-current/10 rounded-xl p-3.5 flex flex-col gap-1 shadow-sm">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      Quote Total
+                    </span>
+                    <span className="text-lg font-extrabold text-foreground tracking-tight">
+                      ${Number(msg.metadata.totalAmount).toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  <div className="text-xs font-medium text-muted-foreground mb-3 opacity-80">
+                    Includes {msg.metadata.itemCount} item{msg.metadata.itemCount === 1 ? '' : 's'}
+                  </div>
+                  
+                  <a 
+                    href={msg.metadata.quoteLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-all shadow-sm hover:shadow active:scale-[0.98]"
+                  >
+                    <Receipt size={14} /> Open Quote Portal
+                  </a>
+                </div>
+              </div>
+
+            ) : msg.type === "EMAIL" ? (
+              // Existing Email render logic
               <div className="flex flex-col text-[14px] leading-relaxed opacity-90 [&_p]:mb-3 last:[&_p]:mb-0 [&_a]:underline [&_a]:font-medium hover:[&_a]:opacity-80 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5">
                 {containsHTML(msg.body) ? (
                   <div
@@ -242,6 +276,7 @@ export function OwnerChatBubble({
                 )}
               </div>
             ) : (
+              // Existing Standard render logic
               <div className="whitespace-pre-wrap leading-relaxed opacity-90">
                 {msg.body}
               </div>

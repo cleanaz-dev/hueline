@@ -57,7 +57,17 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
     },
   });
 
-  const quoteLink = `Link to qoute https://${subdomain.slug}.hue-line.com/quote/${quote.id}`;
+  // Just the raw URL (we will format it nicely in the text body below)
+  const quoteLink = `https://${subdomain.slug}.hue-line.com/quote/${quote.id}`;
+
+  // 4b. Format the final message text for DB, SMS, and Email
+  let finalMessageBody = pendingMessage.msgBody || "";
+  if (finalMessageBody.includes("{{QUOTE_LINK}}")) {
+    finalMessageBody = finalMessageBody.replace("{{QUOTE_LINK}}", quoteLink);
+  } else {
+    // Fallback just in case the AI didn't include the placeholder
+    finalMessageBody = `${finalMessageBody}\n\nLink to quote: ${quoteLink}`;
+  }
 
   // 5. DB side effects
   await prisma.$transaction(async (tx) => {
@@ -72,9 +82,10 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
         chatThread: { connect: { id: threadId } },
       },
     });
-   await tx.clientCommunication.create({
+
+    await tx.clientCommunication.create({
       data: {
-        body: pendingMessage.msgBody!,
+        body: finalMessageBody, // Using the cleanly replaced text!
         role: "AI",
         type: "QUOTE",
         ...(pendingMessage.deliveryMethod === "EMAIL" && {
@@ -82,6 +93,14 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
         }),
         customer: { connect: { id: customer.id } },
         chatThread: { connect: { id: threadId } },
+        
+        // ✨ THE MAGIC: Inject structured data for the Frontend Quote Card ✨
+        metadata: {
+          quoteId: quote.id,
+          totalAmount: validPayload.totalAmount,
+          itemCount: validPayload.items.length,
+          quoteLink: quoteLink,
+        },
       },
     });
 
@@ -99,7 +118,7 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
 
     await tx.logs.create({
       data: {
-        title: `Automated Quote Generated for ${customer.name ?? ""}`,
+        title: `Automated Quote Generated for ${customer.name ?? "customer"}`,
         type: "QUOTE",
         actor: "SYSTEM",
         description: `An automated quote for ${validPayload.items.length} items totaling $${validPayload.totalAmount.toFixed(2)} was generated (via ${task.deliveryMethod}).`,
@@ -108,24 +127,19 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
     });
   });
 
-  // Need to create a generic handler to send SMS or EMAILS
+  // 6. Delivery Handlers
   if (task.deliveryMethod === "SMS") {
     await sendDefaultSMS({
       to: customer.phone!,
-      body: `${pendingMessage.msgBody!} ${quoteLink}`,
+      body: finalMessageBody, // Send exactly what we saved to DB
     });
   } else if (task.deliveryMethod === "EMAIL") {
-    const htmlBody = pendingMessage.msgBody!.replace(
-      "{{QUOTE_LINK}}",
-      quoteLink,
-    );
-
     await sendEmail({
       to: customer.email!,
       subject: pendingMessage.msgSubject!,
       template: SendBasicEmail({
         subject: pendingMessage.msgSubject!,
-        body: htmlBody,
+        body: finalMessageBody, // Send exactly what we saved to DB
       }),
     });
   }
