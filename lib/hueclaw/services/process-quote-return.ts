@@ -64,7 +64,7 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
     await tx.clientActivity.create({
       data: {
         type: task.deliveryMethod === "SMS" ? "SMS_SENT" : "EMAIL_SENT",
-        title: task.deliveryMethod === "SMS" ? "SMS Sent" : "Email Sent",
+        title: task.deliveryMethod === "SMS" ? "Quote SMS Sent" : "Quote Email Sent",
         description: `Quote link delivered to ${customer.name ?? "customer"} via ${task.deliveryMethod}. ${quoteLink}`,
         metadata: { quoteId: quote.id },
         customer: { connect: { id: customer.id } },
