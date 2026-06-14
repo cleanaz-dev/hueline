@@ -88,50 +88,7 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ success: true, message: "No open thread" });
     }
 
-    // 5. If autopilot is on, nudge the AI
-    if (thread.isAutoPilot) {
-      // 4. Save the message
-      await prisma.clientCommunication.create({
-        data: {
-          body: incomingMessage,
-          role: "CLIENT",
-          type: "SMS",
-          customer: { connect: { id: customer.id } },
-          chatThread: { connect: { id: thread.id } },
-        },
-      });
-
-      await prisma.clientActivity.create({
-        data: {
-          type: "SMS_INBOUND",
-          customer: { connect: { id: customer.id } },
-          subDomain: { connect: { id: customer.subdomainId! } },
-          chatThread: { connect: { id: thread.id } },
-          description: `Inbound SMS from ${customer.name}`,
-          title: "Inbound SMS",
-        },
-      });
-
-      await prisma.logs.create({
-        data: {
-          title: "Inbound SMS",
-          type: "SMS",
-          actor: "CLIENT",
-          subdomain: { connect: { id: customer.subdomainId! } },
-          description: "Inbound SMS",
-        },
-      });
-      const delay = Math.floor(Math.random() * 3000) + 2000;
-      await new Promise((resolve) => setTimeout(resolve, delay));
-
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/subdomain/${slug}/hue-claw/${thread.id}/nudge`,
-      );
-
-      return NextResponse.json({ success: true, message: "Auto Pilot ON" });
-    }
-
-    // 4. Save the message
+    // 4. Always save communication, activity, and log — regardless of autopilot
     await prisma.clientCommunication.create({
       data: {
         body: incomingMessage,
@@ -162,6 +119,18 @@ export async function POST(req: Request, { params }: Params) {
         description: "Inbound SMS",
       },
     });
+
+    // 5. If autopilot is on, delay then nudge the AI
+    if (thread.isAutoPilot) {
+      const delay = Math.floor(Math.random() * 3000) + 2000;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_APP_URL}/api/subdomain/${slug}/hue-claw/${thread.id}/nudge`,
+      );
+
+      return NextResponse.json({ success: true, message: "Auto Pilot ON" });
+    }
 
     return NextResponse.json({ success: true, threadId: thread.id });
   } catch (error) {
