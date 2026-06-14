@@ -22,7 +22,7 @@ export interface ChatThreadModel {
 }
 
 interface CustomerChat {
-  id: string; // We map customerId here so the widget's "customer.id" works
+  id: string; 
   name: string;
   phone?: string;
   email?: string;

@@ -4,8 +4,6 @@ import { setHueClawStatus } from "@/lib/redis";
 import { AiQuoteSchema } from "@/lib/zod/hueclaw/quote-payload";
 import { HueClawQuoteMetadata } from "@/lib/zod/hueclaw/quote/quote-metadata";
 
-
-
 type PendingMessagePayload = {
   deliveryMethod: "SMS" | "EMAIL" | "NONE";
   msgBody: string | null;
@@ -37,6 +35,7 @@ export async function handleHueClawQuote(
           roomType: true,
           dimensions: true,
           prompt: true,
+          quotes: true,
         },
       },
     },
@@ -45,17 +44,23 @@ export async function handleHueClawQuote(
   if (!thread) throw new Error("Thread not found");
 
   const booking = thread.bookingData?.[0];
+  
+  let quoteId: string;
 
-  const quote = await prisma.quote.create({
-    data: {
-      booking: {connect: {id: booking.id}},
-      huelineId: booking.huelineId,
-      customer: {connect: {id: thread.customerId}},
-      subdomain: {connect: {id: thread.subdomainId}},
-      status: "DRAFT",
-
-    }
-  })
+  if (!booking.quotes || booking.quotes.length === 0) {
+    const quote = await prisma.quote.create({
+      data: {
+        booking: { connect: { id: booking.id } },
+        huelineId: booking.huelineId,
+        customer: { connect: { id: thread.customerId } },
+        subdomain: { connect: { id: thread.subdomainId } },
+        status: "DRAFT",
+      },
+    });
+    quoteId = quote.id;
+  } else {
+    quoteId = booking.quotes[0].id;
+  }
 
   const systemTask = await prisma.systemTask.create({
     data: {
@@ -67,7 +72,7 @@ export async function handleHueClawQuote(
       status: "PROCESSING",
       initiator: "HUECLAW",
       metadata: {
-        quoteId: quote.id,
+        quoteId,
         bookingId: booking.id,
         threadId,
         pendingMessage,
@@ -76,7 +81,7 @@ export async function handleHueClawQuote(
         squareFeet: Number(booking?.dimensions ?? 0),
         paintColors: booking?.paintColors || [],
         prompt: booking?.prompt || "",
-      } satisfies HueClawQuoteMetadata
+      } satisfies HueClawQuoteMetadata,
     },
   });
 

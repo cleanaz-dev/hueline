@@ -1,8 +1,7 @@
-"use client"
-
+// hueclaw-chat-controls.tsx
 import { useState, useEffect } from "react";
 import { Sparkles, Timer, Loader2 } from "lucide-react";
-import { Switch } from "@/components/ui/switch"; 
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
@@ -23,13 +22,14 @@ export function HueClawChatControls({
   onNudge,
   isAiLoading,
   customerId,
-  threadId
+  threadId,
 }: HueClawControlsProps) {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isToggling, setIsToggling] = useState<boolean>(false);
-  const { subdomain } = useOwner();
 
-  // The true "Grace Period" timer logic
+  // 👈 1. Grab refreshThreads from Context
+  const { subdomain, refreshThreads } = useOwner();
+
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isAutoPilot && countdown !== null && countdown > 0) {
@@ -40,31 +40,31 @@ export function HueClawChatControls({
     return () => clearTimeout(timer);
   }, [isAutoPilot, countdown]);
 
-  // MERGED: Handles the UI state, the Timer, AND the API Call
   const handleToggle = async (checked: boolean) => {
-    // 1. Optimistic UI Update (feels instant to the user)
+    // Optimistic UI Update
     setIsAutoPilot(checked);
-    if (checked) {
-      setCountdown(5);
-    } else {
-      setCountdown(null);
-    }
+    if (checked) setCountdown(5);
+    else setCountdown(null);
 
-    // 2. Fire the Backend API Call
-    if (!threadId || !subdomain?.slug) return; // Guard clause
+    if (!threadId || !subdomain?.slug) return;
 
     setIsToggling(true);
     try {
-      await axios.put(`/api/subdomain/${subdomain.slug}/threads/${threadId}/auto-pilot`, {
-        data: {
-          customerId,
-          isAutoPilot: checked, // Use the new 'checked' value, not the old state
-        }
-      });
+      await axios.put(
+        `/api/subdomain/${subdomain.slug}/threads/${threadId}/auto-pilot`,
+        {
+          data: {
+            customerId,
+            isAutoPilot: checked,
+          },
+        },
+      );
+
+      // 👈 2. Fire refreshThreads so your sidebar list gets the updated AutoPilot state in the background!
+      refreshThreads();
     } catch (error) {
       console.error("Failed to update autopilot status:", error);
-      // 3. Revert UI if backend fails
-      setIsAutoPilot(!checked);
+      setIsAutoPilot(!checked); // Revert UI if backend fails
       setCountdown(null);
     } finally {
       setIsToggling(false);
@@ -72,13 +72,12 @@ export function HueClawChatControls({
   };
 
   const handleManualNudge = () => {
-    setCountdown(null); 
-    onNudge(); 
+    setCountdown(null);
+    onNudge();
   };
 
   return (
     <div className="flex h-9 items-center gap-3 bg-violet-50/40 dark:bg-violet-950/20 p-1 pl-3 rounded-lg border border-violet-100 dark:border-violet-900/40 shadow-sm transition-all duration-300">
-      
       {/* 1. Toggle Area */}
       <div className="flex items-center gap-2 w-[105px]">
         <Switch
@@ -90,12 +89,19 @@ export function HueClawChatControls({
         <span
           className={cn(
             "text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1",
-            isAutoPilot ? "text-violet-700 dark:text-violet-300" : "text-muted-foreground"
+            isAutoPilot
+              ? "text-violet-700 dark:text-violet-300"
+              : "text-muted-foreground",
           )}
         >
           Auto {isAutoPilot ? "ON" : "OFF"}
           {/* Optional: Tiny spinner if the API is slow, just so they know it's saving */}
-          {isToggling && <Loader2 size={10} className="animate-spin text-muted-foreground ml-1" />}
+          {isToggling && (
+            <Loader2
+              size={10}
+              className="animate-spin text-muted-foreground ml-1"
+            />
+          )}
         </span>
       </div>
 
@@ -116,7 +122,10 @@ export function HueClawChatControls({
               disabled={isAiLoading}
               className="absolute inset-0 flex items-center justify-center gap-1.5 rounded-md text-xs font-medium transition-all bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95"
             >
-              <Sparkles size={13} className={cn(!isAiLoading && "text-violet-500")} />
+              <Sparkles
+                size={13}
+                className={cn(!isAiLoading && "text-violet-500")}
+              />
               <span>Wake HueClaw</span>
             </motion.button>
           ) : countdown !== null ? (
@@ -148,12 +157,13 @@ export function HueClawChatControls({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
               </span>
-              <span className="text-[10px] font-bold tracking-wider text-violet-500/80">LISTENING</span>
+              <span className="text-[10px] font-bold tracking-wider text-violet-500/80">
+                LISTENING
+              </span>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-      
     </div>
   );
 }

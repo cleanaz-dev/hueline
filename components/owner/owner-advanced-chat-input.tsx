@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, MessageSquare, Mail, Loader2, X, Sparkles } from "lucide-react";
@@ -8,13 +8,12 @@ import { cn } from "@/lib/utils";
 import { RichTextEditor } from "../admin/prospects/rich-text-editor";
 import { AiActionDock } from "../admin/prospects/ai-action-dock";
 import { useOwner } from "@/context/owner-context";
-import { Switch } from "../ui/switch";
 import { HueClawChatControls } from "./hueclaw/hueclaw-chat-controls";
 
 interface OwnerAdvancedChatInputProps {
-  clientId?: string;
+  isLoading: boolean;
   onSend: (message: string, channel: "SMS" | "EMAIL", subject?: string) => void;
-  isLoading?: boolean;
+  clientId?: string;
 }
 
 export function OwnerAdvancedChatInput({
@@ -22,23 +21,22 @@ export function OwnerAdvancedChatInput({
   onSend,
   isLoading,
 }: OwnerAdvancedChatInputProps) {
+  const { aiSuggestions, isAiLoading, activeThread, hueClawAi } = useOwner();
+
   const [text, setText] = useState("");
   const [subject, setSubject] = useState("");
   const [channel, setChannel] = useState<"SMS" | "EMAIL">("SMS");
   const [isUndocked, setIsUndocked] = useState<boolean>(false);
-  const [isAutoPilot, setIsAutoPilot] = useState<boolean>(false);
+  const [isAutoPilot, setIsAutoPilot] = useState<boolean>(
+    activeThread?.isAutoPilot ?? false,
+  );
 
-  const {
-    aiSuggestions,
-    fetchAiSuggestion,
-    clearAiSuggestion,
-    isAiLoading,
-    activeThread,
-    hueClawAi,
-  } = useOwner();
+  useEffect(() => {
+    setIsAutoPilot(activeThread?.isAutoPilot ?? false);
+  }, [activeThread?.isAutoPilot]);
 
-  const currentSuggestion =
-    clientId && aiSuggestions ? aiSuggestions[clientId] : null;
+  // const currentSuggestion =
+  //   clientId && aiSuggestions ? aiSuggestions[clientId] : null;
 
   const handleSend = () => {
     const plainText = text.replace(/<[^>]*>?/gm, "").trim();
@@ -66,6 +64,8 @@ export function OwnerAdvancedChatInput({
   };
 
   const isEmpty = !text.replace(/<[^>]*>?/gm, "").trim();
+
+  console.log("Active Thread:", activeThread);
 
   return (
     <>
@@ -220,8 +220,9 @@ export function OwnerAdvancedChatInput({
             </button>
           </div>
 
+          
           <HueClawChatControls
-            isAutoPilot={activeThread?.isAutoPilot}
+            isAutoPilot={isAutoPilot} // ✅ Read from your local state so the switch moves instantly!
             setIsAutoPilot={setIsAutoPilot}
             isAiLoading={isAiLoading}
             customerId={clientId}

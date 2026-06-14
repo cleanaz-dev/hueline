@@ -197,7 +197,7 @@ export function GlobalOwnerChatWidget() {
                           name: thread.customer?.name ?? "Unknown",
                           phone: thread.customer?.phone ?? undefined,
                           email: thread.customer?.email ?? undefined,
-                          isAutoPilot: thread.isAutoPilot
+                          isAutoPilot: thread.isAutoPilot,
                         })
                       }
                       className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-xl cursor-pointer transition-colors"

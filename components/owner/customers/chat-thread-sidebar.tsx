@@ -352,6 +352,7 @@ export default function ChatThreadsSidebar({
                   phone: customerPhone,
                   email: customerEmail,
                   threadId: activeThread.id,
+                  isAutoPilot: activeThread.isAutoPilot
                 });
               }}
             >
