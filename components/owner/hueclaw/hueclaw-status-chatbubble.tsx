@@ -11,16 +11,21 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 interface HueClawStatusBubbleProps {
   threadId: string;
+  isAutoPilot?: boolean;
 }
 
-export function HueClawStatusBubble({ threadId }: HueClawStatusBubbleProps) {
+export function HueClawStatusBubble({ threadId, isAutoPilot }: HueClawStatusBubbleProps) {
   const { subdomain } = useOwner();
   
   const { data } = useSWR(
     `/api/subdomain/${subdomain.slug}/threads/${threadId}/hueclaw-status`,
     fetcher,
     {
-      refreshInterval: (latestData) => (latestData?.isWorking ? 2000 : 0),
+      // Because this hits Redis and not Postgres, we can safely poll every 2 seconds
+      // as long as AutoPilot is ON, or if the AI is actively working (from a manual trigger)
+      refreshInterval: (latestData) => {
+        return (isAutoPilot || latestData?.isWorking) ? 2000 : 0;
+      },
       revalidateOnFocus: true, 
     }
   );
@@ -39,7 +44,6 @@ export function HueClawStatusBubble({ threadId }: HueClawStatusBubbleProps) {
   const StatusIcon = activeStatus.icon;
 
   return (
-    // AnimatePresence tracks elements exiting the DOM to animate their removal
     <AnimatePresence>
       {data?.isWorking && (
         <motion.div
@@ -51,7 +55,6 @@ export function HueClawStatusBubble({ threadId }: HueClawStatusBubbleProps) {
         >
           <div className="flex max-w-[85%] md:max-w-[95%] flex-row items-end gap-2 px-1">
             
-            {/* Subtler, smaller Avatar */}
             <div className="flex flex-col items-center shrink-0 w-6 h-6 mb-0.5 mx-2">
               <Avatar className="h-6 w-6 shadow-sm border border-indigo-100 dark:border-indigo-800/50">
                 <AvatarFallback className="bg-indigo-50 dark:bg-indigo-950/50 text-indigo-500 dark:text-indigo-400">
@@ -61,14 +64,12 @@ export function HueClawStatusBubble({ threadId }: HueClawStatusBubbleProps) {
             </div>
 
             <div className="flex flex-col gap-1 min-w-0 items-start">
-              {/* Sleeker, pill-like gradient bubble */}
               <div className="relative flex items-center gap-2.5 px-3.5 py-2 rounded-2xl rounded-bl-sm text-[13px] shadow-sm bg-gradient-to-r from-indigo-50 to-white dark:from-indigo-500/10 dark:to-transparent border border-indigo-50/50 dark:border-indigo-500/10 text-indigo-800 dark:text-indigo-300">
                 
                 <StatusIcon 
                   size={14} 
                   className={cn(
                     "text-indigo-400 dark:text-indigo-500", 
-                    // Use a soft spin for loaders/Imagen, and a gentle pulse for comms
                     data?.taskType === "COMMUNICATION" ? "animate-pulse" : "animate-[spin_3s_linear_infinite]"
                   )} 
                 />
@@ -77,7 +78,6 @@ export function HueClawStatusBubble({ threadId }: HueClawStatusBubbleProps) {
                   {activeStatus.text}
                 </span>
                 
-                {/* Elegant typing dots (...) instead of hardcoded text */}
                 <span className="flex gap-0.5 ml-0.5 opacity-70">
                   <motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ repeat: Infinity, duration: 1.4, delay: 0 }} className="w-1 h-1 bg-indigo-400 rounded-full" />
                   <motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ repeat: Infinity, duration: 1.4, delay: 0.2 }} className="w-1 h-1 bg-indigo-400 rounded-full" />

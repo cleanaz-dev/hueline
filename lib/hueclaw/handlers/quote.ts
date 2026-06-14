@@ -36,6 +36,7 @@ export async function handleHueClawQuote(
           dimensions: true,
           prompt: true,
           quotes: true,
+          pin: true
         },
       },
     },
