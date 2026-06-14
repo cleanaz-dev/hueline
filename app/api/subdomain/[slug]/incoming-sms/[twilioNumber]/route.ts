@@ -32,13 +32,19 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     if (!subdomain || !subdomain.twilioPhoneNumber) {
-      return NextResponse.json({ error: "Required Subdomain data not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Required Subdomain data not found" },
+        { status: 404 },
+      );
     }
 
-    if (normalizePhone(subdomain.twilioPhoneNumber) !== normalizePhone(twilioNumber)) {
+    if (
+      normalizePhone(subdomain.twilioPhoneNumber) !==
+      normalizePhone(twilioNumber)
+    ) {
       return NextResponse.json(
         { error: "Invalid Twilio number for this subdomain" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -64,8 +70,13 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     if (!customer) {
-      console.warn(`[incoming-sms] Unknown sender ${incomingPhone} for ${slug}`);
-      return NextResponse.json({ success: true, message: "Unknown sender dropped" });
+      console.warn(
+        `[incoming-sms] Unknown sender ${incomingPhone} for ${slug}`,
+      );
+      return NextResponse.json({
+        success: true,
+        message: "Unknown sender dropped",
+      });
     }
 
     const thread = await prisma.chatThread.findFirst({
@@ -77,13 +88,55 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ success: true, message: "No open thread" });
     }
 
+    // 5. If autopilot is on, nudge the AI
+    if (thread.isAutoPilot) {
+      // 4. Save the message
+      await prisma.clientCommunication.create({
+        data: {
+          body: incomingMessage,
+          role: "CLIENT",
+          type: "SMS",
+          customer: { connect: { id: customer.id } },
+          chatThread: { connect: { id: thread.id } },
+        },
+      });
+
+      await prisma.clientActivity.create({
+        data: {
+          type: "SMS_INBOUND",
+          customer: { connect: { id: customer.id } },
+          subDomain: { connect: { id: customer.subdomainId! } },
+          chatThread: { connect: { id: thread.id } },
+          description: `Inbound SMS from ${customer.name}`,
+          title: "Inbound SMS",
+        },
+      });
+
+      await prisma.logs.create({
+        data: {
+          title: "Inbound SMS",
+          type: "SMS",
+          actor: "CLIENT",
+          subdomain: { connect: { id: customer.subdomainId! } },
+          description: "Inbound SMS",
+        },
+      });
+      const delay = Math.floor(Math.random() * 3000) + 2000;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_APP_URL}/api/subdomain/${slug}/hue-claw/${thread.id}/nudge`,
+      );
+
+      return NextResponse.json({ success: true, message: "Auto Pilot ON" });
+    }
+
     // 4. Save the message
     await prisma.clientCommunication.create({
       data: {
         body: incomingMessage,
         role: "CLIENT",
         type: "SMS",
-        mediaUrls,
         customer: { connect: { id: customer.id } },
         chatThread: { connect: { id: thread.id } },
       },
@@ -110,25 +163,12 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
-    // 5. If autopilot is on, nudge the AI
-    if (thread.isAutoPilot) {
-      const delay = Math.floor(Math.random() * 3000) + 2000;
-      await new Promise((resolve) => setTimeout(resolve, delay));
-
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/subdomain/${slug}/hue-claw/${thread.id}/nudge`
-      );
-
-      return NextResponse.json({ success: true, message: "Auto Pilot ON" });
-    }
-
     return NextResponse.json({ success: true, threadId: thread.id });
   } catch (error) {
     console.error("[incoming-sms] Internal error:", error);
     return NextResponse.json(
       { success: false, error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
