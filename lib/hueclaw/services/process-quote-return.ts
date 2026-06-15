@@ -118,7 +118,7 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
 
     await tx.logs.create({
       data: {
-        title: `Automated Quote Generated for ${customer.name ?? "customer"}`,
+        title: `Automated Quote Generated for ${customer.name ?? ""}`,
         type: "QUOTE",
         actor: "SYSTEM",
         description: `An automated quote for ${validPayload.items.length} items totaling $${validPayload.totalAmount.toFixed(2)} was generated (via ${task.deliveryMethod}).`,
