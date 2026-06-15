@@ -10,6 +10,7 @@ import { sendEmail } from "@/lib/resend";
 import { SendBasicEmail } from "@/lib/resend/services/send-email";
 import { hueClawQuoteResultSchema } from "@/lib/zod/hueclaw/quote/quote-result-schema";
 import { connect } from "http2";
+import { QuoteCommsMetadata } from "@/lib/zod/hueclaw/quote/quote-comms-metadata";
 
 export async function processQuoteReturn(task: SystemTask, rawResult: any) {
   // 1. Unpack the backpack that handleHueClawQuote packed
@@ -62,19 +63,20 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
 
   // 4b. Format the final message text for DB, SMS, and Email
   let finalMessageBody = pendingMessage.msgBody || "";
+  
   if (finalMessageBody.includes("{{QUOTE_LINK}}")) {
     finalMessageBody = finalMessageBody.replace("{{QUOTE_LINK}}", quoteLink);
   } else {
-    // Fallback just in case the AI didn't include the placeholder
-    finalMessageBody = `${finalMessageBody}\n\nLink to quote: ${quoteLink}`;
+    // If AI forgets {{QUOTE_LINK}}, just append the raw URL cleanly
+    finalMessageBody = `${finalMessageBody}\n\n${quoteLink}`; 
   }
-
   // 5. DB side effects
   await prisma.$transaction(async (tx) => {
     await tx.clientActivity.create({
       data: {
         type: task.deliveryMethod === "SMS" ? "SMS_SENT" : "EMAIL_SENT",
-        title: task.deliveryMethod === "SMS" ? "Quote SMS Sent" : "Quote Email Sent",
+        title:
+          task.deliveryMethod === "SMS" ? "Quote SMS Sent" : "Quote Email Sent",
         description: `Quote link delivered to ${customer.name ?? "customer"} via ${task.deliveryMethod}. ${quoteLink}`,
         metadata: { quoteId: quote.id },
         customer: { connect: { id: customer.id } },
@@ -93,14 +95,13 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
         }),
         customer: { connect: { id: customer.id } },
         chatThread: { connect: { id: threadId } },
-        
-        // ✨ THE MAGIC: Inject structured data for the Frontend Quote Card ✨
         metadata: {
           quoteId: quote.id,
           totalAmount: validPayload.totalAmount,
           itemCount: validPayload.items.length,
+          items: validPayload.items,
           quoteLink: quoteLink,
-        },
+        } satisfies QuoteCommsMetadata
       },
     });
 
@@ -109,7 +110,11 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
         type: "QUOTE_GENERATION",
         title: `Automated Quote Generated: $${validPayload.totalAmount.toFixed(2)}`,
         description: `An automated quote for ${validPayload.items.length} items was generated for ${customer.name ?? ""} (via ${task.deliveryMethod}). ${quoteLink}`,
-        metadata: { huelineId: metadata.huelineId, jobId: task.id, quoteId: quote.id },
+        metadata: {
+          huelineId: metadata.huelineId,
+          jobId: task.id,
+          quoteId: quote.id,
+        },
         customer: { connect: { id: customer.id } },
         subDomain: { connect: { id: task.subdomainId } },
         chatThread: { connect: { id: threadId } },
