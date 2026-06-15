@@ -91,16 +91,6 @@ export async function POST(req: Request, { params }: Params) {
 
     // 4. Always save communication, activity, and log — regardless of autopilot
 
-    await prisma.clientCommunication.create({
-      data: {
-        body: incomingMessage,
-        role: "CLIENT",
-        type: "SMS",
-        customer: { connect: { id: customer.id } },
-        chatThread: { connect: { id: thread.id } },
-      },
-    });
-
     await prisma.clientActivity.create({
       data: {
         type: "SMS_INBOUND",
@@ -109,6 +99,16 @@ export async function POST(req: Request, { params }: Params) {
         chatThread: { connect: { id: thread.id } },
         description: `Inbound SMS from ${customer.name}`,
         title: "Inbound SMS",
+      },
+    });
+
+    await prisma.clientCommunication.create({
+      data: {
+        body: incomingMessage,
+        role: "CLIENT",
+        type: "SMS",
+        customer: { connect: { id: customer.id } },
+        chatThread: { connect: { id: thread.id } },
       },
     });
 
