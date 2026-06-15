@@ -7,7 +7,6 @@ export async function POST(req: Request) {
 
     if (!slug || !twilioNumber) {
       console.error("Missing params", { slug, twilioNumber });
-      // Still return 200 — Twilio needs a 2xx or it will retry + log 11200
       return new Response(
         `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`,
         { status: 200, headers: { "Content-Type": "text/xml" } }
@@ -16,9 +15,20 @@ export async function POST(req: Request) {
 
     const formData = await req.formData();
     const from = formData.get("From") as string;
+    const to = formData.get("To") as string;
     const body = formData.get("Body") as string;
+    const numMedia = parseInt((formData.get("NumMedia") as string) ?? "0", 10);
 
-    console.log({ slug, twilioNumber, from, body });
+    const mediaUrls: string[] = [];
+    const mediaContentTypes: string[] = [];
+    for (let i = 0; i < numMedia; i++) {
+      const url = formData.get(`MediaUrl${i}`) as string;
+      const contentType = formData.get(`MediaContentType${i}`) as string;
+      if (url) mediaUrls.push(url);
+      if (contentType) mediaContentTypes.push(contentType);
+    }
+
+    console.log({ slug, twilioNumber, from, to, body, numMedia, mediaUrls, mediaContentTypes });
 
     return new Response(
       `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`,
@@ -26,7 +36,6 @@ export async function POST(req: Request) {
     );
   } catch (err) {
     console.error("Twilio webhook error:", err);
-    // Always return 200 to Twilio even on internal errors
     return new Response(
       `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`,
       { status: 200, headers: { "Content-Type": "text/xml" } }
