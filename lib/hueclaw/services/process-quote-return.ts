@@ -72,6 +72,23 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
   }
   // 5. DB side effects
   await prisma.$transaction(async (tx) => {
+
+    await tx.clientActivity.create({
+      data: {
+        type: "QUOTE_GENERATION",
+        title: `Automated Quote Generated: $${validPayload.totalAmount.toFixed(2)}`,
+        description: `An automated quote for ${validPayload.items.length} items was generated for ${customer.name ?? ""} (via ${task.deliveryMethod}). ${quoteLink}`,
+        metadata: {
+          huelineId: metadata.huelineId,
+          jobId: task.id,
+          quoteId: quote.id,
+        },
+        customer: { connect: { id: customer.id } },
+        subDomain: { connect: { id: task.subdomainId } },
+        chatThread: { connect: { id: threadId } },
+      },
+    });
+    
     await tx.clientActivity.create({
       data: {
         type: task.deliveryMethod === "SMS" ? "SMS_SENT" : "EMAIL_SENT",
@@ -105,21 +122,7 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
       },
     });
 
-    await tx.clientActivity.create({
-      data: {
-        type: "QUOTE_GENERATION",
-        title: `Automated Quote Generated: $${validPayload.totalAmount.toFixed(2)}`,
-        description: `An automated quote for ${validPayload.items.length} items was generated for ${customer.name ?? ""} (via ${task.deliveryMethod}). ${quoteLink}`,
-        metadata: {
-          huelineId: metadata.huelineId,
-          jobId: task.id,
-          quoteId: quote.id,
-        },
-        customer: { connect: { id: customer.id } },
-        subDomain: { connect: { id: task.subdomainId } },
-        chatThread: { connect: { id: threadId } },
-      },
-    });
+    
 
     await tx.logs.create({
       data: {
