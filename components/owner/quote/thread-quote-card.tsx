@@ -34,7 +34,9 @@ export default function ThreadQuoteCard({ msg }: { msg: any }) {
         >
           <span
             className="transition-transform duration-300 ease-in-out"
-            style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
+            style={{
+              transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+            }}
           >
             <ChevronDown size={14} />
           </span>
@@ -56,8 +58,10 @@ export default function ThreadQuoteCard({ msg }: { msg: any }) {
                   className="flex justify-between items-start gap-3 text-xs pb-2 border-b border-current/5 last:border-0 last:pb-0"
                 >
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="font-medium text-foreground truncate">
-                      {item.title}
+                    <span className="font-medium text-foreground">
+                      {item.title.length > 50
+                        ? item.title.slice(0, 50) + "..."
+                        : item.title}
                     </span>
 
                     {item.description && (

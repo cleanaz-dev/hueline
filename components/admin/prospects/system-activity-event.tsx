@@ -178,7 +178,7 @@ export function SystemActivityEvent({ msg }: SystemActivityEventProps) {
           {/* MIDDLE: Icon & Title (Glides left due to `layout` prop) */}
           <motion.div layout transition={springConfig} className="flex items-center gap-3 min-w-0 flex-1">
             <Icon size={14} strokeWidth={2.5} className={`shrink-0 ${iconColor}`} />
-            <span className={`text-[13px] font-medium truncate transition-colors duration-300 ${isExpanded ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-700 dark:text-zinc-300'}`}>
+            <span className={`text-[13px] font-medium truncate transition-colors duration-300 ${isExpanded ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 dark:text-zinc-300'}`}>
               {title}
               {msg.metadata?.amount && !isExpanded && (
                 <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold text-[12px]">
