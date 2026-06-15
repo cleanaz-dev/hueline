@@ -66,8 +66,8 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
   // 4b. Format the final message text for DB, SMS, and Email
   let finalMessageBody = pendingMessage.msgBody || "";
   
-  if (finalMessageBody.includes("{{QUOTE_LINK}}")) {
-    finalMessageBody = finalMessageBody.replace("{{QUOTE_LINK}}", quoteLink);
+  if (finalMessageBody.includes("{QUOTE_LINK}")) {
+    finalMessageBody = finalMessageBody.replace("{QUOTE_LINK}", quoteLink);
   } else {
     // If AI forgets {{QUOTE_LINK}}, just append the raw URL cleanly
     finalMessageBody = `${finalMessageBody}\n\n${quoteLink}`; 

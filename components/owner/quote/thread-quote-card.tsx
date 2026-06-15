@@ -11,7 +11,7 @@ export default function ThreadQuoteCard({ msg }: { msg: any }) {
   const textBody = msg.body.replace(metadata.quoteLink, "").trim();
 
   return (
-    <div className="flex flex-col gap-3 w-full max-w-full overflow-hidden">
+    <div className="flex flex-col gap-3 overflow-hidden">
       <div className="whitespace-pre-wrap leading-relaxed opacity-90 text-[14px]">
         {textBody}
       </div>
