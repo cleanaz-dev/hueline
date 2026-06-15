@@ -1,17 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { useOwner } from "@/context/owner-context";
 import {
   Calculator,
   Ear,
-  Eye,
   Quote,
   ArrowRight,
   Info,
   Hash,
   Scale,
-  ScanEye,
   Cpu,
   Hammer,
   Radar,
@@ -154,29 +151,25 @@ export default function IntelligenceDashboardPage() {
         icon={<Cpu className="size-6 text-zinc-500" />}
         addButtonLabel="Update Intelligence"
         onAddClick={() => console.log("Button Clicked!")}
-      
-      
-      
       />
      
-
       <Tabs defaultValue="pricing" className="w-full ">
         <TabsList className="bg-transparent p-0 border-b border-zinc-200 w-full justify-start h-auto rounded-none gap-6 mb-8">
           <TabsTrigger
             value="pricing"
-            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none"
+            className="rounded-none border-b-3 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none cursor-pointer hover:bg-muted rounded-md"
           >
             Pricing Logic
           </TabsTrigger>
           <TabsTrigger
             value="listening"
-            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none"
+            className="rounded-none border-b-3 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none cursor-pointer hover:bg-muted rounded-md"
           >
             Active Listening
           </TabsTrigger>
           <TabsTrigger
             value="room"
-            className="rounded-none border-b-2 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none"
+            className="rounded-none border-b-3 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none cursor-pointer hover:bg-muted rounded-md"
           >
             Room Vision
           </TabsTrigger>
@@ -210,7 +203,7 @@ export default function IntelligenceDashboardPage() {
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="border-zinc-200 shadow-sm overflow-hidden">
+            <div className="border-zinc-200 shadow-sm overflow-hidden bg-background">
               <div className="px-4 py-3 bg-zinc-50 border-b border-zinc-200 flex items-center gap-2">
                 <Hash className="w-4 h-4 text-zinc-500" />
                 <h3 className="text-sm font-bold text-zinc-700">Base Rates</h3>
@@ -242,7 +235,7 @@ export default function IntelligenceDashboardPage() {
                 <Scale className="w-4 h-4 text-zinc-500" />
                 <h3 className="text-sm font-bold text-zinc-700">Multipliers</h3>
               </div>
-              <div className="divide-y divide-zinc-100">
+              <div className="divide-y divide-zinc-100 bg-background">
                 {multipliers.map((item) => (
                   <div
                     key={item.key}
@@ -297,7 +290,7 @@ export default function IntelligenceDashboardPage() {
             }
           />
 
-          <div className="border-zinc-200 shadow-sm overflow-hidden">
+          <div className="border-zinc-200 shadow-sm overflow-hidden bg-background">
             <Table>
               <TableHeader>
                 <TableRow className="bg-zinc-50 hover:bg-zinc-50">
@@ -315,7 +308,7 @@ export default function IntelligenceDashboardPage() {
                     <TableCell className="font-bold text-sm text-zinc-700">
                       {flag.label}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-zinc-400">
+                    <TableCell className="font-mono text-xs text-zinc-600">
                       {flag.key}
                     </TableCell>
                   </TableRow>
