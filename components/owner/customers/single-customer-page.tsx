@@ -24,7 +24,8 @@ const sanitizeCustomer = (customer: NonNullCustomerData) => ({
   calls: (customer.calls ?? []) as Call[],
   chatThreads: (customer.chatThreads ?? []) as EnrichedChatThread[],
   designProjects: (customer.designProjects ?? []) as DesignProject[],
-  quotes: (customer.quotes ?? []) as Quote[], // Replace with actual Quote type
+  customerQuote: (customer.subBookingData?.[0]?.quotes?.[0] ??
+    null) as Quote | null,
 });
 // ----------------------------------------------------------------------
 // StatusBadge
@@ -143,6 +144,7 @@ export default function CustomerSinglePage({
             customerName={data.name}
             customerPhone={data.phone}
             customerEmail={data.email}
+            customerQuote={data.customerQuote} // was data.quotes — wrong key, wrong shape
           />
         </div>
       </div>

@@ -109,9 +109,9 @@ export default function Page() {
                     >
                       <Link href={`/my/customers/${customer.id}`}>View</Link>
                     </Button>
-                    <Button size="sm" className="rounded-lg">
+                    {/* <Button size="sm" className="rounded-lg">
                       Message
-                    </Button>
+                    </Button> */}
                   </div>
                 </TableCell>
               </TableRow>

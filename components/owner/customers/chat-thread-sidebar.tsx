@@ -14,12 +14,15 @@ import {
   MessageSquare,
   Video,
   Calendar,
+  CheckCircle,
+  FileText,
 } from "lucide-react";
-import { ChatThread as PrismaChatThread } from "@/app/generated/prisma";
+import { ChatThread as PrismaChatThread, Quote } from "@/app/generated/prisma";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useOwner } from "@/context/owner-context";
 import { cn } from "@/lib/utils";
+import { SideBarQuoteSummary } from "../quote/sidebar-quote-summary";
 
 export type EnrichedChatThread = PrismaChatThread & {
   activities: { type: string; createdAt: string | Date }[];
@@ -29,7 +32,7 @@ export type EnrichedChatThread = PrismaChatThread & {
     type: string;
     createdAt: string | Date;
     subject?: string; // Added to support emails
-    metadata?: any;   // Added to support emails
+    metadata?: any; // Added to support emails
   }[];
 };
 
@@ -117,12 +120,14 @@ export default function ChatThreadsSidebar({
   customerName,
   customerPhone,
   customerEmail,
+  customerQuote,
 }: {
   threads: EnrichedChatThread[];
   callsCount: number;
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
+  customerQuote?: Quote;
 }) {
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const { openChat } = useOwner();
@@ -185,15 +190,13 @@ export default function ChatThreadsSidebar({
               {/* Thread Header Info */}
               {(() => {
                 const lastMsg = getLastMessage(activeThread.communications);
-                
-                
+
                 return (
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <h3 className="text-lg font-bold text-muted-foreground mb-1">
                         {activeThread.title}
                       </h3>
-                     
                     </div>
                     <span className="px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md shrink-0">
                       {activeThread.status}
@@ -205,7 +208,7 @@ export default function ChatThreadsSidebar({
               {/* Latest Message Breakdown */}
               {(() => {
                 const lastMsg = getLastMessage(activeThread.communications);
-                
+
                 if (!lastMsg)
                   return (
                     <div className="bg-slate-50 rounded-xl p-4 text-center text-sm text-slate-500 border border-slate-100 mb-6">
@@ -216,32 +219,48 @@ export default function ChatThreadsSidebar({
                 const roleInfo = getRoleInfo(lastMsg.role);
                 const typeInfo = getTypeInfo(lastMsg.type);
                 const isRight = roleInfo.side === "right";
-                
-                const senderName = isRight ? (customerName || "Customer") : roleInfo.label;
-                const receiverName = isRight ? "Team" : (customerName || "Customer");
-                const emailSubject = lastMsg.subject || lastMsg.metadata?.subject;
+
+                const senderName = isRight
+                  ? customerName || "Customer"
+                  : roleInfo.label;
+                const receiverName = isRight
+                  ? "Team"
+                  : customerName || "Customer";
+                const emailSubject =
+                  lastMsg.subject || lastMsg.metadata?.subject;
 
                 return (
                   <div className="mb-8">
                     {/* Clear direction header to stop confusion */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100 text-[11px] font-bold text-slate-500">
-                        <span className={cn(isRight && "text-slate-800")}>{senderName}</span>
+                        <span className={cn(isRight && "text-slate-800")}>
+                          {senderName}
+                        </span>
                         <ArrowRight className="w-3 h-3 text-slate-300" />
-                        <span className={cn(!isRight && "text-slate-800")}>{receiverName}</span>
+                        <span className={cn(!isRight && "text-slate-800")}>
+                          {receiverName}
+                        </span>
                       </div>
                       <span className="text-xs font-medium text-slate-400">
-                         {formatDistanceToNow(new Date(lastMsg.createdAt), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(lastMsg.createdAt), {
+                          addSuffix: true,
+                        })}
                       </span>
                     </div>
 
                     {/* Omni Chat Bubble Design Preview */}
-                    <div className={cn("flex w-full", isRight ? "justify-end" : "justify-start")}>
+                    <div
+                      className={cn(
+                        "flex w-full",
+                        isRight ? "justify-end" : "justify-start",
+                      )}
+                    >
                       <div
                         className={cn(
                           "relative flex flex-col px-4 py-3 rounded-2xl text-[13px] shadow-sm break-words w-[90%]",
                           roleInfo.bubbleClass,
-                          isRight ? "rounded-tr-sm" : "rounded-tl-sm"
+                          isRight ? "rounded-tr-sm" : "rounded-tl-sm",
                         )}
                       >
                         {/* Inner Type Label */}
@@ -258,7 +277,12 @@ export default function ChatThreadsSidebar({
                             <span className="text-[9px] uppercase tracking-wider font-bold opacity-50">
                               Subject
                             </span>
-                            <span className={cn("font-medium leading-snug truncate", !emailSubject && "italic opacity-60")}>
+                            <span
+                              className={cn(
+                                "font-medium leading-snug truncate",
+                                !emailSubject && "italic opacity-60",
+                              )}
+                            >
                               {emailSubject || "No subject"}
                             </span>
                           </div>
@@ -273,7 +297,6 @@ export default function ChatThreadsSidebar({
                   </div>
                 );
               })()}
-
               {/* Organized Stats Grid */}
               <div className="mb-2">
                 <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">
@@ -283,7 +306,11 @@ export default function ChatThreadsSidebar({
                   <div className="bg-violet-50 rounded-2xl p-4 border border-violet-100/50 flex flex-col items-center justify-center text-center hover:shadow-sm transition-all">
                     <ImageIcon className="w-5 h-5 text-violet-500 mb-2" />
                     <span className="text-xl font-black text-violet-700 leading-none mb-1">
-                      {activeThread.activities.filter((a) => a.type === "GENERATED_IMAGE").length}
+                      {
+                        activeThread.activities.filter(
+                          (a) => a.type === "GENERATED_IMAGE",
+                        ).length
+                      }
                     </span>
                     <span className="text-[10px] font-bold text-violet-600 uppercase tracking-wider opacity-80">
                       Images
@@ -293,7 +320,11 @@ export default function ChatThreadsSidebar({
                   <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100/50 flex flex-col items-center justify-center text-center hover:shadow-sm transition-all">
                     <Mail className="w-5 h-5 text-orange-500 mb-2" />
                     <span className="text-xl font-black text-orange-700 leading-none mb-1">
-                      {activeThread.activities.filter((a) => a.type === "EMAIL_SENT").length}
+                      {
+                        activeThread.activities.filter(
+                          (a) => a.type === "EMAIL_SENT",
+                        ).length
+                      }
                     </span>
                     <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider opacity-80">
                       Emails
@@ -320,6 +351,12 @@ export default function ChatThreadsSidebar({
                     </span>
                   </div>
                 </div>
+
+                {/* ---- RENDER REDESIGNED QUOTE COMPONENT ---- */}
+                <SideBarQuoteSummary
+                  customerQuote={customerQuote}
+                  customerName={customerName}
+                />
               </div>
             </>
           ) : (
@@ -352,7 +389,7 @@ export default function ChatThreadsSidebar({
                   phone: customerPhone,
                   email: customerEmail,
                   threadId: activeThread.id,
-                  isAutoPilot: activeThread.isAutoPilot
+                  isAutoPilot: activeThread.isAutoPilot,
                 });
               }}
             >
