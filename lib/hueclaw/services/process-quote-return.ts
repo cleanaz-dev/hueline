@@ -26,6 +26,8 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
     bookingId,
   } = metadata;
 
+  console.log("Pending Msg:", pendingMessage)
+
   // 2. Fetch customer
   const customer = await prisma.customer.findUnique({
     where: { id: task.customerId! },
