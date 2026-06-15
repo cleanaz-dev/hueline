@@ -18,7 +18,8 @@ export async function POST(req: Request, { params }: Params) {
   const redis = await getRedisClient();
 
   try {
-    const { slug, twilioNumber } = await params;
+    const { slug, twilioNumber: rawTwilioNumber } = await params;
+    const twilioNumber = decodeURIComponent(rawTwilioNumber);
     const { incomingPhone, incomingMessage, mediaUrls = [] } = await req.json();
 
     if (!incomingPhone || !incomingMessage || !slug) {
