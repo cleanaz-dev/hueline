@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { acquireResourceLock, releaseResourceLock } from "@/lib/redis";
 import { handleHueClawNudge } from "@/lib/hueclaw/handlers/nudge";
+import { cancelPendingFollowUp } from "@/lib/aws/event-scheduler/cancel-followups";
 
 export async function POST(
   req: Request,
@@ -16,13 +17,25 @@ export async function POST(
 
   const thread = await prisma.chatThread.findUnique({
     where: { id: threadId },
-    select: { isAutoPilot: true },
+    select: { isAutoPilot: true, id: true },
   });
 
-  if (!thread || !slug) {
+    if (!thread || !slug) {
     console.warn(`[HueClaw] ✗ Thread not found — threadId: ${threadId}`);
     return NextResponse.json({ error: "Thread not found" }, { status: 404 });
   }
+
+  const followUp = await prisma.followUpSchedule.findFirst({
+    where: {
+      chatThreadId: thread?.id
+    }
+  })
+
+  if(followUp) {
+    cancelPendingFollowUp(thread?.id)
+  }
+
+
 
   const authHeader = req.headers.get("authorization");
   const isSystemCron =

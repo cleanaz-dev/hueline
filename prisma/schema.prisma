@@ -197,6 +197,7 @@ enum ClientActivityType {
   VOICE_INBOUND
   SMS_INBOUND
   QUOTE_GENERATION
+  AI_PAUSED
 }
 
 model ChatThread {
@@ -218,9 +219,10 @@ model ChatThread {
   activities     ClientActivity[]
   communications ClientCommunication[]
 
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt // Push to top of UI when new message arrives
-  bookingData SubBookingData[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt // Push to top of UI when new message arrives
+  bookingData       SubBookingData[]
+  followUpSchedules FollowUpSchedule[]
 }
 
 model ClientActivity {
@@ -289,17 +291,43 @@ model Subdomain {
   client       Client?          @relation(fields: [clientId], references: [id])
   clientId     String?          @unique @db.ObjectId
 
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime?        @updatedAt
-  demoClients      DemoClient[]
-  clientActivities ClientActivity[]
-  customers        Customer[]
-  systemTasks      SystemTask[]
-  designProjects   DesignProject[]
-  errorLogs        ErrorLog[]
-  chatThreads      ChatThread[]
-  branding         Branding?
-  quotes           Quote[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime?          @updatedAt
+  demoClients       DemoClient[]
+  clientActivities  ClientActivity[]
+  customers         Customer[]
+  systemTasks       SystemTask[]
+  designProjects    DesignProject[]
+  errorLogs         ErrorLog[]
+  chatThreads       ChatThread[]
+  branding          Branding?
+  quotes            Quote[]
+  followUpSchedules FollowUpSchedule[]
+}
+
+model FollowUpSchedule {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  triggerAt    DateTime
+  reason       String // e.g., "Customer said they are busy, checking back tomorrow"
+  status       String   @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  scheduleName String?
+
+  // Relations
+  chatThreadId String     @db.ObjectId
+  chatThread   ChatThread @relation(fields: [chatThreadId], references: [id])
+  customerId   String     @db.ObjectId
+  customer     Customer   @relation(fields: [customerId], references: [id])
+  subdomainId  String     @db.ObjectId
+  subdomain    Subdomain  @relation(fields: [subdomainId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
 }
 
 model Branding {
@@ -474,16 +502,17 @@ model Customer {
 
   communication ClientCommunication[]
 
-  createdAt        DateTime?        @default(now())
-  updatedAt        DateTime?        @updatedAt
-  clientActivities ClientActivity[]
-  systemTasks      SystemTask[]
-  customerType     CustomerType     @default(RESIDENTIAL)
-  calls            Call[]
-  designProjects   DesignProject[]
-  errorLogs        ErrorLog[]
-  chatThreads      ChatThread[]
-  quotes           Quote[]
+  createdAt         DateTime?          @default(now())
+  updatedAt         DateTime?          @updatedAt
+  clientActivities  ClientActivity[]
+  systemTasks       SystemTask[]
+  customerType      CustomerType       @default(RESIDENTIAL)
+  calls             Call[]
+  designProjects    DesignProject[]
+  errorLogs         ErrorLog[]
+  chatThreads       ChatThread[]
+  quotes            Quote[]
+  followUpSchedules FollowUpSchedule[]
 }
 
 enum CustomerType {

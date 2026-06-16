@@ -5,6 +5,7 @@ import {
   LogActor,
   LogType,
 } from "@/app/generated/prisma";
+import { scheduleAWSFollowUp } from "@/lib/aws/event-scheduler";
 import { prisma } from "@/lib/prisma";
 import { releaseResourceLock } from "@/lib/redis";
 import { sendChatEmail } from "@/lib/resend";
@@ -18,6 +19,7 @@ interface PendingMessage {
   deliveryMethod: "SMS" | "EMAIL" | "NONE";
   msgBody: string | null;
   msgSubject: string | null;
+  reasonForSilence?: string | null; 
 }
 
 // ─── Dynamic Context ──────────────────────────────────────────────────────────
@@ -70,7 +72,7 @@ interface ProcessCommsArgs {
   threadId: string;
   lockKey: string;
   pendingMessage: PendingMessage;
-  triggerSource?: HueClawCommsTrigger; // Defaults to STANDARD_AI_REPLY for now
+  triggerSource?: HueClawCommsTrigger; 
 }
 
 export async function handleHueClawCommunication({
@@ -82,7 +84,7 @@ export async function handleHueClawCommunication({
   const config = TRIGGER_CONFIG[triggerSource];
 
   try {
-    const { deliveryMethod, msgBody, msgSubject } = pendingMessage;
+    const { deliveryMethod, msgBody, msgSubject, reasonForSilence } = pendingMessage;
 
     // 1. Fetch Required DB Data
     const thread = await prisma.chatThread.findUnique({
@@ -92,6 +94,11 @@ export async function handleHueClawCommunication({
         customer: true,
         id: true,
         subdomainId: true,
+        subdomain: {
+          select: {
+            slug: true,
+          }
+        }
       },
     });
 
@@ -99,9 +106,48 @@ export async function handleHueClawCommunication({
       !thread ||
       !thread.customer ||
       !thread.customerId ||
-      !thread.subdomainId
+      !thread.subdomainId ||
+      !thread.subdomain.slug
     ) {
       throw new Error("Missing required thread, customer, or subdomain data.");
+    }
+
+    if (deliveryMethod === "NONE" || !msgBody) {
+      console.log(`[HueClaw Comms] 🛑 AI paused thread ${threadId}. Reason: ${reasonForSilence}`);
+      
+      const triggerAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+      const reason = reasonForSilence || "AI decided to pause the conversation.";
+
+      await prisma.$transaction(async (tx) => {
+        // A. Save the FollowUp Schedule for EventBridge to target later
+        await tx.followUpSchedule.create({
+          data: {
+            triggerAt,
+            reason,
+            status: "PENDING",
+            chatThread: { connect: { id: thread.id } },
+            customer: { connect: { id: thread.customerId } },
+            subdomain: { connect: { id: thread.subdomainId } },
+          }
+        });
+
+        // B. Save a visible System Activity so the Human UI sees why it paused
+        await tx.clientActivity.create({
+          data: {
+            type: "AI_PAUSED", // Make sure this exists in your ClientActivityType enum!
+            title: "HueClaw Pause (Follow-up Scheduled)",
+            description: reason,
+            chatThread: { connect: { id: thread.id } },
+            customer: { connect: { id: thread.customerId } },
+            subDomain: { connect: { id: thread.subdomainId } },
+          },
+        });
+      });
+
+      // TODO: Call AWS EventBridge here (See Step 3 below)
+      await scheduleAWSFollowUp({threadId: thread.id, triggerAt, slug:thread.subdomain.slug, trigger: "nudge"});
+
+      return { success: true };
     }
 
     // 2. Generate Dynamic Context
