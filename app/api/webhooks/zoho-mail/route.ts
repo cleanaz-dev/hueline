@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     // 2. If no +tag found, try parsing from the Subject (e.g., "Re: Quote ref#:12345")
     if (!shortId && subject) {
       // Looks for "ref#:" (case-insensitive) followed by optional spaces, capturing the ID
-      const subjectMatch = subject.match(/ref#:\s*([a-zA-Z0-9_-]+)/i);
+      const subjectMatch = subject.match(/ref(?:#)?:\s*([a-zA-Z0-9_-]+)/i);
       if (subjectMatch) {
         shortId = subjectMatch[1];
       }
