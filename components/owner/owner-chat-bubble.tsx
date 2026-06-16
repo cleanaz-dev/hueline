@@ -1,402 +1,256 @@
-"use client";
-
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+// chat-bubble.tsx
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  ExternalLink,
-  CreditCard,
-  FileText,
-  CheckCircle2,
-  Activity,
-  Phone,
+  Bot,
+  UserRound,
+  Headset,
   Mail,
-  PlaySquare,
-  Globe,
-  ChevronRight,
-  Clock,
-  X,
+  Phone,
+  MessageSquare,
+  Video,
+  Calendar,
+  Loader2,
+  Activity,
+  Receipt,
+  PersonStanding,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { OwnerChatAttachments } from "./owner-chat-attachements";
+import { SystemActivityEvent } from "../admin/prospects/system-activity-event";
 
-interface SystemEventMetadata {
-  callSummary?: string;
-  duration?: number | string;
-  estimatedValue?: number;
-  costBreakdown?: string;
-  callReason?: string;
-  projectScope?: string;
-  amount?: number;
-  currency?: string;
-  stripePaymentIntentId?: string;
-  stripeSessionId?: string;
-  rooms?: string[];
-  paintType?: string;
-  sqft?: number | string;
-  subject?: string;
-  actionUrl?: string;
-  actionLabel?: string;
-  recordingUrl?: string;
-  demoUrl?: string;
-  // Follow-up specific
-  triggerAt?: string | Date;
-  scheduleName?: string;
-  status?: string;
-}
+// Omnichannel formatting
+import Markdown from "react-markdown";
+import DOMPurify from "dompurify";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
+import ThreadQuoteCard from "./quote/thread-quote-card";
 
-interface SystemActivityEventProps {
+type Role = "CLIENT" | "AI" | "OPERATOR" | "SYSTEM";
+type Type =
+  | "SMS"
+  | "EMAIL"
+  | "PHONE"
+  | "DEMO"
+  | "MEETING"
+  | "ACTIVITY"
+  | "QUOTE";
+
+interface ChatBubbleProps {
   msg: {
     id: string;
-    title?: string;
-    body?: string;
+    body: string;
+    subject?: string;
     description?: string;
-    createdAt: Date | string;
-    type?: string;
     activityType?: string;
-    metadata?: SystemEventMetadata;
+    role: Role;
+    type: Type;
+    createdAt: Date | string;
+    metadata?: any;
+    mediaAttachments?: {
+      id: string;
+      filename: string;
+      mimeType: string;
+      mediaUrl: string;
+      mediaSource: string;
+      size: number;
+    }[];
   };
-  onCancelFollowUp?: (scheduleId: string) => Promise<void>;
+
+  huelineId?: string;
+  prospectName?: string;
+  prospectId?: string;
+  isPending?: boolean;
+  isGroupStart?: boolean;
+  isGroupEnd?: boolean;
 }
 
-// ─── CONFIG ──────────────────────────────────────────────────────────────────
-
-const getActivityDesign = (type?: string, activityType?: string) => {
-  const combinedType = `${type || ""} ${activityType || ""}`.toUpperCase();
-
-  let design = { Icon: Activity, iconColor: "text-zinc-400 dark:text-zinc-500" };
-
-  if (combinedType.includes("FOLLOW_UP"))
-    design = { Icon: Clock, iconColor: "text-amber-500 dark:text-amber-400" };
-  else if (combinedType.includes("CALL"))
-    design = { Icon: Phone, iconColor: "text-blue-500 dark:text-blue-400" };
-  else if (combinedType.includes("PAID") || combinedType.includes("PAYMENT"))
-    design = { Icon: CreditCard, iconColor: "text-emerald-500 dark:text-emerald-400" };
-  else if (combinedType.includes("FORM") || combinedType.includes("INTAKE"))
-    design = { Icon: FileText, iconColor: "text-orange-500 dark:text-orange-400" };
-  else if (combinedType.includes("EMAIL"))
-    design = { Icon: Mail, iconColor: "text-purple-500 dark:text-purple-400" };
-  else if (combinedType.includes("DEMO"))
-    design = { Icon: PlaySquare, iconColor: "text-pink-500 dark:text-pink-400" };
-  else if (combinedType.includes("LINK") || combinedType.includes("SUBDOMAIN"))
-    design = { Icon: Globe, iconColor: "text-indigo-500 dark:text-indigo-400" };
-  else if (
-    combinedType.includes("COMPLETED") ||
-    combinedType.includes("STARTED") ||
-    combinedType.includes("APPROVED")
-  )
-    design = { Icon: CheckCircle2, iconColor: "text-green-500 dark:text-green-400" };
-
-  return design;
+const ROLE_CONFIG = {
+  CLIENT: {
+    label: "Client",
+    side: "right",
+    bubble:
+      "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700",
+    icon: PersonStanding,
+  },
+  AI: {
+    label: "AI Assistant",
+    side: "left",
+    bubble:
+      "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-500/20",
+    icon: Bot,
+  },
+  OPERATOR: {
+    label: "Operator",
+    side: "left",
+    bubble:
+      "bg-blue-50 dark:bg-blue-500/10 text-blue-900 dark:text-blue-200 border border-blue-100 dark:border-blue-500/20",
+    icon: Headset,
+  },
 };
 
-// ─── METADATA COMPONENTS ─────────────────────────────────────────────────────
-
-const CallMetadata = ({ meta }: { meta: SystemEventMetadata }) => {
-  if (!meta?.callSummary && !meta?.duration) return null;
-  return (
-    <div className="flex flex-col gap-2 mt-2 p-3.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-zinc-100/80 dark:border-zinc-800/60 shadow-sm">
-      {meta.callSummary && (
-        <p className="text-[12px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
-          {meta.callSummary}
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-medium text-zinc-500 pt-1">
-        {meta.duration && <span>⏱ {meta.duration}s</span>}
-        {meta.estimatedValue != null && (
-          <span className="text-zinc-800 dark:text-zinc-200">Est: ${meta.estimatedValue}</span>
-        )}
-        {meta.callReason && <span>#{meta.callReason.toLowerCase()}</span>}
-      </div>
-    </div>
-  );
+const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
+  SMS: { icon: MessageSquare, label: "SMS" },
+  EMAIL: { icon: Mail, label: "Email" },
+  PHONE: { icon: Phone, label: "Call Log" },
+  DEMO: { icon: Video, label: "Demo" },
+  MEETING: { icon: Calendar, label: "Meeting" },
+  ACTIVITY: { icon: Activity, label: "Activity" },
+  QUOTE: { icon: Receipt, label: "Quote" },
 };
 
-const PaymentMetadata = ({ meta }: { meta: SystemEventMetadata }) => {
-  if (meta?.amount == null) return null;
-  return (
-    <div className="flex items-center gap-3 mt-2 p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 w-fit">
-      <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-wider font-semibold text-emerald-600/70 dark:text-emerald-500/70 mb-0.5">
-          Amount Captured
-        </span>
-        <span className="text-[14px] font-bold text-emerald-700 dark:text-emerald-400">
-          ${meta.amount} {meta.currency?.toUpperCase() || "USD"}
-        </span>
-        <span className="text-[10px] text-emerald-600/60 dark:text-emerald-500/50 font-mono mt-1">
-          Txn: {meta.stripePaymentIntentId || meta.stripeSessionId}
-        </span>
-      </div>
-    </div>
-  );
-};
+// Helper function to detect if string contains HTML tags
+const containsHTML = (str: string) => /<[a-z][\s\S]*>/i.test(str);
 
-const FormMetadata = ({ meta }: { meta: SystemEventMetadata }) => {
-  if (!meta?.rooms?.length && !meta?.paintType && !meta?.sqft) return null;
-  return (
-    <div className="flex flex-wrap items-center gap-2 mt-2 p-3 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-zinc-100/80 dark:border-zinc-800/60 shadow-sm">
-      {meta.paintType && (
-        <span className="px-2.5 py-1 rounded-md bg-white dark:bg-zinc-800 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700">
-          {meta.paintType}
-        </span>
-      )}
-      {meta.sqft && (
-        <span className="px-2.5 py-1 rounded-md bg-white dark:bg-zinc-800 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700">
-          {meta.sqft} sqft
-        </span>
-      )}
-      {meta.rooms?.map((room: string) => (
-        <span
-          key={room}
-          className="px-2.5 py-1 rounded-md bg-white dark:bg-zinc-800 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700 capitalize"
-        >
-          {room}
-        </span>
-      ))}
-    </div>
-  );
-};
-
-const FollowUpMetadata = ({
-  meta,
-  msgId,
-  onCancel,
-}: {
-  meta: SystemEventMetadata;
-  msgId: string;
-  onCancel?: (id: string) => Promise<void>;
-}) => {
-  const [cancelling, setCancelling] = useState(false);
-  const [cancelled, setCancelled] = useState(false);
-
-  if (!meta?.triggerAt) return null;
-
-  const scheduledFor = new Date(meta.triggerAt).toLocaleString([], {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  const handleCancel = async () => {
-    if (!onCancel) return;
-    setCancelling(true);
-    try {
-      await onCancel(msgId);
-      setCancelled(true);
-    } catch (e) {
-      console.error("Failed to cancel follow-up", e);
-    } finally {
-      setCancelling(false);
-    }
-  };
-
-  if (cancelled) {
-    return (
-      <div className="flex items-center gap-2 mt-2 p-3 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-zinc-100/80 dark:border-zinc-800/60">
-        <span className="text-[12px] text-zinc-400 dark:text-zinc-500 italic">
-          Follow-up cancelled
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center justify-between mt-2 p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30">
-      <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-600/70 dark:text-amber-500/70 mb-0.5">
-          Scheduled For
-        </span>
-        <span className="text-[13px] font-semibold text-amber-700 dark:text-amber-400">
-          {scheduledFor}
-        </span>
-      </div>
-      {onCancel && (
-        <button
-          onClick={handleCancel}
-          disabled={cancelling}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-zinc-900 text-red-500 border border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <X size={11} />
-          {cancelling ? "Cancelling..." : "Cancel"}
-        </button>
-      )}
-    </div>
-  );
-};
-
-// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
-
-export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEventProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
+export function OwnerChatBubble({
+  msg,
+  huelineId,
+  prospectName,
+  isPending,
+  prospectId,
+  isGroupStart = true,
+  isGroupEnd = true,
+}: ChatBubbleProps) {
   const time = new Date(msg.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
 
-  const title = msg.title || msg.body || "System Event";
-  const { Icon, iconColor } = getActivityDesign(msg.type, msg.activityType);
-  const hasExpandableContent = msg.description || msg.metadata;
+  if (msg.role === "SYSTEM") {
+    return <SystemActivityEvent msg={msg} />;
+  }
 
-  const isFollowUp = msg.type === "FOLLOW_UP" || msg.activityType === "FOLLOW_UP";
+  const meta = ROLE_CONFIG[msg.role as keyof typeof ROLE_CONFIG];
+  const isRight = meta.side === "right";
+  const typeInfo = TYPE_CONFIG[msg.type];
+  const TypeIcon = typeInfo.icon;
 
-  const springConfig = { type: "spring" as const, bounce: 0.15, duration: 0.5 };
+  const displayName = isRight ? (prospectName ?? "Client") : meta.label;
+  const emailSubject = msg.subject || msg.metadata?.subject;
 
   return (
-    <div className="w-full flex justify-center py-1">
-      <motion.div
-        layout
-        transition={springConfig}
-        className={`w-full max-w-4xl rounded-2xl transition-colors duration-300 ${
-          isExpanded
-            ? "bg-zinc-50/50 dark:bg-zinc-900/20"
-            : "hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20"
-        }`}
+    <div
+      className={cn(
+        "flex w-full transition-all duration-300",
+        isRight ? "justify-end" : "justify-start",
+        isGroupEnd ? "mb-6" : "mb-2",
+        isPending && "opacity-60",
+      )}
+    >
+      <div
+        className={cn(
+          "flex max-w-[85%] md:max-w-[95%]",
+          isRight ? "flex-row-reverse" : "flex-row",
+        )}
       >
-        {/* CLICKABLE HEADER */}
-        <button
-          onClick={() => hasExpandableContent && setIsExpanded(!isExpanded)}
-          disabled={!hasExpandableContent}
-          className={`w-full flex items-center px-4 py-3 focus:outline-none ${
-            hasExpandableContent ? "cursor-pointer" : "cursor-default"
-          }`}
+        {/* Avatar Column */}
+        <div className="flex flex-col items-center shrink-0 w-8 mx-3 ">
+          {isGroupStart && (
+            <div
+              className={cn(
+                "bg-background",
+                msg.role === "AI" && "text-indigo-600",
+                msg.role === "OPERATOR" && "text-blue-600",
+                msg.role === "CLIENT" && "text-zinc-600",
+              )}
+            >
+              <meta.icon size={16} />
+            </div>
+          )}
+        </div>
+
+        {/* Message Content */}
+        <div
+          className={cn(
+            "flex flex-col gap-1.5 min-w-0",
+            isRight ? "items-end" : "items-start",
+          )}
         >
-          <motion.div
-            initial={false}
-            animate={{
-              width: isExpanded ? 0 : 80,
-              opacity: isExpanded ? 0 : 1,
-              marginRight: isExpanded ? 0 : 12,
-            }}
-            transition={springConfig}
-            className="overflow-hidden text-left shrink-0"
-          >
-            <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 whitespace-nowrap">
-              SYSTEM
-            </span>
-          </motion.div>
-
-          <motion.div
-            layout
-            transition={springConfig}
-            className="flex items-center gap-3 min-w-0 flex-1"
-          >
-            <Icon size={14} strokeWidth={2.5} className={`shrink-0 ${iconColor}`} />
-            <span
-              className={`text-[13px] font-medium truncate transition-colors duration-300 ${
-                isExpanded
-                  ? "text-zinc-900 dark:text-zinc-100"
-                  : "text-zinc-500 dark:text-zinc-300"
-              }`}
-            >
-              {title}
-              {msg.metadata?.amount && !isExpanded && (
-                <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold text-[12px]">
-                  ${msg.metadata.amount}
+          {/* Header */}
+          {isGroupStart && (
+            <div className="flex items-baseline gap-2 px-1">
+              <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                {displayName}
+              </span>
+              {isPending ? (
+                <span className="flex items-center gap-1 text-[10px] font-medium text-blue-500 animate-pulse">
+                  <Loader2 size={10} className="animate-spin" /> Sending...
+                </span>
+              ) : (
+                <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+                  {time}
                 </span>
               )}
-              {isFollowUp && msg.metadata?.triggerAt && !isExpanded && (
-                <span className="ml-2 text-amber-500 dark:text-amber-400 font-medium text-[11px]">
-                  {new Date(msg.metadata.triggerAt).toLocaleDateString([], {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              )}
-            </span>
-          </motion.div>
+            </div>
+          )}
 
-          <motion.div
-            layout
-            transition={springConfig}
-            className="flex items-center justify-end gap-3 pl-2 shrink-0"
-          >
-            <span className="text-[11px] font-medium text-zinc-400 shrink-0">{time}</span>
-            {hasExpandableContent ? (
-              <motion.div
-                animate={{ rotate: isExpanded ? 90 : 0 }}
-                transition={springConfig}
-                className="text-zinc-400 flex items-center justify-center"
-              >
-                <ChevronRight
-                  size={14}
-                  className={isExpanded ? "text-zinc-700 dark:text-zinc-300" : ""}
-                />
-              </motion.div>
-            ) : (
-              <div className="w-[14px]" />
+          {/* Bubble */}
+          <div
+            className={cn(
+              "relative flex flex-col px-4 py-3 rounded-2xl text-[14.5px] shadow-sm break-words w-full",
+              meta.bubble,
+              isRight
+                ? cn(isGroupStart ? "rounded-tr-sm" : "rounded-tr-xl")
+                : cn(isGroupStart ? "rounded-tl-sm" : "rounded-tl-xl"),
             )}
-          </motion.div>
-        </button>
+          >
+            {/* Inner Label */}
+            <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-current/10 opacity-70">
+              <TypeIcon size={14} strokeWidth={2.5} />
+              <span className="text-[10px] uppercase tracking-widest font-bold">
+                {typeInfo.label}
+              </span>
+            </div>
 
-        {/* THE REVEAL: Expanded Content */}
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ ...springConfig, opacity: { duration: 0.3 } }}
-              className="overflow-hidden"
-            >
-              <div className="pl-[44px] pr-4 sm:pr-8 pb-4 pt-1">
-                {msg.description && (
-                  <p className="text-[12px] text-zinc-500 dark:text-zinc-400 leading-relaxed mb-1">
-                    {msg.description}
-                  </p>
-                )}
+            {/* Attachments */}
+            <OwnerChatAttachments
+              attachments={msg.mediaAttachments || []}
+              prospectId={prospectId}
+            />
 
-                {msg.metadata && (
-                  <div className="flex flex-col">
-                    {isFollowUp && (
-                      <FollowUpMetadata
-                        meta={msg.metadata}
-                        msgId={msg.id}
-                        onCancel={onCancelFollowUp}
-                      />
-                    )}
-                    {(msg.type === "CALL" || msg.metadata.callSummary) && (
-                      <CallMetadata meta={msg.metadata} />
-                    )}
-                    {(msg.metadata.amount != null || msg.metadata.stripePaymentIntentId) && (
-                      <PaymentMetadata meta={msg.metadata} />
-                    )}
-                    {(msg.metadata.rooms?.length || msg.metadata.sqft) && (
-                      <FormMetadata meta={msg.metadata} />
-                    )}
-                    {(msg.metadata?.actionUrl || msg.metadata?.recordingUrl) && (
-                      <div className="flex items-center gap-2 mt-3">
-                        {msg.metadata.recordingUrl && (
-                          <a
-                            href={msg.metadata.recordingUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors shadow-sm"
-                          >
-                            <PlaySquare size={12} className={iconColor} /> Play Audio
-                          </a>
-                        )}
-                        {msg.metadata.actionUrl && (
-                          <a
-                            href={msg.metadata.actionUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors shadow-sm"
-                          >
-                            {msg.metadata.actionLabel || "View Details"}{" "}
-                            <ExternalLink size={12} className="text-zinc-400" />
-                          </a>
-                        )}
-                      </div>
-                    )}
-                  </div>
+            {/* NEW CLEANER: Email Subject Line */}
+            {msg.type === "EMAIL" && (
+              <div className="mb-3 pb-3 border-b border-current/10 flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-wider font-bold opacity-50">
+                  Subject
+                </span>
+                <span
+                  className={cn(
+                    "font-medium leading-snug",
+                    !emailSubject && "italic opacity-60",
+                  )}
+                >
+                  {emailSubject || "No subject"}
+                </span>
+              </div>
+            )}
+
+            {/* Message Body */}
+            {msg.type === "QUOTE" && msg.metadata?.quoteId ? (
+              <ThreadQuoteCard msg={msg} />
+            ) : msg.type === "EMAIL" ? (
+              // Existing Email render logic
+              <div className="flex flex-col text-[14px] leading-relaxed opacity-90 [&_p]:mb-3 last:[&_p]:mb-0 [&_a]:underline [&_a]:font-medium hover:[&_a]:opacity-80 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5">
+                {containsHTML(msg.body) ? (
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(msg.body),
+                    }}
+                  />
+                ) : (
+                  <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                    {msg.body}
+                  </Markdown>
                 )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+            ) : (
+              // Existing Standard render logic
+              <div className="whitespace-pre-wrap leading-relaxed opacity-90">
+                {msg.body}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
