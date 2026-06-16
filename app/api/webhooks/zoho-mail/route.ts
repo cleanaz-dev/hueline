@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { handleZohoAttachmentDownloadS3Upload } from "./config";
+import axios from "axios";
 
 export async function POST(req: Request) {
   try {
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
     // 1. Try parsing from the +tag in the toAddress (e.g., hello+12345@domain.com)
     const cleanTo = toAddress.replace(/[<>]/g, "");
     const tagMatch = cleanTo.match(/\+([^@]+)@/);
-    
+
     if (tagMatch) {
       shortId = tagMatch[1].split("_")[0];
     }
@@ -42,17 +43,23 @@ export async function POST(req: Request) {
       console.warn("Could not parse shortId from address tag or subject");
       return NextResponse.json(
         { message: "Invalid format: no shortId found" },
-        { status: 200 } 
+        { status: 200 },
       );
     }
 
     // Verify customer exists under this subdomain
     const thread = await prisma.chatThread.findUnique({
-      where: { shortId: shortId }, 
+      where: { shortId: shortId },
       select: {
-        id: true, 
+        id: true,
         customer: true,
         subdomainId: true,
+        isAutoPilot: true,
+        subdomain: {
+          select: {
+            slug: true,
+          },
+        },
       },
     });
 
@@ -82,7 +89,7 @@ export async function POST(req: Request) {
         role: "CLIENT",
         type: "EMAIL",
         customer: { connect: { id: thread.customer.id } },
-        chatThread: { connect: { id: thread.id } }, 
+        chatThread: { connect: { id: thread.id } },
       },
     });
 
@@ -105,6 +112,17 @@ export async function POST(req: Request) {
           },
         });
       }
+    }
+
+    if (thread.isAutoPilot) {
+      const delay = Math.floor(Math.random() * 3000) + 2000;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_APP_URL}/api/subdomain/${thread.subdomain?.slug}/hue-claw/${thread.id}/nudge`,
+      );
+
+      return NextResponse.json({ success: true, message: "Auto Pilot ON" });
     }
 
     return NextResponse.json({ message: "Success" }, { status: 200 });
