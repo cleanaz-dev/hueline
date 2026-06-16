@@ -37,7 +37,7 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ message: "Quote not found" }, { status: 404 });
     }
 
-    console.log("Fetched quote:", quote);
+    // console.log("Fetched quote:", quote);
 
     return NextResponse.json(quote);
   } catch (error) {

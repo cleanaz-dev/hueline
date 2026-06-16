@@ -29,7 +29,10 @@ export default async function Page({ params }: Params) {
     }),
   ]);
 
+  const chatThreads = await prisma.chatThread.findMany()
+
   console.log("Fetched customer:", customer);
+  console.log("Threads:", chatThreads)
 
   if (!customer) return notFound();
   if (!operator) return unauthorized();

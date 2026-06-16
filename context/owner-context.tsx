@@ -10,6 +10,7 @@ import axios from "axios";
 // 1. NEW THREAD LOGIC: Define your Thread model interface
 export interface ChatThreadModel {
   id: string;
+  shortId: string;
   isAutoPilot: boolean;
   customerId: string;
   customer?: {
@@ -27,7 +28,8 @@ interface CustomerChat {
   phone?: string;
   email?: string;
   isAutoPilot: boolean;
-  threadId: string; // Enforce threadId
+  threadId: string;
+  shortId: string; 
   [key: string]: any;
 }
 

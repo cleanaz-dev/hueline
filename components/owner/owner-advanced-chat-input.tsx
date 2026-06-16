@@ -65,7 +65,6 @@ export function OwnerAdvancedChatInput({
 
   const isEmpty = !text.replace(/<[^>]*>?/gm, "").trim();
 
-  console.log("Active Thread:", activeThread);
 
   return (
     <>

@@ -200,7 +200,8 @@ enum ClientActivityType {
 }
 
 model ChatThread {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  shortId String @unique
 
   customerId String   @db.ObjectId
   customer   Customer @relation(fields: [customerId], references: [id])

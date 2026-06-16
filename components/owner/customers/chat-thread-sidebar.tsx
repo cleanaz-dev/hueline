@@ -377,6 +377,7 @@ export default function ChatThreadsSidebar({
         {/* ---- FIXED FOOTER ---- */}
         {activeThread && (
           <div className="shrink-0 p-6 pt-4 border-t border-slate-100 bg-white mt-auto">
+          
             <Button
               className="w-full flex items-center gap-2"
               size="xl"
@@ -390,6 +391,7 @@ export default function ChatThreadsSidebar({
                   email: customerEmail,
                   threadId: activeThread.id,
                   isAutoPilot: activeThread.isAutoPilot,
+                  shortId: activeThread.shortId
                 });
               }}
             >

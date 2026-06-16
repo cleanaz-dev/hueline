@@ -9,6 +9,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { createMockupBooking } from "@/lib/prisma/mutations/booking-data/create-mockup-booking";
 import { voiceMockupWebhookBodySchema } from "@/lib/zod/voice-mockup-webhook-body";
+import { nanoid } from "nanoid";
 
 export type MockupTriggerSource = "DEMO_VOICE_AGENT" | "STANDARD_VOICE_AGENT";
 
@@ -138,6 +139,7 @@ export async function processMockupWorkflow({
     await prisma.$transaction(async (tx) => {
       const thread = await prisma.chatThread.create({
         data: {
+          shortId: nanoid(8),
           customerId: customer.id,
           subdomainId: webhook.subdomainId,
           title: `New Thread: ${customer.name}`,

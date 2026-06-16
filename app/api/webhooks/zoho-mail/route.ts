@@ -30,9 +30,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const [threadId, slug] = tagMatch[1].split("_");
+    const [shortId] = tagMatch[1].split("_");
 
-    if (!threadId || !slug) {
+    if (!shortId) {
       console.warn("Could not parse slug or customerId from tag");
       return NextResponse.json(
         { message: "Invalid tag format" },
@@ -42,18 +42,21 @@ export async function POST(req: Request) {
 
     // Verify customer exists under this subdomain
     const thread = await prisma.chatThread.findUnique({
-      where: { id: threadId },
+      where: { id: shortId },
       select: {
+        id: true,
         customer: true,
         subdomainId: true,
       },
     });
 
-    if (!thread?.customer || !thread.customer.id || !thread.subdomainId) {
-      console.warn("Customer not found for", {
-        slug,
-        thread: thread?.customer.id,
-      });
+    if (
+      !thread?.customer ||
+      !thread.customer.id ||
+      !thread.subdomainId ||
+      !thread.id
+    ) {
+      console.warn("Customer not found for", { thread: thread?.customer.id });
       return NextResponse.json(
         { message: "Customer not found" },
         { status: 200 },
@@ -65,7 +68,7 @@ export async function POST(req: Request) {
         type: "INBOUND_EMAIL",
         subDomain: { connect: { id: thread.subdomainId } },
         customer: { connect: { id: thread.customer.id } },
-        chatThreadId: threadId,
+        chatThread: { connect: { id: thread.id } },
         description: "Cx sent Email",
         title: "Inbound Email",
       },
@@ -78,7 +81,7 @@ export async function POST(req: Request) {
         role: "CLIENT",
         type: "EMAIL",
         customer: { connect: { id: thread.customer.id } },
-        chatThreadId: threadId,
+        chatThread: { connect: { id: thread.customer.id } },
       },
     });
 
