@@ -99,8 +99,36 @@ export async function GET(
       mediaAttachments: [],
     }));
 
+    const followUp = await prisma.followUpSchedule.findFirst({
+      where: { chatThreadId: threadId, status: "PENDING" },
+    });
+
+    const mappedFollowUps = followUp
+      ? [
+          {
+            id: followUp.id,
+            role: "SYSTEM",
+            type: "FOLLOW_UP",
+            activityType: "FOLLOW_UP",
+            body: followUp.reason,
+            description: `Follow-up scheduled for ${followUp.triggerAt.toISOString()}`,
+            metadata: {
+              scheduleName: followUp.scheduleName,
+              triggerAt: followUp.triggerAt,
+              status: followUp.status,
+            },
+            createdAt: followUp.createdAt,
+            mediaAttachments: [],
+          },
+        ]
+      : [];
+
     // 5. Merge and Sort chronologically
-    const timeline = [...communications, ...mappedActivities].sort(
+    const timeline = [
+      ...communications,
+      ...mappedActivities,
+      ...mappedFollowUps,
+    ].sort(
       (a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
