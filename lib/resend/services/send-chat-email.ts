@@ -14,7 +14,7 @@ export async function sendChatEmail({
   to: string;
   subject: string;
   body: string;
-  replyTo: string;
+  replyTo?: string;
   attachmentUrl?: string;
 }) {
   try {

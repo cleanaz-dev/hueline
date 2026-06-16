@@ -1,5 +1,3 @@
-// /lib/hueclaw/handlers/comms.ts
-
 import {
   ClientActivityType,
   CommunicationRole,
@@ -17,15 +15,15 @@ import { sendDefaultSMS } from "@/lib/twilio/sms-default";
 export type HueClawCommsTrigger = "STANDARD_AI_REPLY";
 
 interface PendingMessage {
-  deliveryMethod: "SMS" | "EMAIL" | "NONE"
-  msgBody: string | null
+  deliveryMethod: "SMS" | "EMAIL" | "NONE";
+  msgBody: string | null;
   msgSubject: string | null;
 }
 
 // ─── Dynamic Context ──────────────────────────────────────────────────────────
 export interface CommsContext {
   customerName: string;
-  deliveryMethod: "SMS" | "EMAIL" | "NONE"
+  deliveryMethod: "SMS" | "EMAIL" | "NONE";
   subject: string | null;
   body: string;
 }
@@ -48,12 +46,15 @@ const TRIGGER_CONFIG: Record<HueClawCommsTrigger, TriggerConfig> = {
     logActor: "AI",
     role: "AI",
     commType: (ctx) => ctx.deliveryMethod as CommunicationType,
-    logTitle: (ctx) => `HueClaw ${ctx.deliveryMethod === "EMAIL" ? "Email" : "SMS"}`,
+    logTitle: (ctx) =>
+      `HueClaw ${ctx.deliveryMethod === "EMAIL" ? "Email" : "SMS"}`,
     logType: (ctx) => ctx.deliveryMethod as LogType,
     logDescription: (ctx) =>
       `AI successfully dispatched an ${ctx.deliveryMethod === "EMAIL" ? "email" : "SMS"} to ${ctx.customerName}.`,
     activityType: (ctx) =>
-      (ctx.deliveryMethod === "EMAIL" ? "EMAIL_SENT" : "SMS_SENT") as ClientActivityType,
+      (ctx.deliveryMethod === "EMAIL"
+        ? "EMAIL_SENT"
+        : "SMS_SENT") as ClientActivityType,
     activityTitle: (ctx) =>
       ctx.deliveryMethod === "EMAIL" ? "AI Email Sent" : "AI SMS Sent",
     activityDescription: (ctx) =>
@@ -111,13 +112,7 @@ export async function handleHueClawCommunication({
       body: msgBody!,
     };
 
-    // 3. Format the body safely for the DB (Preserve email subjects!)
-    const formattedDbBody =
-      deliveryMethod === "EMAIL"
-        ? JSON.stringify({ subject: msgSubject, body: msgBody })
-        : msgBody;
-
-    // 4. Dispatch the actual message
+    // 3. Dispatch the actual message
     if (deliveryMethod === "SMS") {
       await sendDefaultSMS({
         to: thread.customer.phone!,
@@ -128,11 +123,11 @@ export async function handleHueClawCommunication({
         to: thread.customer.email!,
         subject: msgSubject!,
         body: msgBody!,
-        replyTo: "", // Add if you have a dynamic reply-to logic
+        // replyTo: "", // Add if you have a dynamic reply-to logic
       });
     }
 
-    // 5. Execute Database Saves in a single Transaction
+    // 4. Execute Database Saves in a single Transaction
     await prisma.$transaction(async (tx) => {
       // A. Activity Log
       await tx.clientActivity.create({
@@ -150,8 +145,11 @@ export async function handleHueClawCommunication({
       await tx.clientCommunication.create({
         data: {
           type: config.commType(context),
+          ...(pendingMessage.deliveryMethod === "EMAIL" && {
+            subject: pendingMessage.msgSubject,
+          }),
           role: config.role,
-          body: formattedDbBody!,
+          body: msgBody!,
           chatThread: { connect: { id: threadId } },
           customer: { connect: { id: thread.customerId } },
         },
@@ -170,7 +168,7 @@ export async function handleHueClawCommunication({
     });
 
     console.log(
-      `[HueClaw Comms] ✅ Message sent & recorded via ${deliveryMethod} for thread ${threadId}`
+      `[HueClaw Comms] ✅ Message sent & recorded via ${deliveryMethod} for thread ${threadId}`,
     );
 
     return { success: true };
