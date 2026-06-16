@@ -231,8 +231,26 @@ export async function handleHueClawCommunication({
     console.error(`[HueClaw Comms] Failed for thread ${threadId}:`, error);
     throw error;
   } finally {
-    await releaseResourceLock(lockKey);
-    await clearHueClawStatus(threadId); // ADD THIS
-    console.log(`[HueClaw Comms] 🔓 Lock released for thread ${threadId}`);
+    // 1. Try to release the lock safely
+    try {
+      await releaseResourceLock(lockKey);
+      console.log(`[HueClaw Comms] 🔓 Lock released for thread ${threadId}`);
+    } catch (lockError) {
+      console.error(
+        `[HueClaw Comms] Warning: Failed to release lock (might have expired):`,
+        lockError,
+      );
+    }
+
+    // 2. Try to clear the polling status safely
+    try {
+      await clearHueClawStatus(threadId);
+      console.log(`[HueClaw Comms] 🧹 Status cleared for thread ${threadId}`);
+    } catch (statusError) {
+      console.error(
+        `[HueClaw Comms] Warning: Failed to clear HueClaw status:`,
+        statusError,
+      );
+    }
   }
 }
