@@ -18,47 +18,48 @@ export async function POST(req: Request) {
 
     console.log("Zoho Mail Webhook:", body);
 
-    // Parse +tag from toAddress → slug + customerId
+    let shortId = null;
+
+    // 1. Try parsing from the +tag in the toAddress (e.g., hello+12345@domain.com)
     const cleanTo = toAddress.replace(/[<>]/g, "");
     const tagMatch = cleanTo.match(/\+([^@]+)@/);
-
-    if (!tagMatch) {
-      console.warn("No +tag found in toAddress");
-      return NextResponse.json(
-        { message: "Invalid address format" },
-        { status: 200 },
-      );
+    
+    if (tagMatch) {
+      shortId = tagMatch[1].split("_")[0];
     }
 
-    const [shortId] = tagMatch[1].split("_");
+    // 2. If no +tag found, try parsing from the Subject (e.g., "Re: Quote ref#:12345")
+    if (!shortId && subject) {
+      // Looks for "ref#:" (case-insensitive) followed by optional spaces, capturing the ID
+      const subjectMatch = subject.match(/ref#:\s*([a-zA-Z0-9_-]+)/i);
+      if (subjectMatch) {
+        shortId = subjectMatch[1];
+      }
+    }
 
+    // 3. If neither worked, bail out
     if (!shortId) {
-      console.warn("Could not parse slug or customerId from tag");
+      console.warn("Could not parse shortId from address tag or subject");
       return NextResponse.json(
-        { message: "Invalid tag format" },
-        { status: 200 },
+        { message: "Invalid format: no shortId found" },
+        { status: 200 } 
       );
     }
 
     // Verify customer exists under this subdomain
     const thread = await prisma.chatThread.findUnique({
-      where: { id: shortId },
+      where: { shortId: shortId }, 
       select: {
-        id: true,
+        id: true, 
         customer: true,
         subdomainId: true,
       },
     });
 
-    if (
-      !thread?.customer ||
-      !thread.customer.id ||
-      !thread.subdomainId ||
-      !thread.id
-    ) {
-      console.warn("Customer not found for", { thread: thread?.customer.id });
+    if (!thread?.customer?.id || !thread?.subdomainId || !thread?.id) {
+      console.warn("Thread or Customer not found for shortId:", shortId);
       return NextResponse.json(
-        { message: "Customer not found" },
+        { message: "Customer/Thread not found" },
         { status: 200 },
       );
     }
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
         role: "CLIENT",
         type: "EMAIL",
         customer: { connect: { id: thread.customer.id } },
-        chatThread: { connect: { id: thread.customer.id } },
+        chatThread: { connect: { id: thread.id } }, 
       },
     });
 
