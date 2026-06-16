@@ -15,6 +15,7 @@ export async function processNudgeReturn(task: any, rawResult: any) {
     deliveryMethod: result.suggestedDeliveryMethod,
     msgBody: result.suggestedDeliveryMethod === "SMS" ? (result.suggestedSms ?? null) : (result.suggestedEmail?.body ?? null),
     msgSubject: result.suggestedDeliveryMethod === "EMAIL" ? (result.suggestedEmail?.subject ?? null) : null,
+    reasonForSilence: result.reasonForSilence ?? null, 
   };
 
   // Route: Image

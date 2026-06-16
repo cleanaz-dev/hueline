@@ -10,6 +10,7 @@ export const aiResultSchema = z.object({
     subject: z.string(),
     body: z.string()
   }).nullable().optional(),
+  reasonForSilence: z.string().nullable().optional(),
 });
 
 export type AiResult = z.infer<typeof aiResultSchema>
