@@ -6,8 +6,9 @@ import {
   LogType,
 } from "@/app/generated/prisma";
 import { scheduleAWSFollowUp } from "@/lib/aws/event-scheduler";
+import { cancelPendingFollowUp } from "@/lib/aws/event-scheduler/cancel-followups";
 import { prisma } from "@/lib/prisma";
-import { releaseResourceLock } from "@/lib/redis";
+import { clearHueClawStatus, releaseResourceLock } from "@/lib/redis";
 import { sendChatEmail } from "@/lib/resend";
 import { sendDefaultSMS } from "@/lib/twilio/sms-default";
 
@@ -19,7 +20,7 @@ interface PendingMessage {
   deliveryMethod: "SMS" | "EMAIL" | "NONE";
   msgBody: string | null;
   msgSubject: string | null;
-  reasonForSilence?: string | null; 
+  reasonForSilence?: string | null;
 }
 
 // ─── Dynamic Context ──────────────────────────────────────────────────────────
@@ -72,7 +73,7 @@ interface ProcessCommsArgs {
   threadId: string;
   lockKey: string;
   pendingMessage: PendingMessage;
-  triggerSource?: HueClawCommsTrigger; 
+  triggerSource?: HueClawCommsTrigger;
 }
 
 export async function handleHueClawCommunication({
@@ -84,7 +85,8 @@ export async function handleHueClawCommunication({
   const config = TRIGGER_CONFIG[triggerSource];
 
   try {
-    const { deliveryMethod, msgBody, msgSubject, reasonForSilence } = pendingMessage;
+    const { deliveryMethod, msgBody, msgSubject, reasonForSilence } =
+      pendingMessage;
 
     // 1. Fetch Required DB Data
     const thread = await prisma.chatThread.findUnique({
@@ -97,8 +99,8 @@ export async function handleHueClawCommunication({
         subdomain: {
           select: {
             slug: true,
-          }
-        }
+          },
+        },
       },
     });
 
@@ -113,13 +115,18 @@ export async function handleHueClawCommunication({
     }
 
     if (deliveryMethod === "NONE" || !msgBody) {
-      console.log(`[HueClaw Comms] 🛑 AI paused thread ${threadId}. Reason: ${reasonForSilence}`);
-      
-      const triggerAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
-      const reason = reasonForSilence || "AI decided to pause the conversation.";
+      console.log(
+        `[HueClaw Comms] 🛑 AI paused thread ${threadId}. Reason: ${reasonForSilence}`,
+      );
+
+      const triggerAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const reason =
+        reasonForSilence || "AI decided to pause the conversation.";
+
+      // Cancel any existing pending follow-up first
+      await cancelPendingFollowUp(thread.id);
 
       await prisma.$transaction(async (tx) => {
-        // A. Save the FollowUp Schedule for EventBridge to target later
         await tx.followUpSchedule.create({
           data: {
             triggerAt,
@@ -128,24 +135,26 @@ export async function handleHueClawCommunication({
             chatThread: { connect: { id: thread.id } },
             customer: { connect: { id: thread.customerId } },
             subdomain: { connect: { id: thread.subdomainId } },
-          }
+          },
         });
 
-        // B. Save a visible System Activity so the Human UI sees why it paused
-        await tx.clientActivity.create({
+        await tx.logs.create({
           data: {
-            type: "AI_PAUSED", // Make sure this exists in your ClientActivityType enum!
-            title: "HueClaw Pause (Follow-up Scheduled)",
-            description: reason,
-            chatThread: { connect: { id: thread.id } },
-            customer: { connect: { id: thread.customerId } },
-            subDomain: { connect: { id: thread.subdomainId } },
+            title: "HueClaw Decided to Follow Up",
+            type: "STATUS_CHANGE",
+            actor: "AI",
+            description: "HueClaw Decided to Follow Up on Conversation",
+            subdomain: { connect: { id: thread.subdomainId } },
           },
         });
       });
 
-      // TODO: Call AWS EventBridge here (See Step 3 below)
-      await scheduleAWSFollowUp({threadId: thread.id, triggerAt, slug:thread.subdomain.slug, trigger: "nudge"});
+      await scheduleAWSFollowUp({
+        threadId: thread.id,
+        triggerAt,
+        slug: thread.subdomain.slug,
+        trigger: "nudge",
+      });
 
       return { success: true };
     }
@@ -222,8 +231,8 @@ export async function handleHueClawCommunication({
     console.error(`[HueClaw Comms] Failed for thread ${threadId}:`, error);
     throw error;
   } finally {
-    // 🔓 Always release the lock at the end
     await releaseResourceLock(lockKey);
+    await clearHueClawStatus(threadId); // ADD THIS
     console.log(`[HueClaw Comms] 🔓 Lock released for thread ${threadId}`);
   }
 }
