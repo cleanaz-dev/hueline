@@ -58,10 +58,11 @@ export async function handleHueClawNudge(
     webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/hueclaw`,
     deliveryMethod: "NONE",
     customerName: thread.customer.name,
-    recentMessages: timeline.slice(-15).map((m) => ({
+   recentMessages: timeline.slice(-15).map((m: any) => ({
       role: m.role,
       type: m.type,
       body: m.body,
+      ...(m.subject && { subject: m.subject }), 
     })),
     systemTaskId: systemTask.id
   };
