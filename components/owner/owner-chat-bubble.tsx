@@ -1,8 +1,6 @@
 // chat-bubble.tsx
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Bot,
-  UserRound,
   Headset,
   Mail,
   Phone,
@@ -24,45 +22,7 @@ import DOMPurify from "dompurify";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import ThreadQuoteCard from "./quote/thread-quote-card";
-
-type Role = "CLIENT" | "AI" | "OPERATOR" | "SYSTEM";
-type Type =
-  | "SMS"
-  | "EMAIL"
-  | "PHONE"
-  | "DEMO"
-  | "MEETING"
-  | "ACTIVITY"
-  | "QUOTE";
-
-interface ChatBubbleProps {
-  msg: {
-    id: string;
-    body: string;
-    subject?: string;
-    description?: string;
-    activityType?: string;
-    role: Role;
-    type: Type;
-    createdAt: Date | string;
-    metadata?: any;
-    mediaAttachments?: {
-      id: string;
-      filename: string;
-      mimeType: string;
-      mediaUrl: string;
-      mediaSource: string;
-      size: number;
-    }[];
-  };
-
-  huelineId?: string;
-  prospectName?: string;
-  prospectId?: string;
-  isPending?: boolean;
-  isGroupStart?: boolean;
-  isGroupEnd?: boolean;
-}
+import { Type, ChatBubbleProps, Role } from "@/types/chat-types";
 
 const ROLE_CONFIG = {
   CLIENT: {
@@ -109,6 +69,7 @@ export function OwnerChatBubble({
   prospectId,
   isGroupStart = true,
   isGroupEnd = true,
+  onCancelFollowUp,
 }: ChatBubbleProps) {
   const time = new Date(msg.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
@@ -116,7 +77,7 @@ export function OwnerChatBubble({
   });
 
   if (msg.role === "SYSTEM") {
-    return <SystemActivityEvent msg={msg} />;
+    return <SystemActivityEvent msg={msg} onCancelFollowUp={onCancelFollowUp} />
   }
 
   const meta = ROLE_CONFIG[msg.role as keyof typeof ROLE_CONFIG];

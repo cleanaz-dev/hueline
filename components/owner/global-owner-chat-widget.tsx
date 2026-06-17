@@ -44,7 +44,6 @@ export function GlobalOwnerChatWidget() {
     isThreadsLoading,
   } = useOwner();
 
-
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -131,7 +130,6 @@ export function GlobalOwnerChatWidget() {
     .toUpperCase()
     .slice(0, 2);
 
-    
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">
       <AnimatePresence mode="wait">
@@ -200,7 +198,7 @@ export function GlobalOwnerChatWidget() {
                           phone: thread.customer?.phone ?? undefined,
                           email: thread.customer?.email ?? undefined,
                           isAutoPilot: thread.isAutoPilot,
-                          shortId: thread.shortId
+                          shortId: thread.shortId,
                         })
                       }
                       className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-xl cursor-pointer transition-colors"
@@ -392,6 +390,19 @@ export function GlobalOwnerChatWidget() {
                             isPending={msg.isPending}
                             isGroupStart={isGroupStart}
                             isGroupEnd={isGroupEnd}
+                            onCancelFollowUp={async (threadId) => {
+                              // Example cancellation logic:
+                              await fetch(
+                                `/api/subdomain/${subdomain.slug}/chat-threads/${threadId}/cancel-followup`,
+                                {
+                                  method: "POST",
+                                  body: JSON.stringify({ threadId }),
+                                },
+                              );
+
+                              // If you are using SWR for messages, revalidate here:
+                              // mutate(...)
+                            }}
                           />
                         );
                       })

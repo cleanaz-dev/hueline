@@ -15,6 +15,9 @@ import {
   ChevronRight,
   Clock,
   X,
+  Calendar,
+  CalendarX,
+  Bot
 } from "lucide-react";
 
 interface SystemEventMetadata {
@@ -168,10 +171,13 @@ const FollowUpMetadata = ({
 
   if (!meta?.triggerAt) return null;
 
-  const scheduledFor = new Date(meta.triggerAt).toLocaleString([], {
+  const triggerDate = new Date(meta.triggerAt);
+  const datePart = triggerDate.toLocaleDateString([], {
     weekday: "short",
     month: "short",
     day: "numeric",
+  });
+  const timePart = triggerDate.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -189,40 +195,64 @@ const FollowUpMetadata = ({
     }
   };
 
-  if (cancelled) {
-    return (
-      <div className="flex items-center gap-2 mt-2 p-3 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-zinc-100/80 dark:border-zinc-800/60">
-        <span className="text-[12px] text-zinc-400 dark:text-zinc-500 italic">
-          Follow-up cancelled
-        </span>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex items-center justify-between mt-2 p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30">
-      <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-600/70 dark:text-amber-500/70 mb-0.5">
-          Scheduled For
-        </span>
-        <span className="text-[13px] font-semibold text-amber-700 dark:text-amber-400">
-          {scheduledFor}
-        </span>
-      </div>
-      {onCancel && (
-        <button
-          onClick={handleCancel}
-          disabled={cancelling}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-zinc-900 text-red-500 border border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <X size={11} />
-          {cancelling ? "Cancelling..." : "Cancel"}
-        </button>
-      )}
+    <div className="mt-3 overflow-hidden">
+      <AnimatePresence mode="wait">
+        {cancelled ? (
+          <motion.div
+            key="cancelled"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800/80"
+          >
+            <CalendarX size={14} className="text-zinc-400" />
+            <span className="text-[12px] text-zinc-500 dark:text-zinc-400">
+              Scheduled follow-up was cancelled.
+            </span>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="active"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, height: 0 }}
+            className="relative flex items-center justify-between p-3.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm overflow-hidden"
+          >
+            {/* Pro enterprise accent strip on the left edge */}
+            <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500/80 dark:bg-amber-500/60" />
+
+            {/* Left side: Status & Time */}
+            <div className="flex items-center gap-3 pl-1">
+              <div className="flex items-center justify-center w-8 h-8 rounded-md bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 text-amber-600 dark:text-amber-500 shrink-0">
+                <Clock size={14} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
+                  Pending AI Follow-Up
+                </span>
+                <span className="text-[12px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  Scheduled for <strong className="font-medium text-zinc-700 dark:text-zinc-300">{datePart} at {timePart}</strong>
+                </span>
+              </div>
+            </div>
+
+            {/* Right side: Action Button */}
+            {onCancel && (
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors disabled:opacity-50 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 shrink-0"
+              >
+                <X size={13} strokeWidth={2.5} />
+                {cancelling ? "Cancelling..." : "Cancel"}
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
-
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEventProps) {
