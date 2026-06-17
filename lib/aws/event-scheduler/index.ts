@@ -44,7 +44,7 @@ export async function scheduleAWSFollowUp({
       `[EventBridge] 🕒 Scheduled AWS nudge: ${scheduleName} at ${formattedDate}`,
     );
 
-    return scheduleName; // Return this so Next.js can save it to Prisma
+    return {scheduleName}; // Return this so Next.js can save it to Prisma
   } catch (error) {
     console.error(
       `[EventBridge Error] Failed to schedule nudge for thread ${threadId}:`,

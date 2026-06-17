@@ -126,12 +126,20 @@ export async function handleHueClawCommunication({
       // Cancel any existing pending follow-up first
       await cancelPendingFollowUp(thread.id);
 
+      const { scheduleName } = await scheduleAWSFollowUp({
+        threadId: thread.id,
+        triggerAt,
+        slug: thread.subdomain.slug,
+        trigger: "nudge",
+      });
+
       await prisma.$transaction(async (tx) => {
         await tx.followUpSchedule.create({
           data: {
             title: "HueClaw Scheduled a follow up in 24hrs",
             triggerAt,
             reason,
+            scheduleName,
             status: "PENDING",
             chatThread: { connect: { id: thread.id } },
             customer: { connect: { id: thread.customerId } },
@@ -148,13 +156,6 @@ export async function handleHueClawCommunication({
             subdomain: { connect: { id: thread.subdomainId } },
           },
         });
-      });
-
-      await scheduleAWSFollowUp({
-        threadId: thread.id,
-        triggerAt,
-        slug: thread.subdomain.slug,
-        trigger: "nudge",
       });
 
       return { success: true };
