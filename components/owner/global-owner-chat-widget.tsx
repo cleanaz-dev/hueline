@@ -34,6 +34,7 @@ export function GlobalOwnerChatWidget() {
     sendSMS,
     isSendingSMS,
     sendEmail,
+    dialCustomer,
     isSendingEmail,
     openChat,
     closeChat,
@@ -109,17 +110,21 @@ export function GlobalOwnerChatWidget() {
 
   const handleSendMessage = async (
     message: string,
-    channel: "SMS" | "EMAIL",
+    channel: "SMS" | "EMAIL" | "DIAL",
     subject?: string,
   ) => {
     setTimeout(
       () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
       50,
     );
+
     const success =
       channel === "SMS"
         ? await sendSMS(customer!.id, customer!.threadId, message)
-        : await sendEmail(customer!.id, customer!.threadId, message, subject);
+        : channel === "EMAIL"
+          ? await sendEmail(customer!.id, customer!.threadId, message, subject)
+          : await dialCustomer(customer!.id, customer!.threadId);
+
     if (success) fetchMessages();
   };
 

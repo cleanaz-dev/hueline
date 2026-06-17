@@ -3,16 +3,36 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, MessageSquare, Mail, Loader2, X, Sparkles } from "lucide-react";
+import {
+  Send,
+  MessageSquare,
+  Mail,
+  Loader2,
+  X,
+  Sparkles,
+  PhoneCall,
+  Phone,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "../admin/prospects/rich-text-editor";
 import { AiActionDock } from "../admin/prospects/ai-action-dock";
 import { useOwner } from "@/context/owner-context";
 import { HueClawChatControls } from "./hueclaw/hueclaw-chat-controls";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface OwnerAdvancedChatInputProps {
   isLoading: boolean;
-  onSend: (message: string, channel: "SMS" | "EMAIL", subject?: string) => void;
+  onSend: (
+    message: string,
+    channel: "SMS" | "EMAIL" | "DIAL",
+    subject?: string,
+  ) => void;
   clientId?: string;
 }
 
@@ -21,15 +41,17 @@ export function OwnerAdvancedChatInput({
   onSend,
   isLoading,
 }: OwnerAdvancedChatInputProps) {
-  const { aiSuggestions, isAiLoading, activeThread, hueClawAi } = useOwner();
+  const { aiSuggestions, isAiLoading, activeThread, hueClawAi, isDialing } =
+    useOwner();
 
   const [text, setText] = useState("");
   const [subject, setSubject] = useState("");
-  const [channel, setChannel] = useState<"SMS" | "EMAIL">("SMS");
+  const [channel, setChannel] = useState<"SMS" | "EMAIL" | "DIAL">("SMS");
   const [isUndocked, setIsUndocked] = useState<boolean>(false);
   const [isAutoPilot, setIsAutoPilot] = useState<boolean>(
     activeThread?.isAutoPilot ?? false,
   );
+  const [customerPhoneNumber, setCustomerPhoneNumber] = useState<string>("");
 
   useEffect(() => {
     setIsAutoPilot(activeThread?.isAutoPilot ?? false);
@@ -39,8 +61,15 @@ export function OwnerAdvancedChatInput({
   //   clientId && aiSuggestions ? aiSuggestions[clientId] : null;
 
   const handleSend = () => {
+    // If dialing, bypass the text check
+    if (channel === "DIAL") {
+      onSend("", "DIAL"); // Pass empty string since there's no message text
+      return;
+    }
+
     const plainText = text.replace(/<[^>]*>?/gm, "").trim();
     if (!plainText) return;
+
     onSend(text, channel, channel === "EMAIL" ? subject : undefined);
     setText("");
     setSubject("");
@@ -54,7 +83,7 @@ export function OwnerAdvancedChatInput({
     }
   };
 
-  const handleSwitchChannel = (newChannel: "SMS" | "EMAIL") => {
+  const handleSwitchChannel = (newChannel: "SMS" | "EMAIL" | "DIAL") => {
     if (channel !== newChannel) {
       setChannel(newChannel);
       setText("");
@@ -63,8 +92,11 @@ export function OwnerAdvancedChatInput({
     }
   };
 
-  const isEmpty = !text.replace(/<[^>]*>?/gm, "").trim();
-
+  // Allow dialing even if text is empty, as long as a number exists
+  const isEmpty =
+    channel === "DIAL"
+      ? !customerPhoneNumber && !activeThread?.phone
+      : !text.replace(/<[^>]*>?/gm, "").trim();
 
   return (
     <>
@@ -217,9 +249,19 @@ export function OwnerAdvancedChatInput({
             >
               <Mail size={13} /> Email
             </button>
+            <button
+              onClick={() => handleSwitchChannel("DIAL")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 rounded-md text-xs font-medium transition-all h-full",
+                channel === "DIAL"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <PhoneCall size={13} /> Dial
+            </button>
           </div>
 
-          
           <HueClawChatControls
             isAutoPilot={isAutoPilot} // ✅ Read from your local state so the switch moves instantly!
             setIsAutoPilot={setIsAutoPilot}
@@ -260,7 +302,7 @@ export function OwnerAdvancedChatInput({
                   disabled={isLoading}
                 />
               </motion.div>
-            ) : (
+            ) : channel === "EMAIL" ? (
               <motion.div
                 key="email"
                 initial={{ opacity: 0 }}
@@ -292,6 +334,40 @@ export function OwnerAdvancedChatInput({
                   />
                 </div>
               </motion.div>
+            ) : (
+              <motion.div
+                key="dial"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="w-full min-h-20 max-h-50 p-3 flex flex-col justify-center gap-2"
+              >
+                <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <PhoneCall size={12} /> Select Phone Number
+                </span>
+                <Select
+                  value={customerPhoneNumber || activeThread?.phone || ""}
+                  onValueChange={(val) => setCustomerPhoneNumber(val)}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger className="w-full h-9 px-3 text-sm bg-transparent border border-zinc-200 dark:border-zinc-800 rounded-md focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer">
+                    <SelectValue placeholder="No phone numbers found" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeThread?.phone ? (
+                      <SelectItem value={activeThread.phone}>
+                        {activeThread.phone}
+                      </SelectItem>
+                    ) : (
+                      <SelectItem value="none" disabled>
+                        No phone numbers found
+                      </SelectItem>
+                    )}
+                    {/* You can map additional numbers here if needed in the future */}
+                  </SelectContent>
+                </Select>
+              </motion.div>
             )}
           </AnimatePresence>
 
@@ -302,19 +378,25 @@ export function OwnerAdvancedChatInput({
             {/* Docked send button */}
             <Button
               onClick={handleSend}
-              disabled={isEmpty || isLoading}
+              disabled={isEmpty || isLoading || isDialing}
               size="sm"
               className="h-8 gap-2 rounded-lg"
             >
               {isLoading ? (
                 <>
                   <Loader2 size={14} className="animate-spin" />
-                  <span>Sending...</span>
+                  <span>
+                    {channel === "DIAL" ? "Dialing..." : "Sending..."}
+                  </span>
                 </>
               ) : (
                 <>
-                  <span>Send</span>
-                  <Send size={14} />
+                  <span>{channel === "DIAL" ? "Dial" : "Send"}</span>
+                  {channel === "DIAL" ? (
+                    <Phone size={14} />
+                  ) : (
+                    <Send size={14} />
+                  )}
                 </>
               )}
             </Button>
