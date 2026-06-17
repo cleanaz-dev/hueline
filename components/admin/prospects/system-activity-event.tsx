@@ -40,6 +40,7 @@ interface SystemEventMetadata {
   recordingUrl?: string;
   demoUrl?: string;
   // Follow-up specific
+  reason?: string; // <-- Added reason here
   triggerAt?: string | Date;
   scheduleName?: string;
   status?: string;
@@ -216,21 +217,29 @@ const FollowUpMetadata = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, height: 0 }}
-            className="relative flex items-center justify-between p-3.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm overflow-hidden"
+            className="relative flex items-start justify-between p-3.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm overflow-hidden"
           >
             {/* Pro enterprise accent strip on the left edge */}
             <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500/80 dark:bg-amber-500/60" />
 
-            {/* Left side: Status & Time */}
-            <div className="flex items-center gap-3 pl-1">
-              <div className="flex items-center justify-center w-8 h-8 rounded-md bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 text-amber-600 dark:text-amber-500 shrink-0">
+            {/* Left side: Status & Reason & Time */}
+            <div className="flex items-start gap-3 pl-1 flex-1 pr-4">
+              <div className="flex items-center justify-center w-8 h-8 rounded-md bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5">
                 <Clock size={14} strokeWidth={2.5} />
               </div>
               <div className="flex flex-col">
                 <span className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
                   Pending AI Follow-Up
                 </span>
-                <span className="text-[12px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                
+                {/* ─── RENDER REASON HERE ─── */}
+                {meta.reason && (
+                  <p className="text-[12px] text-zinc-700 dark:text-zinc-300 mt-1 leading-relaxed">
+                    <span className="font-medium text-zinc-500 dark:text-zinc-400">Reason:</span> {meta.reason}
+                  </p>
+                )}
+                
+                <span className="text-[12px] text-zinc-500 dark:text-zinc-400 mt-1.5">
                   Scheduled for <strong className="font-medium text-zinc-700 dark:text-zinc-300">{datePart} at {timePart}</strong>
                 </span>
               </div>
@@ -241,7 +250,7 @@ const FollowUpMetadata = ({
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors disabled:opacity-50 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors disabled:opacity-50 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 shrink-0 mt-0.5"
               >
                 <X size={13} strokeWidth={2.5} />
                 {cancelling ? "Cancelling..." : "Cancel"}
@@ -253,6 +262,7 @@ const FollowUpMetadata = ({
     </div>
   );
 };
+
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEventProps) {
@@ -371,8 +381,9 @@ export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEve
               className="overflow-hidden"
             >
               <div className="pl-[44px] pr-4 sm:pr-8 pb-4 pt-1">
-                {msg.description && (
-                  <p className="text-[12px] text-zinc-500 dark:text-zinc-400 leading-relaxed mb-1">
+                {/* Only show the description if it's strictly not a follow up, since we cover everything in the follow up card now */}
+                {msg.description && !isFollowUp && (
+                  <p className="text-[12px] text-zinc-500 dark:text-zinc-400 leading-relaxed mb-1 ">
                     {msg.description}
                   </p>
                 )}

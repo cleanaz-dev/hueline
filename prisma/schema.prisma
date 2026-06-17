@@ -307,6 +307,7 @@ model Subdomain {
 
 model FollowUpSchedule {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  title        String?
   triggerAt    DateTime
   reason       String // e.g., "Customer said they are busy, checking back tomorrow"
   status       String   @default("PENDING") // PENDING, COMPLETED, CANCELLED

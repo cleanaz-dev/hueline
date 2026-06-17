@@ -129,6 +129,7 @@ export async function handleHueClawCommunication({
       await prisma.$transaction(async (tx) => {
         await tx.followUpSchedule.create({
           data: {
+            title: "HueClaw Scheduled a follow up in 24hrs",
             triggerAt,
             reason,
             status: "PENDING",

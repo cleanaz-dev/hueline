@@ -110,9 +110,10 @@ export async function GET(
             role: "SYSTEM",
             type: "FOLLOW_UP",
             activityType: "FOLLOW_UP",
-            body: followUp.reason,
+            body: followUp.title,
             description: `Follow-up scheduled for ${followUp.triggerAt.toISOString()}`,
             metadata: {
+              reason: followUp.reason,
               scheduleName: followUp.scheduleName,
               triggerAt: followUp.triggerAt,
               status: followUp.status,
