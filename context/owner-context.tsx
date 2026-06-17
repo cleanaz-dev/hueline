@@ -55,7 +55,10 @@ interface OwnerContextValue {
   chatThreads: ChatThreadModel[];
   isThreadsLoading: boolean;
   refreshThreads: () => void;
-
+  dialCustomer: (
+    customerId: string,
+    threadId: string
+  ) => Promise<void>
   addCustomer: (
     customerName: string,
     customerPhone: string,
@@ -79,6 +82,7 @@ interface OwnerContextValue {
   refreshUsers: () => void;
   isSendingSMS: boolean;
   isSendingEmail: boolean;
+  isDialing: boolean;
   isAiLoading: boolean;
   isGeneratingImage: boolean;
   isAddingCustomer: boolean;
@@ -182,6 +186,7 @@ export function OwnerProvider({
   const [inviteMemberDialogOpen, setInviteMemberDialogOpen] = useState(false);
   const [reportTaskDialogOpen, setReportTaskDialogOpen] = useState(false);
   const [isReportingTask, setIsReportingTask] = useState(false);
+  const [isDialing, setIsDialing] = useState(false)
 
   const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
@@ -270,6 +275,22 @@ export function OwnerProvider({
       setIsAiLoading(false);
     }
   };
+
+  const dialCustomer = async (customerId:string,threadId:string): Promise<void> => {
+    //setIsDialing(true) or set Redis ResourceLock 
+    try {
+      const res = await fetch(
+        `/api/subdomain/${subdomain.slug}/customers/${customerId}/dial`
+      )
+
+      if(!res.ok) {
+        // release resourcelock
+      }
+    } finally {
+      // release resourceLock
+      // mutate chat thread possibly
+    }
+  }
 
 
   const hueClawAi = async (
@@ -389,7 +410,7 @@ export function OwnerProvider({
         isUsersLoading,
         customers: customersData?.customers,
         isCustomersLoading,
-
+        dialCustomer,
         // 4. NEW THREAD LOGIC: Provide Threads
         chatThreads: threadsData?.threads ?? [],
         isThreadsLoading,
@@ -410,6 +431,7 @@ export function OwnerProvider({
         isReportingTask,
         isSendingSMS,
         isSendingEmail,
+        isDialing,
         isAiLoading,
         isGeneratingImage,
         isAddingCustomer,
