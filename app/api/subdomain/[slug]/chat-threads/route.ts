@@ -50,7 +50,7 @@ export async function GET(req: Request, { params }: Params) {
       take: 20, // Optional: Limit to recent 20 threads for performance
     });
 
-    console.log("Threads:", chatThreads)
+    
 
     // Return inside a "threads" object so it matches SWR expecting { threads: [] }
     return NextResponse.json({ threads: chatThreads });

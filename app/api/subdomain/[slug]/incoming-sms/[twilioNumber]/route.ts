@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getRedisClient } from "@/lib/redis";
 import { twilioClient } from "@/lib/twilio/config";
 import axios from "axios";
+import { cancelPendingFollowUp } from "@/lib/aws/event-scheduler/cancel-followups";
 
 interface Params {
   params: Promise<{ slug: string; twilioNumber: string }>;
@@ -126,6 +127,8 @@ export async function POST(req: Request, { params }: Params) {
     if (thread.isAutoPilot) {
       const delay = Math.floor(Math.random() * 3000) + 2000;
       await new Promise((resolve) => setTimeout(resolve, delay));
+
+      await cancelPendingFollowUp(thread.id)
 
       await axios.post(
         `${process.env.NEXT_PUBLIC_APP_URL}/api/subdomain/${slug}/hue-claw/${thread.id}/nudge`,

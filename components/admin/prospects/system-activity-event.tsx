@@ -17,8 +17,11 @@ import {
   X,
   Calendar,
   CalendarX,
-  Bot
+  Bot,
+  Info,
+  CalendarClock,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SystemEventMetadata {
   callSummary?: string;
@@ -65,20 +68,35 @@ interface SystemActivityEventProps {
 const getActivityDesign = (type?: string, activityType?: string) => {
   const combinedType = `${type || ""} ${activityType || ""}`.toUpperCase();
 
-  let design = { Icon: Activity, iconColor: "text-zinc-400 dark:text-zinc-500" };
+  let design = {
+    Icon: Activity,
+    iconColor: "text-zinc-400 dark:text-zinc-500",
+  };
 
   if (combinedType.includes("FOLLOW_UP"))
-    design = { Icon: Clock, iconColor: "text-amber-500 dark:text-amber-400" };
+    design = {
+      Icon: CalendarClock,
+      iconColor: "text-amber-500 dark:text-amber-400",
+    };
   else if (combinedType.includes("CALL"))
     design = { Icon: Phone, iconColor: "text-blue-500 dark:text-blue-400" };
   else if (combinedType.includes("PAID") || combinedType.includes("PAYMENT"))
-    design = { Icon: CreditCard, iconColor: "text-emerald-500 dark:text-emerald-400" };
+    design = {
+      Icon: CreditCard,
+      iconColor: "text-emerald-500 dark:text-emerald-400",
+    };
   else if (combinedType.includes("FORM") || combinedType.includes("INTAKE"))
-    design = { Icon: FileText, iconColor: "text-orange-500 dark:text-orange-400" };
+    design = {
+      Icon: FileText,
+      iconColor: "text-orange-500 dark:text-orange-400",
+    };
   else if (combinedType.includes("EMAIL"))
     design = { Icon: Mail, iconColor: "text-purple-500 dark:text-purple-400" };
   else if (combinedType.includes("DEMO"))
-    design = { Icon: PlaySquare, iconColor: "text-pink-500 dark:text-pink-400" };
+    design = {
+      Icon: PlaySquare,
+      iconColor: "text-pink-500 dark:text-pink-400",
+    };
   else if (combinedType.includes("LINK") || combinedType.includes("SUBDOMAIN"))
     design = { Icon: Globe, iconColor: "text-indigo-500 dark:text-indigo-400" };
   else if (
@@ -86,7 +104,10 @@ const getActivityDesign = (type?: string, activityType?: string) => {
     combinedType.includes("STARTED") ||
     combinedType.includes("APPROVED")
   )
-    design = { Icon: CheckCircle2, iconColor: "text-green-500 dark:text-green-400" };
+    design = {
+      Icon: CheckCircle2,
+      iconColor: "text-green-500 dark:text-green-400",
+    };
 
   return design;
 };
@@ -105,7 +126,9 @@ const CallMetadata = ({ meta }: { meta: SystemEventMetadata }) => {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-medium text-zinc-500 pt-1">
         {meta.duration && <span>⏱ {meta.duration}s</span>}
         {meta.estimatedValue != null && (
-          <span className="text-zinc-800 dark:text-zinc-200">Est: ${meta.estimatedValue}</span>
+          <span className="text-zinc-800 dark:text-zinc-200">
+            Est: ${meta.estimatedValue}
+          </span>
         )}
         {meta.callReason && <span>#{meta.callReason.toLowerCase()}</span>}
       </div>
@@ -225,37 +248,42 @@ const FollowUpMetadata = ({
             {/* Left side: Status & Reason & Time */}
             <div className="flex items-start gap-3 pl-1 flex-1 pr-4">
               <div className="flex items-center justify-center w-8 h-8 rounded-md bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5">
-                <Clock size={14} strokeWidth={2.5} />
+                <Info size={14} strokeWidth={2.5} />
               </div>
               <div className="flex flex-col">
-                <span className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
-                  Pending AI Follow-Up
-                </span>
-                
                 {/* ─── RENDER REASON HERE ─── */}
                 {meta.reason && (
-                  <p className="text-[12px] text-zinc-700 dark:text-zinc-300 mt-1 leading-relaxed">
-                    <span className="font-medium text-zinc-500 dark:text-zinc-400">Reason:</span> {meta.reason}
-                  </p>
+                  <div className="text-sm text-zinc-700 dark:text-zinc-300 mt-1 leading-relaxed">
+                    <p className="text-[10px] font-bold text-zinc-900 dark:text-zinc-400 tracking-wide">
+                      REASON
+                    </p>{" "}
+                    <p>{meta.reason}</p>
+                  </div>
                 )}
-                
-                <span className="text-[12px] text-zinc-500 dark:text-zinc-400 mt-1.5">
-                  Scheduled for <strong className="font-medium text-zinc-700 dark:text-zinc-300">{datePart} at {timePart}</strong>
-                </span>
+                <div className="flex justify-between mt-0.5">
+                  <div className="text-[12px] text-zinc-500 dark:text-zinc-400 mt-auto">
+                    Scheduled for{" "}
+                    <strong className="font-medium text-zinc-700 dark:text-zinc-300">
+                      {datePart} at {timePart}
+                    </strong>
+                  </div>
+                  {onCancel && (
+                    <Button
+                      onClick={handleCancel}
+                      disabled={cancelling}
+                      className="flex items-center gap-1.5 text-[12px]"
+                      variant="ghost"
+                      size="sm"
+                    >
+                      <X size={13} strokeWidth={2.5} />
+                      {cancelling ? "Cancelling..." : "Cancel"}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Right side: Action Button */}
-            {onCancel && (
-              <button
-                onClick={handleCancel}
-                disabled={cancelling}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors disabled:opacity-50 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 shrink-0 mt-0.5"
-              >
-                <X size={13} strokeWidth={2.5} />
-                {cancelling ? "Cancelling..." : "Cancel"}
-              </button>
-            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -265,7 +293,10 @@ const FollowUpMetadata = ({
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
-export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEventProps) {
+export function SystemActivityEvent({
+  msg,
+  onCancelFollowUp,
+}: SystemActivityEventProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const time = new Date(msg.createdAt).toLocaleTimeString([], {
@@ -277,7 +308,8 @@ export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEve
   const { Icon, iconColor } = getActivityDesign(msg.type, msg.activityType);
   const hasExpandableContent = msg.description || msg.metadata;
 
-  const isFollowUp = msg.type === "FOLLOW_UP" || msg.activityType === "FOLLOW_UP";
+  const isFollowUp =
+    msg.type === "FOLLOW_UP" || msg.activityType === "FOLLOW_UP";
 
   const springConfig = { type: "spring" as const, bounce: 0.15, duration: 0.5 };
 
@@ -320,7 +352,11 @@ export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEve
             transition={springConfig}
             className="flex items-center gap-3 min-w-0 flex-1"
           >
-            <Icon size={14} strokeWidth={2.5} className={`shrink-0 ${iconColor}`} />
+            <Icon
+              size={14}
+              strokeWidth={2.5}
+              className={`shrink-0 ${iconColor}`}
+            />
             <span
               className={`text-[13px] font-medium truncate transition-colors duration-300 ${
                 isExpanded
@@ -334,16 +370,6 @@ export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEve
                   ${msg.metadata.amount}
                 </span>
               )}
-              {isFollowUp && msg.metadata?.triggerAt && !isExpanded && (
-                <span className="ml-2 text-amber-500 dark:text-amber-400 font-medium text-[11px]">
-                  {new Date(msg.metadata.triggerAt).toLocaleDateString([], {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              )}
             </span>
           </motion.div>
 
@@ -352,7 +378,9 @@ export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEve
             transition={springConfig}
             className="flex items-center justify-end gap-3 pl-2 shrink-0"
           >
-            <span className="text-[11px] font-medium text-zinc-400 shrink-0">{time}</span>
+            <span className="text-[11px] font-medium text-zinc-400 shrink-0">
+              {time}
+            </span>
             {hasExpandableContent ? (
               <motion.div
                 animate={{ rotate: isExpanded ? 90 : 0 }}
@@ -361,7 +389,9 @@ export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEve
               >
                 <ChevronRight
                   size={14}
-                  className={isExpanded ? "text-zinc-700 dark:text-zinc-300" : ""}
+                  className={
+                    isExpanded ? "text-zinc-700 dark:text-zinc-300" : ""
+                  }
                 />
               </motion.div>
             ) : (
@@ -400,13 +430,15 @@ export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEve
                     {(msg.type === "CALL" || msg.metadata.callSummary) && (
                       <CallMetadata meta={msg.metadata} />
                     )}
-                    {(msg.metadata.amount != null || msg.metadata.stripePaymentIntentId) && (
+                    {(msg.metadata.amount != null ||
+                      msg.metadata.stripePaymentIntentId) && (
                       <PaymentMetadata meta={msg.metadata} />
                     )}
                     {(msg.metadata.rooms?.length || msg.metadata.sqft) && (
                       <FormMetadata meta={msg.metadata} />
                     )}
-                    {(msg.metadata?.actionUrl || msg.metadata?.recordingUrl) && (
+                    {(msg.metadata?.actionUrl ||
+                      msg.metadata?.recordingUrl) && (
                       <div className="flex items-center gap-2 mt-3">
                         {msg.metadata.recordingUrl && (
                           <a
@@ -415,7 +447,8 @@ export function SystemActivityEvent({ msg, onCancelFollowUp }: SystemActivityEve
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors shadow-sm"
                           >
-                            <PlaySquare size={12} className={iconColor} /> Play Audio
+                            <PlaySquare size={12} className={iconColor} /> Play
+                            Audio
                           </a>
                         )}
                         {msg.metadata.actionUrl && (

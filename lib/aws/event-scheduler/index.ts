@@ -33,7 +33,7 @@ export async function scheduleAWSFollowUp({
       ScheduleExpression: `at(${formattedDate})`,
       Target: {
         RoleArn: process.env.AWS_EVENTBRIDGE_ROLE_ARN!, // Role that allows Scheduler -> Lambda
-        Arn: process.env.AWS_HUECLAW_FOLLOWUP_LAMBDA_ARN!, 
+        Arn: process.env.AWS_HUECLAW_FOLLOWUP_LAMBDA_ARN!,
         Input: JSON.stringify({ threadId, slug, trigger }),
       },
       ActionAfterCompletion: "DELETE",
@@ -44,7 +44,7 @@ export async function scheduleAWSFollowUp({
       `[EventBridge] 🕒 Scheduled AWS nudge: ${scheduleName} at ${formattedDate}`,
     );
 
-    return {scheduleName}; // Return this so Next.js can save it to Prisma
+    return { scheduleName }; // Return this so Next.js can save it to Prisma
   } catch (error) {
     console.error(
       `[EventBridge Error] Failed to schedule nudge for thread ${threadId}:`,
