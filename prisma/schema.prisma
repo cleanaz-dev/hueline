@@ -29,6 +29,7 @@ model SubdomainUser {
   clientCommunications ClientCommunication[]
   systemTasks          SystemTask[]
   designProjects       DesignProject[]
+  outboundCalls        OutboundCall[]
 }
 
 model DesignProject {
@@ -224,6 +225,7 @@ model ChatThread {
   updatedAt         DateTime           @updatedAt // Push to top of UI when new message arrives
   bookingData       SubBookingData[]
   followUpSchedules FollowUpSchedule[]
+  outboundCalls     OutboundCall[]
 }
 
 model ClientActivity {
@@ -304,6 +306,7 @@ model Subdomain {
   branding          Branding?
   quotes            Quote[]
   followUpSchedules FollowUpSchedule[]
+  outboundCalls     OutboundCall[]
 }
 
 model FollowUpSchedule {
@@ -515,6 +518,7 @@ model Customer {
   chatThreads       ChatThread[]
   quotes            Quote[]
   followUpSchedules FollowUpSchedule[]
+  outboundCalls     OutboundCall[]
 }
 
 enum CustomerType {
@@ -724,6 +728,28 @@ model Call {
   @@index([bookingDataId])
 }
 
+model OutboundCall {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  subdomain   Subdomain  @relation(fields: [subdomainId], references: [id])
+  subdomainId String    @db.ObjectId
+  customer    Customer?   @relation(fields: [customerId], references: [id])
+  customerId  String?     @db.ObjectId
+  thread      ChatThread @relation(fields: [threadId], references: [id])
+  threadId    String     @db.ObjectId
+  audioUrl    String?
+  roomName    String?    @unique
+
+  callType String?
+
+  operator           SubdomainUser?    @relation(fields: [subdomainUserId], references: [id])
+  subdomainUserId    String?           @db.ObjectId
+  intelligence       CallIntelligence? @relation(fields: [callIntelligenceId], references: [id])
+  callIntelligenceId String?           @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model CallIntelligence {
   id                       String       @id @default(auto()) @map("_id") @db.ObjectId
   callId                   String       @unique @db.ObjectId
@@ -739,8 +765,9 @@ model CallIntelligence {
   transcriptText String?
   callSummary    String? // AI-generated summary
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  outboundCalls OutboundCall[]
 
   @@index([callReason])
   @@index([callOutcome])
