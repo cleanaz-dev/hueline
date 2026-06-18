@@ -2,9 +2,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { RoomServiceClient, SipClient } from "livekit-server-sdk";
+import { AgentDispatchClient, RoomServiceClient, SipClient } from "livekit-server-sdk";
 import { setAgentContext } from "@/lib/redis/agent-context";
-// import redis from "@/lib/redis";
 
 interface Params {
   params: Promise<{
@@ -92,7 +91,7 @@ export async function POST(req: Request, { params }: Params) {
     // 3. Unique room name
     const roomName = `call-${isUserValid.subdomain.slug}-${threadId}-${Date.now()}`;
 
-    // 4. (Optional) stash full context in Redis so agent can hydrate itself
+    // 4. Stash full context in Redis so agent can hydrate itself
     await setAgentContext(roomName, agentContextPayload);
 
     // 5. LiveKit clients
@@ -106,17 +105,21 @@ export async function POST(req: Request, { params }: Params) {
       process.env.LIVEKIT_API_KEY!,
       process.env.LIVEKIT_API_SECRET!,
     );
+    const agentDispatchClient = new AgentDispatchClient(
+      process.env.LIVEKIT_URL!,
+      process.env.LIVEKIT_API_KEY!,
+      process.env.LIVEKIT_API_SECRET!,
+    );
 
     // 6. Create the room — callType + operatorNumber BOTH live in metadata now
-    //    The agent reads this on room start and decides whether to bridge operator in.
     await roomClient.createRoom({
       name: roomName,
       emptyTimeout: 10 * 60,
       metadata: JSON.stringify({
         customerId,
         threadId,
-        callType, // <-- single source of truth for routing
-        operatorNumber, // <-- agent dials this itself if callType requires it
+        callType,
+        operatorNumber,
         operatorName: isUserValid.name,
         operatorId: isUserValid.id,
         agentMode: "sales",
@@ -124,10 +127,10 @@ export async function POST(req: Request, { params }: Params) {
       }),
     });
 
-    // 7. ONE dispatch only — dial the customer into the room.
-    //    The AI agent (already running / dispatched by LiveKit's agent service)
-    //    will join automatically and, based on `callType` in metadata, optionally
-    //    bridge the operator via SIP.
+    // 6.5. Explicitly dispatch the "outbound_agent" worker to this room
+    await agentDispatchClient.createDispatch(roomName, "outbound_agent");
+
+    // 7. Dial the customer into the room
     await sipClient.createSipParticipant(
       process.env.LIVEKIT_SIP_TRUNK_ID!,
       customerNumber,
