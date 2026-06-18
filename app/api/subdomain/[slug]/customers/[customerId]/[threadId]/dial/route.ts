@@ -2,7 +2,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { AgentDispatchClient, RoomServiceClient, SipClient } from "livekit-server-sdk";
+import { AgentDispatchClient, RoomServiceClient } from "livekit-server-sdk";
 import { setAgentContext } from "@/lib/redis/agent-context";
 
 interface Params {
@@ -100,18 +100,13 @@ export async function POST(req: Request, { params }: Params) {
       process.env.LIVEKIT_API_KEY!,
       process.env.LIVEKIT_API_SECRET!,
     );
-    const sipClient = new SipClient(
-      process.env.LIVEKIT_URL!,
-      process.env.LIVEKIT_API_KEY!,
-      process.env.LIVEKIT_API_SECRET!,
-    );
     const agentDispatchClient = new AgentDispatchClient(
       process.env.LIVEKIT_URL!,
       process.env.LIVEKIT_API_KEY!,
       process.env.LIVEKIT_API_SECRET!,
     );
 
-    // 6. Create the room — callType + operatorNumber BOTH live in metadata now
+    // 6. Create the room — pass everything the agent needs in metadata
     await roomClient.createRoom({
       name: roomName,
       emptyTimeout: 10 * 60,
@@ -122,29 +117,21 @@ export async function POST(req: Request, { params }: Params) {
         operatorNumber,
         operatorName: isUserValid.name,
         operatorId: isUserValid.id,
+        customerNumber,                     // ✅ agent dials this
+        customerName: thread.customer.name, // ✅ agent uses this
         agentMode: "sales",
         hasRedisContext: true,
       }),
     });
 
-    // 6.5. Explicitly dispatch the "outbound_agent" worker to this room
+    // 7. Dispatch the agent — it handles all dialing from here
     await agentDispatchClient.createDispatch(roomName, "telephony_agent");
-
-    // 7. Dial the customer into the room
-    await sipClient.createSipParticipant(
-      process.env.LIVEKIT_SIP_TRUNK_ID!,
-      customerNumber,
-      roomName,
-      {
-        participantIdentity: `customer-${customerId}`,
-        participantName: thread.customer.name!,
-      },
-    );
 
     return NextResponse.json(
       { message: "LiveKit Dispatch Successful", roomName },
       { status: 200 },
     );
+
   } catch (error) {
     console.error("LiveKit Dispatch Error:", error);
     return NextResponse.json(
