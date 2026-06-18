@@ -128,7 +128,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     // 6.5. Explicitly dispatch the "outbound_agent" worker to this room
-    await agentDispatchClient.createDispatch(roomName, "outbound_agent");
+    await agentDispatchClient.createDispatch(roomName, "telephony_agent");
 
     // 7. Dial the customer into the room
     await sipClient.createSipParticipant(
