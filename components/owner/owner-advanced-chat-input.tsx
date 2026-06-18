@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DialChannelInput } from "./dial-input-channel";
 
 interface OwnerAdvancedChatInputProps {
   isLoading: boolean;
@@ -32,6 +33,8 @@ interface OwnerAdvancedChatInputProps {
     message: string,
     channel: "SMS" | "EMAIL" | "DIAL",
     subject?: string,
+    customerPhone?: string, // <-- Add this
+    operatorPhone?: string  // <-- Add this
   ) => void;
   clientId?: string;
 }
@@ -41,8 +44,15 @@ export function OwnerAdvancedChatInput({
   onSend,
   isLoading,
 }: OwnerAdvancedChatInputProps) {
-  const { aiSuggestions, isAiLoading, activeThread, hueClawAi, isDialing } =
-    useOwner();
+  const {
+    aiSuggestions,
+    isAiLoading,
+    activeThread,
+    hueClawAi,
+    isDialing,
+    me,
+    isMeLoading,
+  } = useOwner();
 
   const [text, setText] = useState("");
   const [subject, setSubject] = useState("");
@@ -52,25 +62,41 @@ export function OwnerAdvancedChatInput({
     activeThread?.isAutoPilot ?? false,
   );
   const [customerPhoneNumber, setCustomerPhoneNumber] = useState<string>("");
+  const [operatorNumber, setOperatorNumber] = useState<string>(me?.phone ?? "")
 
   useEffect(() => {
     setIsAutoPilot(activeThread?.isAutoPilot ?? false);
   }, [activeThread?.isAutoPilot]);
 
+   useEffect(() => {
+    if (me?.phone && !operatorNumber) {
+      setOperatorNumber(me.phone);
+    }
+  }, [me?.phone, operatorNumber]);
+
   // const currentSuggestion =
   //   clientId && aiSuggestions ? aiSuggestions[clientId] : null;
 
-  const handleSend = () => {
+const handleSend = () => {
     // If dialing, bypass the text check
     if (channel === "DIAL") {
-      onSend("", "DIAL"); // Pass empty string since there's no message text
+      // Pass the new variables here!
+      onSend("", "DIAL", undefined, customerPhoneNumber, operatorNumber); 
       return;
     }
 
     const plainText = text.replace(/<[^>]*>?/gm, "").trim();
     if (!plainText) return;
 
-    onSend(text, channel, channel === "EMAIL" ? subject : undefined);
+    // You can pass them here too just so the arguments line up
+    onSend(
+      text, 
+      channel, 
+      channel === "EMAIL" ? subject : undefined, 
+      customerPhoneNumber, 
+      operatorNumber
+    );
+    
     setText("");
     setSubject("");
     setIsUndocked(false);
@@ -335,39 +361,15 @@ export function OwnerAdvancedChatInput({
                 </div>
               </motion.div>
             ) : (
-              <motion.div
+              <DialChannelInput
                 key="dial"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="w-full min-h-20 max-h-50 p-3 flex flex-col justify-center gap-2"
-              >
-                <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <PhoneCall size={12} /> Select Phone Number
-                </span>
-                <Select
-                  value={customerPhoneNumber || activeThread?.phone || ""}
-                  onValueChange={(val) => setCustomerPhoneNumber(val)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger className="w-full h-9 px-3 text-sm bg-transparent border border-zinc-200 dark:border-zinc-800 rounded-md focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer">
-                    <SelectValue placeholder="No phone numbers found" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {activeThread?.phone ? (
-                      <SelectItem value={activeThread.phone}>
-                        {activeThread.phone}
-                      </SelectItem>
-                    ) : (
-                      <SelectItem value="none" disabled>
-                        No phone numbers found
-                      </SelectItem>
-                    )}
-                    {/* You can map additional numbers here if needed in the future */}
-                  </SelectContent>
-                </Select>
-              </motion.div>
+                customerPhoneNumber={customerPhoneNumber}
+                setCustomerPhoneNumber={setCustomerPhoneNumber}
+                activeThreadPhone={activeThread?.phone}
+                isLoading={isLoading}
+                operatorNumber={operatorNumber}
+                setOperatorNumber={setOperatorNumber}
+              />
             )}
           </AnimatePresence>
 

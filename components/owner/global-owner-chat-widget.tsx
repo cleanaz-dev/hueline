@@ -40,7 +40,7 @@ export function GlobalOwnerChatWidget() {
     closeChat,
     toggleMinimize,
     openChatList,
-    // 1. NEW THREAD LOGIC: Pull in threads instead of globalProspects
+    me,
     chatThreads,
     isThreadsLoading,
   } = useOwner();
@@ -108,10 +108,12 @@ export function GlobalOwnerChatWidget() {
     prevMessageCount.current = combinedMessages.length;
   }, [combinedMessages.length, chatWindowState]);
 
-  const handleSendMessage = async (
+ const handleSendMessage = async (
     message: string,
     channel: "SMS" | "EMAIL" | "DIAL",
     subject?: string,
+    customerPhone?: string,
+    operatorPhone?: string
   ) => {
     setTimeout(
       () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
@@ -123,10 +125,17 @@ export function GlobalOwnerChatWidget() {
         ? await sendSMS(customer!.id, customer!.threadId, message)
         : channel === "EMAIL"
           ? await sendEmail(customer!.id, customer!.threadId, message, subject)
-          : await dialCustomer(customer!.id, customer!.threadId);
+          : await dialCustomer(
+              customer!.id, 
+              customer!.threadId, 
+              customerPhone || customer?.phone!, 
+              "AI_CONFERENCE", // <-- Pass your desired callType string here
+              operatorPhone || me?.phone!
+            );
 
     if (success) fetchMessages();
   };
+
 
   const initials = customer?.name
     ?.split(" ")

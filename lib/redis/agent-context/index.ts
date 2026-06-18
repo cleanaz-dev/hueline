@@ -1,0 +1,84 @@
+// lib/redis/agent-context/index.ts
+
+import { Redis } from "@upstash/redis";
+
+// Initialize the Upstash Redis client
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+// Define the shape of your context payload (adjust types as needed)
+export interface AgentContextMessage {
+  role: string;
+  content: string;
+  date: string | Date;
+}
+
+export interface AgentContextPayload {
+  customer: {
+    name: string | null;
+    email: string | null;
+    phone: string;
+  };
+  operator: {
+    name: string | null;
+    phone: string;
+    id: string;
+  };
+  recentMessages: AgentContextMessage[];
+  quotes: any[]; // Replace `any[]` with your actual Prisma Quote type
+  paintColors: any[]; // Replace `any[]` with your actual Prisma PaintColor type
+}
+
+// Helper to generate consistent keys
+const getContextKey = (roomName: string) => `agent_context:${roomName}`;
+
+/**
+ * Saves the agent context to Redis with a 1-hour TTL.
+ * The AI Agent will fetch this when it spins up in the LiveKit room.
+ */
+export async function setAgentContext(
+  roomName: string,
+  payload: AgentContextPayload
+): Promise<void> {
+  const key = getContextKey(roomName);
+  try {
+    // Upstash automatically JSON.stringifies objects!
+    // ex: 3600 sets the expiration to 1 hour (in seconds)
+    await redis.set(key, payload, { ex: 3600 });
+  } catch (error) {
+    console.error(`[Redis] Failed to set agent context for ${roomName}:`, error);
+    throw error; // Let the API route catch it
+  }
+}
+
+/**
+ * Retrieves the agent context from Redis.
+ */
+export async function getAgentContext(
+  roomName: string
+): Promise<AgentContextPayload | null> {
+  const key = getContextKey(roomName);
+  try {
+    // Upstash automatically parses JSON back to an object
+    const data = await redis.get<AgentContextPayload>(key);
+    return data;
+  } catch (error) {
+    console.error(`[Redis] Failed to get agent context for ${roomName}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Deletes the agent context manually (e.g., when the call ends early).
+ */
+export async function deleteAgentContext(roomName: string): Promise<void> {
+  const key = getContextKey(roomName);
+  try {
+    await redis.del(key);
+  } catch (error) {
+    console.error(`[Redis] Failed to delete agent context for ${roomName}:`, error);
+  }
+}
+

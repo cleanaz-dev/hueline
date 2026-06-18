@@ -18,6 +18,7 @@ model SubdomainUser {
   passwordHash String
   imageUrl     String?
   role         String  @default("MEMBER")
+  phone        String?
 
   subdomainId String    @db.ObjectId
   subdomain   Subdomain @relation(fields: [subdomainId], references: [id])

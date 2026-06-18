@@ -23,13 +23,13 @@ export interface ChatThreadModel {
 }
 
 interface CustomerChat {
-  id: string; 
+  id: string;
   name: string;
   phone?: string;
   email?: string;
   isAutoPilot: boolean;
   threadId: string;
-  shortId: string; 
+  shortId: string;
   [key: string]: any;
 }
 
@@ -57,8 +57,11 @@ interface OwnerContextValue {
   refreshThreads: () => void;
   dialCustomer: (
     customerId: string,
-    threadId: string
-  ) => Promise<void>
+    threadId: string,
+    customerNumber: string,
+    callType: string,
+    operatorNumber?: string,
+  ) => Promise<boolean>;
   addCustomer: (
     customerName: string,
     customerPhone: string,
@@ -117,7 +120,11 @@ interface OwnerContextValue {
   toggleMinimize: () => void;
   openChatList: () => void;
   globalProspects: Customer[];
-  hueClawAi: (customerId: string, threadId: string, trigger: string) => Promise<void>
+  hueClawAi: (
+    customerId: string,
+    threadId: string,
+    trigger: string,
+  ) => Promise<void>;
 }
 
 const OwnerContext = createContext<OwnerContextValue | null>(null);
@@ -186,7 +193,7 @@ export function OwnerProvider({
   const [inviteMemberDialogOpen, setInviteMemberDialogOpen] = useState(false);
   const [reportTaskDialogOpen, setReportTaskDialogOpen] = useState(false);
   const [isReportingTask, setIsReportingTask] = useState(false);
-  const [isDialing, setIsDialing] = useState(false)
+  const [isDialing, setIsDialing] = useState(false);
 
   const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
@@ -276,22 +283,43 @@ export function OwnerProvider({
     }
   };
 
-  const dialCustomer = async (customerId:string,threadId:string): Promise<void> => {
-    //setIsDialing(true) or set Redis ResourceLock 
+  const dialCustomer = async (
+    customerId: string,
+    threadId: string,
+    customerNumber: string,
+    callType: string,
+    operatorNumber?: string,
+  ): Promise<boolean> => {
+    // <-- Changed to Promise<boolean>
+    setIsDialing(true);
     try {
       const res = await fetch(
-        `/api/subdomain/${subdomain.slug}/customers/${customerId}/dial`
-      )
+        `/api/subdomain/${subdomain.slug}/customers/${customerId}/${threadId}/dial`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customerNumber,
+            operatorNumber,
+            callType,
+          }),
+        },
+      );
 
-      if(!res.ok) {
+      if (!res.ok) {
         // release resourcelock
+        return false; // <-- Return false if it failed
       }
+
+      return true; // <-- Return true so your chat widget updates!
+    } catch (error) {
+      console.error("Dialing error:", error);
+      return false; // <-- Return false on network error
     } finally {
       // release resourceLock
-      // mutate chat thread possibly
+      setIsDialing(false);
     }
-  }
-
+  };
 
   const hueClawAi = async (
     customerId: string,
@@ -304,11 +332,12 @@ export function OwnerProvider({
       );
       setAiSuggestions((prev) => ({ ...prev, [customerId]: data }));
 
-      // 🚨 ADD THIS LINE: 
-      // This tells SWR to instantly check the status, which will see 
+      // 🚨 ADD THIS LINE:
+      // This tells SWR to instantly check the status, which will see
       // isWorking: true, making the bubble appear and start 2s polling!
-      mutate(`/api/subdomain/${subdomain.slug}/threads/${threadId}/hueclaw-status`);
-
+      mutate(
+        `/api/subdomain/${subdomain.slug}/threads/${threadId}/hueclaw-status`,
+      );
     } finally {
       console.log("Hue Claw in Action!");
     }
@@ -452,7 +481,7 @@ export function OwnerProvider({
         toggleMinimize,
         openChatList,
         globalProspects: customersData?.customers ?? [],
-        hueClawAi
+        hueClawAi,
       }}
     >
       {children}
