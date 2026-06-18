@@ -21,7 +21,7 @@ export async function POST(req: Request, { params }: Params) {
 
     try {
         const body = await req.json();
-        const { customerId, duration, domainId, triggerSource } = body;
+        const { customerId, domainId, triggerSource, roomName } = body;
 
         const subdomain = await prisma.subdomain.findUnique({
             where: { id: domainId },
@@ -37,6 +37,7 @@ export async function POST(req: Request, { params }: Params) {
                 thread: { connect: { id: threadId } },
                 ...(customerId && { customer: { connect: { id: customerId } } }),
                 callType: triggerSource,
+                roomName,
             },
         });
 

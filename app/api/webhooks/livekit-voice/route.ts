@@ -1,3 +1,4 @@
+import {  handleLiveKitVoiceEgressEnded } from "@/lib/handlers/livekit-voice-egress-handler";
 import { WebhookReceiver } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
 
@@ -22,7 +23,6 @@ export async function POST(req: Request) {
 
     console.log(`📥 Webhook Event: ${event.event}`);
 
-    // Route to handlers based on event type
     switch (event.event) {
       case "participant_joined":
         console.log("Participant Joined");
@@ -32,9 +32,17 @@ export async function POST(req: Request) {
         console.log("Participant Left");
         break;
 
-      case "egress_ended":
-        console.log("Egress Ended");
+      case "egress_ended": {
+        const roomName = event.egressInfo?.roomName;
+        const audioUrl = event.egressInfo?.fileResults?.[0]?.location;
+
+        if (roomName && audioUrl) {
+          await handleLiveKitVoiceEgressEnded(roomName, audioUrl);
+        } else {
+          console.warn("⚠️ egress_ended missing roomName or audioUrl");
+        }
         break;
+      }
 
       case "room_started":
         console.log(`🚀 Room started: ${event.room?.name}`);

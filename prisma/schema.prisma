@@ -729,11 +729,11 @@ model Call {
 }
 
 model OutboundCall {
-  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
   subdomain   Subdomain  @relation(fields: [subdomainId], references: [id])
-  subdomainId String    @db.ObjectId
-  customer    Customer?   @relation(fields: [customerId], references: [id])
-  customerId  String?     @db.ObjectId
+  subdomainId String     @db.ObjectId
+  customer    Customer?  @relation(fields: [customerId], references: [id])
+  customerId  String?    @db.ObjectId
   thread      ChatThread @relation(fields: [threadId], references: [id])
   threadId    String     @db.ObjectId
   audioUrl    String?
