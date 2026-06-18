@@ -32,7 +32,7 @@ export async function POST(req: Request, { params }: Params) {
       name: true,
       email: true,
       phone: true,
-      subdomain: { select: { slug: true } },
+      subdomain: { select: { slug: true, id: true } },
     },
   });
 
@@ -117,8 +117,9 @@ export async function POST(req: Request, { params }: Params) {
         operatorNumber,
         operatorName: isUserValid.name,
         operatorId: isUserValid.id,
-        customerNumber,                     // ✅ agent dials this
-        customerName: thread.customer.name, // ✅ agent uses this
+        customerNumber, // ✅ agent dials this
+        customerName: thread.customer.name,
+        subdomain_id: isUserValid.subdomain.id, // ✅ agent uses this
         agentMode: "sales",
         hasRedisContext: true,
       }),
@@ -131,7 +132,6 @@ export async function POST(req: Request, { params }: Params) {
       { message: "LiveKit Dispatch Successful", roomName },
       { status: 200 },
     );
-
   } catch (error) {
     console.error("LiveKit Dispatch Error:", error);
     return NextResponse.json(
