@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { processNudgeReturn } from "@/lib/hueclaw/services/process-nudge-return";
 import { processImagenReturn } from "@/lib/hueclaw/services/process-imagen-return";
 import { processQuoteReturn } from "@/lib/hueclaw/services/process-quote-return";
+import { processIntelligenceReturn } from "@/lib/hueclaw/services/process-intelligence-return";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.LAMBDA_WEBHOOK_SECRET;
@@ -49,6 +50,10 @@ export async function POST(req: Request) {
       case "QUOTE_GENERATION":
         outcome = await processQuoteReturn(task, result);
         break;
+
+      case "INTELLIGENCE":
+        outcome = await processIntelligenceReturn(task,result)
+        break
       default:
         throw new Error(`Unhandled SystemTask type: ${task.type}`);
     }

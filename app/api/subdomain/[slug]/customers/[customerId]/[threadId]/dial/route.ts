@@ -4,6 +4,13 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { AgentDispatchClient, RoomServiceClient } from "livekit-server-sdk";
 import { setAgentContext } from "@/lib/redis/agent-context";
+import { connect } from "http2";
+import {
+  acquireResourceLock,
+  clearHueClawStatus,
+  releaseResourceLock,
+  setHueClawStatus,
+} from "@/lib/redis";
 
 interface Params {
   params: Promise<{
@@ -39,8 +46,17 @@ export async function POST(req: Request, { params }: Params) {
   if (!isUserValid) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-
+  let lockKey: string | null = null;
   try {
+    lockKey = await acquireResourceLock(threadId, "OUTBOUND_CALL");
+
+    if (!lockKey) {
+      return NextResponse.json(
+        { message: "Task already running for this project!" },
+        { status: 429 },
+      );
+    }
+
     const body = await req.json();
     const { customerNumber, operatorNumber, callType = "AI_CONFERENCE" } = body;
 
@@ -106,11 +122,43 @@ export async function POST(req: Request, { params }: Params) {
       process.env.LIVEKIT_API_SECRET!,
     );
 
+    const outboundCall = await prisma.outboundCall.create({
+      data: {
+        subdomain: { connect: { id: isUserValid.subdomain.id } },
+        roomName,
+        callType,
+        thread: { connect: { id: threadId } },
+      },
+    });
+
+    const systemTask = await prisma.systemTask.create({
+      data: {
+        deliveryMethod: "NONE",
+        initiator: "OPERATOR",
+        lockKey,
+        status: "PROCESSING",
+        type: "OUTBOUND_CALL",
+        customer: { connect: { id: customerId } },
+        subdomain: { connect: { id: isUserValid.subdomain.id } },
+        operator: { connect: { id: isUserValid.id } },
+        metadata: {
+          roomName,
+          outboundCallId: outboundCall.id,
+          threadId,
+          callType,
+          operatorNumber,
+          customerNumber,
+        },
+      },
+    });
+
     // 6. Create the room — pass everything the agent needs in metadata
     await roomClient.createRoom({
       name: roomName,
       emptyTimeout: 10 * 60,
       metadata: JSON.stringify({
+        systemTaskId: systemTask.id,
+        outboundCallId: outboundCall.id,
         customerId,
         threadId,
         callType,
@@ -127,6 +175,7 @@ export async function POST(req: Request, { params }: Params) {
 
     // 7. Dispatch the agent — it handles all dialing from here
     await agentDispatchClient.createDispatch(roomName, "telephony_agent");
+    await setHueClawStatus(threadId, "OUTBOUND_CALL");
 
     return NextResponse.json(
       { message: "LiveKit Dispatch Successful", roomName },
@@ -134,6 +183,10 @@ export async function POST(req: Request, { params }: Params) {
     );
   } catch (error) {
     console.error("LiveKit Dispatch Error:", error);
+    if (lockKey) {
+      await releaseResourceLock(lockKey);
+    }
+    await clearHueClawStatus(threadId);
     return NextResponse.json(
       { message: "Internal Error", error: String(error) },
       { status: 500 },

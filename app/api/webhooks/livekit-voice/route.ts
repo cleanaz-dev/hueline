@@ -32,14 +32,19 @@ export async function POST(req: Request) {
         console.log("Participant Left");
         break;
 
-      case "egress_ended": {
+     case "egress_ended": {
         const roomName = event.egressInfo?.roomName;
-        const audioUrl = event.egressInfo?.fileResults?.[0]?.location;
+        // Grab the S3 Key (filename) instead of the full URL (location)
+        const s3Key = event.egressInfo?.fileResults?.[0]?.filename;
 
-        if (roomName && audioUrl) {
-          await handleLiveKitVoiceEgressEnded(roomName, audioUrl);
+        if (roomName && s3Key) {
+          // Pass roomName and s3Key to your handler
+          await handleLiveKitVoiceEgressEnded(roomName, s3Key);
         } else {
-          console.warn("⚠️ egress_ended missing roomName or audioUrl");
+          console.warn("⚠️ egress_ended missing roomName or s3Key", {
+            roomName,
+            fileResults: event.egressInfo?.fileResults
+          });
         }
         break;
       }

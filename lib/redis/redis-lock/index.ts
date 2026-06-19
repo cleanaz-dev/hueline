@@ -6,7 +6,7 @@ const redis = new Redis({
 });
 
 // We use 'context' so you can lock IMAGEN and SMS separately if needed!
-type LockContext = "IMAGEN" | "UPSCALE" | "QUOTE" | "COMMS" | "NUDGE"
+type LockContext = "IMAGEN" | "UPSCALE" | "QUOTE" | "COMMS" | "NUDGE" | "INTELLIGENCE" | "OUTBOUND_CALL"
 
 export async function acquireResourceLock(resourceId: string, context: LockContext = "IMAGEN") {
   const lockKey = `lock:${context}:${resourceId}`;
@@ -30,7 +30,7 @@ export async function releaseResourceLock(lockKey: string) {
 
 
 
-type HueClawStatus = "COMMUNICATION" | "IMAGEN" | "QUOTE" | "NUDGE"
+type HueClawStatus = "COMMUNICATION" | "IMAGEN" | "QUOTE" | "NUDGE" | "INTELLIGENCE" | "OUTBOUND_CALL"
 export async function setHueClawStatus(threadId: string, status: HueClawStatus = "NUDGE" ) {
   // Key format: hueclaw:status:12345
   // TTL: 300 seconds (5 minutes)
