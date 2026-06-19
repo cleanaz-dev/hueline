@@ -5,33 +5,31 @@ import { getPresignedUrl } from "../aws/s3";
 
 export async function handleLiveKitVoiceEgressEnded(
   roomName: string,
-  s3Key: string, // <-- Changed to s3Key to make it clear what we are passing
+  s3Key: string
 ) {
-  // 1. Save the S3 Key to your DB
+ 
   const call = await prisma.outboundCall.update({
     where: { roomName },
-    data: { audioUrl: s3Key }, // Storing the S3 Key in your audioUrl column
-    select: { threadId: true, id: true },
+    data: { audioUrl: s3Key },
+    select: { threadId: true, id: true, systemTaskId: true },
   });
 
-  if (!call?.threadId) {
-    console.warn(`⚠️ No threadId found for room: ${roomName}`);
+  if (!call?.threadId || !call?.systemTaskId) {
+    console.warn(`⚠️ No threadId and systemTaskId found for room: ${roomName}`);
     return;
   }
  
 
   console.log(`✅ Recording S3 Key saved for room: ${roomName}`);
 
-  // 2. Prepare Lambda payload
   const webhookUrl = `${process.env.NEXT_PUBLIC_URL}/api/webhooks/hueclaw`;
   const audioUrl = await getPresignedUrl(s3Key)
-
-
 
   const payload = {
     audioUrl, 
     webhookUrl,
     threadId: call.threadId,
+    systemTaskId: call.systemTaskId,
   };
 
   const command = createCommand({

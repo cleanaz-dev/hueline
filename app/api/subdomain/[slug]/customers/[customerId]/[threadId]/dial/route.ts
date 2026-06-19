@@ -11,6 +11,7 @@ import {
   releaseResourceLock,
   setHueClawStatus,
 } from "@/lib/redis";
+import { HueClawOutboundCallMetadata } from "@/lib/zod/outbound-calls/hueclaw-outbound-metadata";
 
 interface Params {
   params: Promise<{
@@ -148,7 +149,14 @@ export async function POST(req: Request, { params }: Params) {
           callType,
           operatorNumber,
           customerNumber,
-        },
+        } satisfies HueClawOutboundCallMetadata
+      },
+    });
+
+    await prisma.outboundCall.update({
+      where: { id: outboundCall.id },
+      data: {
+        systemTask: { connect: { id: systemTask.id } },
       },
     });
 

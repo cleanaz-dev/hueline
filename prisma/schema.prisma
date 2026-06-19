@@ -573,10 +573,11 @@ model SystemTask {
   subdomain    Subdomain   @relation(fields: [subdomainId], references: [id])
   subdomainId  String      @db.ObjectId
 
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  customer   Customer? @relation(fields: [customerId], references: [id])
-  customerId String?   @db.ObjectId
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  customer      Customer?      @relation(fields: [customerId], references: [id])
+  customerId    String?        @db.ObjectId
+  outboundCalls OutboundCall[]
 }
 
 enum MetadataSource {
@@ -731,15 +732,18 @@ model Call {
 }
 
 model OutboundCall {
-  id          String     @id @default(auto()) @map("_id") @db.ObjectId
-  subdomain   Subdomain  @relation(fields: [subdomainId], references: [id])
-  subdomainId String     @db.ObjectId
-  customer    Customer?  @relation(fields: [customerId], references: [id])
-  customerId  String?    @db.ObjectId
-  thread      ChatThread @relation(fields: [threadId], references: [id])
-  threadId    String     @db.ObjectId
-  audioUrl    String?
-  roomName    String?    @unique
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  subdomain    Subdomain   @relation(fields: [subdomainId], references: [id])
+  subdomainId  String      @db.ObjectId
+  customer     Customer?   @relation(fields: [customerId], references: [id])
+  customerId   String?     @db.ObjectId
+  thread       ChatThread  @relation(fields: [threadId], references: [id])
+  threadId     String      @db.ObjectId
+  audioUrl     String?
+  roomName     String?     @unique
+  systemTask   SystemTask? @relation(fields: [systemTaskId], references: [id])
+  systemTaskId String?     @db.ObjectId
+  outcome      String?    
 
   callType String?
 
