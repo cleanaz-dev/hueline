@@ -60,7 +60,11 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const body = await req.json();
-    const { customerNumber, operatorNumber, callType = "AI_CONFERENCE" } = body;
+    const {
+      customerNumber,
+      operatorNumber,
+      callType = "OPERATOR_BRIDGE",
+    } = body;
 
     // 1. Fetch the thread
     const thread = await prisma.chatThread.findUnique({
@@ -135,7 +139,7 @@ export async function POST(req: Request, { params }: Params) {
         callerName: thread.customer.name,
         callerPhone: thread.customer.phone,
         customer: { connect: { id: customerId } },
-        status: "PROCESSING"
+        status: "PROCESSING",
       },
     });
 
@@ -160,6 +164,12 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
+    await prisma.call.update({
+      where: { id: outboundCall.id },
+      data: {
+        task: { connect: { id: systemTask.id } },
+      },
+    });
 
     // 6. Create the room — pass everything the agent needs in metadata
     await roomClient.createRoom({

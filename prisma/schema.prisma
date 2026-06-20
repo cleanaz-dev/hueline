@@ -29,7 +29,6 @@ model SubdomainUser {
   clientCommunications ClientCommunication[]
   systemTasks          SystemTask[]
   designProjects       DesignProject[]
-  outboundCalls        OutboundCall[]
 }
 
 model DesignProject {
@@ -226,7 +225,6 @@ model ChatThread {
   updatedAt         DateTime           @updatedAt // Push to top of UI when new message arrives
   bookingData       SubBookingData[]
   followUpSchedules FollowUpSchedule[]
-  outboundCalls     OutboundCall[]
   calls             Call[]
 }
 
@@ -308,7 +306,6 @@ model Subdomain {
   branding          Branding?
   quotes            Quote[]
   followUpSchedules FollowUpSchedule[]
-  outboundCalls     OutboundCall[]
 }
 
 model FollowUpSchedule {
@@ -520,7 +517,6 @@ model Customer {
   chatThreads       ChatThread[]
   quotes            Quote[]
   followUpSchedules FollowUpSchedule[]
-  outboundCalls     OutboundCall[]
 }
 
 enum CustomerType {
@@ -579,7 +575,7 @@ model SystemTask {
   updatedAt     DateTime       @updatedAt
   customer      Customer?      @relation(fields: [customerId], references: [id])
   customerId    String?        @db.ObjectId
-  outboundCalls OutboundCall[]
+  calls         Call[]
 }
 
 enum MetadataSource {
@@ -722,19 +718,21 @@ model Call {
   audioUrl     String?
   duration     String?
   status       String?
-  roomName     String?
+  roomName     String? @unique
   callType     String?
 
   intelligence CallIntelligence?
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  subdomain   Subdomain?  @relation(fields: [subdomainId], references: [id])
-  subdomainId String?     @db.ObjectId
-  customer    Customer?   @relation(fields: [customerId], references: [id])
-  customerId  String?     @db.ObjectId
-  thread      ChatThread? @relation(fields: [threadId], references: [id])
-  threadId    String?     @db.ObjectId
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  subdomain    Subdomain?  @relation(fields: [subdomainId], references: [id])
+  subdomainId  String?     @db.ObjectId
+  customer     Customer?   @relation(fields: [customerId], references: [id])
+  customerId   String?     @db.ObjectId
+  thread       ChatThread? @relation(fields: [threadId], references: [id])
+  threadId     String?     @db.ObjectId
+  task         SystemTask? @relation(fields: [systemTaskId], references: [id])
+  systemTaskId String?     @db.ObjectId
 
   @@index([bookingDataId])
 }
@@ -744,29 +742,7 @@ enum CallDirection {
   OUTBOUND
 }
 
-model OutboundCall {
-  id           String      @id @default(auto()) @map("_id") @db.ObjectId
-  subdomain    Subdomain   @relation(fields: [subdomainId], references: [id])
-  subdomainId  String      @db.ObjectId
-  customer     Customer?   @relation(fields: [customerId], references: [id])
-  customerId   String?     @db.ObjectId
-  thread       ChatThread  @relation(fields: [threadId], references: [id])
-  threadId     String      @db.ObjectId
-  audioUrl     String?
-  roomName     String?     @unique
-  systemTask   SystemTask? @relation(fields: [systemTaskId], references: [id])
-  systemTaskId String?     @db.ObjectId
-  outcome      String?
 
-  callType String?
-
-  operator        SubdomainUser? @relation(fields: [subdomainUserId], references: [id])
-  subdomainUserId String?        @db.ObjectId
-
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
-  intelligence OutboundCallIntelligence?
-}
 
 model CallIntelligence {
   id                       String       @id @default(auto()) @map("_id") @db.ObjectId
@@ -790,24 +766,6 @@ model CallIntelligence {
   @@index([callOutcome])
 }
 
-model OutboundCallIntelligence {
-  id                       String       @id @default(auto()) @map("_id") @db.ObjectId
-  outboundCall             OutboundCall @relation(fields: [outboundCallId], references: [id])
-  outboundCallId           String       @unique @db.ObjectId
-  callReason               CallReason   @default(OTHER)
-  callOutcome              CallOutcome?
-  estimatedAdditionalValue Float        @default(0)
-  customFields             Json?
-  costBreakdown            String?
-  projectScope             String?
-
-  // METADATA
-  transcriptText String?
-  callSummary    String? // AI-generated summary
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
 
 model Export {
   id           String         @id @default(auto()) @map("_id") @db.ObjectId

@@ -1,4 +1,4 @@
-import {  handleLiveKitVoiceEgressEnded } from "@/lib/handlers/livekit-voice-egress-handler";
+import { handleLiveKitVoiceEgressEnded } from "@/lib/handlers/livekit-voice-egress-handler";
 import { WebhookReceiver } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
 
@@ -32,15 +32,24 @@ export async function POST(req: Request) {
         console.log("Participant Left");
         break;
 
-     case "egress_ended": {
+      case "egress_ended": {
         const roomName = event.egressInfo?.roomName;
         // Grab the S3 Key (filename) instead of the full URL (location)
         const s3Key = event.egressInfo?.fileResults?.[0]?.filename;
-        console.log("Egress Ended: ", roomName, s3Key)
+        console.log("Egress Ended: ", roomName, s3Key);
 
         if (roomName && s3Key) {
-          // Pass roomName and s3Key to your handler
-          await handleLiveKitVoiceEgressEnded(roomName, s3Key);
+          // Extract callId from the S3 key
+          // Assuming filepath format: "recordings/{call_id}/{room_name}.ogg"
+          const pathParts = s3Key.split("/");
+          const callId = pathParts.length > 1 ? pathParts[1] : null;
+
+          if (callId) {
+            // Pass roomName, s3Key, AND callId to your handler
+            await handleLiveKitVoiceEgressEnded(roomName, s3Key, callId);
+          } else {
+            console.warn("⚠️ Could not extract callId from s3Key:", s3Key);
+          }
         } else {
           console.warn("⚠️ egress_ended missing roomName or s3Key", {
             roomName,
