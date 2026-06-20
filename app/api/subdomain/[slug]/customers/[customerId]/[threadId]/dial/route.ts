@@ -12,6 +12,7 @@ import {
   setHueClawStatus,
 } from "@/lib/redis";
 import { HueClawOutboundCallMetadata } from "@/lib/zod/outbound-calls/hueclaw-outbound-metadata";
+import { nanoid } from "nanoid";
 
 interface Params {
   params: Promise<{
@@ -123,12 +124,18 @@ export async function POST(req: Request, { params }: Params) {
       process.env.LIVEKIT_API_SECRET!,
     );
 
-    const outboundCall = await prisma.outboundCall.create({
+    const outboundCall = await prisma.call.create({
       data: {
         subdomain: { connect: { id: isUserValid.subdomain.id } },
         roomName,
         callType,
         thread: { connect: { id: threadId } },
+        callDirection: "OUTBOUND",
+        callSid: nanoid(14),
+        callerName: thread.customer.name,
+        callerPhone: thread.customer.phone,
+        customer: { connect: { id: customerId } },
+        status: "PROCESSING"
       },
     });
 
@@ -143,22 +150,16 @@ export async function POST(req: Request, { params }: Params) {
         subdomain: { connect: { id: isUserValid.subdomain.id } },
         operator: { connect: { id: isUserValid.id } },
         metadata: {
+          callId: outboundCall.id,
           roomName,
-          outboundCallId: outboundCall.id,
           threadId,
           callType,
           operatorNumber,
           customerNumber,
-        } satisfies HueClawOutboundCallMetadata
+        } satisfies HueClawOutboundCallMetadata,
       },
     });
 
-    await prisma.outboundCall.update({
-      where: { id: outboundCall.id },
-      data: {
-        systemTask: { connect: { id: systemTask.id } },
-      },
-    });
 
     // 6. Create the room — pass everything the agent needs in metadata
     await roomClient.createRoom({

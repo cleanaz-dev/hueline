@@ -226,6 +226,7 @@ model ChatThread {
   bookingData       SubBookingData[]
   followUpSchedules FollowUpSchedule[]
   outboundCalls     OutboundCall[]
+  calls             Call[]
 }
 
 model ClientActivity {
@@ -710,25 +711,35 @@ model Call {
   bookingDataId String?         @db.ObjectId
   bookingData   SubBookingData? @relation(fields: [bookingDataId], references: [id], onDelete: Cascade)
 
-  callerName  String?
-  callerPhone String?
+  callerName    String?
+  callerPhone   String?
+  callDirection CallDirection @default(INBOUND)
 
   callSid      String  @unique
   recordingSid String?
   audioUrl     String?
   duration     String?
   status       String?
+  roomName     String?
+  callType     String?
 
   intelligence CallIntelligence?
 
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  subdomain   Subdomain? @relation(fields: [subdomainId], references: [id])
-  subdomainId String?    @db.ObjectId
-  customer    Customer?  @relation(fields: [customerId], references: [id])
-  customerId  String?    @db.ObjectId
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  subdomain   Subdomain?  @relation(fields: [subdomainId], references: [id])
+  subdomainId String?     @db.ObjectId
+  customer    Customer?   @relation(fields: [customerId], references: [id])
+  customerId  String?     @db.ObjectId
+  thread      ChatThread? @relation(fields: [threadId], references: [id])
+  threadId    String?     @db.ObjectId
 
   @@index([bookingDataId])
+}
+
+enum CallDirection {
+  INBOUND
+  OUTBOUND
 }
 
 model OutboundCall {
