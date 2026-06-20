@@ -36,6 +36,7 @@ export async function POST(req: Request) {
         const roomName = event.egressInfo?.roomName;
         // Grab the S3 Key (filename) instead of the full URL (location)
         const s3Key = event.egressInfo?.fileResults?.[0]?.filename;
+        console.log("Egress Ended: ", roomName, s3Key)
 
         if (roomName && s3Key) {
           // Pass roomName and s3Key to your handler
