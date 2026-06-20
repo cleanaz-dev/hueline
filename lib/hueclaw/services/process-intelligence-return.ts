@@ -1,4 +1,4 @@
-import { CallReason, SystemTask } from "@/app/generated/prisma";
+import { CallOutcome, CallReason, SystemTask } from "@/app/generated/prisma";
 import { z } from "zod";
 import { hueClawOutboundCallMetadataSchema } from "@/lib/zod/outbound-calls/hueclaw-outbound-metadata";
 import { intelligenceResultSchema } from "@/lib/zod/intelligence/intelligence-result-schema";
@@ -42,7 +42,7 @@ export async function processIntelligenceReturn(task: SystemTask, result: any) {
   const outboundCall = await prisma.call.update({
     where: { id: callId },
     data: {
-      outcome: intelligence.callOutcome, // E.g., POSITIVE, NEUTRAL, NEGATIVE
+      outcome: intelligence.callOutcome as CallOutcome, // E.g., POSITIVE, NEUTRAL, NEGATIVE
       intelligence: {
         create: {
           transcriptText: transcriptText,
