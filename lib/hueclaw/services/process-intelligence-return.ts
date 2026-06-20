@@ -42,7 +42,6 @@ export async function processIntelligenceReturn(task: SystemTask, result: any) {
   const outboundCall = await prisma.call.update({
     where: { id: callId },
     data: {
-      outcome: intelligence.callOutcome as CallOutcome, // E.g., POSITIVE, NEUTRAL, NEGATIVE
       intelligence: {
         create: {
           transcriptText: transcriptText,

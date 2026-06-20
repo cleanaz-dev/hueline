@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createCommand, lambda } from "@/lib/aws/lambda";
-import { acquireResourceLock, setHueClawStatus } from "../redis";
+import { acquireResourceLock, clearHueClawStatus, setHueClawStatus } from "../redis";
 import { getPresignedUrl } from "../aws/s3";
 
 export async function handleLiveKitVoiceEgressEnded(
@@ -36,8 +36,10 @@ export async function handleLiveKitVoiceEgressEnded(
     functionName: "hueline-hueclaw-intelligence-PROD",
     payload,
   });
+  
 
   // 3. Trigger Redis & Lambda
+  await clearHueClawStatus(call.threadId)
   await setHueClawStatus(call.threadId, "INTELLIGENCE");
   await lambda.send(command);
 }
