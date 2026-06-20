@@ -177,7 +177,7 @@ export async function POST(req: Request, { params }: Params) {
       emptyTimeout: 10 * 60,
       metadata: JSON.stringify({
         systemTaskId: systemTask.id,
-        outboundCallId: outboundCall.id,
+        callId: outboundCall.id,
         customerId,
         threadId,
         callType,
