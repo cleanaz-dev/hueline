@@ -26,6 +26,8 @@ export async function handleLiveKitVoiceEgressEnded(
   const webhookUrl = `${process.env.NEXT_PUBLIC_URL}/api/webhooks/hueclaw`;
   const audioUrl = await getPresignedUrl(s3Key);
 
+  console.log("Audio URL:", audioUrl)
+
   const payload = {
     audioUrl, 
     webhookUrl,
