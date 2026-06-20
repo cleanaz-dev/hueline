@@ -194,6 +194,7 @@ enum ClientActivityType {
   UPSCALED_IMAGE
   FOLLOWUP_IMAGE_SENT
   INBOUND_CALL
+  OUTBOUND_CALL
   INBOUND_EMAIL
   VOICE_OUTBOUND
   VOICE_INBOUND
@@ -657,6 +658,7 @@ enum CommunicationType {
   AI_SUGESSTION
   QUOTE
   NONE
+  VOICE
 }
 
 enum BookingStatus {

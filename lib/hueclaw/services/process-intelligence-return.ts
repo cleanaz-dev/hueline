@@ -1,4 +1,4 @@
-import { CallReason, SystemTask } from "@/app/generated/prisma"; 
+import { CallReason, SystemTask } from "@/app/generated/prisma";
 import { z } from "zod";
 import { hueClawOutboundCallMetadataSchema } from "@/lib/zod/outbound-calls/hueclaw-outbound-metadata";
 import { intelligenceResultSchema } from "@/lib/zod/intelligence/intelligence-result-schema";
@@ -30,31 +30,57 @@ export async function processIntelligenceReturn(task: SystemTask, result: any) {
     where: { id: task.subdomainId },
     select: { id: true, slug: true },
   });
-  if (!subdomain) throw new Error(`Subdomain not found for ${task.subdomainId}`);
+  if (!subdomain)
+    throw new Error(`Subdomain not found for ${task.subdomainId}`);
 
-  console.log(`[Intelligence] 🧠 Processing reasoning for OutboundCall: ${callId} - Reason: ${intelligence.callReason}`);
+  console.log(
+    `[Intelligence] 🧠 Processing reasoning for OutboundCall: ${callId} - Reason: ${intelligence.callReason}`,
+  );
 
   // 4. Update the OutboundCall & Create CallIntelligence Log
   // Using Prisma's nested create to connect the newly generated intelligence directly
-  await prisma.call.update({
+  const outboundCall = await prisma.call.update({
     where: { id: callId },
     data: {
       outcome: intelligence.callOutcome, // E.g., POSITIVE, NEUTRAL, NEGATIVE
       intelligence: {
         create: {
           transcriptText: transcriptText,
-          callReason: intelligence.callReason as CallReason || "OTHER",
+          callReason: (intelligence.callReason as CallReason) || "OTHER",
           callSummary: intelligence.callSummary,
           callOutcome: intelligence.callOutcome,
           // If your CallIntelligence model requires these, we provide safe fallbacks
-          projectScope: "UNKNOWN", 
+          projectScope: "UNKNOWN",
           estimatedAdditionalValue: 0,
-        }
-      }
-    }
+        },
+      },
+    },
   });
 
+  await prisma.clientActivity.create({
+    data: {
+      type: "OUTBOUND_CALL",
+      chatThread: { connect: { id: threadId } },
+      customer: { connect: { id: customer.id } },
+      description: `Call type: ${metadata.callType}`,
+      title: "Outbound Call",
+    },
+  });
 
+  await prisma.clientCommunication.create({
+    data: {
+      body: "Outbound Call",
+      role: "AI",
+      type: "VOICE",
+      chatThread: { connect: { id: threadId } },
+      customer: { connect: { id: customer.id } },
+      metadata: {
+        audioUrl: outboundCall.audioUrl,
+        outcome: intelligence.callOutcome,
+        transcript: transcriptText,
+      },
+    },
+  });
 
   return {
     releaseLock: true,
