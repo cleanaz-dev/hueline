@@ -15,7 +15,6 @@ export async function PATCH(req: Request, { params }: Params) {
   const authHeaders = req.headers.get("x-webhook-secret");
 
   try {
-    
     const body = await req.json();
     const { duration, status, roomName } = body;
 
@@ -23,7 +22,7 @@ export async function PATCH(req: Request, { params }: Params) {
       where: { id: callId },
       data: {
         status,
-        duration,
+        duration: String(duration),
       },
     });
 
