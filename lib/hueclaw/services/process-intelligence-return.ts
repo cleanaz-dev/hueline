@@ -36,23 +36,23 @@ export async function processIntelligenceReturn(task: SystemTask, result: any) {
 
   // 4. Update the OutboundCall & Create CallIntelligence Log
   // Using Prisma's nested create to connect the newly generated intelligence directly
-//   await prisma.outboundCall.update({
-//     where: { id: outboundCallId },
-//     data: {
-//       outcome: intelligence.callOutcome, // E.g., POSITIVE, NEUTRAL, NEGATIVE
-//       intelligence: {
-//         create: {
-//           transcriptText: transcriptText,
-//           callReason: intelligence.callReason as CallReason || "OTHER",
-//           callSummary: intelligence.callSummary,
-//           callOutcome: intelligence.callOutcome,
-//           // If your CallIntelligence model requires these, we provide safe fallbacks
-//           projectScope: "UNKNOWN", 
-//           estimatedAdditionalValue: 0,
-//         }
-//       }
-//     }
-//   });
+  await prisma.outboundCall.update({
+    where: { id: outboundCallId },
+    data: {
+      outcome: intelligence.callOutcome, // E.g., POSITIVE, NEUTRAL, NEGATIVE
+      intelligence: {
+        create: {
+          transcriptText: transcriptText,
+          callReason: intelligence.callReason as CallReason || "OTHER",
+          callSummary: intelligence.callSummary,
+          callOutcome: intelligence.callOutcome,
+          // If your CallIntelligence model requires these, we provide safe fallbacks
+          projectScope: "UNKNOWN", 
+          estimatedAdditionalValue: 0,
+        }
+      }
+    }
+  });
 
 //   // 5. Update the Chat Thread 
 //   // This mimics the "pulse" headline logic from your reference code
