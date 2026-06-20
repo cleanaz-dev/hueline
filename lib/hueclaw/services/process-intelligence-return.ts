@@ -11,7 +11,7 @@ export async function processIntelligenceReturn(task: SystemTask, result: any) {
     callType,
     customerNumber,
     operatorNumber,
-    outboundCallId,
+    callId,
     roomName,
     threadId,
   } = metadata;
@@ -32,12 +32,12 @@ export async function processIntelligenceReturn(task: SystemTask, result: any) {
   });
   if (!subdomain) throw new Error(`Subdomain not found for ${task.subdomainId}`);
 
-  console.log(`[Intelligence] 🧠 Processing reasoning for OutboundCall: ${outboundCallId} - Reason: ${intelligence.callReason}`);
+  console.log(`[Intelligence] 🧠 Processing reasoning for OutboundCall: ${callId} - Reason: ${intelligence.callReason}`);
 
   // 4. Update the OutboundCall & Create CallIntelligence Log
   // Using Prisma's nested create to connect the newly generated intelligence directly
-  await prisma.outboundCall.update({
-    where: { id: outboundCallId },
+  await prisma.call.update({
+    where: { id: callId },
     data: {
       outcome: intelligence.callOutcome, // E.g., POSITIVE, NEUTRAL, NEGATIVE
       intelligence: {
@@ -54,27 +54,7 @@ export async function processIntelligenceReturn(task: SystemTask, result: any) {
     }
   });
 
-//   // 5. Update the Chat Thread 
-//   // This mimics the "pulse" headline logic from your reference code
-//   let pulseString = intelligence.lastInteraction || "Outbound Call Completed";
-  
-//   if (!intelligence.lastInteraction && intelligence.callReason) {
-//      pulseString = intelligence.callReason.replace(/_/g, " ").toLowerCase();
-//      pulseString = pulseString.charAt(0).toUpperCase() + pulseString.slice(1);
-//   }
 
-//   await prisma.chatThread.update({
-//     where: { id: threadId },
-//     data: {
-//       // Assuming you have fields like this on ChatThread based on your TODO
-//       // If your thread uses different field names (e.g. `lastMessage`), adjust accordingly
-//       lastInteraction: pulseString,
-//       updatedAt: new Date(),
-//     }
-//   });
-
-  // (Optional) Update CRM/Customer state if needed based on `outcome`
-  // if (intelligence.callOutcome === "POSITIVE") { ... }
 
   return {
     releaseLock: true,
