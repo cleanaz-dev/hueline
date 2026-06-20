@@ -743,17 +743,16 @@ model OutboundCall {
   roomName     String?     @unique
   systemTask   SystemTask? @relation(fields: [systemTaskId], references: [id])
   systemTaskId String?     @db.ObjectId
-  outcome      String?    
+  outcome      String?
 
   callType String?
 
-  operator           SubdomainUser?    @relation(fields: [subdomainUserId], references: [id])
-  subdomainUserId    String?           @db.ObjectId
-  intelligence       CallIntelligence? @relation(fields: [callIntelligenceId], references: [id])
-  callIntelligenceId String?           @db.ObjectId
+  operator        SubdomainUser? @relation(fields: [subdomainUserId], references: [id])
+  subdomainUserId String?        @db.ObjectId
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  intelligence OutboundCallIntelligence?
 }
 
 model CallIntelligence {
@@ -771,12 +770,30 @@ model CallIntelligence {
   transcriptText String?
   callSummary    String? // AI-generated summary
 
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  outboundCalls OutboundCall[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([callReason])
   @@index([callOutcome])
+}
+
+model OutboundCallIntelligence {
+  id                       String       @id @default(auto()) @map("_id") @db.ObjectId
+  outboundCall             OutboundCall @relation(fields: [outboundCallId], references: [id])
+  outboundCallId           String       @unique @db.ObjectId
+  callReason               CallReason   @default(OTHER)
+  callOutcome              CallOutcome?
+  estimatedAdditionalValue Float        @default(0)
+  customFields             Json?
+  costBreakdown            String?
+  projectScope             String?
+
+  // METADATA
+  transcriptText String?
+  callSummary    String? // AI-generated summary
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Export {
