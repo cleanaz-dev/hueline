@@ -73,6 +73,8 @@ export function GlobalOwnerChatWidget() {
     }
   };
 
+  
+
   useEffect(() => {
     if (
       (chatWindowState !== "open" && chatWindowState !== "minimized") ||
@@ -95,18 +97,24 @@ export function GlobalOwnerChatWidget() {
     ];
   }, [messages, customerPendingMessages]);
 
+  // useEffect(() => {
+  //   if (
+  //     chatWindowState === "open" &&
+  //     combinedMessages.length > prevMessageCount.current
+  //   ) {
+  //     setTimeout(
+  //       () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+  //       100,
+  //     );
+  //   }
+  //   prevMessageCount.current = combinedMessages.length;
+  // }, [combinedMessages.length, chatWindowState]);
+
   useEffect(() => {
-    if (
-      chatWindowState === "open" &&
-      combinedMessages.length > prevMessageCount.current
-    ) {
-      setTimeout(
-        () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
-        100,
-      );
-    }
-    prevMessageCount.current = combinedMessages.length;
-  }, [combinedMessages.length, chatWindowState]);
+  if (chatWindowState === "open" && bottomRef.current) {
+    bottomRef.current.scrollIntoView({ behavior: "smooth" });
+  }
+}, [combinedMessages.length, chatWindowState]);
 
  const handleSendMessage = async (
     message: string,

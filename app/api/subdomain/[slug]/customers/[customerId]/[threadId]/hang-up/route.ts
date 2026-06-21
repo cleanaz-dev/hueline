@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
-
 interface Params {
   params: Promise<{
     slug: string;
@@ -12,7 +11,6 @@ interface Params {
     threadId: string;
   }>;
 }
-
 
 export async function POST(req: Request, { params }: Params) {
   const { customerId, slug, threadId } = await params;
@@ -25,7 +23,7 @@ export async function POST(req: Request, { params }: Params) {
   const isUserValid = await prisma.subdomainUser.findFirst({
     where: {
       email: user.email,
-      slug,
+      subdomain: { slug }
     },
   });
   if (!isUserValid)
