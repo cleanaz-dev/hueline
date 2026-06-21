@@ -1,5 +1,6 @@
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { invalidateThreadCache } from "@/lib/redis/agent-context";
 import { sendChatEmail } from "@/lib/resend";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -87,6 +88,8 @@ export async function POST(req: Request, { params }: Params) {
         where: { id: threadId },
         data: { updatedAt: new Date() } // Forces the thread to the top of "Recent Chats"
       });
+      // Clears Redis Thread Cache
+      await invalidateThreadCache(slug, threadId)
 
     } else {
       await prisma.errorLog.create({

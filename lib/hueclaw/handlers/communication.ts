@@ -9,6 +9,7 @@ import { scheduleAWSFollowUp } from "@/lib/aws/event-scheduler";
 import { cancelPendingFollowUp } from "@/lib/aws/event-scheduler/cancel-followups";
 import { prisma } from "@/lib/prisma";
 import { clearHueClawStatus, releaseResourceLock } from "@/lib/redis";
+import { invalidateThreadCache } from "@/lib/redis/agent-context";
 import { sendChatEmail } from "@/lib/resend";
 import { sendDefaultSMS } from "@/lib/twilio/sms-default";
 
@@ -84,6 +85,17 @@ export async function handleHueClawCommunication({
 }: ProcessCommsArgs) {
   const config = TRIGGER_CONFIG[triggerSource];
 
+  const threadGlobalSlug = await prisma.chatThread.findUnique({
+    where: {id: threadId},
+    select: {
+      subdomain: {
+        select: {
+          slug: true
+        }
+      }
+    }
+  })
+
   try {
     const { deliveryMethod, msgBody, msgSubject, reasonForSilence } =
       pendingMessage;
@@ -157,6 +169,8 @@ export async function handleHueClawCommunication({
           },
         });
       });
+
+      
 
       return { success: true };
     }
@@ -237,6 +251,9 @@ export async function handleHueClawCommunication({
     try {
       await releaseResourceLock(lockKey);
       console.log(`[HueClaw Comms] 🔓 Lock released for thread ${threadId}`);
+
+      //Invalidate REDIS Cache
+      await invalidateThreadCache(threadGlobalSlug?.subdomain.slug!,threadId)
     } catch (lockError) {
       console.error(
         `[HueClaw Comms] Warning: Failed to release lock (might have expired):`,

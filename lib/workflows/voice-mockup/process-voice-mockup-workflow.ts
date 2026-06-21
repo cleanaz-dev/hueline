@@ -8,6 +8,7 @@ import {
 } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { createMockupBooking } from "@/lib/prisma/mutations/booking-data/create-mockup-booking";
+import { invalidateThreadCache } from "@/lib/redis/agent-context";
 import { voiceMockupWebhookBodySchema } from "@/lib/zod/voice-mockup-webhook-body";
 import { nanoid } from "nanoid";
 
@@ -88,6 +89,7 @@ export async function processMockupWorkflow({
 }: ProcessMockupArgs) {
   const config = MOCKUP_CONFIG[triggerSource];
 
+
   try {
     const parsedWebhook = voiceMockupWebhookBodySchema.safeParse(webhookBody);
     if (!parsedWebhook.success) {
@@ -144,6 +146,14 @@ export async function processMockupWorkflow({
           subdomainId: webhook.subdomainId,
           title: `New Thread: ${customer.name}`,
         },
+        select: {
+          id: true,
+          subdomain: {
+            select: {
+              slug: true
+            }
+          }
+        }
       });
       // Communication + media attachment (the mockup image)
       await tx.clientCommunication.create({
@@ -189,8 +199,11 @@ export async function processMockupWorkflow({
           subdomain: { connect: { id: webhook.subdomainId } },
         },
       });
-    });
 
+       // Invalidate REDIS THREAD CACHE
+      await invalidateThreadCache(thread.subdomain.slug,thread.id)
+    });
+   
     return { success: true };
   } catch (error) {
     console.error(

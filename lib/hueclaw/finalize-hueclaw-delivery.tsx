@@ -4,6 +4,7 @@ import { SendImageSMS } from "../twilio/twilio-send-image";
 import { sendEmailWithAttachment } from "../resend/send-image-email";
 import { HueClawEmailTemplate } from "../resend/hue-claw/hueclaw-email-template";
 import { prisma } from "../prisma";
+import { invalidateThreadCache } from "../redis/agent-context";
 
 export type DeliveryMethod = "SMS" | "EMAIL" | string;
 export type PendingMessagePayload = {
@@ -68,6 +69,18 @@ export async function finalizeHueClawDelivery({
     });
   }
 
+  const thread = await prisma.chatThread.findUnique({
+    where: {id: threadId},
+    select: {
+      id: true,
+      subdomain: {
+        select: {
+          slug: true
+        }
+      }
+    }
+  })
+
   await prisma.clientActivity.create({
     data: {
       type: pendingMessage.deliveryMethod === "SMS" ? "SMS_SENT" : "EMAIL_SENT",
@@ -99,4 +112,6 @@ export async function finalizeHueClawDelivery({
       },
     },
   });
+  // Clears Redis Thread Cache
+  await invalidateThreadCache(thread?.subdomain.slug!, threadId)
 }

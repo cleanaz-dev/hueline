@@ -6,6 +6,7 @@ import { sendEmail } from "@/lib/resend";
 import { SendBasicEmail } from "@/lib/resend/services/send-email";
 import { hueClawQuoteResultSchema } from "@/lib/zod/hueclaw/quote/quote-result-schema";
 import { QuoteCommsMetadata } from "@/lib/zod/hueclaw/quote/quote-comms-metadata";
+import { invalidateThreadCache } from "@/lib/redis/agent-context";
 
 export async function processQuoteReturn(task: SystemTask, rawResult: any) {
   // 1. Unpack the backpack that handleHueClawQuote packed
@@ -148,6 +149,9 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
       }),
     });
   }
+
+   // Invalidate REDIS THREAD CACHE
+    await invalidateThreadCache(subdomain.slug,threadId)
 
   return {
     releaseLock: true,

@@ -1,5 +1,6 @@
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { invalidateThreadCache } from "@/lib/redis/agent-context";
 import { sendDefaultSMS } from "@/lib/twilio/sms-default";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -74,6 +75,9 @@ export async function POST(req: Request, { params }: Params) {
         title: "SMS Sent",
       },
     });
+
+    // Clears Redis Thread Cache
+    await invalidateThreadCache(slug, threadId)
 
     // ✅ Added missing success response
     return NextResponse.json(

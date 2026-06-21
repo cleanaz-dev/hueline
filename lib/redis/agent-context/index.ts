@@ -3,7 +3,7 @@
 import { Redis } from "@upstash/redis";
 
 // Initialize the Upstash Redis client
-const redis = new Redis({
+export const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
@@ -81,4 +81,10 @@ export async function deleteAgentContext(roomName: string): Promise<void> {
     console.error(`[Redis] Failed to delete agent context for ${roomName}:`, error);
   }
 }
-
+/**
+ * Deletes Thread on every change or update to the thread
+ */
+export async function invalidateThreadCache(slug: string, threadId: string) {
+  const cacheKey = `timeline:${slug}:${threadId}`;
+  await redis.del(cacheKey);
+}

@@ -6,6 +6,7 @@ import {
   SystemTask,
 } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { invalidateThreadCache } from "@/lib/redis/agent-context";
 import {
   HandlerQuoteWebhookBody,
   handlerQuoteWebhookSchema,
@@ -216,6 +217,9 @@ export async function processQuoteWorkflow({
 
       return { success: true };
     });
+
+    // Invalidate REDIS THREAD CACHE
+    await invalidateThreadCache(subdomain.slug, metadata.chatThreadId!);
   } catch (error) {
     console.error(`[processQuoteWorkflow] Failed for ${customer.id}:`, error);
     throw new Error("Failed to process quote workflow");

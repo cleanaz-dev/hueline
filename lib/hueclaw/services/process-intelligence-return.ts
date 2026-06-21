@@ -3,6 +3,7 @@ import { z } from "zod";
 import { hueClawOutboundCallMetadataSchema } from "@/lib/zod/outbound-calls/hueclaw-outbound-metadata";
 import { intelligenceResultSchema } from "@/lib/zod/intelligence/intelligence-result-schema";
 import { prisma } from "@/lib/prisma";
+import { invalidateThreadCache } from "@/lib/redis/agent-context";
 
 export async function processIntelligenceReturn(task: SystemTask, result: any) {
   // 1. Parse Metadata & Payload
@@ -80,6 +81,9 @@ export async function processIntelligenceReturn(task: SystemTask, result: any) {
       },
     },
   });
+
+  // Invalidate REDIS THREAD CACHE
+  await invalidateThreadCache(subdomain.slug,threadId)
 
   return {
     releaseLock: true,

@@ -18,6 +18,7 @@ import z from "zod";
 import { DesignStudioMetadata, designStudioMetadataSchema } from "@/lib/zod/design-studio-metadata";
 import { createNewSubBooking } from "./mutations/create-new-subbooking";
 import { StandardImageMetadata, standardImagenMetadataSchema } from "@/lib/zod/imagen-metadata/standard-imagen-metadata-schema";
+import { invalidateThreadCache } from "@/lib/redis/agent-context";
 
 // ─── Trigger Source ───────────────────────────────────────────────────────────
 export type ImagenTriggerSource = z.infer<
@@ -354,7 +355,8 @@ export async function processImagenWorkflow({
         });
       }
     });
-
+     // Invalidate REDIS THREAD CACHE
+      // await invalidateThreadCache(subdomain.slug)
     return { success: true };
   } catch (error) {
     console.error(`[processImagenWorkflow] Failed for ${customer.id}:`, error);

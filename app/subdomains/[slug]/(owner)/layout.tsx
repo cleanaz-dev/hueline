@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { OwnerProvider } from "@/context/owner-context";
 import { getOwnerData } from "@/lib/prisma/queries/owner/get-owner-data";
-import { GlobalOwnerChatWidget } from "@/components/owner/global-owner-chat-widget";
+import { GlobalOwnerChatWidget } from "@/components/owner/chat-widget/global-owner-chat-widget";
 import AddCustomerDialog from "@/components/owner/customers/add-customer-dialog";
 import InviteTeamDialog from "@/components/owner/team/invite-team-dialog";
 import ReportTaskDialog from "@/components/owner/system-tasks/report-task-dialog";

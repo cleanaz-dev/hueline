@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 // 1. IMPORT YOUR UTILITY HERE:
 import { getPresignedUrl } from "@/lib/aws/s3";
+import { redis } from "@/lib/redis/agent-context";
 
 export async function GET(
   req: Request,
@@ -36,6 +37,18 @@ export async function GET(
 
   if (!isUserValid) {
     return NextResponse.json({ message: "Access Denied" }, { status: 401 });
+  }
+
+  const cacheKey = `timeline:${slug}:${threadId}`;
+
+  try {
+    const cachedTimeline = await redis.get(cacheKey);
+    if (cachedTimeline) {
+      // CACHE HIT! Return immediately (2ms response time 🔥)
+      return NextResponse.json(cachedTimeline);
+    }
+  } catch (e) {
+    console.error("Redis fetch failed, falling back to DB", e);
   }
 
   try {
@@ -133,6 +146,8 @@ export async function GET(
       (a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
+
+    await redis.set(cacheKey, JSON.stringify(timeline), { ex: 2700 });
 
     return NextResponse.json(timeline);
   } catch (error) {
