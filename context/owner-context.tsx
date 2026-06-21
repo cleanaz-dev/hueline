@@ -88,6 +88,11 @@ interface OwnerContextValue {
   isDialing: boolean;
   isAiLoading: boolean;
   isGeneratingImage: boolean;
+  isCancellingCall: boolean;
+  handleHangUpCall:(
+    customerId: string,
+    threadId:string,
+  ) => Promise<boolean>
   isAddingCustomer: boolean;
   aiSuggestions: Record<string, AiSuggestionData>;
   pendingMessages: PendingMessage[];
@@ -194,6 +199,7 @@ export function OwnerProvider({
   const [reportTaskDialogOpen, setReportTaskDialogOpen] = useState(false);
   const [isReportingTask, setIsReportingTask] = useState(false);
   const [isDialing, setIsDialing] = useState(false);
+  const [isCancellingCall, setIsCancellingCall] = useState(false);
 
   const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
@@ -290,7 +296,6 @@ export function OwnerProvider({
     callType: string,
     operatorNumber?: string,
   ): Promise<boolean> => {
-    // <-- Changed to Promise<boolean>
     setIsDialing(true);
     try {
       const res = await fetch(
@@ -429,6 +434,22 @@ export function OwnerProvider({
     }
   };
 
+  const handleHangUpCall = async (customerId: string, threadId: string): Promise<boolean> =>  {
+    setIsCancellingCall(true);
+    try {
+      const res = await fetch(
+        `/api/subdomain/${subdomain.slug}/customers/${customerId}/${threadId}/hang-up`,
+        {
+          method: "POST",
+        },
+      );
+      if (!res.ok) throw new Error();
+      return res.ok;
+    } finally {
+      setIsCancellingCall(false);
+    }
+  };
+
   return (
     <OwnerContext.Provider
       value={{
@@ -444,7 +465,8 @@ export function OwnerProvider({
         chatThreads: threadsData?.threads ?? [],
         isThreadsLoading,
         refreshThreads: () => mutateThreads(),
-
+        isCancellingCall,
+        handleHangUpCall,
         isInvitingMember,
         addCustomerDialogOpen,
         setAddCustomerDialogOpen,

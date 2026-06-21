@@ -23,7 +23,7 @@ export async function handleLiveKitVoiceEgressEnded(
 
   console.log(`✅ Recording S3 Key saved for call: ${callId} (Room: ${roomName})`);
 
-  const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/hueclaw`;
+  const webhookUrl = `https://www.hue-line.com/api/webhooks/hueclaw`;
   const audioUrl = await getPresignedUrl(s3Key);
 
   console.log("Audio URL:", audioUrl)

@@ -18,14 +18,8 @@ import { RichTextEditor } from "../admin/prospects/rich-text-editor";
 import { AiActionDock } from "../admin/prospects/ai-action-dock";
 import { useOwner } from "@/context/owner-context";
 import { HueClawChatControls } from "./hueclaw/hueclaw-chat-controls";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { DialChannelInput } from "./dial-input-channel";
+import OmniChannelActionButton from "./omni-channel-actions-button";
 
 interface OwnerAdvancedChatInputProps {
   isLoading: boolean;
@@ -34,7 +28,7 @@ interface OwnerAdvancedChatInputProps {
     channel: "SMS" | "EMAIL" | "DIAL",
     subject?: string,
     customerPhone?: string, // <-- Add this
-    operatorPhone?: string  // <-- Add this
+    operatorPhone?: string, // <-- Add this
   ) => void;
   clientId?: string;
 }
@@ -62,13 +56,13 @@ export function OwnerAdvancedChatInput({
     activeThread?.isAutoPilot ?? false,
   );
   const [customerPhoneNumber, setCustomerPhoneNumber] = useState<string>("");
-  const [operatorNumber, setOperatorNumber] = useState<string>(me?.phone ?? "")
+  const [operatorNumber, setOperatorNumber] = useState<string>(me?.phone ?? "");
 
   useEffect(() => {
     setIsAutoPilot(activeThread?.isAutoPilot ?? false);
   }, [activeThread?.isAutoPilot]);
 
-   useEffect(() => {
+  useEffect(() => {
     if (me?.phone && !operatorNumber) {
       setOperatorNumber(me.phone);
     }
@@ -77,11 +71,11 @@ export function OwnerAdvancedChatInput({
   // const currentSuggestion =
   //   clientId && aiSuggestions ? aiSuggestions[clientId] : null;
 
-const handleSend = () => {
+  const handleSend = () => {
     // If dialing, bypass the text check
     if (channel === "DIAL") {
       // Pass the new variables here!
-      onSend("", "DIAL", undefined, customerPhoneNumber, operatorNumber); 
+      onSend("", "DIAL", undefined, customerPhoneNumber, operatorNumber);
       return;
     }
 
@@ -90,13 +84,13 @@ const handleSend = () => {
 
     // You can pass them here too just so the arguments line up
     onSend(
-      text, 
-      channel, 
-      channel === "EMAIL" ? subject : undefined, 
-      customerPhoneNumber, 
-      operatorNumber
+      text,
+      channel,
+      channel === "EMAIL" ? subject : undefined,
+      customerPhoneNumber,
+      operatorNumber,
     );
-    
+
     setText("");
     setSubject("");
     setIsUndocked(false);
@@ -117,6 +111,10 @@ const handleSend = () => {
       setIsUndocked(false);
     }
   };
+
+  const handleHangUp = async () => (
+    console.log("Hangup")
+  )
 
   // Allow dialing even if text is empty, as long as a number exists
   const isEmpty =
@@ -369,40 +367,20 @@ const handleSend = () => {
                 isLoading={isLoading}
                 operatorNumber={operatorNumber}
                 setOperatorNumber={setOperatorNumber}
+                isDialing={isDialing}
               />
             )}
           </AnimatePresence>
 
-          <motion.div
-            layout
-            className="flex justify-end p-2 pt-0 mt-1 bg-background shrink-0"
-          >
-            {/* Docked send button */}
-            <Button
-              onClick={handleSend}
-              disabled={isEmpty || isLoading || isDialing}
-              size="sm"
-              className="h-8 gap-2 rounded-lg"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  <span>
-                    {channel === "DIAL" ? "Dialing..." : "Sending..."}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span>{channel === "DIAL" ? "Dial" : "Send"}</span>
-                  {channel === "DIAL" ? (
-                    <Phone size={14} />
-                  ) : (
-                    <Send size={14} />
-                  )}
-                </>
-              )}
-            </Button>
-          </motion.div>
+          <OmniChannelActionButton
+            channel={channel}
+            isEmpty={isEmpty}
+            isLoading={isLoading}
+            isDialing={isDialing}
+            onSend={handleSend}
+            customerId={activeThread?.id!}
+            threadId={activeThread?.threadId!}
+          />
         </motion.div>
       </div>
     </>

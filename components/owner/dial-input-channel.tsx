@@ -19,6 +19,7 @@ interface DialChannelInputProps {
   setOperatorNumber: (val: string) => void;
   activeThreadPhone?: string;
   isLoading: boolean;
+  isDialing: boolean
 }
 
 export function DialChannelInput({
@@ -28,6 +29,7 @@ export function DialChannelInput({
   setOperatorNumber,
   activeThreadPhone,
   isLoading,
+  isDialing
 }: DialChannelInputProps) {
   const { me, isMeLoading } = useOwner();
 
@@ -47,7 +49,7 @@ export function DialChannelInput({
         <Select
           value={customerPhoneNumber || activeThreadPhone || ""}
           onValueChange={(val) => setCustomerPhoneNumber(val)}
-          disabled={isLoading}
+          disabled={isLoading || isDialing}
         >
           <SelectTrigger className="w-full h-9 px-3 text-sm bg-transparent border border-zinc-200 dark:border-zinc-800 rounded-md focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer">
             <SelectValue placeholder="No phone numbers found" />
@@ -77,7 +79,7 @@ export function DialChannelInput({
             value={operatorNumber}
             onChange={(e) => setOperatorNumber(e.target.value)}
             placeholder="Operator phone number..."
-            disabled={isLoading}
+            disabled={isLoading || isDialing}
             className="w-full h-9 px-3 text-sm bg-transparent border border-zinc-200 dark:border-zinc-800 rounded-md"
           />
         )}
