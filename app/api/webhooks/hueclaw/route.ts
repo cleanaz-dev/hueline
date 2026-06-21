@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         outcome = await processQuoteReturn(task, result);
         break;
 
-      case "INTELLIGENCE":
+      case "OUTBOUND_CALL":
         outcome = await processIntelligenceReturn(task,result)
         break
       default:

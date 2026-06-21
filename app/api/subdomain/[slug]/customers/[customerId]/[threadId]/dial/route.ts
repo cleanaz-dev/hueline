@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { AgentDispatchClient, RoomServiceClient } from "livekit-server-sdk";
 import { setAgentContext } from "@/lib/redis/agent-context";
-import { connect } from "http2";
 import {
   acquireResourceLock,
   clearHueClawStatus,

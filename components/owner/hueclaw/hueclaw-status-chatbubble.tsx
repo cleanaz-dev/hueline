@@ -10,6 +10,10 @@ import {
   Calculator,
   BrainCircuit,
   Speech,
+  PhoneOutgoing,
+  Headset,
+  PhoneForwarded,
+  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOwner } from "@/context/owner-context";
@@ -31,8 +35,6 @@ export function HueClawStatusBubble({
     `/api/subdomain/${subdomain.slug}/threads/${threadId}/hueclaw-status`,
     fetcher,
     {
-      // Because this hits Redis and not Postgres, we can safely poll every 2 seconds
-      // as long as AutoPilot is ON, or if the AI is actively working (from a manual trigger)
       refreshInterval: (latestData) => {
         return isAutoPilot || latestData?.isWorking ? 2000 : 0;
       },
@@ -44,10 +46,14 @@ export function HueClawStatusBubble({
     COMMUNICATION: { text: "HueClaw is analyzing thread", icon: BrainCircuit },
     IMAGEN: { text: "HueClaw is generating an image", icon: ImageIcon },
     QUOTE: { text: "HueClaw is calculating a quote", icon: Calculator },
-    INTELLIGENCE: {
-      text: "HueClaw is processing call intelligence",
-      icon: Speech,
-    },
+    INTELLIGENCE: { text: "HueClaw is processing call intelligence", icon: Speech },
+    
+    // Granular Call States
+    OUTBOUND_CALL: { text: "HueClaw is initiating call", icon: PhoneOutgoing },
+    DIALING_OPERATOR: { text: "Dialing operator...", icon: PhoneOutgoing },
+    OPERATOR_CONNECTED: { text: "Operator connected, bridging...", icon: Headset },
+    DIALING_CUSTOMER: { text: "Dialing customer...", icon: PhoneForwarded },
+    CALL_CONNECTED: { text: "Call in progress", icon: Phone },
   };
 
   const activeStatus = STATUS_CONFIG[data?.taskType] || {
@@ -82,9 +88,9 @@ export function HueClawStatusBubble({
                   size={14}
                   className={cn(
                     "text-indigo-400 dark:text-indigo-500",
-                    data?.taskType === "COMMUNICATION"
-                      ? "animate-pulse"
-                      : "animate-[spin_3s_linear_infinite]",
+                    data?.taskType && STATUS_CONFIG[data.taskType] 
+                      ? "animate-pulse" 
+                      : "animate-[spin_3s_linear_infinite]"
                   )}
                 />
 
