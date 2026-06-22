@@ -213,7 +213,7 @@ export function WidgetOpen() {
                       isGroupStart={isGroupStart}
                       isGroupEnd={isGroupEnd}
                       onCancelFollowUp={async (threadId) => {
-                        await fetch(`/api/subdomain/${subdomain.slug}/chat-threads/${threadId}/cancel-followup`, {
+                        await fetch(`/api/subdomain/${subdomain.slug}/customers/${customer?.id}/${threadId}/cancel-followup`, {
                           method: "POST",
                           body: JSON.stringify({ threadId }),
                         });
