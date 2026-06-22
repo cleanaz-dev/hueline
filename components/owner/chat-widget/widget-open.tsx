@@ -1,4 +1,7 @@
 // components/owner/chat-widget/widget-open.tsx
+
+
+"use client"
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
