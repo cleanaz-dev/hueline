@@ -309,11 +309,11 @@ model Subdomain {
 }
 
 model FollowUpSchedule {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
   title        String?
   triggerAt    DateTime
   reason       String // e.g., "Customer said they are busy, checking back tomorrow"
-  status       String   @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  status       FollowUpStatus @default(PENDING) // PENDING, COMPLETED, CANCELLED
   scheduleName String?
 
   // Relations
@@ -571,11 +571,11 @@ model SystemTask {
   subdomain    Subdomain   @relation(fields: [subdomainId], references: [id])
   subdomainId  String      @db.ObjectId
 
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  customer      Customer?      @relation(fields: [customerId], references: [id])
-  customerId    String?        @db.ObjectId
-  calls         Call[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?   @db.ObjectId
+  calls      Call[]
 }
 
 enum MetadataSource {
@@ -718,7 +718,7 @@ model Call {
   audioUrl     String?
   duration     String?
   status       String?
-  roomName     String? @unique
+  roomName     String? 
   callType     String?
 
   intelligence CallIntelligence?
@@ -742,8 +742,6 @@ enum CallDirection {
   OUTBOUND
 }
 
-
-
 model CallIntelligence {
   id                       String       @id @default(auto()) @map("_id") @db.ObjectId
   callId                   String       @unique @db.ObjectId
@@ -765,7 +763,6 @@ model CallIntelligence {
   @@index([callReason])
   @@index([callOutcome])
 }
-
 
 model Export {
   id           String         @id @default(auto()) @map("_id") @db.ObjectId

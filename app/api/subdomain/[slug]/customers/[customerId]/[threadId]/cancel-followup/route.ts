@@ -44,7 +44,7 @@ if (!session || !session.user)
     },
   });
   if (!followUp)
-    return NextResponse.json({ message: "Missing Data" }, { status: 400 });
+    return NextResponse.json({ message: "FollowUp Does Not Exist" }, { status: 400 });
 
   try {
     await cancelPendingFollowUp(threadId);
