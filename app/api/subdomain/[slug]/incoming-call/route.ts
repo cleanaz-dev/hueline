@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { setHueClawStatus } from "@/lib/redis";
+import { invalidateThreadCache } from "@/lib/redis/agent-context";
 import { nanoid } from "nanoid";
 import { NextResponse } from "next/server";
 
@@ -12,7 +13,7 @@ interface Params {
 export async function POST(req: Request, { params }: Params) {
   const key = process.env.LAMBDA_WEBHOOK_SECRET!;
   const { slug } = await params;
-  const authHeaders = await req.headers.get("x-webhook-secret");
+  const authHeaders = req.headers.get("x-webhook-secret");
 
   try {
     const body = await req.json();
@@ -20,7 +21,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const subdomain = await prisma.subdomain.findUnique({
       where: { slug },
-      select: { id: true },
+      select: { id: true, slug: true },
     });
 
     if (!subdomain) {
@@ -63,7 +64,19 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
-    await setHueClawStatus(thread.id, "CALL_CONNECTED")
+    await prisma.clientActivity.create({
+      data: {
+        type: "INBOUND_CALL",
+        chatThread: { connect: { id: thread.id } },
+        customer: { connect: { id: customer.id } },
+        description: `Inbound Call from ${customer.name} - ${customer.phone}`,
+        title: "Inbound Call",
+      },
+    });
+
+    await setHueClawStatus(thread.id, "CALL_CONNECTED");
+
+    await invalidateThreadCache(slug, thread.id);
 
     return NextResponse.json(
       { message: "Call Flow Created Successfully", threadId: thread.id },

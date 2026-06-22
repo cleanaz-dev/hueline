@@ -137,11 +137,38 @@ export async function GET(
         ]
       : [];
 
+    const rawCalls = await prisma.call.findMany({
+      where: { customerId, threadId: threadId },
+    });
+
+    const mappedCalls = rawCalls.map((call) => ({
+      id: call.id,
+      // INBOUND = Client side (right), OUTBOUND = Operator/AI side (left)
+      role: call.callDirection === "INBOUND" ? "CLIENT" : "OPERATOR",
+      type: "PHONE",
+      activityType: "CALL", // Optional fallback
+      body:
+        call.status === "PROCESSING"
+          ? "Live Call in Progress..."
+          : "Call Ended",
+      description: `Call ID: ${call.callSid}`,
+      metadata: {
+        status: call.status,
+        callDirection: call.callDirection,
+        audioUrl: call.audioUrl,
+        duration: call.duration,
+        roomName: call.roomName,
+      },
+      createdAt: call.createdAt,
+      mediaAttachments: [],
+    }));
+
     // 5. Merge and Sort chronologically
     const timeline = [
       ...communications,
       ...mappedActivities,
       ...mappedFollowUps,
+      ...mappedCalls, // <-- Add calls to the merge
     ].sort(
       (a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),

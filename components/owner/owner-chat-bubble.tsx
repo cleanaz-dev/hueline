@@ -23,6 +23,7 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import ThreadQuoteCard from "./quote/thread-quote-card";
 import { Type, ChatBubbleProps, Role } from "@/types/chat-types";
+import ThreadCallCard from "./chat-widget/thread-call-card";
 
 const ROLE_CONFIG = {
   CLIENT: {
@@ -188,6 +189,9 @@ export function OwnerChatBubble({
             {/* Message Body */}
             {msg.type === "QUOTE" && msg.metadata?.quoteId ? (
               <ThreadQuoteCard msg={msg} />
+            ) : msg.type === "PHONE" ? (
+              // NEW: Render the Call Card!
+              <ThreadCallCard msg={msg} />
             ) : msg.type === "EMAIL" ? (
               // Existing Email render logic
               <div className="flex flex-col text-[14px] leading-relaxed opacity-90 [&_p]:mb-3 last:[&_p]:mb-0 [&_a]:underline [&_a]:font-medium hover:[&_a]:opacity-80 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5">
