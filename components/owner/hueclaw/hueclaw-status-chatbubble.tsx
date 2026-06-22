@@ -44,16 +44,16 @@ export function HueClawStatusBubble({
 
   const STATUS_CONFIG: Record<HueClawStatus, { text: string; icon: any }> = {
     COMMUNICATION: { text: "Analyzing thread context", icon: BrainCircuit },
-    IMAGEN: { text: "Generating an image", icon: ImageIcon },
+    IMAGEN: { text: "Generating image", icon: ImageIcon },
     QUOTE: { text: "Calculating custom quote", icon: Calculator },
-    INTELLIGENCE: { text: "Processing call intelligence", icon: Speech },
-    OUTBOUND_CALL: { text: "Initiating outbound call", icon: PhoneOutgoing },
+    INTELLIGENCE: { text: "Processing intelligence", icon: Speech },
+    OUTBOUND_CALL: { text: "Initiating call", icon: PhoneOutgoing },
     DIALING_OPERATOR: { text: "Dialing operator...", icon: PhoneOutgoing },
-    OPERATOR_CONNECTED: { text: "Operator connected, bridging...", icon: Headset },
+    OPERATOR_CONNECTED: { text: "Operator connected", icon: Headset },
     DIALING_CUSTOMER: { text: "Dialing customer...", icon: PhoneForwarded },
     CALL_CONNECTED: { text: "Live call in progress", icon: Phone },
-    NUDGE: { text: "Processing next steps", icon: Loader2 },
-    LIVE_IMAGEN: { text: "Generating a live image", icon: ImageIcon },
+    NUDGE: { text: "Processing", icon: Loader2 },
+    LIVE_IMAGEN: { text: "Generating live image", icon: ImageIcon },
   };
 
   const activeStatus = STATUS_CONFIG[data?.taskType as HueClawStatus] || {
@@ -67,58 +67,62 @@ export function HueClawStatusBubble({
     <AnimatePresence>
       {data?.isWorking && (
         <motion.div
-          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="flex w-full justify-center my-4"
+          // Spring physics for a realistic "popping out" feeling
+          initial={{ opacity: 0, y: 15, scale: 0.9, filter: "blur(4px)" }}
+          animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+          exit={{ opacity: 0, y: 10, scale: 0.95, filter: "blur(2px)", transition: { duration: 0.2 } }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          className="flex w-full justify-center my-6 relative z-10"
         >
-          {/* AI Dynamic Island Pill */}
-          <div className="relative flex items-center gap-3 p-1 pr-4 rounded-full bg-white dark:bg-zinc-900 border border-indigo-100 dark:border-indigo-500/30 shadow-md shadow-indigo-500/5">
+          {/* Continuous "breathing" / hovering effect */}
+          <motion.div 
+            animate={{ y: [0, -2, 0] }} 
+            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+            // The ultra-soft shadow creates the physical depth
+            className="flex items-center gap-3 py-2 px-4 rounded-full bg-white dark:bg-zinc-900 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)] border border-black/5 dark:border-white/5"
+          >
             
-            {/* AI Avatar inside the pill */}
-            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-500 text-white shadow-inner shrink-0 relative overflow-hidden">
-              <Bot size={14} className="relative z-10" />
-              {/* Subtle sweep effect inside the avatar */}
-              <div className="absolute inset-0 bg-white/20 blur-sm animate-pulse" />
+            {/* Minimal AI Avatar */}
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-zinc-50 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 shrink-0">
+              <Bot size={13} />
             </div>
 
-            {/* Status Icon & Text Group */}
+            {/* Status Info (Grayscale/Muted) */}
             <div className="flex items-center gap-1.5">
               <StatusIcon
-                size={12}
+                size={13}
                 className={cn(
-                  "text-indigo-500 dark:text-indigo-400",
+                  "text-zinc-400 dark:text-zinc-500",
                   data?.taskType && STATUS_CONFIG[data.taskType as HueClawStatus]
                     ? "animate-pulse"
                     : "animate-[spin_3s_linear_infinite]"
                 )}
               />
-              <span className="text-[12.5px] font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
+              <span className="text-[13px] font-medium tracking-tight text-zinc-600 dark:text-zinc-300">
                 {activeStatus.text}
               </span>
             </div>
 
-            {/* AI Bouncing Dots */}
-            <div className="flex gap-0.5 ml-1 opacity-70">
-              <motion.span
-                animate={{ y: [0, -3, 0] }}
-                transition={{ repeat: Infinity, duration: 1, delay: 0 }}
-                className="w-1 h-1 bg-purple-500 rounded-full"
+            {/* Subtle Breathing Dots */}
+            <div className="flex gap-1 ml-1 items-center">
+              <motion.div
+                animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                transition={{ repeat: Infinity, duration: 1.5, delay: 0 }}
+                className="w-1 h-1 bg-zinc-400 dark:bg-zinc-500 rounded-full"
               />
-              <motion.span
-                animate={{ y: [0, -3, 0] }}
-                transition={{ repeat: Infinity, duration: 1, delay: 0.15 }}
-                className="w-1 h-1 bg-purple-500 rounded-full"
+              <motion.div
+                animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}
+                className="w-1 h-1 bg-zinc-400 dark:bg-zinc-500 rounded-full"
               />
-              <motion.span
-                animate={{ y: [0, -3, 0] }}
-                transition={{ repeat: Infinity, duration: 1, delay: 0.3 }}
-                className="w-1 h-1 bg-purple-500 rounded-full"
+              <motion.div
+                animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }}
+                className="w-1 h-1 bg-zinc-400 dark:bg-zinc-500 rounded-full"
               />
             </div>
 
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
