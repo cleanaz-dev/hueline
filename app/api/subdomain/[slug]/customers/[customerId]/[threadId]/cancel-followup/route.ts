@@ -19,13 +19,15 @@ export async function POST(req: Request, { params }: Params) {
   const session = await getServerSession(authOptions);
   const user = session?.user;
 
-  if (!session || session.user)
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+if (!session || !session.user)
+  return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
   const validatedUser = await prisma.subdomainUser.findFirst({
     where: {
       email: user?.email!,
-      slug,
+      subdomain: {
+        slug
+      }
     },
   });
 
