@@ -192,7 +192,7 @@ export function OwnerProvider({
     fetcher,
     { 
       revalidateOnFocus: false,
-      refreshInterval: 2000 // <-- ADD THIS: Polls for new threads every 3 seconds!
+      refreshInterval: 1500 // <-- ADD THIS: Polls for new threads every 3 seconds!
     },
   );
 
