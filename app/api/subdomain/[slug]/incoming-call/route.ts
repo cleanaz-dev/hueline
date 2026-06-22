@@ -15,7 +15,7 @@ export async function POST(req: Request, { params }: Params) {
 
   try {
     const body = await req.json();
-    const { customer_name, phone_number, call_sid, room_name  } = body;
+    const { customer_name, phone_number, call_sid, room_name } = body;
 
     const subdomain = await prisma.subdomain.findUnique({
       where: { slug },
@@ -23,7 +23,10 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     if (!subdomain) {
-      return NextResponse.json({ message: "Subdomain not found" }, { status: 404 });
+      return NextResponse.json(
+        { message: "Subdomain not found" },
+        { status: 404 },
+      );
     }
 
     const customer = await prisma.customer.create({
@@ -55,13 +58,19 @@ export async function POST(req: Request, { params }: Params) {
         subdomain: { connect: { id: subdomain.id } },
         status: "PROCESSING",
         thread: { connect: { id: thread.id } },
-        roomName: room_name
+        roomName: room_name,
       },
     });
 
-    return NextResponse.json({ message: "Call Flow Created Successfully" }, { status: 200 });
+    return NextResponse.json(
+      { message: "Call Flow Created Successfully", threadId: thread.id },
+      { status: 200 },
+    );
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ message: "Error Creating Call Flow" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Error Creating Call Flow" },
+      { status: 500 },
+    );
   }
 }
