@@ -1,19 +1,16 @@
-// components/chat/widget-new-thread-alert.tsx
 "use client";
 
 import { motion } from "framer-motion";
 import { Phone, MessageSquare, X } from "lucide-react";
-import { useOwner } from "@/context/owner-context";
+import { useOwner, ChatThreadModel } from "@/context/owner-context"; // Import your model
 
-export function WidgetNewThreadAlert() {
-  const { newThreadAlert, dismissNewThreadAlert, openNewThreadAlert } = useOwner();
+// Accept the alert as a prop
+export function WidgetNewThreadAlert({ threadAlert }: { threadAlert: ChatThreadModel }) {
+  const { dismissNewThreadAlert, openNewThreadAlert } = useOwner();
 
-  if (!newThreadAlert) return null;
-
-  const customerName = newThreadAlert.customer?.name || "Unknown Caller";
-  
-  // Optional: You can check if it's a call based on a title or type if you have it
-  const isCall = true; // Assume call for now based on your incoming webhook
+  // Safely grab the customer name
+  const customerName = threadAlert.customer?.name || "Unknown Caller";
+  const isCall = true; // Assume call for now
 
   return (
     <motion.div
@@ -25,7 +22,6 @@ export function WidgetNewThreadAlert() {
       <div className="relative overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl p-4 cursor-pointer hover:border-emerald-500/50 transition-colors group"
         onClick={openNewThreadAlert}
       >
-        {/* Animated Background Pulse for attention */}
         <div className="absolute inset-0 bg-emerald-500/5 dark:bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
 
         <div className="flex items-start gap-3 relative z-10">
@@ -46,10 +42,9 @@ export function WidgetNewThreadAlert() {
           </div>
         </div>
 
-        {/* Dismiss Button */}
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevent opening the chat
+            e.stopPropagation(); 
             dismissNewThreadAlert();
           }}
           className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 p-1 bg-white dark:bg-zinc-900 rounded-full"

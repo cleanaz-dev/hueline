@@ -183,14 +183,17 @@ export function OwnerProvider({
 
   // 3. NEW THREAD LOGIC: SWR to fetch your recent chat threads.
 
-  const {
+   const {
     data: threadsData,
     isLoading: isThreadsLoading,
     mutate: mutateThreads,
   } = useSWR<{ threads: ChatThreadModel[] }>(
     `/api/subdomain/${subdomain.slug}/chat-threads`,
     fetcher,
-    { revalidateOnFocus: false },
+    { 
+      revalidateOnFocus: false,
+      refreshInterval: 2000 // <-- ADD THIS: Polls for new threads every 3 seconds!
+    },
   );
 
   const [isSendingSMS, setIsSendingSMS] = useState(false);
