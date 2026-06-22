@@ -9,7 +9,7 @@ import { WidgetIcon } from "./widget-icon";
 import { WidgetList } from "./widget-list";
 import { WidgetMinimized } from "./widget-minimized";
 import { WidgetOpen } from "./widget-open";
-import { WidgetNewThreadAlert } from "./widget-new-thread-alert"; // <-- ADD THIS
+import { WidgetNewThreadAlert } from "./widget-new-thread-alert"; 
 
 export function GlobalOwnerChatWidget() {
   const { chatWindowState } = useOwner();
