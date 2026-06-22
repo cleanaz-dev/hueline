@@ -55,7 +55,7 @@ export function HueClawStatusBubble({
     DIALING_OPERATOR:     { text: "Dialing operator",            icon: PhoneOutgoing  },
     OPERATOR_CONNECTED:   { text: "Operator connected",          icon: Headset        },
     DIALING_CUSTOMER:     { text: "AI dialing the customer",     icon: PhoneForwarded },
-    CALL_CONNECTED:       { text: "Live call in progress",              icon: Phone          },
+    CALL_CONNECTED:       { text: "Call Connected",              icon: Phone          },
     GATHERING_DETAILS:    { text: "AI gathering details",        icon: ClipboardList  },
     SPEAKING_WITH_CLIENT: { text: "AI speaking with client",     icon: Speech         },
     CALL_WRAPPING:        { text: "AI wrapping up the call",     icon: PhoneOff       },

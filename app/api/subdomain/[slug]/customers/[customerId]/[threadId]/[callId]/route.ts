@@ -9,14 +9,15 @@ interface Params {
     callId: string;
   }>;
 }
+
 export async function PATCH(req: Request, { params }: Params) {
   const { callId, customerId, slug, threadId } = await params;
 
-  const authHeaders = req.headers.get("x-webhook-secret");
+  // const authHeaders = req.headers.get("x-webhook-secret");
 
   try {
     const body = await req.json();
-    const { duration, status, roomName } = body;
+    const { duration, status, roomName, triggerSource, callSid } = body;
 
     await prisma.call.update({
       where: { id: callId },
@@ -25,6 +26,10 @@ export async function PATCH(req: Request, { params }: Params) {
         duration: String(duration),
       },
     });
+
+    // if (triggerSource) {
+    //   await handleEndOfCall(...)
+    // }
 
     return NextResponse.json({ message: "Updated Call" }, { status: 200 });
   } catch (error) {
