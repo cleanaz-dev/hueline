@@ -50,6 +50,16 @@ export async function POST(req: Request, { params }: Params) {
       select: { id: true },
     });
 
+    await prisma.clientActivity.create({
+      data: {
+        type: "INBOUND_CALL",
+        chatThread: { connect: { id: thread.id } },
+        customer: { connect: { id: customer.id } },
+        description: `Inbound Call from ${customer.name} - ${customer.phone}`,
+        title: "Inbound Call",
+      },
+    });
+
     await prisma.call.create({
       data: {
         callSid: call_sid,
@@ -61,16 +71,6 @@ export async function POST(req: Request, { params }: Params) {
         status: "PROCESSING",
         thread: { connect: { id: thread.id } },
         roomName: room_name,
-      },
-    });
-
-    await prisma.clientActivity.create({
-      data: {
-        type: "INBOUND_CALL",
-        chatThread: { connect: { id: thread.id } },
-        customer: { connect: { id: customer.id } },
-        description: `Inbound Call from ${customer.name} - ${customer.phone}`,
-        title: "Inbound Call",
       },
     });
 

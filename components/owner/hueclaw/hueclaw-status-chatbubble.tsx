@@ -13,6 +13,8 @@ import {
   Headset,
   PhoneForwarded,
   Phone,
+  ClipboardList,
+  PhoneOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOwner } from "@/context/owner-context";
@@ -43,17 +45,20 @@ export function HueClawStatusBubble({
   );
 
   const STATUS_CONFIG: Record<HueClawStatus, { text: string; icon: any }> = {
-    COMMUNICATION: { text: "Analyzing thread context", icon: BrainCircuit },
-    IMAGEN: { text: "Generating image", icon: ImageIcon },
-    QUOTE: { text: "Calculating custom quote", icon: Calculator },
-    INTELLIGENCE: { text: "Processing intelligence", icon: Speech },
-    OUTBOUND_CALL: { text: "Initiating call", icon: PhoneOutgoing },
-    DIALING_OPERATOR: { text: "Dialing operator...", icon: PhoneOutgoing },
-    OPERATOR_CONNECTED: { text: "Operator connected", icon: Headset },
-    DIALING_CUSTOMER: { text: "Dialing customer...", icon: PhoneForwarded },
-    CALL_CONNECTED: { text: "Live call in progress", icon: Phone },
-    NUDGE: { text: "Processing", icon: Loader2 },
-    LIVE_IMAGEN: { text: "Generating live image", icon: ImageIcon },
+    COMMUNICATION:        { text: "AI analyzing thread context", icon: BrainCircuit  },
+    IMAGEN:               { text: "AI generating image",         icon: ImageIcon      },
+    QUOTE:                { text: "AI calculating custom quote", icon: Calculator     },
+    INTELLIGENCE:         { text: "AI running intelligence",     icon: Speech         },
+    NUDGE:                { text: "AI processing",               icon: Loader2        },
+    LIVE_IMAGEN:          { text: "AI generating live image",    icon: ImageIcon      },
+    OUTBOUND_CALL:        { text: "AI initiating outbound call", icon: PhoneOutgoing  },
+    DIALING_OPERATOR:     { text: "Dialing operator",            icon: PhoneOutgoing  },
+    OPERATOR_CONNECTED:   { text: "Operator connected",          icon: Headset        },
+    DIALING_CUSTOMER:     { text: "AI dialing the customer",     icon: PhoneForwarded },
+    CALL_CONNECTED:       { text: "Live call in progress",              icon: Phone          },
+    GATHERING_DETAILS:    { text: "AI gathering details",        icon: ClipboardList  },
+    SPEAKING_WITH_CLIENT: { text: "AI speaking with client",     icon: Speech         },
+    CALL_WRAPPING:        { text: "AI wrapping up the call",     icon: PhoneOff       },
   };
 
   const activeStatus = STATUS_CONFIG[data?.taskType as HueClawStatus] || {
@@ -67,27 +72,24 @@ export function HueClawStatusBubble({
     <AnimatePresence>
       {data?.isWorking && (
         <motion.div
-          // Spring physics for a realistic "popping out" feeling
           initial={{ opacity: 0, y: 15, scale: 0.9, filter: "blur(4px)" }}
           animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-          exit={{ opacity: 0, y: 10, scale: 0.95, filter: "blur(2px)", transition: { duration: 0.2 } }}
+          exit={{
+            opacity: 0,
+            y: 10,
+            scale: 0.95,
+            filter: "blur(2px)",
+            transition: { duration: 0.2 },
+          }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
           className="flex w-full justify-center my-6 relative z-10"
         >
-          {/* Continuous "breathing" / hovering effect */}
-          <motion.div 
-            animate={{ y: [0, -2, 0] }} 
-            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-            // The ultra-soft shadow creates the physical depth
-            className="flex items-center gap-3 py-2 px-4 rounded-full bg-white dark:bg-zinc-900 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)] border border-black/5 dark:border-white/5"
-          >
-            
-            {/* Minimal AI Avatar */}
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-zinc-50 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 shrink-0">
+          <div className="flex items-center gap-3 py-2 px-4 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-zinc-50 dark:bg-zinc-800 text-muted-foreground dark:text-zinc-500 shrink-0">
               <Bot size={13} />
             </div>
 
-            {/* Status Info (Grayscale/Muted) */}
             <div className="flex items-center gap-1.5">
               <StatusIcon
                 size={13}
@@ -95,15 +97,14 @@ export function HueClawStatusBubble({
                   "text-zinc-400 dark:text-zinc-500",
                   data?.taskType && STATUS_CONFIG[data.taskType as HueClawStatus]
                     ? "animate-pulse"
-                    : "animate-[spin_3s_linear_infinite]"
+                    : "animate-[spin_3s_linear_infinite]",
                 )}
               />
-              <span className="text-[13px] font-medium tracking-tight text-zinc-600 dark:text-zinc-300">
+              <span className="text-[13px] font-medium tracking-tight text-muted-foreground/90">
                 {activeStatus.text}
               </span>
             </div>
 
-            {/* Subtle Breathing Dots */}
             <div className="flex gap-1 ml-1 items-center">
               <motion.div
                 animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
@@ -121,8 +122,7 @@ export function HueClawStatusBubble({
                 className="w-1 h-1 bg-zinc-400 dark:bg-zinc-500 rounded-full"
               />
             </div>
-
-          </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

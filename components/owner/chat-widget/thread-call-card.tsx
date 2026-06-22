@@ -21,12 +21,12 @@ export default function ThreadCallCard({ msg }: ThreadCallCardProps) {
   if (isProcessing) {
     return (
       <div className="flex items-center gap-3 py-2 px-1 opacity-70">
-        <Loader2 size={16} className="animate-spin text-zinc-400" />
+       
         <div className="flex flex-col">
-          <span className="text-[13px] italic text-zinc-600 dark:text-zinc-400">
+          <span className="text-[13px] italic text-zinc-800 dark:text-zinc-400">
             {isInbound ? "Inbound call in progress..." : "Outbound call in progress..."}
           </span>
-          <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+          <span className="text-xs text-zinc-600">
             Audio recording will appear here when ended.
           </span>
         </div>

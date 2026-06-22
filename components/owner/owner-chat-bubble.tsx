@@ -52,7 +52,7 @@ const ROLE_CONFIG = {
 const TYPE_CONFIG: Record<Type, { icon: any; label: string }> = {
   SMS: { icon: MessageSquare, label: "SMS" },
   EMAIL: { icon: Mail, label: "Email" },
-  PHONE: { icon: Phone, label: "Call Log" },
+  PHONE: { icon: Phone, label: "Call" },
   DEMO: { icon: Video, label: "Demo" },
   MEETING: { icon: Calendar, label: "Meeting" },
   ACTIVITY: { icon: Activity, label: "Activity" },
