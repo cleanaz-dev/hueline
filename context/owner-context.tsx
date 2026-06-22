@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, ReactNode, useState } from "react";
+import {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import { Customer, SubdomainUser } from "@/app/generated/prisma";
 import { AiSuggestionData } from "@/lib/moonshot";
 import { OwnerData } from "@/types/owner";
@@ -89,10 +96,7 @@ interface OwnerContextValue {
   isAiLoading: boolean;
   isGeneratingImage: boolean;
   isCancellingCall: boolean;
-  handleHangUpCall:(
-    customerId: string,
-    threadId:string,
-  ) => Promise<boolean>
+  handleHangUpCall: (customerId: string, threadId: string) => Promise<boolean>;
   isAddingCustomer: boolean;
   aiSuggestions: Record<string, AiSuggestionData>;
   pendingMessages: PendingMessage[];
@@ -130,6 +134,11 @@ interface OwnerContextValue {
     threadId: string,
     trigger: string,
   ) => Promise<void>;
+
+  //New Thread
+  newThreadAlert: ChatThreadModel | null;
+  dismissNewThreadAlert: () => void;
+  openNewThreadAlert: () => void;
 }
 
 const OwnerContext = createContext<OwnerContextValue | null>(null);
@@ -214,6 +223,53 @@ export function OwnerProvider({
 
   const users = userData?.users;
   const me = meData?.me;
+  // --- NEW THREAD DETECTION LOGIC ---
+  const [newThreadAlert, setNewThreadAlert] = useState<ChatThreadModel | null>(
+    null,
+  );
+  const knownThreadIds = useRef<Set<string> | null>(null);
+
+  useEffect(() => {
+    if (threadsData?.threads) {
+      if (knownThreadIds.current === null) {
+        // Initial load: Just record what's already there, don't trigger alerts
+        knownThreadIds.current = new Set(threadsData.threads.map((t) => t.id));
+      } else {
+        // Compare new data against known IDs
+        const newThreads = threadsData.threads.filter(
+          (t) => !knownThreadIds.current?.has(t.id),
+        );
+
+        if (newThreads.length > 0) {
+          // Grab the most recent new thread and show the alert
+          setNewThreadAlert(newThreads[0]);
+
+          // Add them to our known set so we don't alert again
+          newThreads.forEach((t) => knownThreadIds.current?.add(t.id));
+        }
+      }
+    }
+  }, [threadsData]);
+
+  const dismissNewThreadAlert = () => setNewThreadAlert(null);
+
+  const openNewThreadAlert = () => {
+    if (!newThreadAlert) return;
+
+    // Map the ChatThreadModel back to your CustomerChat format to open it
+    const prospectChat: CustomerChat = {
+      id: newThreadAlert.customer?.id || newThreadAlert.customerId,
+      name: newThreadAlert.customer?.name || "Unknown",
+      phone: newThreadAlert.customer?.phone,
+      email: newThreadAlert.customer?.email,
+      isAutoPilot: newThreadAlert.isAutoPilot,
+      threadId: newThreadAlert.id,
+      shortId: newThreadAlert.shortId,
+    };
+
+    openChat(prospectChat);
+    dismissNewThreadAlert(); // Hide the alert widget
+  };
 
   const openChat = (prospect: CustomerChat) => {
     setActiveThread(prospect);
@@ -434,7 +490,10 @@ export function OwnerProvider({
     }
   };
 
-  const handleHangUpCall = async (customerId: string, threadId: string): Promise<boolean> =>  {
+  const handleHangUpCall = async (
+    customerId: string,
+    threadId: string,
+  ): Promise<boolean> => {
     setIsCancellingCall(true);
     try {
       const res = await fetch(
@@ -504,6 +563,10 @@ export function OwnerProvider({
         openChatList,
         globalProspects: customersData?.customers ?? [],
         hueClawAi,
+
+        newThreadAlert,
+        dismissNewThreadAlert,
+        openNewThreadAlert,
       }}
     >
       {children}
