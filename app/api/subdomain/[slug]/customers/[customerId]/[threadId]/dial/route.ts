@@ -12,6 +12,7 @@ import {
 } from "@/lib/redis";
 import { HueClawOutboundCallMetadata } from "@/lib/zod/outbound-calls/hueclaw-outbound-metadata";
 import { nanoid } from "nanoid";
+import { HueClawCallMetadata } from "@/lib/zod/hueclaw/calls/hueclaw-call-metadata-schema";
 
 interface Params {
   params: Promise<{
@@ -148,7 +149,7 @@ export async function POST(req: Request, { params }: Params) {
         initiator: "OPERATOR",
         lockKey,
         status: "PROCESSING",
-        type: "OUTBOUND_CALL",
+        type: "INTELLIGENCE",
         customer: { connect: { id: customerId } },
         subdomain: { connect: { id: isUserValid.subdomain.id } },
         operator: { connect: { id: isUserValid.id } },
@@ -159,7 +160,7 @@ export async function POST(req: Request, { params }: Params) {
           callType,
           operatorNumber,
           customerNumber,
-        } satisfies HueClawOutboundCallMetadata,
+        } satisfies HueClawCallMetadata,
       },
     });
 

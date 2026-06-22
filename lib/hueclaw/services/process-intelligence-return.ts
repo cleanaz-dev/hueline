@@ -1,57 +1,46 @@
 import { CallOutcome, CallReason, SystemTask } from "@/app/generated/prisma";
-import { z } from "zod";
-import { hueClawOutboundCallMetadataSchema } from "@/lib/zod/outbound-calls/hueclaw-outbound-metadata";
+import { hueClawCallMetadataSchema } from "@/lib/zod/hueclaw/calls/hueclaw-call-metadata-schema";
 import { intelligenceResultSchema } from "@/lib/zod/intelligence/intelligence-result-schema";
 import { prisma } from "@/lib/prisma";
 import { invalidateThreadCache } from "@/lib/redis/agent-context";
 
 export async function processIntelligenceReturn(task: SystemTask, result: any) {
   // 1. Parse Metadata & Payload
-  const metadata = hueClawOutboundCallMetadataSchema.parse(task.metadata);
-  const {
-    callType,
-    customerNumber,
-    operatorNumber,
-    callId,
-    roomName,
-    threadId,
-  } = metadata;
+  const metadata = hueClawCallMetadataSchema.parse(task.metadata);
+  const { callId, threadId, callType } = metadata;
 
   // 2. Parse Results from Lambda
   const parsedData = intelligenceResultSchema.parse(result);
-  const { intelligence, transcriptText } = parsedData;
+  const { intelligence, transcriptText, audioUrl } = parsedData;
 
   // 3. Validate Database Relations
-  const customer = await prisma.customer.findUnique({
-    where: { id: task.customerId! },
-  });
+  const customer = await prisma.customer.findUnique({ where: { id: task.customerId! } });
   if (!customer) throw new Error(`Customer not found for task ${task.id}`);
 
   const subdomain = await prisma.subdomain.findUnique({
     where: { id: task.subdomainId },
     select: { id: true, slug: true },
   });
-  if (!subdomain)
-    throw new Error(`Subdomain not found for ${task.subdomainId}`);
+  if (!subdomain) throw new Error(`Subdomain not found for ${task.subdomainId}`);
 
-  console.log(
-    `[Intelligence] 🧠 Processing reasoning for OutboundCall: ${callId} - Reason: ${intelligence.callReason}`,
-  );
+  const isOutbound = !!callType && callType !== "INBOUND";
 
-  // 4. Update the OutboundCall & Create CallIntelligence Log
-  // Using Prisma's nested create to connect the newly generated intelligence directly
-  const outboundCall = await prisma.call.update({
+  console.log(`[Intelligence] 🧠 Processing for Call: ${callId} - Reason: ${intelligence.callReason}`);
+
+  // 4. Update Call & Create CallIntelligence
+  const call = await prisma.call.update({
     where: { id: callId },
     data: {
+      // inbound: write s3 audio url back to the call record
+      ...(!isOutbound && audioUrl && { audioUrl }),
       intelligence: {
         create: {
-          transcriptText: transcriptText,
+          transcriptText,
           callReason: (intelligence.callReason as CallReason) || "OTHER",
           callSummary: intelligence.callSummary,
-          callOutcome: intelligence.callOutcome,
-          // If your CallIntelligence model requires these, we provide safe fallbacks
-          projectScope: "UNKNOWN",
-          estimatedAdditionalValue: 0,
+          callOutcome: intelligence.callOutcome as CallOutcome,
+          projectScope: intelligence.projectScope ?? "UNKNOWN",
+          estimatedAdditionalValue: intelligence.estimatedAdditionalValue ?? 0,
         },
       },
     },
@@ -59,35 +48,34 @@ export async function processIntelligenceReturn(task: SystemTask, result: any) {
 
   await prisma.clientActivity.create({
     data: {
-      type: "OUTBOUND_CALL",
+      type: isOutbound ? "OUTBOUND_CALL" : "INBOUND_CALL",
       chatThread: { connect: { id: threadId } },
       customer: { connect: { id: customer.id } },
-      description: `Call type: ${metadata.callType}`,
-      title: "Outbound Call",
+      description: callType ? `Call type: ${callType}` : "Inbound call",
+      title: isOutbound ? "Outbound Call" : "Inbound Call",
     },
   });
 
   await prisma.clientCommunication.create({
     data: {
-      body: "Outbound Call",
+      body: isOutbound ? "Outbound Call" : "Inbound Call",
       role: "AI",
       type: "VOICE",
       chatThread: { connect: { id: threadId } },
       customer: { connect: { id: customer.id } },
       metadata: {
-        audioUrl: outboundCall.audioUrl,
+        audioUrl: call.audioUrl,
         outcome: intelligence.callOutcome,
         transcript: transcriptText,
       },
     },
   });
 
-  // Invalidate REDIS THREAD CACHE
-  await invalidateThreadCache(subdomain.slug,threadId)
+  await invalidateThreadCache(subdomain.slug, threadId);
 
   return {
     releaseLock: true,
-    threadId: threadId,
-    message: `Outbound intelligence logged. Outcome: ${intelligence.callOutcome}`,
+    threadId,
+    message: `Intelligence logged. Outcome: ${intelligence.callOutcome}`,
   };
 }
