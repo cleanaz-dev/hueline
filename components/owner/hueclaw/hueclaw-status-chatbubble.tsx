@@ -2,7 +2,6 @@
 
 import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Bot,
   Loader2,
@@ -67,7 +66,7 @@ export function HueClawStatusBubble({
   };
 
   const activeStatus = STATUS_CONFIG[data?.taskType as HueClawStatus] || {
-    text: "HueClaw is thinking",
+    text: "HueClaw is processing",
     icon: Loader2,
   };
 
@@ -77,57 +76,37 @@ export function HueClawStatusBubble({
     <AnimatePresence>
       {data?.isWorking && (
         <motion.div
-          initial={{ opacity: 0, y: 10, scale: 0.96 }}
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
+          exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="flex w-full justify-start mb-4 origin-bottom-left"
+          className="flex w-full justify-center my-4" // Centered wrapper
         >
-          <div className="flex max-w-[85%] md:max-w-[95%] flex-row items-end gap-2 px-1">
-            <div className="flex flex-col items-center shrink-0 w-6 h-6 mb-0.5 mx-2">
-              <Avatar className="h-6 w-6 shadow-sm border border-indigo-100 dark:border-indigo-800/50">
-                <AvatarFallback className="bg-indigo-50 dark:bg-indigo-950/50 text-indigo-500 dark:text-indigo-400">
-                  <Bot size={12} />
-                </AvatarFallback>
-              </Avatar>
-            </div>
+          {/* Sleek, centered pill design */}
+          <div className="flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-indigo-50/80 dark:bg-indigo-500/10 border border-indigo-100/50 dark:border-indigo-500/20 shadow-sm backdrop-blur-sm text-indigo-700 dark:text-indigo-300">
+            
+            {/* Pulsing/Spinning Icon */}
+            <StatusIcon
+              size={14}
+              className={cn(
+                "text-indigo-500 dark:text-indigo-400",
+                data?.taskType && STATUS_CONFIG[data.taskType as HueClawStatus]
+                  ? "animate-pulse"
+                  : "animate-[spin_3s_linear_infinite]"
+              )}
+            />
 
-            <div className="flex flex-col gap-1 min-w-0 items-start">
-              <div className="relative flex items-center gap-2.5 px-3.5 py-2 rounded-2xl rounded-bl-sm text-[13px] shadow-sm bg-gradient-to-r from-indigo-50 to-white dark:from-indigo-500/10 dark:to-transparent border border-indigo-50/50 dark:border-indigo-500/10 text-indigo-800 dark:text-indigo-300">
-                <StatusIcon
-                  size={14}
-                  className={cn(
-                    "text-indigo-400 dark:text-indigo-500",
-                    data?.taskType &&
-                      STATUS_CONFIG[data.taskType as HueClawStatus]
-                      ? "animate-pulse"
-                      : "animate-[spin_3s_linear_infinite]",
-                  )}
-                />
+            {/* Status Text */}
+            <span className="text-[12px] font-semibold tracking-wide">
+              {activeStatus.text}
+            </span>
 
-                <span className="font-medium tracking-wide opacity-90">
-                  {activeStatus.text}
-                </span>
-
-                <span className="flex gap-0.5 ml-0.5 opacity-70">
-                  <motion.span
-                    animate={{ opacity: [0.2, 1, 0.2] }}
-                    transition={{ repeat: Infinity, duration: 1.4, delay: 0 }}
-                    className="w-1 h-1 bg-indigo-400 rounded-full"
-                  />
-                  <motion.span
-                    animate={{ opacity: [0.2, 1, 0.2] }}
-                    transition={{ repeat: Infinity, duration: 1.4, delay: 0.2 }}
-                    className="w-1 h-1 bg-indigo-400 rounded-full"
-                  />
-                  <motion.span
-                    animate={{ opacity: [0.2, 1, 0.2] }}
-                    transition={{ repeat: Infinity, duration: 1.4, delay: 0.4 }}
-                    className="w-1 h-1 bg-indigo-400 rounded-full"
-                  />
-                </span>
-              </div>
-            </div>
+            {/* Subtle trailing dots instead of bouncing balls */}
+            <span className="flex gap-0.5 ml-1 opacity-60">
+              <span className="w-1 h-1 rounded-full bg-current animate-pulse" style={{ animationDelay: "0ms" }} />
+              <span className="w-1 h-1 rounded-full bg-current animate-pulse" style={{ animationDelay: "150ms" }} />
+              <span className="w-1 h-1 rounded-full bg-current animate-pulse" style={{ animationDelay: "300ms" }} />
+            </span>
           </div>
         </motion.div>
       )}

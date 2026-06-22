@@ -97,18 +97,6 @@ export function GlobalOwnerChatWidget() {
     ];
   }, [messages, customerPendingMessages]);
 
-  // useEffect(() => {
-  //   if (
-  //     chatWindowState === "open" &&
-  //     combinedMessages.length > prevMessageCount.current
-  //   ) {
-  //     setTimeout(
-  //       () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
-  //       100,
-  //     );
-  //   }
-  //   prevMessageCount.current = combinedMessages.length;
-  // }, [combinedMessages.length, chatWindowState]);
 
   useEffect(() => {
   if (chatWindowState === "open" && bottomRef.current) {
