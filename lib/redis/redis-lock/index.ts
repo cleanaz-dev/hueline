@@ -29,8 +29,19 @@ export async function releaseResourceLock(lockKey: string) {
 }
 
 
-
-type HueClawStatus = "COMMUNICATION" | "IMAGEN" | "QUOTE" | "NUDGE" | "INTELLIGENCE" | "OUTBOUND_CALL"
+export type HueClawStatus =
+  | "COMMUNICATION"
+  | "IMAGEN"
+  | "QUOTE"
+  | "NUDGE"
+  | "INTELLIGENCE"
+  | "OUTBOUND_CALL"
+  | "DIALING_OPERATOR"
+  | "OPERATOR_CONNECTED"
+  | "DIALING_CUSTOMER"
+  | "CALL_CONNECTED"
+  | "LIVE_IMAGEN";
+  
 export async function setHueClawStatus(threadId: string, status: HueClawStatus = "NUDGE" ) {
   // Key format: hueclaw:status:12345
   // TTL: 300 seconds (5 minutes)

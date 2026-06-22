@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOwner } from "@/context/owner-context";
+import { HueClawStatus } from "@/lib/redis";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -42,21 +43,30 @@ export function HueClawStatusBubble({
     },
   );
 
-  const STATUS_CONFIG: Record<string, { text: string; icon: any }> = {
+  const STATUS_CONFIG: Record<HueClawStatus, { text: string; icon: any }> = {
     COMMUNICATION: { text: "HueClaw is analyzing thread", icon: BrainCircuit },
     IMAGEN: { text: "HueClaw is generating an image", icon: ImageIcon },
     QUOTE: { text: "HueClaw is calculating a quote", icon: Calculator },
-    INTELLIGENCE: { text: "HueClaw is processing call intelligence", icon: Speech },
-    
-    // Granular Call States
+    INTELLIGENCE: {
+      text: "HueClaw is processing call intelligence",
+      icon: Speech,
+    },
     OUTBOUND_CALL: { text: "HueClaw is initiating call", icon: PhoneOutgoing },
     DIALING_OPERATOR: { text: "Dialing operator...", icon: PhoneOutgoing },
-    OPERATOR_CONNECTED: { text: "Operator connected, bridging...", icon: Headset },
+    OPERATOR_CONNECTED: {
+      text: "Operator connected, bridging...",
+      icon: Headset,
+    },
     DIALING_CUSTOMER: { text: "Dialing customer...", icon: PhoneForwarded },
     CALL_CONNECTED: { text: "Call in progress", icon: Phone },
+    NUDGE: { text: "HueClaw is thinking", icon: Loader2 },
+    LIVE_IMAGEN: {
+      text: "HueClaw is generating a live image",
+      icon: ImageIcon,
+    },
   };
 
-  const activeStatus = STATUS_CONFIG[data?.taskType] || {
+  const activeStatus = STATUS_CONFIG[data?.taskType as HueClawStatus] || {
     text: "HueClaw is thinking",
     icon: Loader2,
   };
@@ -88,9 +98,10 @@ export function HueClawStatusBubble({
                   size={14}
                   className={cn(
                     "text-indigo-400 dark:text-indigo-500",
-                    data?.taskType && STATUS_CONFIG[data.taskType] 
-                      ? "animate-pulse" 
-                      : "animate-[spin_3s_linear_infinite]"
+                    data?.taskType &&
+                      STATUS_CONFIG[data.taskType as HueClawStatus]
+                      ? "animate-pulse"
+                      : "animate-[spin_3s_linear_infinite]",
                   )}
                 />
 

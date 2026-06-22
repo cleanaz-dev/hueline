@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { setHueClawStatus } from "@/lib/redis";
 import { nanoid } from "nanoid";
 import { NextResponse } from "next/server";
 
@@ -61,6 +62,8 @@ export async function POST(req: Request, { params }: Params) {
         roomName: room_name,
       },
     });
+
+    await setHueClawStatus(thread.id, "CALL_CONNECTED")
 
     return NextResponse.json(
       { message: "Call Flow Created Successfully", threadId: thread.id },
