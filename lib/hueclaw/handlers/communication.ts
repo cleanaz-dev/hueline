@@ -85,16 +85,9 @@ export async function handleHueClawCommunication({
 }: ProcessCommsArgs) {
   const config = TRIGGER_CONFIG[triggerSource];
 
-  const threadGlobalSlug = await prisma.chatThread.findUnique({
-    where: {id: threadId},
-    select: {
-      subdomain: {
-        select: {
-          slug: true
-        }
-      }
-    }
-  })
+  // Captured inside the try block once we successfully resolve the thread,
+  // so the finally block can use it without needing a second DB fetch.
+  let subdomainSlug: string | undefined;
 
   try {
     const { deliveryMethod, msgBody, msgSubject, reasonForSilence } =
@@ -125,6 +118,9 @@ export async function handleHueClawCommunication({
     ) {
       throw new Error("Missing required thread, customer, or subdomain data.");
     }
+
+    // Capture for use in the finally block (avoids a second, unprotected fetch)
+    subdomainSlug = thread.subdomain.slug;
 
     if (deliveryMethod === "NONE" || !msgBody) {
       console.log(
@@ -169,8 +165,6 @@ export async function handleHueClawCommunication({
           },
         });
       });
-
-      
 
       return { success: true };
     }
@@ -251,9 +245,6 @@ export async function handleHueClawCommunication({
     try {
       await releaseResourceLock(lockKey);
       console.log(`[HueClaw Comms] 🔓 Lock released for thread ${threadId}`);
-
-      //Invalidate REDIS Cache
-      await invalidateThreadCache(threadGlobalSlug?.subdomain.slug!,threadId)
     } catch (lockError) {
       console.error(
         `[HueClaw Comms] Warning: Failed to release lock (might have expired):`,
@@ -261,7 +252,27 @@ export async function handleHueClawCommunication({
       );
     }
 
-    // 2. Try to clear the polling status safely
+    // 2. Try to invalidate the thread cache safely (kept separate from lock
+    //    release so failures are logged distinctly and don't get conflated)
+    if (subdomainSlug) {
+      try {
+        await invalidateThreadCache(subdomainSlug, threadId);
+        console.log(
+          `[HueClaw Comms] 🗑️ Cache invalidated for thread ${threadId}`,
+        );
+      } catch (cacheError) {
+        console.error(
+          `[HueClaw Comms] Warning: Failed to invalidate thread cache:`,
+          cacheError,
+        );
+      }
+    } else {
+      console.warn(
+        `[HueClaw Comms] Skipped cache invalidation for thread ${threadId} — no subdomain slug resolved.`,
+      );
+    }
+
+    // 3. Try to clear the polling status safely
     try {
       await clearHueClawStatus(threadId);
       console.log(`[HueClaw Comms] 🧹 Status cleared for thread ${threadId}`);
