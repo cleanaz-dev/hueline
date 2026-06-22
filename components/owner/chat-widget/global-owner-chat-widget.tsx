@@ -1,3 +1,4 @@
+"use client"
 import { AnimatePresence } from "framer-motion";
 import { useOwner } from "@/context/owner-context";
 
