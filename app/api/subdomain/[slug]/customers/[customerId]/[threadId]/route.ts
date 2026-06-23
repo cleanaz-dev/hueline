@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 // 1. IMPORT YOUR UTILITY HERE:
 import { getPresignedUrl } from "@/lib/aws/s3";
-import { redis } from "@/lib/redis/agent-context";
+import { getTimelineCache, setTimelineCache } from "@/lib/redis/agent-context";
 
 export async function GET(
   req: Request,
@@ -12,7 +12,7 @@ export async function GET(
     params,
   }: {
     params: Promise<{ customerId: string; slug: string; threadId: string }>;
-  },
+  }
 ) {
   const session = await getServerSession(authOptions);
 
@@ -39,18 +39,17 @@ export async function GET(
     return NextResponse.json({ message: "Access Denied" }, { status: 401 });
   }
 
-  const cacheKey = `timeline:${slug}:${threadId}`;
-
+  // 2. CHECK CACHE FIRST
   try {
-    const cachedTimeline = await redis.get(cacheKey);
+    const cachedTimeline = await getTimelineCache(slug, threadId);
     if (cachedTimeline) {
-      // CACHE HIT! Return immediately (2ms response time 🔥)
       return NextResponse.json(cachedTimeline);
     }
   } catch (e) {
     console.error("Redis fetch failed, falling back to DB", e);
   }
 
+  // 3. FETCH FROM DB IF NOT IN CACHE
   try {
     // 1. Fetch Communications WITH their attachments
     const rawCommunications = await prisma.clientCommunication.findMany({
@@ -83,14 +82,14 @@ export async function GET(
               };
             }
             return attachment;
-          }),
+          })
         );
 
         return {
           ...comm,
           mediaAttachments: processedAttachments,
         };
-      }),
+      })
     );
 
     // 3. Fetch Activities
@@ -171,17 +170,19 @@ export async function GET(
       ...mappedCalls, // <-- Add calls to the merge
     ].sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    await redis.set(cacheKey, JSON.stringify(timeline), { ex: 2700 });
+    // 6. SET THE CACHE WITH OUR NEW UTILITY (No double stringifying!)
+    await setTimelineCache(slug, threadId, timeline);
 
     return NextResponse.json(timeline);
   } catch (error) {
     console.error("Error fetching timeline:", error);
     return NextResponse.json(
       { message: "Internal Server Error:", error },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
+

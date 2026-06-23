@@ -1,3 +1,5 @@
+"use client"
+
 import PusherClient from "pusher-js";
 
 export const pusherClient = new PusherClient(

@@ -81,6 +81,44 @@ export async function deleteAgentContext(roomName: string): Promise<void> {
     console.error(`[Redis] Failed to delete agent context for ${roomName}:`, error);
   }
 }
+
+/**
+ * Saves the timeline data to Redis with a 45-minute TTL.
+ * Upstash automatically handles JSON stringification/parsing.
+ */
+export async function setTimelineCache(
+  slug: string,
+  threadId: string,
+  timeline: unknown // Replace `unknown` with your actual Timeline event type
+): Promise<void> {
+  const cacheKey = `timeline:${slug}:${threadId}`;
+  try {
+    // Pass the object directly to Upstash, it handles JSON.stringify
+    // ex: 2700 = 45 minutes in seconds
+    await redis.set(cacheKey, timeline, { ex: 2700 });
+  } catch (error) {
+    console.error(`[Redis] Failed to set timeline cache for ${slug}:${threadId}:`, error);
+    // We don't throw here usually, as caching failures shouldn't break the API response
+  }
+}
+
+/**
+ * Retrieves the cached timeline data from Redis.
+ */
+export async function getTimelineCache<T>(
+  slug: string,
+  threadId: string
+): Promise<T | null> {
+  const cacheKey = `timeline:${slug}:${threadId}`;
+  try {
+    const data = await redis.get<T>(cacheKey);
+    return data;
+  } catch (error) {
+    console.error(`[Redis] Failed to get timeline cache for ${slug}:${threadId}:`, error);
+    return null;
+  }
+}
+
 /**
  * Deletes Thread on every change or update to the thread
  */
