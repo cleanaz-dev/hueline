@@ -10,12 +10,11 @@ interface Params {
     slug: string;
     customerId: string;
     threadId: string;
-    followUpId: string;
   }>;
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const { customerId, slug, threadId, followUpId } = await params;
+  const { customerId, slug, threadId } = await params;
 
   const session = await getServerSession(authOptions);
   const user = session?.user;
@@ -37,6 +36,10 @@ export async function POST(req: Request, { params }: Params) {
       { message: "Unauthorized Request" },
       { status: 401 },
     );
+
+  const body = await req.json();
+
+  const { followUpId } = body
 
   const followUp = await prisma.followUpSchedule.findUnique({
     where: { id: followUpId },

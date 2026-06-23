@@ -262,19 +262,6 @@ export function WidgetOpen() {
                       isPending={msg.isPending}
                       isGroupStart={isGroupStart}
                       isGroupEnd={isGroupEnd}
-                      onCancelFollowUp={async (followUpId) => {
-                        if (!customer?.threadId || !customer?.id) return;
-
-                        await fetch(
-                          `/api/subdomain/${subdomain.slug}/customers/${customer.id}/${customer.threadId}/${followUpId}/cancel-followup`,
-                          {
-                            method: "POST",
-                            body: JSON.stringify({
-                              threadId: customer.threadId,
-                            }),
-                          },
-                        );
-                      }}
                     />
                   );
                 })

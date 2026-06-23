@@ -531,7 +531,7 @@ export function OwnerProvider({
     setIsCancellingFollowUp(true);
     try {
       const res = await fetch(
-        `/api/subdomain/${subdomain.slug}/customers/${customerId}/${threadId}`,
+        `/api/subdomain/${subdomain.slug}/customers/${customerId}/${threadId}/cancel-followup`,
         {
           method: "POST",
           body: JSON.stringify({ followUpId }),

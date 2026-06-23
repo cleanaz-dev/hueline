@@ -194,7 +194,7 @@ export function SystemActivityEvent({
                       <FollowUpMetadata
                         meta={msg.metadata}
                         followUpId={msg.metadata?.followUpId}
-                        // onCancel={onCancelFollowUp}
+                        
                       />
                     )}
                     {(msg.type === "CALL" || msg.metadata.callSummary) && (
