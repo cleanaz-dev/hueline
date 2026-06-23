@@ -1,7 +1,6 @@
 // components/owner/chat-widget/widget-open.tsx
 
-
-"use client"
+"use client";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -35,7 +34,8 @@ export function WidgetOpen() {
     me,
   } = useOwner();
 
-  const { messages, loading, combinedMessages, fetchMessages } = useThreadMessages();
+  const { messages, loading, combinedMessages, fetchMessages } =
+    useThreadMessages();
   const [showSwitcher, setShowSwitcher] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -50,27 +50,35 @@ export function WidgetOpen() {
     channel: "SMS" | "EMAIL" | "DIAL",
     subject?: string,
     customerPhone?: string,
-    operatorPhone?: string
+    operatorPhone?: string,
   ) => {
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    setTimeout(
+      () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+      50,
+    );
 
     const success =
       channel === "SMS"
         ? await sendSMS(customer!.id, customer!.threadId, message)
         : channel === "EMAIL"
-        ? await sendEmail(customer!.id, customer!.threadId, message, subject)
-        : await dialCustomer(
-            customer!.id,
-            customer!.threadId,
-            customerPhone || customer?.phone!,
-            "AI_CONFERENCE",
-            operatorPhone || me?.phone!
-          );
+          ? await sendEmail(customer!.id, customer!.threadId, message, subject)
+          : await dialCustomer(
+              customer!.id,
+              customer!.threadId,
+              customerPhone || customer?.phone!,
+              "AI_CONFERENCE",
+              operatorPhone || me?.phone!,
+            );
 
     if (success) fetchMessages();
   };
 
-  const initials = customer?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+  const initials = customer?.name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <motion.div
@@ -97,11 +105,15 @@ export function WidgetOpen() {
               onClick={() => setShowSwitcher(!showSwitcher)}
             >
               <div className="flex items-center gap-1.5">
-                <p className="text-sm font-semibold leading-tight">{customer?.name}</p>
+                <p className="text-sm font-semibold leading-tight">
+                  {customer?.name}
+                </p>
                 <ChevronsUpDown size={14} className="text-muted-foreground" />
               </div>
               <div className="flex gap-2 items-center">
-                <p className="text-xs text-muted-foreground">{customer?.phone}</p>
+                <p className="text-xs text-muted-foreground">
+                  {customer?.phone}
+                </p>
                 <p className="text-xs text-muted-foreground truncate max-w-[120px]">
                   {customer?.email}
                 </p>
@@ -116,16 +128,34 @@ export function WidgetOpen() {
 
           {/* ACTION BUTTONS */}
           <div className="flex items-center gap-1">
-            <Badge variant="outline" className="text-[10px] px-2 py-0.5 font-normal text-muted-foreground mr-1">
+            <Badge
+              variant="outline"
+              className="text-[10px] px-2 py-0.5 font-normal text-muted-foreground mr-1"
+            >
               {messages.length} msgs
             </Badge>
-            <Button variant="ghost" size="icon" onClick={() => fetchMessages()} className="h-7 w-7 rounded-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fetchMessages()}
+              className="h-7 w-7 rounded-full"
+            >
               <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             </Button>
-            <Button variant="ghost" size="icon" onClick={toggleMinimize} className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMinimize}
+              className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+            >
               <Minus size={16} />
             </Button>
-            <Button variant="ghost" size="icon" onClick={closeChat} className="h-7 w-7 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={closeChat}
+              className="h-7 w-7 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+            >
               <X size={16} />
             </Button>
           </div>
@@ -167,16 +197,24 @@ export function WidgetOpen() {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
-                            {thread.customer?.name?.slice(0, 2).toUpperCase() ?? <UserRound size={14} />}
+                            {thread.customer?.name
+                              ?.slice(0, 2)
+                              .toUpperCase() ?? <UserRound size={14} />}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium">{thread.customer?.name ?? "Unknown"}</span>
-                          <span className="text-xs text-muted-foreground font-mono">Thread: {thread.shortId}</span>
+                          <span className="text-sm font-medium">
+                            {thread.customer?.name ?? "Unknown"}
+                          </span>
+                          <span className="text-xs text-muted-foreground font-mono">
+                            Thread: {thread.shortId}
+                          </span>
                         </div>
                       </div>
                       {customer?.threadId === thread.id && (
-                        <Badge variant="secondary" className="text-[10px]">Active</Badge>
+                        <Badge variant="secondary" className="text-[10px]">
+                          Active
+                        </Badge>
                       )}
                     </div>
                   ))}
@@ -187,7 +225,10 @@ export function WidgetOpen() {
         </AnimatePresence>
 
         {/* CHAT BODY */}
-        <div className="flex-1 min-h-0 flex flex-col bg-slate-50/50 dark:bg-zinc-950/50" onClick={() => setShowSwitcher(false)}>
+        <div
+          className="flex-1 min-h-0 flex flex-col bg-slate-50/50 dark:bg-zinc-950/50"
+          onClick={() => setShowSwitcher(false)}
+        >
           <ScrollArea className="h-full px-1.5">
             <div className="py-5 space-y-1">
               {loading ? (
@@ -203,8 +244,14 @@ export function WidgetOpen() {
                 combinedMessages.map((msg: any, index: number) => {
                   const prevMsg = combinedMessages[index - 1];
                   const nextMsg = combinedMessages[index + 1];
-                  const isGroupStart = !prevMsg || prevMsg.role !== msg.role || prevMsg.type !== msg.type;
-                  const isGroupEnd = !nextMsg || nextMsg.role !== msg.role || nextMsg.type !== msg.type;
+                  const isGroupStart =
+                    !prevMsg ||
+                    prevMsg.role !== msg.role ||
+                    prevMsg.type !== msg.type;
+                  const isGroupEnd =
+                    !nextMsg ||
+                    nextMsg.role !== msg.role ||
+                    nextMsg.type !== msg.type;
 
                   return (
                     <OwnerChatBubble
@@ -215,25 +262,44 @@ export function WidgetOpen() {
                       isPending={msg.isPending}
                       isGroupStart={isGroupStart}
                       isGroupEnd={isGroupEnd}
-                      onCancelFollowUp={async (threadId) => {
-                        await fetch(`/api/subdomain/${subdomain.slug}/customers/${customer?.id}/${threadId}/cancel-followup`, {
-                          method: "POST",
-                          body: JSON.stringify({ threadId }),
-                        });
+                      onCancelFollowUp={async (followUpId) => {
+                        if (!customer?.threadId || !customer?.id) return;
+
+                        await fetch(
+                          `/api/subdomain/${subdomain.slug}/customers/${customer.id}/${customer.threadId}/${followUpId}/cancel-followup`,
+                          {
+                            method: "POST",
+                            body: JSON.stringify({
+                              threadId: customer.threadId,
+                            }),
+                          },
+                        );
                       }}
                     />
                   );
                 })
               )}
-              {customer?.threadId && <HueClawStatusBubble threadId={customer?.threadId} isAutoPilot={customer?.isAutoPilot} />}
+              {customer?.threadId && (
+                <HueClawStatusBubble
+                  threadId={customer?.threadId}
+                  isAutoPilot={customer?.isAutoPilot}
+                />
+              )}
               <div ref={bottomRef} className="h-2" />
             </div>
           </ScrollArea>
         </div>
 
         {/* INPUT */}
-        <div className="shrink-0 bg-background border-t" onClick={() => setShowSwitcher(false)}>
-          <OwnerAdvancedChatInput isLoading={isSendingSMS || isSendingEmail} onSend={handleSendMessage} clientId={customer?.id} />
+        <div
+          className="shrink-0 bg-background border-t"
+          onClick={() => setShowSwitcher(false)}
+        >
+          <OwnerAdvancedChatInput
+            isLoading={isSendingSMS || isSendingEmail}
+            onSend={handleSendMessage}
+            clientId={customer?.id}
+          />
         </div>
       </motion.div>
     </motion.div>

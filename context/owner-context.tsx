@@ -140,6 +140,10 @@ interface OwnerContextValue {
   newThreadAlert: ChatThreadModel | null;
   dismissNewThreadAlert: () => void;
   openNewThreadAlert: () => void;
+
+  // Cancel Follow Up
+  handleCancelFollowUp: (threadId: string, customerId: string, followUpId: string) => Promise<boolean>
+  isCancellingFollowUp: boolean
 }
 
 const OwnerContext = createContext<OwnerContextValue | null>(null);
@@ -210,6 +214,7 @@ export function OwnerProvider({
   const [isReportingTask, setIsReportingTask] = useState(false);
   const [isDialing, setIsDialing] = useState(false);
   const [isCancellingCall, setIsCancellingCall] = useState(false);
+  const [isCancellingFollowUp, setIsCancellingFollowUp] = useState(false);
 
   const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
@@ -237,24 +242,22 @@ export function OwnerProvider({
 
     // Listen for the "new-thread" event
     channel.bind("new-thread", (newThread: ChatThreadModel) => {
-      
       // A) Trigger the animated framer-motion widget INSTANTLY
       setNewThreadAlert(newThread);
 
-      // B) Silently inject this new thread into SWR's cache so that 
+      // B) Silently inject this new thread into SWR's cache so that
       // when they open their thread list, it's already there!
       mutateThreads((currentData) => {
         if (!currentData) return { threads: [newThread] };
-        
+
         // Prevent duplicate injections just in case
-        if (currentData.threads.some(t => t.id === newThread.id)) {
+        if (currentData.threads.some((t) => t.id === newThread.id)) {
           return currentData;
         }
-        
+
         // Put the new thread at the top of the list
         return { threads: [newThread, ...currentData.threads] };
       }, false); // false = do not re-fetch from API, we already have the data!
-
     });
 
     return () => {
@@ -262,8 +265,6 @@ export function OwnerProvider({
     };
   }, [subdomain?.slug, mutateThreads]);
 
-
-  
   const dismissNewThreadAlert = () => setNewThreadAlert(null);
 
   const openNewThreadAlert = () => {
@@ -522,6 +523,27 @@ export function OwnerProvider({
     }
   };
 
+  const handleCancelFollowUp = async (
+    followUpId: string,
+    threadId: string,
+    customerId: string,
+  ): Promise<boolean> => {
+    setIsCancellingFollowUp(true);
+    try {
+      const res = await fetch(
+        `/api/subdomain/${subdomain.slug}/customers/${customerId}/${threadId}`,
+        {
+          method: "POST",
+          body: JSON.stringify({ followUpId }),
+        },
+      );
+      if (!res.ok) throw new Error();
+      return res.ok;
+    } finally {
+      setIsCancellingFollowUp(false);
+    }
+  };
+
   return (
     <OwnerContext.Provider
       value={{
@@ -580,6 +602,9 @@ export function OwnerProvider({
         newThreadAlert,
         dismissNewThreadAlert,
         openNewThreadAlert,
+        // Cancel Follow Up
+        handleCancelFollowUp,
+        isCancellingFollowUp
       }}
     >
       {children}

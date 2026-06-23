@@ -35,5 +35,5 @@ export interface ChatBubbleProps {
   isPending?: boolean;
   isGroupStart?: boolean;
   isGroupEnd?: boolean;
-  onCancelFollowUp?: (id: string) => Promise<void>
+  onCancelFollowUp?: (followUpId: string) => Promise<void>
 }

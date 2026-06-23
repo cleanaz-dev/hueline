@@ -70,7 +70,6 @@ export function OwnerChatBubble({
   prospectId,
   isGroupStart = true,
   isGroupEnd = true,
-  onCancelFollowUp,
 }: ChatBubbleProps) {
   const time = new Date(msg.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
@@ -78,7 +77,7 @@ export function OwnerChatBubble({
   });
 
   if (msg.role === "SYSTEM") {
-    return <SystemActivityEvent msg={msg} onCancelFollowUp={onCancelFollowUp} />
+    return <SystemActivityEvent msg={msg}  />
   }
 
   const meta = ROLE_CONFIG[msg.role as keyof typeof ROLE_CONFIG];

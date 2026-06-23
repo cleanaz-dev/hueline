@@ -10,24 +10,25 @@ interface Params {
     slug: string;
     customerId: string;
     threadId: string;
+    followUpId: string;
   }>;
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const { customerId, slug, threadId } = await params;
+  const { customerId, slug, threadId, followUpId } = await params;
 
   const session = await getServerSession(authOptions);
   const user = session?.user;
 
-if (!session || !session.user)
-  return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!session || !session.user)
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
   const validatedUser = await prisma.subdomainUser.findFirst({
     where: {
       email: user?.email!,
       subdomain: {
-        slug
-      }
+        slug,
+      },
     },
   });
 
@@ -37,14 +38,14 @@ if (!session || !session.user)
       { status: 401 },
     );
 
-  const followUp = await prisma.followUpSchedule.findFirst({
-    where: {
-      customerId,
-      chatThreadId: threadId,
-    },
+  const followUp = await prisma.followUpSchedule.findUnique({
+    where: { id: followUpId },
   });
   if (!followUp)
-    return NextResponse.json({ message: "FollowUp Does Not Exist" }, { status: 400 });
+    return NextResponse.json(
+      { message: "FollowUp Does Not Exist" },
+      { status: 400 },
+    );
 
   try {
     await cancelPendingFollowUp(threadId);

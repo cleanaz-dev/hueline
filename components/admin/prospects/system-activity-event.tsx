@@ -1,67 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  ExternalLink,
-  CreditCard,
-  FileText,
-  CheckCircle2,
-  Activity,
-  Phone,
-  Mail,
-  PlaySquare,
-  Globe,
-  ChevronRight,
-  Clock,
-  X,
-  Calendar,
-  CalendarX,
-  Bot,
-  Info,
-  CalendarClock,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
+// Keep only the icons actually used in SystemActivityEvent.tsx
+import { Plus, Phone, ChevronRight, PlaySquare, ExternalLink, Activity, CalendarClock, CreditCard, FileText, Mail, Globe, CheckCircle2 } from "lucide-react"; 
+import {AnimatePresence, motion } from "framer-motion"
 
-interface SystemEventMetadata {
-  callSummary?: string;
-  duration?: number | string;
-  estimatedValue?: number;
-  costBreakdown?: string;
-  callReason?: string;
-  projectScope?: string;
-  amount?: number;
-  currency?: string;
-  stripePaymentIntentId?: string;
-  stripeSessionId?: string;
-  rooms?: string[];
-  paintType?: string;
-  sqft?: number | string;
-  subject?: string;
-  actionUrl?: string;
-  actionLabel?: string;
-  recordingUrl?: string;
-  demoUrl?: string;
-  // Follow-up specific
-  reason?: string; // <-- Added reason here
-  triggerAt?: string | Date;
-  scheduleName?: string;
-  status?: string;
-}
+// Your extracted components!
+import { CallMetadata } from "./system-event-call-meta";
+import { PaymentMetadata } from "./system-event-payment-meta";
+import { FormMetadata } from "./system-event-form-meta";
+import { FollowUpMetadata } from "./system-event-follow-up-meta"
+import { SystemActivityEventProps, SystemEventMetadata } from "./system-event-types";
 
-interface SystemActivityEventProps {
-  msg: {
-    id: string;
-    title?: string;
-    body?: string;
-    description?: string;
-    createdAt: Date | string;
-    type?: string;
-    activityType?: string;
-    metadata?: SystemEventMetadata;
-  };
-  onCancelFollowUp?: (scheduleId: string) => Promise<void>;
-}
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 
@@ -112,190 +62,10 @@ const getActivityDesign = (type?: string, activityType?: string) => {
   return design;
 };
 
-// ─── METADATA COMPONENTS ─────────────────────────────────────────────────────
-
-const CallMetadata = ({ meta }: { meta: SystemEventMetadata }) => {
-  if (!meta?.callSummary && !meta?.duration) return null;
-  return (
-    <div className="flex flex-col gap-2 mt-2 p-3.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-zinc-100/80 dark:border-zinc-800/60 shadow-sm">
-      {meta.callSummary && (
-        <p className="text-[12px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
-          {meta.callSummary}
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-medium text-zinc-500 pt-1">
-        {meta.duration && <span>⏱ {meta.duration}s</span>}
-        {meta.estimatedValue != null && (
-          <span className="text-zinc-800 dark:text-zinc-200">
-            Est: ${meta.estimatedValue}
-          </span>
-        )}
-        {meta.callReason && <span>#{meta.callReason.toLowerCase()}</span>}
-      </div>
-    </div>
-  );
-};
-
-const PaymentMetadata = ({ meta }: { meta: SystemEventMetadata }) => {
-  if (meta?.amount == null) return null;
-  return (
-    <div className="flex items-center gap-3 mt-2 p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 w-fit">
-      <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-wider font-semibold text-emerald-600/70 dark:text-emerald-500/70 mb-0.5">
-          Amount Captured
-        </span>
-        <span className="text-[14px] font-bold text-emerald-700 dark:text-emerald-400">
-          ${meta.amount} {meta.currency?.toUpperCase() || "USD"}
-        </span>
-        <span className="text-[10px] text-emerald-600/60 dark:text-emerald-500/50 font-mono mt-1">
-          Txn: {meta.stripePaymentIntentId || meta.stripeSessionId}
-        </span>
-      </div>
-    </div>
-  );
-};
-
-const FormMetadata = ({ meta }: { meta: SystemEventMetadata }) => {
-  if (!meta?.rooms?.length && !meta?.paintType && !meta?.sqft) return null;
-  return (
-    <div className="flex flex-wrap items-center gap-2 mt-2 p-3 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/40 border border-zinc-100/80 dark:border-zinc-800/60 shadow-sm">
-      {meta.paintType && (
-        <span className="px-2.5 py-1 rounded-md bg-white dark:bg-zinc-800 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700">
-          {meta.paintType}
-        </span>
-      )}
-      {meta.sqft && (
-        <span className="px-2.5 py-1 rounded-md bg-white dark:bg-zinc-800 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700">
-          {meta.sqft} sqft
-        </span>
-      )}
-      {meta.rooms?.map((room: string) => (
-        <span
-          key={room}
-          className="px-2.5 py-1 rounded-md bg-white dark:bg-zinc-800 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700 capitalize"
-        >
-          {room}
-        </span>
-      ))}
-    </div>
-  );
-};
-
-const FollowUpMetadata = ({
-  meta,
-  msgId,
-  onCancel,
-}: {
-  meta: SystemEventMetadata;
-  msgId: string;
-  onCancel?: (id: string) => Promise<void>;
-}) => {
-  const [cancelling, setCancelling] = useState(false);
-  const [cancelled, setCancelled] = useState(false);
-
-  if (!meta?.triggerAt) return null;
-
-  const triggerDate = new Date(meta.triggerAt);
-  const datePart = triggerDate.toLocaleDateString([], {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-  const timePart = triggerDate.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  const handleCancel = async () => {
-    if (!onCancel) return;
-    setCancelling(true);
-    try {
-      await onCancel(msgId);
-      setCancelled(true);
-    } catch (e) {
-      console.error("Failed to cancel follow-up", e);
-    } finally {
-      setCancelling(false);
-    }
-  };
-
-  return (
-    <div className="mt-3 overflow-hidden">
-      <AnimatePresence mode="wait">
-        {cancelled ? (
-          <motion.div
-            key="cancelled"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800/80"
-          >
-            <CalendarX size={14} className="text-zinc-400" />
-            <span className="text-[12px] text-zinc-500 dark:text-zinc-400">
-              Scheduled follow-up was cancelled.
-            </span>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="active"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, height: 0 }}
-            className="relative flex items-start justify-between p-3.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm overflow-hidden"
-          >
-            {/* Pro enterprise accent strip on the left edge */}
-            <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-amber-500/80 dark:bg-amber-500/60" />
-
-            {/* Left side: Status & Reason & Time */}
-            <div className="flex items-start gap-3 pl-1 flex-1 pr-4">
-              <div className="flex items-center justify-center w-8 h-8 rounded-md bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5">
-                <Info size={14} strokeWidth={2.5} />
-              </div>
-              <div className="flex flex-col">
-                {/* ─── RENDER REASON HERE ─── */}
-                {meta.reason && (
-                  <div className="text-sm text-zinc-700 dark:text-zinc-300 mt-1 leading-relaxed">
-                    <p className="text-[10px] font-bold text-zinc-900 dark:text-zinc-400 tracking-wide">
-                      REASON
-                    </p>{" "}
-                    <p>{meta.reason}</p>
-                  </div>
-                )}
-                <div className="flex justify-between mt-0.5">
-                  <div className="text-[12px] text-zinc-500 dark:text-zinc-400 mt-auto">
-                    Scheduled for{" "}
-                    <strong className="font-medium text-zinc-700 dark:text-zinc-300">
-                      {datePart} at {timePart}
-                    </strong>
-                  </div>
-                  {onCancel && (
-                    <Button
-                      onClick={handleCancel}
-                      disabled={cancelling}
-                      className="flex items-center gap-1.5 text-[12px]"
-                      variant="ghost"
-                      size="sm"
-                    >
-                      <X size={13} strokeWidth={2.5} />
-                      {cancelling ? "Cancelling..." : "Cancel"}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Right side: Action Button */}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 export function SystemActivityEvent({
   msg,
-  onCancelFollowUp,
 }: SystemActivityEventProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -423,8 +193,8 @@ export function SystemActivityEvent({
                     {isFollowUp && (
                       <FollowUpMetadata
                         meta={msg.metadata}
-                        msgId={msg.id}
-                        onCancel={onCancelFollowUp}
+                        followUpId={msg.metadata?.followUpId}
+                        // onCancel={onCancelFollowUp}
                       />
                     )}
                     {(msg.type === "CALL" || msg.metadata.callSummary) && (
