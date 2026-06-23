@@ -1,3 +1,4 @@
+import { pusherServer } from "@/lib/pusher/pusher-server";
 import { Redis } from "@upstash/redis";
 
 const redis = new Redis({
@@ -52,13 +53,28 @@ export async function setHueClawStatus(
   threadId: string,
   status: HueClawStatus = "NUDGE",
 ) {
+  // 1. Set the status in Redis (acts as the source of truth for new page loads)
   await redis.setex(`hueclaw:status:${threadId}`, 300, status);
+
+  // 2. Broadcast the update to anyone currently viewing this thread
+  await pusherServer.trigger(`thread-${threadId}`, "status-update", {
+    isWorking: true,
+    taskType: status,
+  });
 }
+
 
 export async function getHueClawStatus(threadId: string) {
   return await redis.get(`hueclaw:status:${threadId}`);
 }
 
 export async function clearHueClawStatus(threadId: string) {
+  // 1. Clear from Redis
   await redis.del(`hueclaw:status:${threadId}`);
+
+  // 2. Broadcast the clear event
+  await pusherServer.trigger(`thread-${threadId}`, "status-update", {
+    isWorking: false,
+    taskType: null,
+  });
 }
