@@ -9,6 +9,7 @@ import { authOptions } from "@/lib/auth/config";
 import SuperAdminSidebar from "@/components/admin/super-admin-sidebar";
 import { SuperAdminProvider } from "@/context/super-admin-context";
 import { GlobalChatWidget } from "@/components/admin/prospects/global-chat-widget";
+import { redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -50,6 +51,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SubDomainLayout({ children }: Props) {
   const session = await getServerSession(authOptions);
+
+  if(!session) return redirect("https://hue-line.com")
   const isSuperAdmin = session?.role === "SUPER_ADMIN";
 
   // REMOVED <NextAuthSessionProvider> WRAPPER HERE
