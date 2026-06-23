@@ -13,6 +13,7 @@ import { AiSuggestionData } from "@/lib/moonshot";
 import { OwnerData } from "@/types/owner";
 import useSWR, { mutate } from "swr";
 import axios from "axios";
+import { pusherClient } from "@/lib/pusher/pusher-client";
 
 // 1. NEW THREAD LOGIC: Define your Thread model interface
 export interface ChatThreadModel {
@@ -183,17 +184,14 @@ export function OwnerProvider({
 
   // 3. NEW THREAD LOGIC: SWR to fetch your recent chat threads.
 
-   const {
+  const {
     data: threadsData,
     isLoading: isThreadsLoading,
     mutate: mutateThreads,
   } = useSWR<{ threads: ChatThreadModel[] }>(
     `/api/subdomain/${subdomain.slug}/chat-threads`,
     fetcher,
-    { 
-      revalidateOnFocus: false,
-      refreshInterval: 1500 // <-- ADD THIS: Polls for new threads every 3 seconds!
-    },
+    { revalidateOnFocus: false },
   );
 
   const [isSendingSMS, setIsSendingSMS] = useState(false);
@@ -230,30 +228,42 @@ export function OwnerProvider({
   const [newThreadAlert, setNewThreadAlert] = useState<ChatThreadModel | null>(
     null,
   );
-  const knownThreadIds = useRef<Set<string> | null>(null);
-
   useEffect(() => {
-    if (threadsData?.threads) {
-      if (knownThreadIds.current === null) {
-        // Initial load: Just record what's already there, don't trigger alerts
-        knownThreadIds.current = new Set(threadsData.threads.map((t) => t.id));
-      } else {
-        // Compare new data against known IDs
-        const newThreads = threadsData.threads.filter(
-          (t) => !knownThreadIds.current?.has(t.id),
-        );
+    if (!subdomain?.slug) return;
 
-        if (newThreads.length > 0) {
-          // Grab the most recent new thread and show the alert
-          setNewThreadAlert(newThreads[0]);
+    // Tune into the main dashboard frequency for this specific subdomain
+    const channelName = `dashboard-${subdomain.slug}`;
+    const channel = pusherClient.subscribe(channelName);
 
-          // Add them to our known set so we don't alert again
-          newThreads.forEach((t) => knownThreadIds.current?.add(t.id));
+    // Listen for the "new-thread" event
+    channel.bind("new-thread", (newThread: ChatThreadModel) => {
+      
+      // A) Trigger the animated framer-motion widget INSTANTLY
+      setNewThreadAlert(newThread);
+
+      // B) Silently inject this new thread into SWR's cache so that 
+      // when they open their thread list, it's already there!
+      mutateThreads((currentData) => {
+        if (!currentData) return { threads: [newThread] };
+        
+        // Prevent duplicate injections just in case
+        if (currentData.threads.some(t => t.id === newThread.id)) {
+          return currentData;
         }
-      }
-    }
-  }, [threadsData]);
+        
+        // Put the new thread at the top of the list
+        return { threads: [newThread, ...currentData.threads] };
+      }, false); // false = do not re-fetch from API, we already have the data!
 
+    });
+
+    return () => {
+      pusherClient.unsubscribe(channelName);
+    };
+  }, [subdomain?.slug, mutateThreads]);
+
+
+  
   const dismissNewThreadAlert = () => setNewThreadAlert(null);
 
   const openNewThreadAlert = () => {

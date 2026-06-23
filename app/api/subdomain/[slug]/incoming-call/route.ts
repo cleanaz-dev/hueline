@@ -3,6 +3,7 @@ import { setHueClawStatus } from "@/lib/redis";
 import { invalidateThreadCache } from "@/lib/redis/agent-context";
 import { nanoid } from "nanoid";
 import { NextResponse } from "next/server";
+import { pusherServer } from "@/lib/pusher/pusher-server"; // <-- 1. Import Pusher
 
 interface Params {
   params: Promise<{
@@ -39,6 +40,7 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
+    // 2. Change 'select' to 'include' so we have the full data for the frontend widget!
     const thread = await prisma.chatThread.create({
       data: {
         shortId: nanoid(8),
@@ -47,8 +49,17 @@ export async function POST(req: Request, { params }: Params) {
         status: "OPEN",
         title: "NEW CALL",
       },
-      select: { id: true },
+      include: {
+        customer: true, // Frontend needs this to show the name/phone!
+      },
     });
+
+    // 3. BROADCAST THE NEW THREAD TO THE DASHBOARD INSTANTLY
+    await pusherServer.trigger(
+      `dashboard-${slug}`, 
+      "new-thread", 
+      thread
+    );
 
     await prisma.clientActivity.create({
       data: {
@@ -74,6 +85,8 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
+    // NOTE: If you updated your redis.ts earlier, this function below 
+    // is ALSO automatically sending the Pusher status update! Perfect.
     await setHueClawStatus(thread.id, "CALL_CONNECTED");
 
     await invalidateThreadCache(slug, thread.id);
