@@ -206,7 +206,7 @@ export function SystemActivityEvent({ msg }: SystemActivityEventProps) {
                     {isFollowUp && (
                       <FollowUpMetadata
                         meta={msg.metadata}
-                        followUpId={msg.metadata?.followUpId || msg.id} // 👈 ADD FALLBACK HERE
+                        
                       />
                     )}
                     {(msg.type === "CALL" || msg.metadata.callSummary) && (
