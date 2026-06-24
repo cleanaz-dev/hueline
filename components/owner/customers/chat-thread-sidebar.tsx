@@ -31,8 +31,8 @@ export type EnrichedChatThread = PrismaChatThread & {
     role: string;
     type: string;
     createdAt: string | Date;
-    subject?: string; // Added to support emails
-    metadata?: any; // Added to support emails
+    subject?: string;
+    metadata?: any; 
   }[];
 };
 
@@ -46,7 +46,8 @@ function getLastMessage(comms: EnrichedChatThread["communications"]) {
   )[0];
 }
 
-function stripHtml(html: string) {
+// UPGRADED: Added a maxLength parameter (defaults to 120 chars)
+function stripAndTruncateHtml(html: string, maxLength: number = 120) {
   if (!html) return "";
   // Strip tags and decode basic HTML entities for a clean snippet
   let text = html.replace(/<[^>]*>/g, " ");
@@ -57,7 +58,11 @@ function stripHtml(html: string) {
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
-  return text.replace(/\s+/g, " ").trim();
+    
+  const cleanText = text.replace(/\s+/g, " ").trim();
+  
+  if (cleanText.length <= maxLength) return cleanText;
+  return cleanText.substring(0, maxLength).trimEnd() + "...";
 }
 
 function getRoleInfo(role: string) {
@@ -189,8 +194,6 @@ export default function ChatThreadsSidebar({
             <>
               {/* Thread Header Info */}
               {(() => {
-                const lastMsg = getLastMessage(activeThread.communications);
-
                 return (
                   <div className="flex justify-between items-start mb-6">
                     <div>
@@ -288,9 +291,11 @@ export default function ChatThreadsSidebar({
                           </div>
                         )}
 
-                        {/* Message Snippet Wrapper */}
-                        <div className="line-clamp-3 leading-relaxed opacity-90 whitespace-pre-wrap">
-                          {stripHtml(lastMsg.body)}
+                        {/* Message Snippet Wrapper 
+                            UPGRADED: Swapped to line-clamp-2, normal whitespace, and max char length! 
+                        */}
+                        <div className="line-clamp-2 leading-relaxed opacity-90">
+                          {stripAndTruncateHtml(lastMsg.body, 120)}
                         </div>
                       </div>
                     </div>
