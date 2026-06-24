@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Receipt, ChevronDown, ChevronUp } from "lucide-react";
+import { Receipt, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 export default function ThreadQuoteCard({ msg }: { msg: any }) {
@@ -11,12 +11,20 @@ export default function ThreadQuoteCard({ msg }: { msg: any }) {
   const textBody = msg.body.replace(metadata.quoteLink, "").trim();
 
   return (
-    <div className="flex flex-col gap-3 overflow-hidden">
-      <div className="whitespace-pre-wrap leading-relaxed opacity-90 text-[14px]">
-        {textBody}
-      </div>
+    // Removed gap-3 here so we can control the spacing precisely with margins
+    <div className="flex flex-col pt-1">
+      
+      {/* TEXT BODY (Respects normal padding) */}
+      {textBody && (
+        <div className="whitespace-pre-wrap leading-relaxed opacity-90 text-[14px] mb-3">
+          {textBody}
+        </div>
+      )}
 
-      <div className="bg-background/60 dark:bg-background/40 border border-current/10 rounded-xl p-3.5 flex flex-col gap-1 shadow-sm overflow-hidden">
+      {/* QUOTE DATA (Full width using negative margins to break out of parent padding) */}
+      {/* -mx-4 pulls it full width, -mb-3 docks it to the bottom, rounded-b-2xl matches parent corners */}
+      <div className="bg-background/60 dark:bg-background/40 border-t border-current/10 -mx-4 -mb-3 px-4 pt-3 pb-3.5 rounded-b-2xl flex flex-col gap-1 overflow-hidden">
+        
         {/* Header */}
         <div className="flex justify-between items-center mb-1">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">

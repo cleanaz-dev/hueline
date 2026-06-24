@@ -55,7 +55,7 @@ export default async function SubDomainLayout({ children }: Props) {
   if(!session) return redirect("https://hue-line.com")
   const isSuperAdmin = session?.role === "SUPER_ADMIN";
 
-  // REMOVED <NextAuthSessionProvider> WRAPPER HERE
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-linear-to-b from-primary/15 via-secondary/05 to-primary/30">
       {isSuperAdmin ? (

@@ -129,9 +129,11 @@ export async function GET(
               scheduleName: followUp.scheduleName,
               triggerAt: followUp.triggerAt,
               status: followUp.status,
+              followUpId: followUp.id,
             },
             createdAt: followUp.createdAt,
             mediaAttachments: [],
+            followUpId: followUp.id,
           },
         ]
       : [];

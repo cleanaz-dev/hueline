@@ -2,16 +2,31 @@
 
 import React, { useState } from "react";
 // Keep only the icons actually used in SystemActivityEvent.tsx
-import { Plus, Phone, ChevronRight, PlaySquare, ExternalLink, Activity, CalendarClock, CreditCard, FileText, Mail, Globe, CheckCircle2 } from "lucide-react"; 
-import {AnimatePresence, motion } from "framer-motion"
+import {
+  Plus,
+  Phone,
+  ChevronRight,
+  PlaySquare,
+  ExternalLink,
+  Activity,
+  CalendarClock,
+  CreditCard,
+  FileText,
+  Mail,
+  Globe,
+  CheckCircle2,
+} from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 // Your extracted components!
 import { CallMetadata } from "./system-event-call-meta";
 import { PaymentMetadata } from "./system-event-payment-meta";
 import { FormMetadata } from "./system-event-form-meta";
-import { FollowUpMetadata } from "./system-event-follow-up-meta"
-import { SystemActivityEventProps, SystemEventMetadata } from "./system-event-types";
-
+import { FollowUpMetadata } from "./system-event-follow-up-meta";
+import {
+  SystemActivityEventProps,
+  SystemEventMetadata,
+} from "./system-event-types";
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 
@@ -64,9 +79,7 @@ const getActivityDesign = (type?: string, activityType?: string) => {
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
-export function SystemActivityEvent({
-  msg,
-}: SystemActivityEventProps) {
+export function SystemActivityEvent({ msg }: SystemActivityEventProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const time = new Date(msg.createdAt).toLocaleTimeString([], {
@@ -193,8 +206,7 @@ export function SystemActivityEvent({
                     {isFollowUp && (
                       <FollowUpMetadata
                         meta={msg.metadata}
-                        followUpId={msg.metadata?.followUpId}
-                        
+                        followUpId={msg.metadata?.followUpId || msg.id} // 👈 ADD FALLBACK HERE
                       />
                     )}
                     {(msg.type === "CALL" || msg.metadata.callSummary) && (

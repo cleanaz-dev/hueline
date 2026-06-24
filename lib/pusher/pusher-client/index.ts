@@ -1,10 +1,16 @@
-"use client"
+"use client";
 
-import PusherClient from "pusher-js";
+import Pusher from "pusher-js";
 
-export const pusherClient = new PusherClient(
-  process.env.NEXT_PUBLIC_PUSHER_KEY!,
-  {
-    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-  }
-);
+const PusherClient = (Pusher as any).default || Pusher;
+
+/**
+ * Initialize Pusher ONLY in the browser. 
+ * On the server, this will be null.
+ */
+export const pusherClient =
+  typeof window !== "undefined"
+    ? new PusherClient(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+      })
+    : null;

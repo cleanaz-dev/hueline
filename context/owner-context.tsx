@@ -142,8 +142,12 @@ interface OwnerContextValue {
   openNewThreadAlert: () => void;
 
   // Cancel Follow Up
-  handleCancelFollowUp: (threadId: string, customerId: string, followUpId: string) => Promise<boolean>
-  isCancellingFollowUp: boolean
+  handleCancelFollowUp: (
+    threadId: string,
+    customerId: string,
+    followUpId: string,
+  ) => Promise<boolean>;
+  isCancellingFollowUp: boolean;
 }
 
 const OwnerContext = createContext<OwnerContextValue | null>(null);
@@ -524,9 +528,9 @@ export function OwnerProvider({
   };
 
   const handleCancelFollowUp = async (
-    followUpId: string,
     threadId: string,
     customerId: string,
+    followUpId: string,
   ): Promise<boolean> => {
     setIsCancellingFollowUp(true);
     try {
@@ -604,7 +608,7 @@ export function OwnerProvider({
         openNewThreadAlert,
         // Cancel Follow Up
         handleCancelFollowUp,
-        isCancellingFollowUp
+        isCancellingFollowUp,
       }}
     >
       {children}

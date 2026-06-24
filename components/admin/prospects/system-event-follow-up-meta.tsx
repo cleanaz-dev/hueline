@@ -12,22 +12,23 @@ export interface FollowUpMetadataProps {
   meta: {
     triggerAt?: string | Date;
     reason?: string;
+    followUpId?: string;
   };
-  followUpId?: string;
-
+ 
 }
 
-export function FollowUpMetadata({
-  meta,
-  followUpId,
-  
-}: FollowUpMetadataProps) {
-  const { handleCancelFollowUp, isCancellingFollowUp, activeThread: customer } =
-    useOwner();
+export function FollowUpMetadata({ meta }: FollowUpMetadataProps) {
+  const {
+    handleCancelFollowUp,
+    isCancellingFollowUp,
+    activeThread: customer,
+  } = useOwner();
 
   const [cancelled, setCancelled] = useState(false);
 
-  if (!meta?.triggerAt || !followUpId) return null;
+  console.log("meta:", meta)
+
+  if (!meta?.triggerAt || !meta?.followUpId) return null;
 
   const triggerDate = new Date(meta.triggerAt);
   const datePart = triggerDate.toLocaleDateString([], {
@@ -43,12 +44,15 @@ export function FollowUpMetadata({
   const handleCancel = async () => {
     if (!handleCancelFollowUp) return;
     try {
-      await handleCancelFollowUp(customer?.threadId!, customer?.id!, followUpId);
+      await handleCancelFollowUp(
+        customer?.threadId!,
+        customer?.id!,
+        meta?.followUpId!,
+      );
       setCancelled(true);
     } catch (e) {
       console.error("Failed to cancel follow-up", e);
     } finally {
-      
     }
   };
 
@@ -100,18 +104,17 @@ export function FollowUpMetadata({
                       {datePart} at {timePart}
                     </strong>
                   </div>
-                  {isCancellingFollowUp && (
-                    <Button
-                      onClick={handleCancel}
-                      disabled={isCancellingFollowUp}
-                      className="flex items-center gap-1.5 text-[12px]"
-                      variant="ghost"
-                      size="sm"
-                    >
-                      <X size={13} strokeWidth={2.5} />
-                      {isCancellingFollowUp ? "Cancelling..." : "Cancel"}
-                    </Button>
-                  )}
+
+                  <Button
+                    onClick={handleCancel}
+                    disabled={isCancellingFollowUp}
+                    className="flex items-center gap-1.5 text-[12px]"
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <X size={13} strokeWidth={2.5} />
+                    {isCancellingFollowUp ? "Cancelling..." : "Cancel"}
+                  </Button>
                 </div>
               </div>
             </div>

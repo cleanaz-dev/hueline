@@ -5,6 +5,7 @@ import { twilioClient } from "@/lib/twilio/config";
 import axios from "axios";
 import { cancelPendingFollowUp } from "@/lib/aws/event-scheduler/cancel-followups";
 import { invalidateThreadCache } from "@/lib/redis/agent-context";
+import { pusherServer } from "@/lib/pusher/pusher-server";
 
 interface Params {
   params: Promise<{ slug: string; twilioNumber: string }>;
@@ -126,6 +127,14 @@ export async function POST(req: Request, { params }: Params) {
 
     // Clears Redis Thread Cache
     await invalidateThreadCache(slug, thread.id);
+
+     try {
+      await pusherServer.trigger(`thread-${thread.id}`, "new-message", {
+        threadId: thread.id,
+      });
+    } catch (pusherErr) {
+      console.error("Failed to trigger pusher for new message", pusherErr);
+    }
 
     // 5. If autopilot is on, delay then nudge the AI
     if (thread.isAutoPilot) {

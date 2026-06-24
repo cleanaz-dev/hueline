@@ -1,47 +1,51 @@
 // components/owner/chat-widget/use-thread-messages.ts
-import { useState, useEffect, useMemo } from "react";
+import { useMemo, useEffect } from "react"; // 👈 Add useEffect
+import useSWR from "swr";
 import { useOwner } from "@/context/owner-context";
+import { pusherClient } from "@/lib/pusher/pusher-client"; // 👈 Import pusherClient
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function useThreadMessages() {
   const { subdomain, activeThread: customer, chatWindowState, pendingMessages } = useOwner();
-  
-  const [messages, setMessages] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+
+  const shouldFetch =
+    (chatWindowState === "open" || chatWindowState === "minimized") &&
+    customer?.id &&
+    customer?.threadId;
+
+  const url = shouldFetch
+    ? `/api/subdomain/${subdomain.slug}/customers/${customer.id}/${customer.threadId}`
+    : null;
+
+  const { data, isLoading, mutate } = useSWR(url, fetcher, {
+    refreshInterval: 10000,
+    revalidateOnFocus: true,
+  });
+
+  // 🚨 ADD THIS EFFECT: Real-time Pusher listener
+  useEffect(() => {
+    if (!customer?.threadId) return;
+
+    // Listen to the specific channel for this chat thread
+    const channelName = `thread-${customer.threadId}`;
+    const channel = pusherClient.subscribe(channelName);
+
+    // When the webhook says there is a new message, INSTANTLY fetch!
+    channel.bind("new-message", () => {
+      mutate();
+    });
+
+    return () => {
+      pusherClient.unsubscribe(channelName);
+    };
+  }, [customer?.threadId, mutate]); // Re-bind if the thread changes
+
+  const messages = data || [];
 
   const customerPendingMessages = pendingMessages.filter(
     (m) => m.customerId === customer?.id
   );
-
-  const fetchMessages = async (isBackgroundPoll = false) => {
-    if (!customer?.id || !customer?.threadId) return;
-
-    if (!isBackgroundPoll) setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/subdomain/${subdomain.slug}/customers/${customer.id}/${customer.threadId}`
-      );
-      const data = await res.json();
-      setMessages(data);
-    } catch (err) {
-      console.error("Fetch error", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (
-      (chatWindowState !== "open" && chatWindowState !== "minimized") ||
-      !customer?.id ||
-      !customer?.threadId
-    ) return;
-
-    setMessages((prev) => (prev[0]?.customerId !== customer.id ? [] : prev));
-    fetchMessages();
-
-    const pollInterval = setInterval(() => fetchMessages(true), 10000);
-    return () => clearInterval(pollInterval);
-  }, [chatWindowState, customer?.id, customer?.threadId]);
 
   const combinedMessages = useMemo(() => {
     return [
@@ -52,8 +56,8 @@ export function useThreadMessages() {
 
   return {
     messages,
-    loading,
+    loading: isLoading,
     combinedMessages,
-    fetchMessages,
+    fetchMessages: () => mutate(),
   };
 }
