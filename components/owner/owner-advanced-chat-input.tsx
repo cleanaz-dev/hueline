@@ -298,7 +298,7 @@ export function OwnerAdvancedChatInput({
                   animate={{ opacity: 1, filter: "blur(0px)", x: 0 }}
                   exit={{ opacity: 0, filter: "blur(4px)", x: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="flex items-center gap-2 h-full px-2 text-primary font-medium"
+                  className="flex items-center gap-2 h-full px-2 text-violet-700 font-medium"
                 >
                   <Sparkles size={16} className="animate-pulse" />
                   <span className="text-sm">AI is managing this thread</span>
@@ -325,7 +325,7 @@ export function OwnerAdvancedChatInput({
           className={cn(
             "relative flex flex-col rounded-xl border bg-background transition-all duration-300 overflow-hidden",
             isAutoPilot 
-              ? "border-primary/50 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.2)]" 
+              ? "border-violet-500/50 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.2)]" 
               : channel === "EMAIL"
               ? "border-blue-200 dark:border-blue-900 shadow-sm focus-within:ring-1 focus-within:ring-ring"
               : "border-zinc-200 dark:border-zinc-800 focus-within:ring-1 focus-within:ring-ring"
@@ -411,10 +411,7 @@ export function OwnerAdvancedChatInput({
                     exit={{ y: 10, opacity: 0, scale: 0.95 }}
                     className="flex flex-col items-center gap-1.5 px-6 py-4 bg-background border shadow-md rounded-2xl dark:bg-zinc-900"
                   >
-                    <div className="flex items-center gap-2 text-primary">
-                      <Bot size={20} className="animate-pulse" />
-                      <span className="text-sm font-semibold">Autopilot Engaged</span>
-                    </div>
+                   
                     <span className="text-xs text-muted-foreground">Toggle the switch above to reply manually</span>
                   </motion.div>
                 </motion.div>
