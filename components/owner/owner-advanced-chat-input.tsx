@@ -325,7 +325,7 @@ export function OwnerAdvancedChatInput({
           className={cn(
             "relative flex flex-col rounded-xl border bg-background transition-all duration-300 overflow-hidden",
             isAutoPilot 
-              ? "border-violet-500/50 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.2)]" 
+              ? "border-violet-500/50 shadow-[0_0_20px_-5px_rgb(139_92_246/0.2)]" 
               : channel === "EMAIL"
               ? "border-blue-200 dark:border-blue-900 shadow-sm focus-within:ring-1 focus-within:ring-ring"
               : "border-zinc-200 dark:border-zinc-800 focus-within:ring-1 focus-within:ring-ring"
