@@ -11,6 +11,7 @@ interface OmniChannelActionButtonProps {
   isEmpty: boolean;
   isLoading: boolean;
   isDialing: boolean;
+  isActiveCall: boolean; // <-- NEW
   onSend: () => void;
   customerId: string;
   threadId: string;
@@ -21,13 +22,18 @@ export default function OmniChannelActionButton({
   isEmpty,
   isLoading,
   isDialing,
+  isActiveCall, // <-- NEW
   onSend,
   customerId,
   threadId,
 }: OmniChannelActionButtonProps) {
-  const isBusy = isLoading || isDialing;
-  const { handleHangUpCall, isCancellingCall } = useOwner();
+  // Global busy state to prevent multi-clicking while an API request is in flight
+  const isBusy = isLoading || isDialing; 
+  
+  // Specific loading state for the current active channel's label
+  const isActionLoading = channel === "DIAL" ? isDialing : isLoading;
 
+  const { handleHangUpCall, isCancellingCall } = useOwner();
   const [countdown, setCountdown] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -86,7 +92,8 @@ export default function OmniChannelActionButton({
       layout
       className="flex justify-end gap-2 p-2 pt-0 mt-1 bg-background shrink-0"
     >
-      {isBusy && !isCountingDown && (
+      {/* 1. Show Hang Up Button ONLY if there is an Active Call on this thread */}
+      {isActiveCall && (
         <Button
           onClick={handleHangUp}
           disabled={isCancellingCall}
@@ -108,6 +115,7 @@ export default function OmniChannelActionButton({
         </Button>
       )}
 
+      {/* 2. Primary Action Button */}
       <AnimatePresence mode="wait" initial={false}>
         {isCountingDown ? (
           <motion.div
@@ -140,11 +148,17 @@ export default function OmniChannelActionButton({
           >
             <Button
               onClick={handleMainClick}
-              disabled={isEmpty || isBusy}
+              // Disable button if input is empty, request is in flight, OR if they are already in a call and looking at the DIAL tab
+              disabled={isEmpty || isBusy || (channel === "DIAL" && isActiveCall)}
               size="sm"
               className="h-8 gap-2 rounded-lg"
             >
-              {isBusy ? (
+              {channel === "DIAL" && isActiveCall ? (
+                <>
+                  <span>In Call</span>
+                  <Phone size={14} />
+                </>
+              ) : isActionLoading ? (
                 <>
                   <Loader2 size={14} className="animate-spin" />
                   <span>

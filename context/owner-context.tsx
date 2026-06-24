@@ -41,6 +41,12 @@ interface CustomerChat {
   [key: string]: any;
 }
 
+interface ActiveCallData {
+  threadId: string;
+  customerId: string;
+  roomName: string;
+}
+
 interface PendingMessage {
   id: string;
   customerId: string;
@@ -148,6 +154,9 @@ interface OwnerContextValue {
     followUpId: string,
   ) => Promise<boolean>;
   isCancellingFollowUp: boolean;
+
+  // Active Call
+  activeCall: ActiveCallData | null;
 }
 
 const OwnerContext = createContext<OwnerContextValue | null>(null);
@@ -217,6 +226,7 @@ export function OwnerProvider({
   const [reportTaskDialogOpen, setReportTaskDialogOpen] = useState(false);
   const [isReportingTask, setIsReportingTask] = useState(false);
   const [isDialing, setIsDialing] = useState(false);
+  const [activeCall, setActiveCall] = useState<ActiveCallData | null>(null);
   const [isCancellingCall, setIsCancellingCall] = useState(false);
   const [isCancellingFollowUp, setIsCancellingFollowUp] = useState(false);
 
@@ -262,6 +272,17 @@ export function OwnerProvider({
         // Put the new thread at the top of the list
         return { threads: [newThread, ...currentData.threads] };
       }, false); // false = do not re-fetch from API, we already have the data!
+    });
+
+     // NEW: Listen for Call Ended events
+    channel.bind("call-ended", (data: { roomName: string, threadId: string }) => {
+      setActiveCall((prev) => {
+        // If the ended call is our current active call, clear it
+        if (prev?.roomName === data.roomName) {
+          return null;
+        }
+        return prev;
+      });
     });
 
     return () => {
@@ -377,25 +398,30 @@ export function OwnerProvider({
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            customerNumber,
-            operatorNumber,
-            callType,
-          }),
+          body: JSON.stringify({ customerNumber, operatorNumber, callType }),
         },
       );
 
       if (!res.ok) {
-        // release resourcelock
-        return false; // <-- Return false if it failed
+        return false;
       }
 
-      return true; // <-- Return true so your chat widget updates!
+      // Parse the response to get the roomName
+      const data = await res.json();
+
+      // Set the Active Call state here!
+      setActiveCall({
+        threadId,
+        customerId,
+        roomName: data.roomName,
+      });
+
+      return true;
     } catch (error) {
       console.error("Dialing error:", error);
-      return false; // <-- Return false on network error
+      return false;
     } finally {
-      // release resourceLock
+      // This turns off the loading spinner, but activeCall is now SET
       setIsDialing(false);
     }
   };
@@ -514,6 +540,8 @@ export function OwnerProvider({
   ): Promise<boolean> => {
     setIsCancellingCall(true);
     try {
+
+      setActiveCall(null);
       const res = await fetch(
         `/api/subdomain/${subdomain.slug}/customers/${customerId}/${threadId}/hang-up`,
         {
@@ -609,6 +637,9 @@ export function OwnerProvider({
         // Cancel Follow Up
         handleCancelFollowUp,
         isCancellingFollowUp,
+
+        // Active Call
+        activeCall,
       }}
     >
       {children}

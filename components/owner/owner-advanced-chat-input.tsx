@@ -44,6 +44,7 @@ export function OwnerAdvancedChatInput({
     activeThread,
     hueClawAi,
     isDialing,
+    activeCall, // <-- NEW: Pull activeCall state
     me,
     isMeLoading,
   } = useOwner();
@@ -112,15 +113,15 @@ export function OwnerAdvancedChatInput({
     }
   };
 
-  const handleHangUp = async () => (
-    console.log("Hangup")
-  )
+  const handleHangUp = async () => console.log("Hangup");
 
   // Allow dialing even if text is empty, as long as a number exists
   const isEmpty =
     channel === "DIAL"
       ? !customerPhoneNumber && !activeThread?.phone
       : !text.replace(/<[^>]*>?/gm, "").trim();
+
+   const isActiveCall = activeCall?.threadId === activeThread?.threadId;
 
   return (
     <>
@@ -372,11 +373,12 @@ export function OwnerAdvancedChatInput({
             )}
           </AnimatePresence>
 
-          <OmniChannelActionButton
+           <OmniChannelActionButton
             channel={channel}
             isEmpty={isEmpty}
             isLoading={isLoading}
             isDialing={isDialing}
+            isActiveCall={isActiveCall} // <-- NEW: Pass it to the button
             onSend={handleSend}
             customerId={activeThread?.id!}
             threadId={activeThread?.threadId!}
