@@ -13,6 +13,7 @@ import {
 import { HueClawOutboundCallMetadata } from "@/lib/zod/outbound-calls/hueclaw-outbound-metadata";
 import { nanoid } from "nanoid";
 import { HueClawCallMetadata } from "@/lib/zod/hueclaw/calls/hueclaw-call-metadata-schema";
+import { pusherServer } from "@/lib/pusher/pusher-server";
 
 interface Params {
   params: Promise<{
@@ -195,6 +196,14 @@ export async function POST(req: Request, { params }: Params) {
     // 7. Dispatch the agent — it handles all dialing from here
     await agentDispatchClient.createDispatch(roomName, "telephony_agent");
     await setHueClawStatus(threadId, "OUTBOUND_CALL");
+
+    try {
+      await pusherServer.trigger(`thread-${thread.id}`, "new-message", {
+        threadId: thread.id,
+      });
+    } catch (pusherErr) {
+      console.error("Failed to trigger pusher for new message", pusherErr);
+    }
 
     return NextResponse.json(
       { message: "LiveKit Dispatch Successful", roomName },
