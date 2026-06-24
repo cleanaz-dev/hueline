@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Phone, PhoneOff, Send, X } from "lucide-react";
-import { Button } from "@/components/ui/button"; // Adjust import to your setup
+import { Button } from "@/components/ui/button";
 import { useOwner } from "@/context/owner-context";
 
 const DIAL_COUNTDOWN_SECONDS = 5;
@@ -28,7 +28,6 @@ export default function OmniChannelActionButton({
   const isBusy = isLoading || isDialing;
   const { handleHangUpCall, isCancellingCall } = useOwner();
 
-  // Countdown-to-cancel state — only relevant for DIAL.
   const [countdown, setCountdown] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -40,32 +39,31 @@ export default function OmniChannelActionButton({
     setCountdown(null);
   };
 
-  timerRef.current = setInterval(() => {
-    setCountdown((prev) => {
-      if (prev === null) return null;
-      if (prev <= 1) return 0;
-      return prev - 1;
-    });
-  }, 1000);
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (countdown === 0) {
+      clearCountdown();
+      onSend();
+    }
+  }, [countdown]);
 
   const handleMainClick = () => {
     if (channel === "DIAL") {
-      // Start the countdown instead of dialing immediately.
       setCountdown(DIAL_COUNTDOWN_SECONDS);
       timerRef.current = setInterval(() => {
         setCountdown((prev) => {
           if (prev === null) return null;
-          if (prev <= 1) {
-            clearCountdown();
-            onSend();
-            return null;
-          }
+          if (prev <= 1) return 0;
           return prev - 1;
         });
       }, 1000);
       return;
     }
-
     onSend();
   };
 
@@ -83,19 +81,11 @@ export default function OmniChannelActionButton({
 
   const isCountingDown = countdown !== null;
 
-  useEffect(() => {
-    if (countdown === 0) {
-      clearCountdown();
-      onSend();
-    }
-  }, [countdown]);
-
   return (
     <motion.div
       layout
       className="flex justify-end gap-2 p-2 pt-0 mt-1 bg-background shrink-0"
     >
-      {/* Hang Up / Cancel Button - only shows when actively busy (dialing/loading), not during the pre-dial countdown */}
       {isBusy && !isCountingDown && (
         <Button
           onClick={handleHangUp}
@@ -118,7 +108,6 @@ export default function OmniChannelActionButton({
         </Button>
       )}
 
-      {/* Main Send / Dial Button, or the countdown-to-cancel state */}
       <AnimatePresence mode="wait" initial={false}>
         {isCountingDown ? (
           <motion.div
