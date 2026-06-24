@@ -286,6 +286,7 @@ export function WidgetOpen() {
             isLoading={isSendingSMS || isSendingEmail}
             onSend={handleSendMessage}
             clientId={customer?.id}
+          
           />
         </div>
       </motion.div>

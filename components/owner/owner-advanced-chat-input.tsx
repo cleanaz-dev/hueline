@@ -9,9 +9,8 @@ import {
   Mail,
   Loader2,
   X,
-  Sparkles,
   PhoneCall,
-  Phone,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "../admin/prospects/rich-text-editor";
@@ -27,8 +26,8 @@ interface OwnerAdvancedChatInputProps {
     message: string,
     channel: "SMS" | "EMAIL" | "DIAL",
     subject?: string,
-    customerPhone?: string, // <-- Add this
-    operatorPhone?: string, // <-- Add this
+    customerPhone?: string, 
+    operatorPhone?: string, 
   ) => void;
   clientId?: string;
 }
@@ -44,7 +43,7 @@ export function OwnerAdvancedChatInput({
     activeThread,
     hueClawAi,
     isDialing,
-    activeCall, // <-- NEW: Pull activeCall state
+    activeCall, 
     me,
     isMeLoading,
   } = useOwner();
@@ -69,13 +68,11 @@ export function OwnerAdvancedChatInput({
     }
   }, [me?.phone, operatorNumber]);
 
-  // const currentSuggestion =
-  //   clientId && aiSuggestions ? aiSuggestions[clientId] : null;
-
   const handleSend = () => {
-    // If dialing, bypass the text check
+    // 🛡️ Safeguard: Prevent human interference if AI is on
+    if (isAutoPilot) return;
+
     if (channel === "DIAL") {
-      // Pass the new variables here!
       onSend("", "DIAL", undefined, customerPhoneNumber, operatorNumber);
       return;
     }
@@ -83,7 +80,6 @@ export function OwnerAdvancedChatInput({
     const plainText = text.replace(/<[^>]*>?/gm, "").trim();
     if (!plainText) return;
 
-    // You can pass them here too just so the arguments line up
     onSend(
       text,
       channel,
@@ -98,7 +94,8 @@ export function OwnerAdvancedChatInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey && channel === "SMS") {
+    // 🛡️ Safeguard: Ignore enter key if AI is on
+    if (e.key === "Enter" && !e.shiftKey && channel === "SMS" && !isAutoPilot) {
       e.preventDefault();
       handleSend();
     }
@@ -113,15 +110,12 @@ export function OwnerAdvancedChatInput({
     }
   };
 
-  const handleHangUp = async () => console.log("Hangup");
-
-  // Allow dialing even if text is empty, as long as a number exists
   const isEmpty =
     channel === "DIAL"
       ? !customerPhoneNumber && !activeThread?.phone
       : !text.replace(/<[^>]*>?/gm, "").trim();
 
-   const isActiveCall = activeCall?.threadId === activeThread?.threadId;
+  const isActiveCall = activeCall?.threadId === activeThread?.threadId;
 
   return (
     <>
@@ -153,7 +147,28 @@ export function OwnerAdvancedChatInput({
                 width: "min(680px, 90vw)",
               }}
             >
-              <div className="flex flex-col rounded-2xl border bg-background shadow-2xl overflow-hidden">
+              <div className="flex flex-col rounded-2xl border bg-background shadow-2xl overflow-hidden relative">
+                
+                {/* 🤖 UNDOCKED AUTOPILOT LOCK OVERLAY */}
+                <AnimatePresence>
+                  {isAutoPilot && (
+                    <motion.div
+                      initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                      animate={{ opacity: 1, backdropFilter: "blur(3px)" }}
+                      exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                      className="absolute inset-0 z-[70] flex items-center justify-center bg-background/50"
+                    >
+                      <motion.div 
+                        initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 10, opacity: 0 }}
+                        className="flex items-center gap-2 px-4 py-2 bg-background border shadow-md rounded-full"
+                      >
+                        <Sparkles size={16} className="text-primary animate-pulse" />
+                        <span className="text-sm font-medium">Autopilot Active</span>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
                   <div className="flex items-center gap-2">
                     <Mail size={14} className="text-muted-foreground" />
@@ -173,12 +188,11 @@ export function OwnerAdvancedChatInput({
                 <RichTextEditor
                   value={text}
                   onChange={setText}
-                  disabled={isLoading}
+                  disabled={isLoading || isAutoPilot}
                   isUndocked={true}
                   onDock={() => setIsUndocked(false)}
                 />
 
-                {/* Undocked subject field */}
                 <div className="flex items-center border-t border-border/50">
                   <span className="text-xs text-muted-foreground px-3 border-r border-border/50 h-9 flex items-center shrink-0">
                     Subject
@@ -188,16 +202,15 @@ export function OwnerAdvancedChatInput({
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="Add a subject…"
-                    disabled={isLoading}
+                    disabled={isLoading || isAutoPilot}
                     className="flex-1 h-9 px-3 text-sm bg-transparent focus:outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
                   />
                 </div>
 
                 <div className="flex justify-end px-3 py-2.5 border-t bg-muted/20">
-                  {/* Undocked send button */}
                   <Button
                     onClick={handleSend}
-                    disabled={isEmpty || isLoading}
+                    disabled={isEmpty || isLoading || isAutoPilot}
                     size="sm"
                     className="h-8 gap-2 rounded-lg"
                   >
@@ -222,34 +235,8 @@ export function OwnerAdvancedChatInput({
 
       {/* ─── Docked input (always visible) ───────────────────────────────── */}
       <div className="p-4 bg-background border-t shadow-[0_-4px_15px_-5px_rgba(0,0,0,0.05)]">
-        {/* <AiActionDock
-          isLoading={isAiLoading}
-          suggestion={currentSuggestion}
-          onAnalyze={() =>
-            clientId &&
-            fetchAiSuggestion &&
-            fetchAiSuggestion(clientId, activeThread?.threadId!)
-          }
-          onClear={() =>
-            clientId &&
-            clearAiSuggestion &&
-            clearAiSuggestion(clientId, activeThread?.threadId!)
-          }
-          onUseSms={(aiText) => {
-            setChannel("SMS");
-            setSubject("");
-            setText(aiText);
-            setIsUndocked(false);
-          }}
-          onUseEmail={(aiSubject, aiBody) => {
-            setChannel("EMAIL");
-            setSubject(aiSubject);
-            setText(aiBody);
-            setIsUndocked(false);
-          }}
-        /> */}
-
-        {/* Channel Switcher & AI Controls (h-10 locks the height so no bouncing) */}
+        
+        {/* Channel Switcher & AI Controls */}
         <div className="flex items-center justify-between h-10 mb-2">
           <div className="flex bg-muted/50 p-1 rounded-lg h-8 border border-border/50">
             <button
@@ -288,7 +275,7 @@ export function OwnerAdvancedChatInput({
           </div>
 
           <HueClawChatControls
-            isAutoPilot={isAutoPilot} // ✅ Read from your local state so the switch moves instantly!
+            isAutoPilot={isAutoPilot} 
             setIsAutoPilot={setIsAutoPilot}
             isAiLoading={isAiLoading}
             customerId={clientId}
@@ -309,76 +296,101 @@ export function OwnerAdvancedChatInput({
               : "border-zinc-200 dark:border-zinc-800",
           )}
         >
-          <AnimatePresence mode="wait">
-            {channel === "SMS" ? (
-              <motion.div
-                key="sms"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                <textarea
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Text message..."
-                  className="w-full min-h-20 max-h-50 p-3 text-sm bg-transparent resize-none focus:outline-none scrollbar-thin"
-                  disabled={isLoading}
-                />
-              </motion.div>
-            ) : channel === "EMAIL" ? (
-              <motion.div
-                key="email"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="flex flex-col w-full"
-              >
-                <RichTextEditor
-                  value={text}
-                  onChange={setText}
-                  disabled={isLoading || isUndocked}
-                  isUndocked={false}
-                  onUndock={() => setIsUndocked(true)}
-                />
-
-                {/* Docked subject field */}
-                <div className="flex items-center border-t border-border/50">
-                  <span className="text-xs text-muted-foreground px-3 border-r border-border/50 h-9 flex items-center shrink-0">
-                    Subject
-                  </span>
-                  <input
-                    type="text"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Add a subject…"
-                    disabled={isLoading}
-                    className="flex-1 h-9 px-3 text-sm bg-transparent focus:outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+          {/* Wrapper for the input fields so our overlay only covers the text/dial zone, NOT the action button row */}
+          <div className="relative flex-1">
+            <AnimatePresence mode="wait">
+              {channel === "SMS" ? (
+                <motion.div
+                  key="sms"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <textarea
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Text message..."
+                    className="w-full min-h-20 max-h-50 p-3 text-sm bg-transparent resize-none focus:outline-none scrollbar-thin"
+                    disabled={isLoading || isAutoPilot}
                   />
-                </div>
-              </motion.div>
-            ) : (
-              <DialChannelInput
-                key="dial"
-                customerPhoneNumber={customerPhoneNumber}
-                setCustomerPhoneNumber={setCustomerPhoneNumber}
-                activeThreadPhone={activeThread?.phone}
-                isLoading={isLoading}
-                operatorNumber={operatorNumber}
-                setOperatorNumber={setOperatorNumber}
-                isDialing={isDialing}
-              />
-            )}
-          </AnimatePresence>
+                </motion.div>
+              ) : channel === "EMAIL" ? (
+                <motion.div
+                  key="email"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex flex-col w-full"
+                >
+                  <RichTextEditor
+                    value={text}
+                    onChange={setText}
+                    disabled={isLoading || isUndocked || isAutoPilot}
+                    isUndocked={false}
+                    onUndock={() => setIsUndocked(true)}
+                  />
 
-           <OmniChannelActionButton
+                  {/* Docked subject field */}
+                  <div className="flex items-center border-t border-border/50">
+                    <span className="text-xs text-muted-foreground px-3 border-r border-border/50 h-9 flex items-center shrink-0">
+                      Subject
+                    </span>
+                    <input
+                      type="text"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      placeholder="Add a subject…"
+                      disabled={isLoading || isAutoPilot}
+                      className="flex-1 h-9 px-3 text-sm bg-transparent focus:outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+                    />
+                  </div>
+                </motion.div>
+              ) : (
+                <DialChannelInput
+                  key="dial"
+                  customerPhoneNumber={customerPhoneNumber}
+                  setCustomerPhoneNumber={setCustomerPhoneNumber}
+                  activeThreadPhone={activeThread?.phone}
+                  isLoading={isLoading || isAutoPilot}
+                  operatorNumber={operatorNumber}
+                  setOperatorNumber={setOperatorNumber}
+                  isDialing={isDialing}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* 🤖 DOCKED AUTOPILOT LOCK OVERLAY */}
+            <AnimatePresence>
+              {isAutoPilot && (
+                <motion.div
+                  initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                  animate={{ opacity: 1, backdropFilter: "blur(3px)" }}
+                  exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                  className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 rounded-t-xl"
+                >
+                  <motion.div 
+                    initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 10, opacity: 0 }}
+                    className="flex items-center gap-2 px-4 py-2 bg-background border shadow-md rounded-full dark:bg-zinc-900"
+                  >
+                    <Sparkles size={16} className="text-primary animate-pulse" />
+                    <span className="text-sm font-medium text-foreground">Autopilot Active</span>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <OmniChannelActionButton
             channel={channel}
-            isEmpty={isEmpty}
+            // 🛡️ Passing `isAutoPilot` here tells the child component to disable the "Send/Dial" button,
+            // while keeping the "Hang Up" button perfectly functioning!
+            isEmpty={isEmpty || isAutoPilot} 
             isLoading={isLoading}
             isDialing={isDialing}
-            isActiveCall={isActiveCall} // <-- NEW: Pass it to the button
+            isActiveCall={isActiveCall}
             onSend={handleSend}
             customerId={activeThread?.id!}
             threadId={activeThread?.threadId!}
