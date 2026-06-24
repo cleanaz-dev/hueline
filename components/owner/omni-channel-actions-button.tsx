@@ -40,12 +40,13 @@ export default function OmniChannelActionButton({
     setCountdown(null);
   };
 
-  // Tear down any running interval on unmount.
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
+  timerRef.current = setInterval(() => {
+    setCountdown((prev) => {
+      if (prev === null) return null;
+      if (prev <= 1) return 0;
+      return prev - 1;
+    });
+  }, 1000);
 
   const handleMainClick = () => {
     if (channel === "DIAL") {
@@ -81,6 +82,13 @@ export default function OmniChannelActionButton({
   };
 
   const isCountingDown = countdown !== null;
+
+  useEffect(() => {
+    if (countdown === 0) {
+      clearCountdown();
+      onSend();
+    }
+  }, [countdown]);
 
   return (
     <motion.div
