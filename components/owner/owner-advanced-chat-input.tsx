@@ -247,6 +247,7 @@ export function OwnerAdvancedChatInput({
                   ? "bg-background shadow-sm text-foreground"
                   : "text-muted-foreground hover:text-foreground",
               )}
+              disabled={isAutoPilot}
             >
               <MessageSquare size={13} /> SMS
             </button>
@@ -258,6 +259,7 @@ export function OwnerAdvancedChatInput({
                   ? "bg-background shadow-sm text-foreground"
                   : "text-muted-foreground hover:text-foreground",
               )}
+              disabled={isAutoPilot}
             >
               <Mail size={13} /> Email
             </button>
@@ -269,6 +271,7 @@ export function OwnerAdvancedChatInput({
                   ? "bg-background shadow-sm text-foreground"
                   : "text-muted-foreground hover:text-foreground",
               )}
+              disabled={isAutoPilot}
             >
               <PhoneCall size={13} /> Dial
             </button>
