@@ -11,6 +11,7 @@ import {
   X,
   PhoneCall,
   Sparkles,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RichTextEditor } from "../admin/prospects/rich-text-editor";
@@ -69,7 +70,6 @@ export function OwnerAdvancedChatInput({
   }, [me?.phone, operatorNumber]);
 
   const handleSend = () => {
-    // 🛡️ Safeguard: Prevent human interference if AI is on
     if (isAutoPilot) return;
 
     if (channel === "DIAL") {
@@ -94,7 +94,6 @@ export function OwnerAdvancedChatInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // 🛡️ Safeguard: Ignore enter key if AI is on
     if (e.key === "Enter" && !e.shiftKey && channel === "SMS" && !isAutoPilot) {
       e.preventDefault();
       handleSend();
@@ -147,23 +146,31 @@ export function OwnerAdvancedChatInput({
                 width: "min(680px, 90vw)",
               }}
             >
-              <div className="flex flex-col rounded-2xl border bg-background shadow-2xl overflow-hidden relative">
+              <div className={cn(
+                "flex flex-col rounded-2xl border bg-background shadow-2xl overflow-hidden relative transition-all duration-300",
+                isAutoPilot && "border-primary/50 ring-1 ring-primary/20"
+              )}>
                 
                 {/* 🤖 UNDOCKED AUTOPILOT LOCK OVERLAY */}
                 <AnimatePresence>
                   {isAutoPilot && (
                     <motion.div
                       initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                      animate={{ opacity: 1, backdropFilter: "blur(3px)" }}
+                      animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
                       exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                      className="absolute inset-0 z-[70] flex items-center justify-center bg-background/50"
+                      className="absolute inset-0 z-[70] flex items-center justify-center bg-background/40"
                     >
                       <motion.div 
-                        initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 10, opacity: 0 }}
-                        className="flex items-center gap-2 px-4 py-2 bg-background border shadow-md rounded-full"
+                        initial={{ y: 10, opacity: 0, scale: 0.95 }} 
+                        animate={{ y: 0, opacity: 1, scale: 1 }} 
+                        exit={{ y: 10, opacity: 0, scale: 0.95 }}
+                        className="flex flex-col items-center gap-1.5 px-6 py-4 bg-background border shadow-xl rounded-2xl dark:bg-zinc-900"
                       >
-                        <Sparkles size={16} className="text-primary animate-pulse" />
-                        <span className="text-sm font-medium">Autopilot Active</span>
+                        <div className="flex items-center gap-2 text-primary">
+                          <Bot size={20} className="animate-pulse" />
+                          <span className="text-sm font-semibold">Autopilot is Engaged</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">Turn off Autopilot to send emails manually</span>
                       </motion.div>
                     </motion.div>
                   )}
@@ -236,45 +243,68 @@ export function OwnerAdvancedChatInput({
       {/* ─── Docked input (always visible) ───────────────────────────────── */}
       <div className="p-4 bg-background border-t shadow-[0_-4px_15px_-5px_rgba(0,0,0,0.05)]">
         
-        {/* Channel Switcher & AI Controls */}
+        {/* Header Row: Channel Switcher OR AI Status */}
         <div className="flex items-center justify-between h-10 mb-2">
-          <div className="flex bg-muted/50 p-1 rounded-lg h-8 border border-border/50">
-            <button
-              onClick={() => handleSwitchChannel("SMS")}
-              className={cn(
-                "flex items-center gap-1.5 px-3 rounded-md text-xs font-medium transition-all h-full",
-                channel === "SMS"
-                  ? "bg-background shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
+          
+          <div className="relative flex h-8 items-center">
+            <AnimatePresence mode="wait">
+              {!isAutoPilot ? (
+                <motion.div
+                  key="channel-switcher"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex bg-muted/50 p-1 rounded-lg h-full border border-border/50"
+                >
+                  <button
+                    onClick={() => handleSwitchChannel("SMS")}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 rounded-md text-xs font-medium transition-all h-full",
+                      channel === "SMS"
+                        ? "bg-background shadow-sm text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <MessageSquare size={13} /> SMS
+                  </button>
+                  <button
+                    onClick={() => handleSwitchChannel("EMAIL")}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 rounded-md text-xs font-medium transition-all h-full",
+                      channel === "EMAIL"
+                        ? "bg-background shadow-sm text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Mail size={13} /> Email
+                  </button>
+                  <button
+                    onClick={() => handleSwitchChannel("DIAL")}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 rounded-md text-xs font-medium transition-all h-full",
+                      channel === "DIAL"
+                        ? "bg-background shadow-sm text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <PhoneCall size={13} /> Dial
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="ai-status"
+                  initial={{ opacity: 0, filter: "blur(4px)", x: 10 }}
+                  animate={{ opacity: 1, filter: "blur(0px)", x: 0 }}
+                  exit={{ opacity: 0, filter: "blur(4px)", x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center gap-2 h-full px-2 text-primary font-medium"
+                >
+                  <Sparkles size={16} className="animate-pulse" />
+                  <span className="text-sm">AI is managing this thread</span>
+                </motion.div>
               )}
-              disabled={isAutoPilot}
-            >
-              <MessageSquare size={13} /> SMS
-            </button>
-            <button
-              onClick={() => handleSwitchChannel("EMAIL")}
-              className={cn(
-                "flex items-center gap-1.5 px-3 rounded-md text-xs font-medium transition-all h-full",
-                channel === "EMAIL"
-                  ? "bg-background shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              disabled={isAutoPilot}
-            >
-              <Mail size={13} /> Email
-            </button>
-            <button
-              onClick={() => handleSwitchChannel("DIAL")}
-              className={cn(
-                "flex items-center gap-1.5 px-3 rounded-md text-xs font-medium transition-all h-full",
-                channel === "DIAL"
-                  ? "bg-background shadow-sm text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              disabled={isAutoPilot}
-            >
-              <PhoneCall size={13} /> Dial
-            </button>
+            </AnimatePresence>
           </div>
 
           <HueClawChatControls
@@ -293,10 +323,12 @@ export function OwnerAdvancedChatInput({
         <motion.div
           layout
           className={cn(
-            "relative flex flex-col rounded-xl border bg-background transition-colors focus-within:ring-1 focus-within:ring-ring overflow-hidden",
-            channel === "EMAIL"
-              ? "border-blue-200 dark:border-blue-900 shadow-sm"
-              : "border-zinc-200 dark:border-zinc-800",
+            "relative flex flex-col rounded-xl border bg-background transition-all duration-300 overflow-hidden",
+            isAutoPilot 
+              ? "border-primary/50 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.2)]" 
+              : channel === "EMAIL"
+              ? "border-blue-200 dark:border-blue-900 shadow-sm focus-within:ring-1 focus-within:ring-ring"
+              : "border-zinc-200 dark:border-zinc-800 focus-within:ring-1 focus-within:ring-ring"
           )}
         >
           {/* Wrapper for the input fields so our overlay only covers the text/dial zone, NOT the action button row */}
@@ -336,7 +368,6 @@ export function OwnerAdvancedChatInput({
                     onUndock={() => setIsUndocked(true)}
                   />
 
-                  {/* Docked subject field */}
                   <div className="flex items-center border-t border-border/50">
                     <span className="text-xs text-muted-foreground px-3 border-r border-border/50 h-9 flex items-center shrink-0">
                       Subject
@@ -370,16 +401,21 @@ export function OwnerAdvancedChatInput({
               {isAutoPilot && (
                 <motion.div
                   initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                  animate={{ opacity: 1, backdropFilter: "blur(3px)" }}
+                  animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
                   exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                  className="absolute inset-0 z-20 flex items-center justify-center bg-background/50 rounded-t-xl"
+                  className="absolute inset-0 z-20 flex items-center justify-center bg-background/40 rounded-t-xl"
                 >
                   <motion.div 
-                    initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 10, opacity: 0 }}
-                    className="flex items-center gap-2 px-4 py-2 bg-background border shadow-md rounded-full dark:bg-zinc-900"
+                    initial={{ y: 10, opacity: 0, scale: 0.95 }} 
+                    animate={{ y: 0, opacity: 1, scale: 1 }} 
+                    exit={{ y: 10, opacity: 0, scale: 0.95 }}
+                    className="flex flex-col items-center gap-1.5 px-6 py-4 bg-background border shadow-md rounded-2xl dark:bg-zinc-900"
                   >
-                    <Sparkles size={16} className="text-primary animate-pulse" />
-                    <span className="text-sm font-medium text-foreground">Autopilot Active</span>
+                    <div className="flex items-center gap-2 text-primary">
+                      <Bot size={20} className="animate-pulse" />
+                      <span className="text-sm font-semibold">Autopilot Engaged</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">Toggle the switch above to reply manually</span>
                   </motion.div>
                 </motion.div>
               )}
@@ -388,8 +424,6 @@ export function OwnerAdvancedChatInput({
 
           <OmniChannelActionButton
             channel={channel}
-            // 🛡️ Passing `isAutoPilot` here tells the child component to disable the "Send/Dial" button,
-            // while keeping the "Hang Up" button perfectly functioning!
             isEmpty={isEmpty || isAutoPilot} 
             isLoading={isLoading}
             isDialing={isDialing}
