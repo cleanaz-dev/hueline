@@ -32,7 +32,7 @@ export default function Page() {
       />
 
       {/* Table Card */}
-      <div className="rounded-3xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-zinc-50">
