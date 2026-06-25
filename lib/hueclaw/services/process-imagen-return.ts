@@ -4,6 +4,7 @@ import { handleHueClawImagenReturn } from "../handlers/handle-hueclaw-imagen-ret
 import { finalizeHueClawDelivery } from "../finalize-hueclaw-delivery";
 import { SystemTask } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { paintColorMsgGenerator } from "./paint-color-message-generator"; // <-- Imported
 
 export async function processImagenReturn(task: SystemTask, rawResult: any) {
   // 1. Unpack Metadata
@@ -49,7 +50,6 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
   // 3. Update customer information with image and point colors
   await handleHueClawImagenReturn(result, metadata, task);
 
-  // 4. Execute Final Delivery (Merge Backpack + S3 URLs)
   console.log(
     `Sending ${pendingMessage.deliveryMethod} with image:`,
     result.newImagenS3Key,
@@ -60,21 +60,32 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
     portalLink = `https://${subdomain.slug}.hue-line.com/j/${metadata.huelineId}`;
   }
   
+  // Create a clean object for the color context
   const color = {
     brand: result.selectedColorBrand,
     name: result.selectedColorName,
     code: result.selectedColorCode,
-    hex: result.selectedColorHex,
+    hex: result.selectedColorHex, // Passed down to finalizeHueClawDelivery
   };
 
-  // FIX #1: Ensure msgBody is NEVER null so Prisma doesn't crash.
-  // If the AI didn't write a message, we default to a placeholder text.
-  const safeMsgBody = pendingMessage.msgBody ?? "Here is your new room mockup!";
+  // 4. GENERATE THE CONTEXT-AWARE MESSAGE (JIT Generation)
+  const draftMsgBody = pendingMessage.msgBody ?? "Here is your new room mockup!";
+  
+  const finalMsgBody = await paintColorMsgGenerator(
+    draftMsgBody,
+    {
+      brand: result.selectedColorBrand,
+      name: result.selectedColorName,
+      code: result.selectedColorCode,
+    },
+    pendingMessage.deliveryMethod
+  );
 
+  // 5. Execute Final Delivery (Merge Backpack + S3 URLs + Final AI Message)
   await finalizeHueClawDelivery({
     pendingMessage: {
       ...pendingMessage,
-      msgBody: safeMsgBody, // <-- This passes the safe string to your database!
+      msgBody: finalMsgBody, // <-- Injects the brand new DeepSeek message!
     },
     images: result.newImagenS3Key,
     customer,
@@ -85,6 +96,6 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
     color,
   });
 
-  // 5. Signal gateway to clean up
+  // 6. Signal gateway to clean up
   return { releaseLock: true, threadId, message: "Imagen delivery complete" };
 }
