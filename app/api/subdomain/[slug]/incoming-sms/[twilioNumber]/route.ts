@@ -25,6 +25,8 @@ export async function POST(req: Request, { params }: Params) {
     const twilioNumber = decodeURIComponent(rawTwilioNumber);
     const { incomingPhone, incomingMessage, mediaUrls = [] } = await req.json();
 
+    console.log(incomingPhone, incomingMessage, mediaUrls)
+
     // 1. FIXED VALIDATION: Allow request if it has EITHER a message OR media
     const hasText = incomingMessage && incomingMessage.trim().length > 0;
     const hasMedia = mediaUrls && mediaUrls.length > 0;
