@@ -17,6 +17,13 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
     roomType,
   } = metadata;
 
+  // FIX #2: If the Lambda crashed/failed, `rawResult` might be undefined.
+  if (!rawResult) {
+    throw new Error(
+      "Imagen Lambda returned an empty result payload. Check the Lambda logs to see why the AI failed."
+    );
+  }
+
   // 2. Validate Lambda Payload
   const result = hueClawImagenResultPayloadSchema.parse(rawResult);
 
@@ -26,9 +33,13 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
     },
   });
 
+  if (!customer) {
+    throw new Error(`Customer not found for ID: ${task.customerId}`);
+  }
+
   const subdomain = await prisma.subdomain.findUnique({
     where: {
-      id: customer?.subdomainId!,
+      id: customer.subdomainId!,
     },
     select: {
       slug: true,
@@ -43,10 +54,12 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
     `Sending ${pendingMessage.deliveryMethod} with image:`,
     result.newImagenS3Key,
   );
+  
   let portalLink: string | null = null;
   if (subdomain?.slug) {
     portalLink = `https://${subdomain.slug}.hue-line.com/j/${metadata.huelineId}`;
   }
+  
   const color = {
     brand: result.selectedColorBrand,
     name: result.selectedColorName,
@@ -54,13 +67,20 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
     hex: result.selectedColorHex,
   };
 
+  // FIX #1: Ensure msgBody is NEVER null so Prisma doesn't crash.
+  // If the AI didn't write a message, we default to a placeholder text.
+  const safeMsgBody = pendingMessage.msgBody ?? "Here is your new room mockup!";
+
   await finalizeHueClawDelivery({
-    pendingMessage,
+    pendingMessage: {
+      ...pendingMessage,
+      msgBody: safeMsgBody, // <-- This passes the safe string to your database!
+    },
     images: result.newImagenS3Key,
     customer,
     portalLink,
     threadId,
-    newImagenKey: result.newImagenS3Key, // ← add this
+    newImagenKey: result.newImagenS3Key,
     newImagenCompressedKey: result.compressedS3Key,
     color,
   });
