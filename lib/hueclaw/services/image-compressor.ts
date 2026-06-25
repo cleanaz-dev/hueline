@@ -36,10 +36,12 @@ export async function processMediaUrl(
       contentType,
       customerId
     );
+    
 
     const command = createCommand({
       functionName: "hueline-compress-image-presigned-url-PROD",
       payload: { key: originalKey },
+      invocationType: "RequestResponse"
     });
 
     const resp = await lambda.send(command);

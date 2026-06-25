@@ -1,4 +1,4 @@
-import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
+import { LambdaClient, InvokeCommand, InvocationType } from "@aws-sdk/client-lambda";
 
 export const lambda = new LambdaClient({
   region: "us-east-1",
@@ -11,12 +11,14 @@ export const lambda = new LambdaClient({
 export const createCommand = ({
   functionName,
   payload,
+  invocationType = "Event" as InvocationType
 }: {
   functionName: string;
   payload: any;
+  invocationType?: InvocationType;
 }) =>
   new InvokeCommand({
     FunctionName: functionName,
-    InvocationType: "Event",
+    InvocationType: invocationType,
     Payload: Buffer.from(JSON.stringify(payload)),
   });
