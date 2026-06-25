@@ -25,7 +25,7 @@ export async function POST(req: Request, { params }: Params) {
     const twilioNumber = decodeURIComponent(rawTwilioNumber);
     const { incomingPhone, incomingMessage, mediaUrls = [] } = await req.json();
 
-    console.log(incomingPhone, incomingMessage, mediaUrls)
+    console.log(incomingPhone, incomingMessage, mediaUrls);
 
     // 1. FIXED VALIDATION: Allow request if it has EITHER a message OR media
     const hasText = incomingMessage && incomingMessage.trim().length > 0;
@@ -44,7 +44,7 @@ export async function POST(req: Request, { params }: Params) {
     if (!subdomain || !subdomain.twilioPhoneNumber) {
       return NextResponse.json(
         { error: "Required Subdomain data not found" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -54,7 +54,7 @@ export async function POST(req: Request, { params }: Params) {
     ) {
       return NextResponse.json(
         { error: "Invalid Twilio number for this subdomain" },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
@@ -81,7 +81,7 @@ export async function POST(req: Request, { params }: Params) {
 
     if (!customer) {
       console.warn(
-        `[incoming-sms] Unknown sender ${incomingPhone} for ${slug}`,
+        `[incoming-sms] Unknown sender ${incomingPhone} for ${slug}`
       );
       return NextResponse.json({
         success: true,
@@ -101,19 +101,25 @@ export async function POST(req: Request, { params }: Params) {
     // ==========================================
     // 5. PROCESS IMAGES VIA LAMBDA IN PARALLEL
     // ==========================================
-    // We use Promise.all so if they send 3 images, they compress simultaneously
-    const processedMedia = await Promise.all(
-      mediaUrls.map((url: string) =>
-        processMediaUrl(url, subdomain.id, customer.id),
-      ),
-    );
+    const processedMedia = (
+      await Promise.all(
+        mediaUrls.map((url: string) =>
+          processMediaUrl(url, subdomain.id, customer.id)
+        )
+      )
+    ).filter((m): m is NonNullable<typeof m> => m !== null);
+
+    // Skip media work entirely if everything failed
+    if (mediaUrls.length > 0 && processedMedia.length === 0) {
+      console.warn("[incoming-sms] All media processing failed");
+    }
 
     // Save each processed image as a MediaAsset
     await Promise.all(
       processedMedia.map((media) =>
         prisma.mediaAsset.create({
           data: {
-            fileName: media.originalKey?.split("/").pop() ?? "",
+            fileName: media.filename,
             fileType: "IMAGE",
             s3Key: media.originalKey,
             compressedKey: media.compressedKey,
@@ -121,59 +127,60 @@ export async function POST(req: Request, { params }: Params) {
             subdomain: { connect: { id: subdomain.id } },
             thread: { connect: { id: thread.id } },
           },
-        }),
-      ),
+        })
+      )
     );
 
-    // Provide a fallback message body if they only sent an image
     const finalMessageBody = hasText ? incomingMessage : "[Image Attached]";
 
-    // 6. Save everything to the Database
-    await prisma.clientActivity.create({
-      data: {
-        type: "SMS_INBOUND",
-        customer: { connect: { id: customer.id } },
-        subDomain: { connect: { id: customer.subdomainId! } },
-        chatThread: { connect: { id: thread.id } },
-        description: `Inbound SMS from ${customer.name}${hasMedia ? " (with Media)" : ""}`,
-        title: "Inbound SMS",
-      },
-    });
-
-    // NOTE: You will need to adapt the 'attachments' / media fields here to match
-    // exactly how you have them set up in your Prisma schema!
-    await prisma.clientCommunication.create({
-      data: {
-        body: finalMessageBody,
-        role: "CLIENT",
-        type: "SMS",
-        customer: { connect: { id: customer.id } },
-        chatThread: { connect: { id: thread.id } },
-
-        // Example 1: If your schema uses a related table for attachments
-        attachments: {
-          create: processedMedia.map((media) => ({
-            fileUrl: media.originalUrl,
-            compressedKey: media.compressedKey,
-            type: "IMAGE",
-          })),
+    // 6. Persist activity + communication + log in parallel
+    await Promise.all([
+      prisma.clientActivity.create({
+        data: {
+          type: "SMS_INBOUND",
+          customer: { connect: { id: customer.id } },
+          subDomain: { connect: { id: customer.subdomainId! } },
+          chatThread: { connect: { id: thread.id } },
+          description: `Inbound SMS from ${customer.name}${
+            processedMedia.length > 0 ? " (with Media)" : ""
+          }`,
+          title: "Inbound SMS",
         },
+      }),
 
-        // Example 2: If your schema just saves a single media string or JSON array
-        // mediaUrl: processedMedia[0]?.originalUrl || null,
-        // compressedImageKey: processedMedia[0]?.compressedKey || null,
-      },
-    });
+      prisma.clientCommunication.create({
+        data: {
+          body: finalMessageBody,
+          role: "CLIENT",
+          type: "SMS",
+          customer: { connect: { id: customer.id } },
+          chatThread: { connect: { id: thread.id } },
+          mediaAttachments:
+            processedMedia.length > 0
+              ? {
+                  create: processedMedia.map((media) => ({
+                    filename: media.filename,
+                    mimeType: media.mimeType,
+                    size: media.size,
+                    mediaSource: "S3",
+                    mediaUrl: media.originalKey,
+                    compressedKey: media.compressedKey,
+                  })),
+                }
+              : undefined,
+        },
+      }),
 
-    await prisma.logs.create({
-      data: {
-        title: "Inbound SMS",
-        type: "SMS",
-        actor: "CLIENT",
-        subdomain: { connect: { id: customer.subdomainId! } },
-        description: "Inbound SMS",
-      },
-    });
+      prisma.logs.create({
+        data: {
+          title: "Inbound SMS",
+          type: "SMS",
+          actor: "CLIENT",
+          subdomain: { connect: { id: customer.subdomainId! } },
+          description: "Inbound SMS",
+        },
+      }),
+    ]);
 
     // 7. Clear Cache & Trigger Pusher
     await invalidateThreadCache(slug, thread.id);
@@ -200,7 +207,7 @@ export async function POST(req: Request, { params }: Params) {
     console.error("[incoming-sms] Internal error:", error);
     return NextResponse.json(
       { success: false, error: "Internal Server Error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

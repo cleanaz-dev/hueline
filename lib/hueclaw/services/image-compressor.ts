@@ -2,16 +2,33 @@
 import { lambda, createCommand } from "@/lib/aws/lambda";
 import { uploadImageAsset } from "@/lib/aws/s3";
 
+export interface ProcessedMedia {
+  originalKey: string;
+  compressedKey: string | null;
+  filename: string;
+  mimeType: string;
+  size: number;
+}
+
 export async function processMediaUrl(
   mediaUrl: string,
   subdomainId: string,
   customerId: string
-) {
+): Promise<ProcessedMedia | null> {
   try {
-    // Buffer handled here, component stays clean
     const response = await fetch(mediaUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch media: ${response.status}`);
+    }
+
     const file = Buffer.from(await response.arrayBuffer());
     const contentType = response.headers.get("content-type") ?? "image/jpeg";
+
+    // Extract a sensible filename from the URL (fallback to a generated one)
+    const urlPath = new URL(mediaUrl).pathname;
+    const filename =
+      decodeURIComponent(urlPath.split("/").pop() || "") ||
+      `media-${Date.now()}.jpg`;
 
     const originalKey = await uploadImageAsset(
       file,
@@ -37,9 +54,13 @@ export async function processMediaUrl(
     return {
       originalKey,
       compressedKey: result.key ?? null,
+      filename,
+      mimeType: contentType,
+      size: file.length,
     };
   } catch (error) {
     console.error(`[ImageCompressor] Failed to process image`, error);
-    return { originalKey: null, compressedKey: null };
+    return null;
   }
 }
+
