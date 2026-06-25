@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getRedisClient } from "@/lib/redis";
 import { twilioClient } from "@/lib/twilio/config";
@@ -6,6 +6,7 @@ import axios from "axios";
 import { cancelPendingFollowUp } from "@/lib/aws/event-scheduler/cancel-followups";
 import { invalidateThreadCache } from "@/lib/redis/agent-context";
 import { pusherServer } from "@/lib/pusher/pusher-server";
+import { randomUUID } from "crypto";
 
 interface Params {
   params: Promise<{ slug: string; twilioNumber: string }>;
@@ -128,7 +129,7 @@ export async function POST(req: Request, { params }: Params) {
     // Clears Redis Thread Cache
     await invalidateThreadCache(slug, thread.id);
 
-     try {
+    try {
       await pusherServer.trigger(`thread-${thread.id}`, "new-message", {
         threadId: thread.id,
       });
@@ -136,18 +137,45 @@ export async function POST(req: Request, { params }: Params) {
       console.error("Failed to trigger pusher for new message", pusherErr);
     }
 
-    // 5. If autopilot is on, delay then nudge the AI
+     // 5. If autopilot is on, debounce then nudge the AI
     if (thread.isAutoPilot) {
-      const delay = Math.floor(Math.random() * 3000) + 2000;
-      await new Promise((resolve) => setTimeout(resolve, delay));
-
       await cancelPendingFollowUp(thread.id);
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/subdomain/${slug}/hue-claw/${thread.id}/nudge`,
-      );
+      const DEBOUNCE_DELAY_MS = 15000; // 15 seconds
+      const messageJobId = randomUUID();
+      const debounceKey = `nudge_debounce:${thread.id}`;
 
-      return NextResponse.json({ success: true, message: "Auto Pilot ON" });
+      // 1. Log this specific message as the "latest" job
+      await redis.set(debounceKey, messageJobId);
+
+      // 2. Wrap the delayed nudge in Next.js 16's after()
+      after(async () => {
+        // Wait for the debounce window
+        await new Promise((resolve) => setTimeout(resolve, DEBOUNCE_DELAY_MS));
+
+        // Check if our job is STILL the latest job in Redis
+        const currentJobId = await redis.get(debounceKey);
+
+        if (currentJobId === messageJobId) {
+          // No other texts came in during the 15 seconds! Trigger AI.
+          await redis.del(debounceKey);
+          
+          try {
+            await axios.post(
+              `${process.env.NEXT_PUBLIC_APP_URL}/api/subdomain/${slug}/hue-claw/${thread.id}/nudge`
+            );
+            console.log(`[incoming-sms] AI Nudged successfully for thread ${thread.id}`);
+          } catch (err) {
+            console.error(`[incoming-sms] Failed to nudge AI`, err);
+          }
+        } else {
+          // Another text came in and overwrote the key. Exit silently.
+          console.log(`[incoming-sms] Nudge debounced (skipped) for thread ${thread.id}`);
+        }
+      });
+
+      // 3. Return immediately! Twilio gets a 200 OK instantly.
+      return NextResponse.json({ success: true, message: "Auto Pilot ON (Debounced)" });
     }
 
     return NextResponse.json({ success: true, threadId: thread.id });
