@@ -63,8 +63,9 @@ model DesignProject {
   // The generated images (reusing your existing Mockup model)
   mockups Mockup[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  mediaAssets MediaAsset[]
 
   @@index([subdomainId])
   @@index([bookingId])
@@ -226,6 +227,7 @@ model ChatThread {
   bookingData       SubBookingData[]
   followUpSchedules FollowUpSchedule[]
   calls             Call[]
+  mediaAssets       MediaAsset[]
 }
 
 model ClientActivity {
@@ -306,6 +308,7 @@ model Subdomain {
   branding          Branding?
   quotes            Quote[]
   followUpSchedules FollowUpSchedule[]
+  mediaAssets       MediaAsset[]
 }
 
 model FollowUpSchedule {
@@ -444,6 +447,7 @@ model SubBookingData {
   quotes          Quote[]
   relatedThreadId String?         @db.ObjectId
   relatedThread   ChatThread?     @relation(fields: [relatedThreadId], references: [id])
+  mediaAssets     MediaAsset[]
 }
 
 model Quote {
@@ -517,6 +521,33 @@ model Customer {
   chatThreads       ChatThread[]
   quotes            Quote[]
   followUpSchedules FollowUpSchedule[]
+  mediaAssets       MediaAsset[]
+}
+
+model MediaAsset {
+  id            String             @id @default(auto()) @map("_id") @db.ObjectId
+  fileName      String
+  fileType      MediaAssetFileType
+  s3Key         String?
+  compressedKey String?
+  customer      Customer?          @relation(fields: [customerId], references: [id])
+  customerId    String?            @db.ObjectId
+  thread        ChatThread?        @relation(fields: [threadId], references: [id])
+  threadId      String?            @db.ObjectId
+  subdomain     Subdomain          @relation(fields: [subdomainId], references: [id])
+  subdomainId   String             @db.ObjectId
+  booking       SubBookingData?    @relation(fields: [bookingId], references: [id])
+  bookingId     String?            @db.ObjectId
+  designProject DesignProject?     @relation(fields: [projectId], references: [id])
+  projectId     String?            @db.ObjectId
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+enum MediaAssetFileType {
+  IMAGE
+  PDF
 }
 
 enum CustomerType {
@@ -718,7 +749,7 @@ model Call {
   audioUrl     String?
   duration     String?
   status       String?
-  roomName     String? 
+  roomName     String?
   callType     String?
 
   intelligence CallIntelligence?

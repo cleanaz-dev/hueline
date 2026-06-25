@@ -7,7 +7,7 @@ import axios from "axios";
 
 const DEBOUNCE_DELAY_MS = 15000; // 15 seconds
 
-export async function debounceAndNudgeAISMS(threadId: string, slug: string) {
+export async function debounceAndNudgeAI(threadId: string, slug: string) {
   // 1. Instantly cancel any scheduled follow-ups so they don't fire
   await cancelPendingFollowUp(threadId);
 
