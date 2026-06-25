@@ -530,6 +530,7 @@ model MediaAsset {
   fileType      MediaAssetFileType
   s3Key         String?
   compressedKey String?
+  metadata      Json?  
   customer      Customer?          @relation(fields: [customerId], references: [id])
   customerId    String?            @db.ObjectId
   thread        ChatThread?        @relation(fields: [threadId], references: [id])
