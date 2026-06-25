@@ -1,16 +1,15 @@
-
 import { NextResponse } from "next/server";
 
-export const revalidate = 60; // cache for 60 seconds
+export const revalidate = 60;
 
 export async function GET() {
   try {
     const res = await fetch("https://api.cal.com/v2/bookings", {
       headers: {
         "Authorization": `Bearer ${process.env.CALCOM_API_KEY}`,
-        "cal-api-version": "2024-08-13",
+        "cal-api-version": "2026-05-01",
       },
-      next: { revalidate: 60 }, // Next.js cache
+      next: { revalidate: 60 },
     });
 
     if (!res.ok) {
