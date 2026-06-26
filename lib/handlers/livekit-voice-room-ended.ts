@@ -2,14 +2,22 @@
 import { Prisma } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { clearHueClawStatus } from "@/lib/redis";
-import { getTranscript, deleteTranscript } from "@/lib/redis/agent-context";
+import {
+  getTranscript,
+  deleteTranscript,
+  invalidateThreadCache,
+} from "@/lib/redis/agent-context";
 import { pusherServer } from "@/lib/pusher/pusher-server";
 
 export async function handleLiveKitVoiceRoomEnded(roomName: string) {
   try {
     const currentCall = await prisma.call.findFirst({
       where: { roomName },
-      select: { id: true, threadId: true },
+      select: {
+        id: true,
+        threadId: true,
+        subdomain: { select: { slug: true } },
+      },
     });
 
     if (!currentCall || !currentCall.id || !currentCall.threadId) {
@@ -46,6 +54,8 @@ export async function handleLiveKitVoiceRoomEnded(roomName: string) {
     });
 
     await clearHueClawStatus(currentCall.threadId!);
+
+    await invalidateThreadCache(currentCall.subdomain?.slug!, currentCall.threadId);
 
     // 🧠 invokeCallIntelligenceLambda(currentCall.id);
   } catch (error) {

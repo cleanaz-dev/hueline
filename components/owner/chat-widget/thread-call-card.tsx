@@ -21,27 +21,25 @@ interface ThreadCallCardProps {
 
 export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
   const meta = msg.metadata || {};
-  const isProcessing = meta.status === "PROCESSING"
   const isInbound = meta.callDirection === "INBOUND";
 
-  // --- LIVE TRANSCRIPT STATE ---
+  const [isEnded, setIsEnded] = useState(false);
+  const isProcessing = !isEnded && meta.status === "PROCESSING";
+
   const [liveLines, setLiveLines] = useState<Array<{ role: string; text: string }>>([]);
   const [currentStream, setCurrentStream] = useState<{ role: string; text: string } | null>(null);
-  
-  // Modal State
+
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new words appear in the modal
   useEffect(() => {
     if (scrollRef.current && isTranscriptOpen) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [liveLines, currentStream, isTranscriptOpen]);
 
-  // Bind Pusher ONLY when the call is live
   useEffect(() => {
-    if (!isProcessing || !threadId) return;
+    if (!threadId) return;
 
     const channelName = `thread-${threadId}`;
     const channel = pusherClient.subscribe(channelName);
@@ -55,12 +53,18 @@ export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
       }
     });
 
+    channel.bind("call-ended", () => {
+      setIsEnded(true);
+      setCurrentStream(null);
+      setIsTranscriptOpen(false);
+    });
+
     return () => {
       channel.unbind("live-transcript");
+      channel.unbind("call-ended");
       pusherClient.unsubscribe(channelName);
     };
-  }, [isProcessing, threadId]);
-
+  }, [threadId]);
 
   // 🔴 LIVE / PROCESSING STATE
   if (isProcessing) {
@@ -73,13 +77,11 @@ export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
             </div>
           )}
 
-          {/* Clean Live Call Card */}
           <div className="flex flex-col gap-3 -mx-4 -mb-3 px-4 pt-3 pb-3.5 bg-background/60 dark:bg-background/40 border-t border-current/10 rounded-b-2xl overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 shrink-0">
                   <Phone size={14} className="animate-pulse" />
-                  {/* Ping animation behind the phone icon */}
                   <span className="absolute inline-flex w-full h-full rounded-full bg-blue-400 opacity-20 animate-ping" />
                 </div>
                 <div className="flex flex-col">
@@ -94,7 +96,6 @@ export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
               </div>
             </div>
 
-            {/* View Transcript Button */}
             <div className="pt-2 border-t border-current/5 mt-1">
               <button
                 onClick={() => setIsTranscriptOpen(true)}
@@ -107,12 +108,9 @@ export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
           </div>
         </div>
 
-        {/* 🎙️ THE TRANSCRIPT MODAL */}
         {isTranscriptOpen && (
           <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="relative flex flex-col w-full max-w-lg bg-background rounded-2xl shadow-2xl border border-border overflow-hidden h-[80vh] max-h-[600px] animate-in zoom-in-95 duration-200">
-              
-              {/* Modal Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/30">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10 text-blue-600">
@@ -134,8 +132,7 @@ export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
                 </button>
               </div>
 
-              {/* Modal Chat Area */}
-              <div 
+              <div
                 ref={scrollRef}
                 className="flex-1 overflow-y-auto p-5 flex flex-col gap-4 bg-zinc-50/50 dark:bg-zinc-950/50 scrollbar-thin"
               >
@@ -146,7 +143,6 @@ export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
                   </div>
                 )}
 
-                {/* Render Finalized Lines as Chat Bubbles */}
                 {liveLines.map((line, i) => {
                   const isAI = line.role === "AI";
                   return (
@@ -157,7 +153,7 @@ export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
                         </div>
                         <div className={cn(
                           "px-4 py-2.5 rounded-2xl text-[14px] leading-relaxed shadow-sm",
-                          isAI 
+                          isAI
                             ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-500/20 rounded-tl-sm"
                             : "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-tr-sm"
                         )}>
@@ -168,7 +164,6 @@ export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
                   );
                 })}
 
-                {/* Render Typing / Streaming Line */}
                 {currentStream && (
                   <div className={cn("flex w-full", currentStream.role === "AI" ? "justify-start" : "justify-end")}>
                     <div className={cn("flex max-w-[85%] gap-2 opacity-80", currentStream.role === "AI" ? "flex-row" : "flex-row-reverse")}>
@@ -177,7 +172,7 @@ export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
                       </div>
                       <div className={cn(
                         "px-4 py-2.5 rounded-2xl text-[14px] leading-relaxed shadow-sm",
-                        currentStream.role === "AI" 
+                        currentStream.role === "AI"
                           ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-900 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-500/20 rounded-tl-sm"
                           : "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-tr-sm"
                       )}>
@@ -195,7 +190,7 @@ export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
     );
   }
 
-  // 🟢 COMPLETED STATE (Untouched, just keeping it neat)
+  // 🟢 COMPLETED STATE
   return (
     <div className="flex flex-col pt-1 min-w-[260px]">
       {msg.body && msg.body !== "Call Ended" && (
