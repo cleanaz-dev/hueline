@@ -55,11 +55,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     // 3. BROADCAST THE NEW THREAD TO THE DASHBOARD INSTANTLY
-    await pusherServer.trigger(
-      `dashboard-${slug}`, 
-      "new-thread", 
-      thread
-    );
+    await pusherServer.trigger(`dashboard-${slug}`, "new-thread", thread);
 
     await prisma.clientActivity.create({
       data: {
@@ -68,6 +64,7 @@ export async function POST(req: Request, { params }: Params) {
         customer: { connect: { id: customer.id } },
         description: `Inbound Call from ${customer.name} - ${customer.phone}`,
         title: "Inbound Call",
+        subDomain: { connect: { slug } },
       },
     });
 
@@ -85,7 +82,7 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
 
-    // NOTE: If you updated your redis.ts earlier, this function below 
+    // NOTE: If you updated your redis.ts earlier, this function below
     // is ALSO automatically sending the Pusher status update! Perfect.
     await setHueClawStatus(thread.id, "CALL_CONNECTED");
 

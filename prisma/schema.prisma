@@ -530,7 +530,7 @@ model MediaAsset {
   fileType      MediaAssetFileType
   s3Key         String?
   compressedKey String?
-  metadata      Json?  
+  metadata      Json?
   customer      Customer?          @relation(fields: [customerId], references: [id])
   customerId    String?            @db.ObjectId
   thread        ChatThread?        @relation(fields: [threadId], references: [id])
@@ -752,6 +752,8 @@ model Call {
   status       String?
   roomName     String?
   callType     String?
+
+  transcript Json? // <- New!
 
   intelligence CallIntelligence?
 

@@ -1,6 +1,9 @@
-import { handleLiveKitVoiceEgressEnded } from "@/lib/handlers/livekit-voice-egress-handler";
+// app/api/livekit/webhook/route.ts (or wherever this lives)
+
 import { WebhookReceiver } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
+import { handleLiveKitVoiceEgressEnded } from "@/lib/handlers/livekit-voice-egress-handler";
+import { handleLiveKitVoiceRoomEnded } from "@/lib/handlers/livekit-voice-room-ended"; // <-- Import new handler
 
 const receiver = new WebhookReceiver(
   process.env.LIVEKIT_API_KEY!,
@@ -34,18 +37,14 @@ export async function POST(req: Request) {
 
       case "egress_ended": {
         const roomName = event.egressInfo?.roomName;
-        // Grab the S3 Key (filename) instead of the full URL (location)
         const s3Key = event.egressInfo?.fileResults?.[0]?.filename;
         console.log("Egress Ended: ", roomName, s3Key);
 
         if (roomName && s3Key) {
-          // Extract callId from the S3 key
-          // Assuming filepath format: "recordings/{call_id}/{room_name}.ogg"
           const pathParts = s3Key.split("/");
           const callId = pathParts.length > 1 ? pathParts[1] : null;
 
           if (callId) {
-            // Pass roomName, s3Key, AND callId to your handler
             await handleLiveKitVoiceEgressEnded(roomName, s3Key, callId);
           } else {
             console.warn("⚠️ Could not extract callId from s3Key:", s3Key);
@@ -63,9 +62,16 @@ export async function POST(req: Request) {
         console.log(`🚀 Room started: ${event.room?.name}`);
         break;
 
-      case "room_finished":
-        console.log(`🏁 Room finished: ${event.room?.name}`);
+      case "room_finished": {
+        const roomName = event.room?.name;
+        console.log(`🏁 Room finished: ${roomName}`);
+        
+        if (roomName) {
+          // Look how beautiful and clean this is!
+          await handleLiveKitVoiceRoomEnded(roomName);
+        }
         break;
+      }
 
       default:
         console.log(`⚠️ Unhandled event: ${event.event}`);
