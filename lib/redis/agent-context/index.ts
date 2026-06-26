@@ -126,3 +126,44 @@ export async function invalidateThreadCache(slug: string, threadId: string) {
   const cacheKey = `timeline:${slug}:${threadId}`;
   await redis.del(cacheKey);
 }
+
+
+// ─── Live Transcript (per call) ──────────────────────────────────────────────
+
+export interface TranscriptLine {
+  role: string;
+  text: string;
+  timestamp: string;
+}
+
+const getTranscriptKey = (callId: string) => `live_transcript:${callId}`;
+
+/**
+ * Appends a finalized transcript line to the call's Redis list.
+ * TTL of 2 hours in case the call ends without cleanup.
+ */
+export async function appendTranscriptLine(
+  callId: string,
+  line: TranscriptLine
+): Promise<void> {
+  const key = getTranscriptKey(callId);
+  // Upstash rpush expects spread args, not an array
+  await redis.rpush(key, JSON.stringify(line));
+  await redis.expire(key, 7200);
+}
+
+/**
+ * Returns all transcript lines for a call, in order.
+ */
+export async function getTranscript(callId: string): Promise<TranscriptLine[]> {
+  const key = getTranscriptKey(callId);
+  const lines = await redis.lrange<string>(key, 0, -1);
+  return lines.map((l) => JSON.parse(l) as TranscriptLine);
+}
+
+/**
+ * Deletes the transcript once it's been persisted to the DB.
+ */
+export async function deleteTranscript(callId: string): Promise<void> {
+  await redis.del(getTranscriptKey(callId));
+}

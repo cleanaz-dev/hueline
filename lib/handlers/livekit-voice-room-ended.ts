@@ -1,6 +1,8 @@
 // lib/handlers/livekit-voice-room-ended.ts
+import { Prisma } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
-import { clearHueClawStatus, getRedisClient } from "@/lib/redis";
+import { clearHueClawStatus } from "@/lib/redis";
+import { getTranscript, deleteTranscript } from "@/lib/redis/agent-context";
 
 export async function handleLiveKitVoiceRoomEnded(roomName: string) {
   try {
@@ -16,31 +18,24 @@ export async function handleLiveKitVoiceRoomEnded(roomName: string) {
       return;
     }
 
-    const redis = await getRedisClient();
-    const redisKey = `live_transcript:${currentCall.id}`;
+    const transcript = await getTranscript(currentCall.id);
 
-    const rawTranscriptList = (await redis.lrange(redisKey, 0, -1)) as string[]; // ✅
-
-    if (!rawTranscriptList || rawTranscriptList.length === 0) {
+    if (!transcript || transcript.length === 0) {
       console.log(
         `ℹ️ [RoomEnded] No transcript lines found in Redis for Call ID: ${currentCall.id}`,
       );
       return;
     }
 
-    const finalTranscriptArray = rawTranscriptList.map((line) =>
-      JSON.parse(line),
-    );
-
     await prisma.call.update({
       where: { id: currentCall.id },
       data: {
-        transcript: finalTranscriptArray,
+        transcript: transcript as unknown as Prisma.InputJsonValue,
         status: "ENDED",
       },
     });
 
-    await redis.del(redisKey);
+    await deleteTranscript(currentCall.id);
 
     console.log(
       `✅ [RoomEnded] Saved complete transcript for Call ID: ${currentCall.id}`,

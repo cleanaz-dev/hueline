@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { pusherServer } from "@/lib/pusher/pusher-server";
 import { prisma } from "@/lib/prisma";
-import { getRedisClient } from "@/lib/redis"; // <-- Assuming this is your Redis client
+import { appendTranscriptLine } from "@/lib/redis/agent-context";
 
 export async function POST(req: Request) {
   try {
@@ -20,28 +20,19 @@ export async function POST(req: Request) {
       role,
     });
 
-    // 2. Only save finalized sentences to the DB/Redis to avoid spam
+    // 2. Only save finalized sentences to Redis to avoid spam
     if (isFinal) {
       const currentCall = await prisma.call.findFirst({
-        where: { threadId, status: "PROCESSING" }, // Or whatever your active status is
-        select: { id: true }
+        where: { threadId, status: "PROCESSING" },
+        select: { id: true },
       });
 
       if (currentCall) {
-        const redis = await getRedisClient();
-        const redisKey = `live_transcript:${currentCall.id}`;
-
-        const transcriptLine = JSON.stringify({
+        await appendTranscriptLine(currentCall.id, {
           role,
           text,
           timestamp: new Date().toISOString(),
         });
-
-        // Atomically push to the end of the Redis list (Blazing fast, no race conditions)
-        await redis.rpush(redisKey, transcriptLine);
-        
-        // Optional: Set an expiration just in case the call ends weirdly (e.g., 2 hours)
-        await redis.expire(redisKey, 7200); 
       }
     }
 
