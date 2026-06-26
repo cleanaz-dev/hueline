@@ -3,6 +3,7 @@ import { Prisma } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { clearHueClawStatus } from "@/lib/redis";
 import { getTranscript, deleteTranscript } from "@/lib/redis/agent-context";
+import { pusherServer } from "@/lib/pusher/pusher-server";
 
 export async function handleLiveKitVoiceRoomEnded(roomName: string) {
   try {
@@ -21,10 +22,9 @@ export async function handleLiveKitVoiceRoomEnded(roomName: string) {
     const transcript = await getTranscript(currentCall.id);
 
     if (!transcript || transcript.length === 0) {
-      console.log(
+      console.warn(
         `ℹ️ [RoomEnded] No transcript lines found in Redis for Call ID: ${currentCall.id}`,
       );
-      return;
     }
 
     await prisma.call.update({
@@ -40,6 +40,10 @@ export async function handleLiveKitVoiceRoomEnded(roomName: string) {
     console.log(
       `✅ [RoomEnded] Saved complete transcript for Call ID: ${currentCall.id}`,
     );
+
+    await pusherServer.trigger(`thread-${currentCall.threadId}`, "call-ended", {
+      callId: currentCall.id,
+    });
 
     await clearHueClawStatus(currentCall.threadId!);
 
