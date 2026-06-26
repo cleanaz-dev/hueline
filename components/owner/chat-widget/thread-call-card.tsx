@@ -21,7 +21,7 @@ interface ThreadCallCardProps {
 
 export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
   const meta = msg.metadata || {};
-  const isProcessing = meta.status === "PROCESSING" || !meta.audioUrl;
+  const isProcessing = meta.status === "PROCESSING"
   const isInbound = meta.callDirection === "INBOUND";
 
   // --- LIVE TRANSCRIPT STATE ---
