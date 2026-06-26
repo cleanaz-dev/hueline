@@ -7,20 +7,27 @@ export interface PaintColorData {
 export async function paintColorMsgGenerator(
   draftBody: string,
   colorData: PaintColorData,
-  deliveryMethod: "SMS" | "EMAIL" | "NONE" | string
+  deliveryMethod: string,
+  portalLink?: string | null // 👈 NEW PARAMETER
 ): Promise<string> {
   const apiKey = process.env.NOVITA_API_KEY;
   const colorString = `${colorData.brand} ${colorData.name} (${colorData.code})`;
 
-  // If there's no API key or it's NONE, just append it manually and move on safely.
+  // Fallback if API fails
   if (!apiKey || deliveryMethod === "NONE") {
-    return `${draftBody} (Color: ${colorString})`;
+    return portalLink 
+      ? `${draftBody} (Color: ${colorString})\n\nPortal: ${portalLink}\nLet me know your thoughts!`
+      : `${draftBody} (Color: ${colorString})`;
   }
 
-  const lengthRule =
-    deliveryMethod === "SMS"
-      ? "- Keep the message strictly under 160 characters. Conversational and punchy."
-      : "- You are writing for an EMAIL body, keep it professional but warm.";
+  const lengthRule = deliveryMethod === "SMS"
+    ? "- Keep the message short, conversational, and punchy."
+    : "- You are writing for an EMAIL body, keep it professional but warm.";
+
+  // 👈 THE JEDI MIND TRICK RULE
+  const linkInstruction = portalLink 
+    ? `- You MUST include this exact link inside your message: ${portalLink}\n- CRITICAL: You MUST write at least one sentence AFTER the link. Do not let the link be the very last word in the message.`
+    : "";
 
   const prompt = `You are an elite sales assistant for a painting company.
 You just generated a room mockup for a customer.
@@ -30,7 +37,8 @@ Actual paint color used: "${colorString}"
 Rewrite the drafted message to naturally include the exact paint color name.
 STRICT RULES:
 - Keep the original tone and intent.
-- Ensure it sounds like the image is attached right now (e.g., "Here is the [color] mockup...").
+- Ensure it sounds like the image is attached right now (e.g., "Here is the mockup...").
+${linkInstruction}
 ${lengthRule}
 - Return ONLY the raw final message text. No quotes, no markdown, no explanation.`;
 
@@ -45,24 +53,21 @@ ${lengthRule}
         model: "deepseek/deepseek-v4-pro",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
-        max_tokens: 1000
-
+        max_tokens: 200,
       }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Novita API error: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Novita API error: ${response.status}`);
 
     const data = await response.json();
     let finalMessage = data.choices[0].message.content.trim();
-
-    // Clean up random quotes AI sometimes adds
     finalMessage = finalMessage.replace(/^["']|["']$/g, "").trim();
 
     return finalMessage;
   } catch (error) {
     console.error("[paintColorMsgGenerator] Failed, falling back:", error);
-    return `${draftBody} (Color: ${colorString})`;
+    return portalLink 
+      ? `${draftBody} (Color: ${colorString})\n\nPortal: ${portalLink}\nLet me know your thoughts!`
+      : `${draftBody} (Color: ${colorString})`;
   }
 }

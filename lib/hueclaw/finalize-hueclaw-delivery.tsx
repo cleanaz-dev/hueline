@@ -24,7 +24,6 @@ type FinalizeArgs = {
   pendingMessage: PendingMessagePayload;
   images: string;
   customer: Customer | null;
-  portalLink?: string | null | undefined;
   threadId: string;
   newImagenCompressedKey?: string;
   newImagenKey?: string;
@@ -35,7 +34,6 @@ export async function finalizeHueClawDelivery({
   pendingMessage,
   images,
   customer,
-  portalLink,
   threadId,
   newImagenKey,
   newImagenCompressedKey,
@@ -45,13 +43,10 @@ export async function finalizeHueClawDelivery({
   const imageUrl = await getPresignedUrl(newImagenCompressedKey!);
 
   if (pendingMessage.deliveryMethod === "SMS") {
-    const body = portalLink
-      ? `${pendingMessage.msgBody}\n\nView on your portal: ${portalLink}`
-      : pendingMessage.msgBody!;
-
+    // 👈 NO MORE HARDCODED LINK! Just send the pure AI-generated text.
     await SendImageSMS({
       to: customer?.phone!,
-      body,
+      body: pendingMessage.msgBody!,
       imageUrl: [imageUrl],
     });
   } else {
@@ -70,7 +65,7 @@ export async function finalizeHueClawDelivery({
   }
 
   const thread = await prisma.chatThread.findUnique({
-    where: {id: threadId},
+    where: { id: threadId },
     select: {
       id: true,
       subdomain: {
@@ -79,15 +74,15 @@ export async function finalizeHueClawDelivery({
         }
       }
     }
-  })
+  });
 
   await prisma.clientActivity.create({
     data: {
       type: pendingMessage.deliveryMethod === "SMS" ? "SMS_SENT" : "EMAIL_SENT",
       chatThread: { connect: { id: threadId } },
       customer: { connect: { id: customer?.id } },
-      description: "SMS sent with Image and Portal link",
-      title: "SMS SENT",
+      description: `${pendingMessage.deliveryMethod} sent with Mockup Image`,
+      title: `${pendingMessage.deliveryMethod} SENT`,
       subDomain: { connect: { id: customer?.subdomainId! } },
     },
   });
@@ -97,12 +92,12 @@ export async function finalizeHueClawDelivery({
       body: pendingMessage.msgBody!,
       ...(pendingMessage.msgSubject && { subject: pendingMessage.msgSubject }),
       role: "AI",
-      type: "SMS",
+      type: pendingMessage.deliveryMethod === "SMS" ? "SMS" : "EMAIL", // 👈 Fixed this so it handles Email correctly
       chatThread: { connect: { id: threadId } },
       customer: { connect: { id: customer?.id } },
       mediaAttachments: {
         create: {
-          filename: `${color.brand}-${color.name}-${color.code}-mockup.png`,
+          filename: `${color.brand.replace(/\s+/g, '-')}-${color.name.replace(/\s+/g, '-')}-${color.code}-mockup.png`,
           size: 0,
           mimeType: "image/png",
           mediaSource: "S3",
@@ -112,6 +107,7 @@ export async function finalizeHueClawDelivery({
       },
     },
   });
+  
   // Clears Redis Thread Cache
-  await invalidateThreadCache(thread?.subdomain.slug!, threadId)
+  await invalidateThreadCache(thread?.subdomain.slug!, threadId);
 }

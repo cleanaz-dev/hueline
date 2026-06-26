@@ -4,7 +4,7 @@ import { handleHueClawImagenReturn } from "../handlers/handle-hueclaw-imagen-ret
 import { finalizeHueClawDelivery } from "../finalize-hueclaw-delivery";
 import { SystemTask } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
-import { paintColorMsgGenerator } from "./paint-color-message-generator"; // <-- Imported
+import { paintColorMsgGenerator } from "./paint-color-message-generator"; 
 
 export async function processImagenReturn(task: SystemTask, rawResult: any) {
   // 1. Unpack Metadata
@@ -18,7 +18,6 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
     roomType,
   } = metadata;
 
-  // FIX #2: If the Lambda crashed/failed, `rawResult` might be undefined.
   if (!rawResult) {
     throw new Error(
       "Imagen Lambda returned an empty result payload. Check the Lambda logs to see why the AI failed."
@@ -29,9 +28,7 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
   const result = hueClawImagenResultPayloadSchema.parse(rawResult);
 
   const customer = await prisma.customer.findUnique({
-    where: {
-      id: task.customerId!,
-    },
+    where: { id: task.customerId! },
   });
 
   if (!customer) {
@@ -39,12 +36,8 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
   }
 
   const subdomain = await prisma.subdomain.findUnique({
-    where: {
-      id: customer.subdomainId!,
-    },
-    select: {
-      slug: true,
-    },
+    where: { id: customer.subdomainId! },
+    select: { slug: true },
   });
 
   // 3. Update customer information with image and point colors
@@ -60,15 +53,14 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
     portalLink = `https://${subdomain.slug}.hue-line.com/j/${metadata.huelineId}`;
   }
   
-  // Create a clean object for the color context
   const color = {
     brand: result.selectedColorBrand,
     name: result.selectedColorName,
     code: result.selectedColorCode,
-    hex: result.selectedColorHex, // Passed down to finalizeHueClawDelivery
+    hex: result.selectedColorHex, 
   };
 
-  // 4. GENERATE THE CONTEXT-AWARE MESSAGE (JIT Generation)
+  // 4. GENERATE THE CONTEXT-AWARE MESSAGE 
   const draftMsgBody = pendingMessage.msgBody ?? "Here is your new room mockup!";
   
   const finalMsgBody = await paintColorMsgGenerator(
@@ -78,19 +70,19 @@ export async function processImagenReturn(task: SystemTask, rawResult: any) {
       name: result.selectedColorName,
       code: result.selectedColorCode,
     },
-    pendingMessage.deliveryMethod
+    pendingMessage.deliveryMethod,
+    portalLink // 👈 Passed to the AI so it weaves it into finalMsgBody
   );
 
-  // 5. Execute Final Delivery (Merge Backpack + S3 URLs + Final AI Message)
+  // 5. Execute Final Delivery 
   await finalizeHueClawDelivery({
     pendingMessage: {
       ...pendingMessage,
-      msgBody: finalMsgBody, // <-- Injects the brand new DeepSeek message!
+      msgBody: finalMsgBody, // 👈 Beautiful, AI-formatted text with the link embedded!
     },
     images: result.newImagenS3Key,
     customer,
-    portalLink,
-    threadId,
+    threadId, // 👈 portalLink removed from here!
     newImagenKey: result.newImagenS3Key,
     newImagenCompressedKey: result.compressedS3Key,
     color,

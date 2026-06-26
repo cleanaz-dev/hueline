@@ -70,6 +70,7 @@ export function OwnerChatBubble({
   prospectId,
   isGroupStart = true,
   isGroupEnd = true,
+  threadId
 }: ChatBubbleProps) {
   const time = new Date(msg.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
@@ -190,7 +191,7 @@ export function OwnerChatBubble({
               <ThreadQuoteCard msg={msg} />
             ) : msg.type === "PHONE" ? (
               // NEW: Render the Call Card!
-              <ThreadCallCard msg={msg} />
+              <ThreadCallCard msg={msg} threadId={threadId} />
             ) : msg.type === "EMAIL" ? (
               // Existing Email render logic
               <div className="flex flex-col text-[14px] leading-relaxed opacity-90 [&_p]:mb-3 last:[&_p]:mb-0 [&_a]:underline [&_a]:font-medium hover:[&_a]:opacity-80 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5">

@@ -35,5 +35,6 @@ export interface ChatBubbleProps {
   isPending?: boolean;
   isGroupStart?: boolean;
   isGroupEnd?: boolean;
+  threadId?: string
  
 }

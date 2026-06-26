@@ -262,6 +262,7 @@ export function WidgetOpen() {
                       isPending={msg.isPending}
                       isGroupStart={isGroupStart}
                       isGroupEnd={isGroupEnd}
+                      threadId={customer?.threadId}
                     />
                   );
                 })
