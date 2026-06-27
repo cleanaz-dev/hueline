@@ -706,12 +706,12 @@ model Call {
   callerPhone   String?
   callDirection CallDirection @default(INBOUND)
 
-  callSid      String
+  callSid      String?  @unique
   recordingSid String?
   audioUrl     String?
   duration     String?
   status       String?
-  roomName     String  @unique
+  roomName     String?  @unique
   callType     String?
 
   transcript Json? // <- New!
