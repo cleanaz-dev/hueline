@@ -83,7 +83,7 @@ export default function MainDesignStudio() {
     customerMode === "existing" ? !!selectedCustomerId : !!newCustomer.name;
 
   return (
-    <div className="w-full font-sans text-zinc-900">
+   <div className="container max-w-7xl mx-auto px-4">
       {/* --- Header Section --- */}
 
       <OwnerPageHeader
