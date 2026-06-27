@@ -24,7 +24,6 @@ export async function getOwnerData(slug: string) {
         include: {
           mockups: true,
           paintColors: true,
-          alternateColors: true,
           sharedAccess: true,
           exports: true,
           calls: {

@@ -138,7 +138,7 @@ export default function ClientDownloadPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SubdomainNav data={subdomain} miniNav={false} />
+      <SubdomainNav data={subdomain.branding ?? { logoUrl: null, logoWidth: null, logoHeight: null }} miniNav={true} />
 
       <div className="max-w-6xl mx-auto px-4 py-6 md:py-10">
         <div className="mb-6 md:mb-8">

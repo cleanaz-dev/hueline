@@ -8,9 +8,7 @@ export default async function page() {
       subdomain: {
         select: {
           slug: true,
-          logo: true,
-          logoHeight:true,
-          logoWidth: true,
+          branding: true,
           companyName: true,
           calls: true,
           logs: true,

@@ -24,7 +24,6 @@ export async function getBookingForPage(huelineId: string, slug: string) {
           }
         },
         mockups: true,
-        alternateColors: true,
         sharedAccess: true,
         paintColors: true,
         exports: true,
@@ -41,7 +40,7 @@ export async function getBookingForPage(huelineId: string, slug: string) {
     }
 
     // CRITICAL: Check if subdomain exists
-    if (!booking.subdomain) {
+    if (!booking.subdomainId) {
       console.error(`Booking ${huelineId} has missing subdomain relation`);
       return null; 
     }

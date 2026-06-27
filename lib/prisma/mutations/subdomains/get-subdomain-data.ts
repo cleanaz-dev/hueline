@@ -7,11 +7,11 @@ export async function getSubDomainData(slug: string) {
     include: {
       rooms: true,
       logs: true,
+      branding: true,
       bookings: {
         include: {
           mockups: true,
           paintColors: true,
-          alternateColors: true,
           sharedAccess: true,
           exports: {
             orderBy: { createdAt: "desc" },

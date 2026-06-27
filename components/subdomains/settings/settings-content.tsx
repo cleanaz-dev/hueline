@@ -86,9 +86,7 @@ export default function SettingsContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-6">
                    <ReadOnlyField label="Company Name" value={settings.companyName || "N/A"} />
                    <ReadOnlyField label="Subdomain Slug" value={settings.slug} copyable />
-                   <div className="md:col-span-2">
-                     <ReadOnlyField label="Hue-Line Domain" value={settings.projectUrl || ""} copyable isLink />
-                   </div>
+                   
                 </div>
               </Card>
 

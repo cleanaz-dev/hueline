@@ -8,7 +8,6 @@ export async function getBookingByIdSlug(huelineId: string, slug: string) {
     include: {
       subdomain: true,
       mockups: true,
-      alternateColors: true,
       sharedAccess: true,
       paintColors: true,
     }

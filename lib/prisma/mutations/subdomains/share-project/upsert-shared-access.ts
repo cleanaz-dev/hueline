@@ -1,3 +1,4 @@
+import { AccessType } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
 
 export async function upsertSharedAccess(
@@ -30,7 +31,7 @@ export async function upsertSharedAccess(
     return await prisma.sharedAccess.update({
       where: { id: existingAccess.id },
       data: {
-        accessType: accessType,
+        accessType: accessType as AccessType,
         pin: pin, 
       }
     });
@@ -40,7 +41,7 @@ export async function upsertSharedAccess(
       data: {
         bookingDataId: booking.id,
         email: email,
-        accessType: accessType,
+        accessType: accessType as AccessType,
         pin: pin,
       }
     });

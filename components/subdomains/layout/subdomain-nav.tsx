@@ -8,15 +8,11 @@ import { SubdomainAccountData } from "@/types/subdomain-type";
 import {
   LogOut,
   LayoutDashboard,
-  User,
   ChevronDown,
-  Settings,
-  ShieldAlert,
   Search,
   PhoneCall,
   CircleUserRound,
   Cpu,
-  Warehouse,
   DoorOpen,
 } from "lucide-react";
 import { getPublicUrl } from "@/lib/aws/cdn";
@@ -25,7 +21,7 @@ export default function SubdomainNav({
   miniNav = true,
   data,
 }: {
-  data: Pick<SubdomainAccountData, "logo" | "logoWidth" | "logoHeight">;
+  data: Pick<NonNullable<SubdomainAccountData["branding"]>, "logoUrl" | "logoWidth" | "logoHeight">;
   miniNav?: boolean;
 }) {
   const { data: session, status } = useSession();
@@ -96,7 +92,7 @@ export default function SubdomainNav({
     rawRole === "OWNER";
   const isBusinessOwner = !isCustomer && !isSuperAdmin;
 
-  const logoSrc = getPublicUrl(data.logo) || "/placeholder-logo.png";
+  const logoSrc = getPublicUrl(data.logoUrl) || "/placeholder-logo.png";
 
   return (
     <>

@@ -27,7 +27,7 @@ export default function SubDomainIdPage({ booking, subdomain }: Props) {
     <ScrollArea className="h-screen w-full">
       <div className="min-h-screen bg-linear-to-b from-primary/15 via-secondary/05 to-primary/25">
         {/* Navigation */}
-        <SubdomainNav data={subdomain} miniNav={true} />
+       <SubdomainNav data={subdomain.branding ?? { logoUrl: null, logoWidth: null, logoHeight: null }} miniNav={true} />
 
         <main className="max-w-6xl mx-auto px-2 md:px-12 space-y-12 py-4 md:py-8">
           {/* Hero Section */}

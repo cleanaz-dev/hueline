@@ -1,4 +1,4 @@
-import { Prisma, RoomType, BookingStatus, Export } from "@/app/generated/prisma";
+import { Prisma, RoomType, BookingStatus, Export, Branding } from "@/app/generated/prisma";
 import {
   CallReason,
   CallOutcome,
@@ -73,12 +73,7 @@ export interface SubdomainAccountData {
   id: string;
   slug: string;
   companyName: string | null;
-  projectUrl: string | null;
-  logo: string | null;
-  logoWidth: number | null;
-  logoHeight: number | null;
-  splashScreen: string | null;
-  theme: any | null;
+  branding?: Branding | null;
   active: boolean;
   twilioPhoneNumber: string | null;
   forwardingNumber: string | null;
@@ -114,6 +109,7 @@ export interface Client {
 
 export interface BookingData {
   id: string;
+  branding?: Branding;
   subdomainId: string;
   huelineId: string;
   name: string;
@@ -169,7 +165,7 @@ export interface Call {
   id: string;
   bookingDataId: string | null;
   bookingData?: BookingData | null;
-  callSid: string;
+  callSid?: string | null
   recordingSid: string | null;
   audioUrl: string | null;
   duration: string | null;

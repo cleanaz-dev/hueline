@@ -11,7 +11,7 @@ export function SubDomainContent() {
   const { booking, subdomain, isLoading } = useBooking();
   
   // Initialize splash state
-  const [showSplash, setShowSplash] = useState(!!subdomain.splashScreen);
+  const [showSplash, setShowSplash] = useState(!!subdomain.branding?.splashScreen);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   // 1. Minimum timer to prevent flickering (1.5s)
@@ -27,16 +27,16 @@ export function SubDomainContent() {
 
   // 3. Fallback: If no splash URL, hide after timer
   useEffect(() => {
-    if (!subdomain.splashScreen && minTimeElapsed) {
+    if (!subdomain.branding?.splashScreen && minTimeElapsed) {
       setShowSplash(false);
     }
-  }, [minTimeElapsed, subdomain.splashScreen]);
+  }, [minTimeElapsed, subdomain.branding?.splashScreen]);
 
   return (
     <>
       <AnimatePresence mode="wait">
         {/* Keep splash visible if timer hasn't ended OR data is still loading */}
-        {(showSplash || (!minTimeElapsed && isLoading)) && subdomain.splashScreen ? (
+        {(showSplash || (!minTimeElapsed && isLoading)) && subdomain.branding?.splashScreen ? (
           <motion.div
             key="splash"
             initial={{ opacity: 1 }}
@@ -47,7 +47,7 @@ export function SubDomainContent() {
             <SubDomainSplashScreen
               onVideoEnd={handleSplashEnd} 
               // FIX: Add '|| ""' to ensure the type is always string
-              splashScreenUrl={getPublicUrl(subdomain.splashScreen) || ""}
+              splashScreenUrl={getPublicUrl(subdomain.branding?.splashScreen) || ""}
             />
           </motion.div>
         ) : null}

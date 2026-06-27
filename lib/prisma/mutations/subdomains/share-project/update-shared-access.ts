@@ -1,8 +1,9 @@
+import { AccessType } from "@/app/generated/prisma";
 import { prisma } from "@/lib/prisma";
 
 interface AccessParams {
   email: string;
-  accessType: string;
+  accessType: AccessType;
   pin: string;
 }
 

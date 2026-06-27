@@ -55,7 +55,7 @@ export async function createTenant(formData: FormData) {
           email: data.email,
           name: data.ownerName,
           passwordHash: hashedPassword,
-          role: "account_owner", // The standard role for partners
+          role: "OWNER", // The standard role for partners
           subdomainId: newSubdomain.id,
         },
       });

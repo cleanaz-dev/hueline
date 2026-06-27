@@ -13,7 +13,6 @@ export async function getAllClients() {
     select: {
       id: true,
       slug: true,
-      projectUrl: true,
       active: true,
       bookings: {
         select: {
@@ -68,7 +67,6 @@ export async function getAllClients() {
       id: subdomain.id,
       slug: subdomain.slug,
       active: subdomain.active,
-      projectUrl: subdomain.projectUrl,
       // All account identity now comes from Client
       companyName: client?.company ?? null,
       planName: client?.planName ?? null,

@@ -31,7 +31,7 @@ export default function ClientPostSession({
   const router = useRouter();
   const [isRetrying, setIsRetrying] = useState(false);
 
-  const logoSrc = getPublicUrl(subdomain.logo) || "/placeholder-logo.png";
+  const logoSrc = getPublicUrl(subdomain.branding?.logoUrl) || "/placeholder-logo.png";
 
   const handleRetry = async () => {
     if (isRetrying) return;

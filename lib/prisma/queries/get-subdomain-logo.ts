@@ -5,10 +5,20 @@ export async function getSubdomainLogo(slug: string) {
   try {
     const subdomain = await prisma.subdomain.findUnique({
       where: { slug },
-      select: { logo: true }
+      select: {
+        branding: {
+          select: {
+            logoUrl: true,
+          },
+        },
+      },
     });
-    
-    return subdomain?.logo ? getPublicUrl(subdomain.logo) : null;
+
+    if (!subdomain?.branding?.logoUrl) return null;
+
+    return subdomain?.branding.logoUrl
+      ? getPublicUrl(subdomain.branding.logoUrl)
+      : null;
   } catch (error) {
     console.error("Failed to fetch logo:", error);
     return null;

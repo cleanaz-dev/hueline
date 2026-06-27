@@ -14,7 +14,7 @@ import {
   Phone,
   Calendar
 } from "lucide-react";
-import { Prisma } from "@/app/generated/prisma";
+import { Branding, Prisma } from "@/app/generated/prisma";
 
 type ClientWithRelations = Prisma.ClientGetPayload<{
   include: {
@@ -22,9 +22,7 @@ type ClientWithRelations = Prisma.ClientGetPayload<{
     subdomain: {
       select: {
         slug: true;
-        logo: true;
-        logoHeight: true;
-        logoWidth: true;
+        branding: true;        // ← just `true`, not the Branding type
         companyName: true;
         calls: true;
         logs: true;
@@ -34,7 +32,6 @@ type ClientWithRelations = Prisma.ClientGetPayload<{
     _count: true;
   };
 }>;
-
 interface AdminClientPageProps {
   clientData: ClientWithRelations[];
 }

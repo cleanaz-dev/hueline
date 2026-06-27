@@ -37,14 +37,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `${subData.slug} Design Studio`,
       description: `Professional paint design mockups and color consultation`,
-      images: [subData.logo || "/default-og-image.jpg"],
+      images: [subData.branding?.logoUrl || "/default-og-image.jpg"],
       siteName: subData.slug,
     },
     twitter: {
       card: "summary_large_image",
       title: `${subData.slug} Design Studio`,
       description: `Professional paint design mockups`,
-      images: [subData.logo || "/default-og-image.jpg"],
+      images: [subData.branding?.logoUrl || "/default-og-image.jpg"],
     },
   };
 }

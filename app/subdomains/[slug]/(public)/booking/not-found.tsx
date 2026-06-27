@@ -1,9 +1,6 @@
-import React from "react";
-import Image from "next/image";
 import { headers } from 'next/headers'
 import { getSubDomainData } from "@/lib/prisma";
 import { AlertCircle } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default async function BookingNotFound() {
     // Extract subdomain from hostname
@@ -13,7 +10,7 @@ export default async function BookingNotFound() {
   
   // Fetch subdomain data
   const subDomainData = await getSubDomainData(subdomain);
-  const logoUrl = subDomainData?.logo || '/images/logo-2--increased-brightness.png';
+  const logoUrl = subDomainData?.branding?.logoUrl || '/images/logo-2--increased-brightness.png';
   const companyName = subDomainData?.companyName || 'Company';
   
   return (
