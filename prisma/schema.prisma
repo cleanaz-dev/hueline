@@ -761,7 +761,7 @@ model CallIntelligence {
 
 model Export {
   id           String         @id @default(uuid())
-  systemTaskId String        @unique
+  systemTaskId String?        @unique
   bookingId    String
   booking      SubBookingData @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   resolution   String
