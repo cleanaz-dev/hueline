@@ -149,7 +149,7 @@ export default function IntelligenceDashboardPage() {
         title="Intelligence"
         description="Review the active logic gates, pricing models, and vision."
         icon={<Cpu className="size-6 text-zinc-500" />}
-        addButtonLabel="Update Intelligence"
+        addButtonLabel="Create Intelligence"
         onAddClick={() => console.log("Button Clicked!")}
       />
      
