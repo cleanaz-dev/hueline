@@ -14,14 +14,18 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const subdomain = await prisma.subdomain.findUnique({
       where: { slug },
-      select: { logo: true },
+      select: { branding: {
+        select: {
+          logoUrl: true
+        }
+      } },
     });
 
-    if (!subdomain || !subdomain.logo) {
-      return NextResponse.json({ logo: null });
+    if (!subdomain || !subdomain?.branding?.logoUrl) {
+      return NextResponse.json({ logoUrl: null });
     }
 
-    return NextResponse.json({ logo: subdomain.logo });
+    return NextResponse.json({ logo: subdomain.branding.logoUrl });
   } catch (error) {
     console.error("Error fetching logo:", error);
     return NextResponse.json({ logo: null }, { status: 500 });
