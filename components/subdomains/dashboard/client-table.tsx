@@ -66,7 +66,10 @@ export type TableBooking = SubBookingData & {
   status?: BookingStatus | null;
   paintColors?: { brand: string; code: string; name: string; hex: string }[];
   mockups?: { presignedUrl?: string | null; [key: string]: unknown }[];
-  calls?: { intelligence?: { estimatedAdditionalValue?: number } | null; [key: string]: unknown }[];
+  calls?: {
+    intelligence?: { estimatedAdditionalValue?: number } | null;
+    [key: string]: unknown;
+  }[];
   rooms?: {
     roomKey: string;
     recordingUrl?: string | null;
@@ -431,12 +434,15 @@ export default function ClientTable() {
       columnHelper.accessor("huelineId", {
         header: "ACTION",
         cell: (info) => (
-          <div
-            className="flex gap-2"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
+          <div className="flex gap-2" onMouseDown={(e) => e.stopPropagation()}>
             <button
-              onClick={() => openIntelligence(info.row.original as unknown as Parameters<typeof openIntelligence>[0])}
+              onClick={() =>
+                openIntelligence(
+                  info.row.original as unknown as Parameters<
+                    typeof openIntelligence
+                  >[0],
+                )
+              }
               className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-purple-100 bg-purple-50 text-purple-600 hover:bg-purple-100 transition-all group cursor-pointer"
             >
               <Database className="w-4 h-4 group-hover:scale-110 transition-transform" />
@@ -605,17 +611,20 @@ export default function ClientTable() {
       </div>
 
       {/* --- MOBILE VIEW --- */}
-<ClientTableMobile
-  table={table}
-  formatImageUrl={formatImageUrl}
-  openIntelligence={openIntelligence as unknown as (booking: TableBooking) => void}
-/>
+      <ClientTableMobile
+        table={table}
+        formatImageUrl={formatImageUrl}
+        openIntelligence={
+          openIntelligence as unknown as (booking: TableBooking) => void
+        }
+      />
 
       {/* --- PAGINATION --- */}
       <div className="flex items-center justify-between px-2">
         <div className="text-sm text-gray-500">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
+          {table.getPageCount() === 0
+            ? "No results"
+            : `Page ${table.getState().pagination.pageIndex + 1} of ${table.getPageCount()}`}
         </div>
         <div className="flex items-center gap-2">
           <Button
