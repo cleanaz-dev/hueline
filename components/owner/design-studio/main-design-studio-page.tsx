@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDesign } from "@/context/design-studio-context";
 import { useOwner } from "@/context/owner-context";
-import { Loader2, Plus, ImageIcon, CalendarDays } from "lucide-react";
+import { Loader2, Plus, ImageIcon, CalendarDays, Palette } from "lucide-react";
 
 // shadcn/ui components
 import {
@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import OwnerPageHeader from "../owner-page.header";
 
 const formatDate = (dateString: string | Date) => {
   return new Intl.DateTimeFormat("en-US", {
@@ -38,21 +39,21 @@ const formatDate = (dateString: string | Date) => {
 export default function MainDesignStudio() {
   const router = useRouter();
   const { customers, isCustomersLoading } = useOwner();
-  const { 
-    designs, 
-    createDesignProject, 
-    isCreatingDesignProject, 
-    isDesignsLoading 
+  const {
+    designs,
+    createDesignProject,
+    isCreatingDesignProject,
+    isDesignsLoading,
   } = useDesign();
 
   // --- Modal & Form State ---
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [customerMode, setCustomerMode] = useState<"existing" | "new">("new");
-  const [roomType, setRoomType] = useState<string | null>(null)
-  
+  const [roomType, setRoomType] = useState<string | null>(null);
+
   // Existing Customer State
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
-  
+
   // New Customer State
   const [newCustomer, setNewCustomer] = useState({
     name: "",
@@ -64,13 +65,13 @@ export default function MainDesignStudio() {
     try {
       // 🟢 NOTE: You will need to update your context to accept this payload!
       // Example: await createDesignProject({ customerMode, selectedCustomerId, newCustomer })
-      
+
       await createDesignProject({
         customerMode,
         customerId: selectedCustomerId,
-        newCustomer
+        newCustomer,
       }); // <-- Update this call based on your API
-      
+
       setIsDialogOpen(false);
     } catch (error) {
       console.error("Failed to create design project:", error);
@@ -78,35 +79,30 @@ export default function MainDesignStudio() {
   };
 
   // Validation to disable the create button if fields are missing
-  const canCreate = customerMode === "existing" 
-    ? !!selectedCustomerId 
-    : !!newCustomer.name;
+  const canCreate =
+    customerMode === "existing" ? !!selectedCustomerId : !!newCustomer.name;
 
   return (
     <div className="w-full font-sans text-zinc-900">
-      
       {/* --- Header Section --- */}
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Design Studio</h1>
-          <p className="mt-1 text-sm text-zinc-500">Manage and create AI paint mockups for your clients.</p>
-        </div>
-        
-        <Button
-          onClick={() => setIsDialogOpen(true)}
-          className="h-10 rounded-xl bg-zinc-900 px-5 text-sm font-bold text-white shadow-sm transition-all hover:bg-zinc-800 hover:shadow-md active:scale-[0.98]"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          New Design
-        </Button>
-      </div>
+
+      <OwnerPageHeader
+        title="Design Studio"
+        description="Manage and create AI paint mockups for your clients."
+        icon={<Palette className="size-6" />}
+        onAddClick={() => setIsDialogOpen(true)}
+        addButtonLabel="New Design"
+      />
 
       {/* --- Main Content Area --- */}
       {isDesignsLoading ? (
         // Loading State
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
+            <div
+              key={i}
+              className="flex flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm"
+            >
               <div className="aspect-[4/3] w-full animate-pulse bg-zinc-100" />
               <div className="p-5">
                 <div className="mb-3 h-5 w-2/3 animate-pulse rounded bg-zinc-100" />
@@ -116,7 +112,6 @@ export default function MainDesignStudio() {
           ))}
         </div>
       ) : designs && designs.length > 0 ? (
-        
         // Grid of Design Cards
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {designs.map((project: any) => (
@@ -128,16 +123,24 @@ export default function MainDesignStudio() {
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-50">
                 {project.originalImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={project.originalImageUrl} alt={project.name || "Design Project"} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <img
+                    src={project.originalImageUrl}
+                    alt={project.name || "Design Project"}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
                 ) : (
                   <div className="flex h-full w-full flex-col items-center justify-center bg-zinc-50/50 text-zinc-300 transition-colors group-hover:bg-zinc-100/50">
                     <ImageIcon className="h-10 w-10 mb-2 opacity-50" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Blank Canvas</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                      Blank Canvas
+                    </span>
                   </div>
                 )}
-                
+
                 <div className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-zinc-700 shadow-sm backdrop-blur-md">
-                  {project.mockups?.length > 0 ? `${project.mockups.length} Mockups` : "Draft"}
+                  {project.mockups?.length > 0
+                    ? `${project.mockups.length} Mockups`
+                    : "Draft"}
                 </div>
               </div>
 
@@ -164,9 +167,7 @@ export default function MainDesignStudio() {
             </button>
           ))}
         </div>
-
       ) : (
-        
         // Empty State
         <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-200 bg-transparent px-6 py-12 text-center">
           <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-zinc-50 shadow-sm ring-1 ring-black/5">
@@ -174,9 +175,13 @@ export default function MainDesignStudio() {
           </div>
           <h2 className="text-lg font-bold text-zinc-900">No projects yet</h2>
           <p className="mt-2 max-w-sm text-sm text-zinc-500">
-            Create your first design project to start uploading photos and generating AI paint mockups.
+            Create your first design project to start uploading photos and
+            generating AI paint mockups.
           </p>
-          <Button onClick={() => setIsDialogOpen(true)} className="mt-6 rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-sm font-bold text-zinc-900 shadow-sm hover:bg-zinc-50">
+          <Button
+            onClick={() => setIsDialogOpen(true)}
+            className="mt-6 rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-sm font-bold text-zinc-900 shadow-sm hover:bg-zinc-50"
+          >
             Create First Design
           </Button>
         </div>
@@ -193,45 +198,64 @@ export default function MainDesignStudio() {
           </DialogHeader>
 
           <div className="py-4">
-            <Tabs 
-              defaultValue="new" 
+            <Tabs
+              defaultValue="new"
               className="w-full"
-              onValueChange={(val) => setCustomerMode(val as "new" | "existing")}
+              onValueChange={(val) =>
+                setCustomerMode(val as "new" | "existing")
+              }
             >
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="new">New Customer</TabsTrigger>
                 <TabsTrigger value="existing">Existing Customer</TabsTrigger>
               </TabsList>
-              
+
               {/* NEW CUSTOMER TAB */}
               <TabsContent value="new" className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
-                  <Input 
-                    id="name" 
-                    placeholder="John Doe" 
+                  <Label htmlFor="name">
+                    Full Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    placeholder="John Doe"
                     value={newCustomer.name}
-                    onChange={(e) => setNewCustomer(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) =>
+                      setNewCustomer((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input 
-                    id="phone" 
+                  <Input
+                    id="phone"
                     type="tel"
-                    placeholder="(555) 000-0000" 
+                    placeholder="(555) 000-0000"
                     value={newCustomer.phone}
-                    onChange={(e) => setNewCustomer(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={(e) =>
+                      setNewCustomer((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
-                  <Input 
-                    id="email" 
+                  <Input
+                    id="email"
                     type="email"
-                    placeholder="john@example.com" 
+                    placeholder="john@example.com"
                     value={newCustomer.email}
-                    onChange={(e) => setNewCustomer(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) =>
+                      setNewCustomer((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
                   />
                 </div>
               </TabsContent>
@@ -239,10 +263,21 @@ export default function MainDesignStudio() {
               {/* EXISTING CUSTOMER TAB */}
               <TabsContent value="existing" className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Select Client <span className="text-red-500">*</span></Label>
-                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                  <Label>
+                    Select Client <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={selectedCustomerId}
+                    onValueChange={setSelectedCustomerId}
+                  >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder={isCustomersLoading ? "Loading..." : "Search clients..."} />
+                      <SelectValue
+                        placeholder={
+                          isCustomersLoading
+                            ? "Loading..."
+                            : "Search clients..."
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {customers?.map((c) => (
@@ -258,20 +293,22 @@ export default function MainDesignStudio() {
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsDialogOpen(false)}
               disabled={isCreatingDesignProject}
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleCreateNewDesign} 
+            <Button
+              onClick={handleCreateNewDesign}
               disabled={!canCreate || isCreatingDesignProject}
               className="bg-zinc-900 text-white hover:bg-zinc-800"
             >
               {isCreatingDesignProject ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</>
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...
+                </>
               ) : (
                 "Create Project"
               )}
