@@ -66,7 +66,7 @@ async function resolveCallUrls(calls: NonNullable<CustomerData>["calls"]) {
   return Promise.all(
     (calls ?? []).map(async (call) => ({
       ...call,
-      audioUrl: call.audioUrl ? await getPresignedUrl(call.audioUrl) : null,
+      audioS3Key: call.audioS3Key ? await getPresignedUrl(call.audioS3Key) : null,
     })),
   );
 }

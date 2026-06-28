@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-// 1. IMPORT YOUR UTILITY HERE:
 import { getPresignedUrl } from "@/lib/aws/s3";
 import { getTimelineCache, setTimelineCache } from "@/lib/redis/agent-context";
 
@@ -23,7 +22,6 @@ export async function GET(
   }
   const { customerId, slug, threadId } = await params;
 
-  // check if data belongs to fetcher
   const isUserValid = await prisma.subdomain.findFirst({
     where: {
       slug,
@@ -39,7 +37,6 @@ export async function GET(
     return NextResponse.json({ message: "Access Denied" }, { status: 401 });
   }
 
-  // 2. CHECK CACHE FIRST
   try {
     const cachedTimeline = await getTimelineCache(slug, threadId);
     if (cachedTimeline) {
@@ -49,7 +46,6 @@ export async function GET(
     console.error("Redis fetch failed, falling back to DB", e);
   }
 
-  // 3. FETCH FROM DB IF NOT IN CACHE
   try {
     // 1. Fetch Communications WITH their attachments
     const rawCommunications = await prisma.clientCommunication.findMany({
@@ -62,8 +58,7 @@ export async function GET(
       },
     });
 
-    // 2. MAGIC STEP: Pre-sign the URLs before sending to the client
-    // We use Promise.all to map over the comms concurrently
+    // 2. Pre-sign attachment URLs before sending to the client
     const communications = await Promise.all(
       rawCommunications.map(async (comm) => {
         const processedAttachments = await Promise.all(
@@ -73,7 +68,7 @@ export async function GET(
               const keyToSign =
                 isImage && attachment.compressedKey
                   ? attachment.compressedKey
-                  : attachment.mediaUrl; // mediaUrl is already the raw S3 key
+                  : attachment.mediaUrl;
 
               const presignedUrl = await getPresignedUrl(keyToSign);
               return {
@@ -102,7 +97,6 @@ export async function GET(
       id: act.id,
       role: "SYSTEM",
       type: "ACTIVITY",
-
       activityType: act.type,
       body: act.title || act.type.replace(/_/g, " "),
       description: act.description,
@@ -111,6 +105,7 @@ export async function GET(
       mediaAttachments: [],
     }));
 
+    // 5. Fetch and map Follow-ups
     const followUp = await prisma.followUpSchedule.findFirst({
       where: { chatThreadId: threadId, status: "PENDING" },
     });
@@ -138,44 +133,48 @@ export async function GET(
         ]
       : [];
 
+    // 6. Fetch Calls and pre-sign audioS3Key
     const rawCalls = await prisma.call.findMany({
-      where: { customerId, threadId: threadId },
+      where: { customerId, threadId },
     });
 
-    const mappedCalls = rawCalls.map((call) => ({
-      id: call.id,
-      // INBOUND = Client side (right), OUTBOUND = Operator/AI side (left)
-      role: call.callDirection === "INBOUND" ? "CLIENT" : "OPERATOR",
-      type: "PHONE",
-      activityType: "CALL", // Optional fallback
-      body:
-        call.status === "PROCESSING"
-          ? "Live Call in Progress..."
-          : "Call Ended",
-      description: `Call ID: ${call.callSid}`,
-      metadata: {
-        status: call.status,
-        callDirection: call.callDirection,
-        audioUrl: call.audioUrl,
-        duration: call.duration,
-        roomName: call.roomName,
-      },
-      createdAt: call.createdAt,
-      mediaAttachments: [],
-    }));
+    const mappedCalls = await Promise.all(
+      rawCalls.map(async (call) => ({
+        id: call.id,
+        role: call.callDirection === "INBOUND" ? "CLIENT" : "OPERATOR",
+        type: "PHONE",
+        activityType: "CALL",
+        body:
+          call.status === "PROCESSING"
+            ? "Live Call in Progress..."
+            : "Call Ended",
+        description: `Call ID: ${call.callSid}`,
+        metadata: {
+          status: call.status,
+          callDirection: call.callDirection,
+          audioS3Key: call.audioS3Key
+            ? await getPresignedUrl(call.audioS3Key)
+            : null, // ✅ same key, presigned value
+          duration: call.duration,
+          roomName: call.roomName,
+        },
+        createdAt: call.createdAt,
+        mediaAttachments: [],
+      }))
+    );
 
-    // 5. Merge and Sort chronologically
+    // 7. Merge and sort chronologically
     const timeline = [
       ...communications,
       ...mappedActivities,
       ...mappedFollowUps,
-      ...mappedCalls, // <-- Add calls to the merge
+      ...mappedCalls,
     ].sort(
       (a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    // 6. SET THE CACHE WITH OUR NEW UTILITY (No double stringifying!)
+    // 8. Cache the result
     await setTimelineCache(slug, threadId, timeline);
 
     return NextResponse.json(timeline);
@@ -187,4 +186,3 @@ export async function GET(
     );
   }
 }
-

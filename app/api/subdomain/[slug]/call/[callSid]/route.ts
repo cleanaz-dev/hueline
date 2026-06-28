@@ -43,11 +43,11 @@ export async function GET(
         callSid: callSid,
       },
       select: {
-        audioUrl: true
+        audioS3Key: true
       }
     });
 
-    if (!call || !call.audioUrl) {
+    if (!call || !call.audioS3Key) {
       return NextResponse.json(
         { error: "No audio recording found" },
         { status: 404 }
@@ -57,7 +57,7 @@ export async function GET(
     // Generate a presigned URL from the S3 key
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET_NAME!,
-      Key: call.audioUrl,
+      Key: call.audioS3Key,
     });
 
     const presignedUrl = await getSignedUrl(s3Client, command, {

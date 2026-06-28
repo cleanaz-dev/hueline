@@ -56,7 +56,7 @@ export async function upsertCall({
   return prisma.call.upsert({
     where: { callSid },
     update: {
-      audioUrl: recordingUrl,
+      audioS3Key: recordingUrl,
       duration: duration ? String(duration) : undefined,
       status: "completed",
       ...(bookingId && { bookingId }),
@@ -69,7 +69,7 @@ export async function upsertCall({
     },
     create: {
       callSid,
-      audioUrl: recordingUrl,
+      audioS3Key: recordingUrl,
       duration: duration ? String(duration) : "0",
       status: "completed",
       bookingDataId: bookingId,

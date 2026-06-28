@@ -11,7 +11,7 @@ interface ThreadCallCardProps {
     metadata?: {
       status?: string | null;
       callDirection?: string | null;
-      audioUrl?: string | null;
+      audioS3Key?: string | null;
       duration?: string | null;
       roomName?: string | null;
     } | null;
@@ -224,10 +224,10 @@ export default function ThreadCallCard({ msg, threadId }: ThreadCallCardProps) {
         </div>
 
         <div className="pt-1">
-          {meta.audioUrl ? (
+          {meta.audioS3Key ? (
             <audio
               controls
-              src={meta.audioUrl}
+              src={meta.audioS3Key}
               className="h-8 w-full outline-none [&::-webkit-media-controls-panel]:bg-background/50 dark:[&::-webkit-media-controls-panel]:bg-background/30 rounded-md"
             />
           ) : (

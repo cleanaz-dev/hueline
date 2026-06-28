@@ -17,7 +17,7 @@ export async function updateCallBasic({
   return prisma.call.update({
     where: { callSid },
     data: {
-      audioUrl: recordingUrl,
+      audioS3Key: recordingUrl,
       status: "completed",
       ...(duration !== undefined && { duration: String(duration) }),
     },

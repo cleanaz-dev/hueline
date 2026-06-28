@@ -88,7 +88,7 @@ export async function POST(
     const updatedCall = await prisma.call.upsert({
       where: { callSid },
       update: {
-        audioUrl: recording_url,
+        audioS3Key: recording_url,
         duration: duration ? String(duration) : undefined,
         status: "completed",
         ...(bookingDataId && { bookingDataId }),
@@ -120,7 +120,7 @@ export async function POST(
       },
       create: {
         callSid,
-        audioUrl: recording_url || "",
+        audioS3Key: recording_url || "",
         duration: duration ? String(duration) : "0",
         status: "completed",
         bookingDataId: bookingDataId,

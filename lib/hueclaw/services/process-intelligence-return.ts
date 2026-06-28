@@ -64,7 +64,7 @@ export async function processIntelligenceReturn(task: SystemTask, result: any) {
       chatThread: { connect: { id: threadId } },
       customer: { connect: { id: customer.id } },
       metadata: {
-        audioUrl: call.audioUrl,
+        audioS3Key: call.audioS3Key,
         outcome: intelligence.callOutcome,
         transcript: transcriptText,
       },

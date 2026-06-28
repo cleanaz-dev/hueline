@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       /* ============================================================
        * EGRESS ENDED
        * Fires when a recording/egress job finishes and the file
-       * has been uploaded to S3. Triggers transcription pipeline.
+       * has been uploaded to S3. Updates Call with AudioS3Key
        * ============================================================ */
       case "egress_ended": {
         const roomName = event.egressInfo?.roomName;

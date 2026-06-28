@@ -70,14 +70,14 @@ export async function POST(req: Request, { params }: Params) {
       where: { callSid },
       update: {
         duration: duration ? String(duration) : undefined,
-        audioUrl: recordingUrl,
+        audioS3Key: recordingUrl,
         status: "completed",
         ...(booking?.id && { bookingDataId: booking.id }),
       },
       create: {
         callSid,
         duration: duration ? String(duration) : "0",
-        audioUrl: recordingUrl || "",
+        audioS3Key: recordingUrl || "",
         status: "completed",
         subdomain: {
           connect: { id: subdomain.id }

@@ -167,9 +167,10 @@ export interface Call {
   bookingData?: BookingData | null;
   callSid?: string | null
   recordingSid: string | null;
-  audioUrl: string | null;
+  audioS3Key: string | null;
   duration: string | null;
   status: string | null;
+  roomName?: string | null
 
   // Specific Call Analytics
   intelligence?: CallIntelligence | null;
