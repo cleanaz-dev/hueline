@@ -22,3 +22,6 @@ export const createCommand = ({
     InvocationType: invocationType,
     Payload: Buffer.from(JSON.stringify(payload)),
   });
+
+  export * from "./invoke-call-intelligence"
+  export * from "./trigger-hueclaw-worker"

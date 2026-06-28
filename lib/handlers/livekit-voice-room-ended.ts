@@ -1,67 +1,67 @@
-// lib/handlers/livekit-voice-room-ended.ts
-import { Prisma } from "@/app/generated/prisma";
-import { prisma } from "@/lib/prisma";
-import { clearHueClawStatus } from "@/lib/redis";
-import {
-  getTranscript,
-  deleteTranscript,
-  invalidateThreadCache,
-} from "@/lib/redis/agent-context";
+"use server"
+import { after } from "next/server";
+import { acquireResourceLock, clearHueClawStatus, releaseResourceLock, setHueClawStatus } from "@/lib/redis";
+import { invalidateThreadCache } from "@/lib/redis/agent-context";
 import { pusherServer } from "@/lib/pusher/pusher-server";
+import { createCallIntelligenceTask } from "../services/system-tasks/create-call-intelligence-task";
+import { invokeCallIntelligenceLambda } from "../aws/lambda";
+import { getCallForIntelligence } from "../prisma/queries";
+import { updateCallwithTranscript } from "../hueclaw/services/update-call-with-transcript";
+import { getTwilioAudioUrl } from "./handle-get-twilio-audio";
 
 export async function handleLiveKitVoiceRoomEnded(roomName: string) {
+  let lockKey: string | null = null;
   try {
-    const currentCall = await prisma.call.findFirst({
-      where: { roomName },
-      select: {
-        id: true,
-        threadId: true,
-        subdomain: { select: { slug: true } },
+    const callData = await getCallForIntelligence(roomName);
+    if (!callData) return;
+
+    const { callId, threadId, customerId, subdomainId, slug, intelligence, callSid } = callData;
+
+    if (callSid) {
+      after(async () => {
+        await getTwilioAudioUrl(callSid, subdomainId, threadId, customerId, callId, slug!);
+      });
+    }
+
+    const { transcript } = await updateCallwithTranscript(callId);
+
+    lockKey = await acquireResourceLock(threadId, "INTELLIGENCE");
+
+    await pusherServer.trigger(`thread-${threadId}`, "call-ended", { callId });
+
+    await clearHueClawStatus(threadId);
+
+    const { taskId } = await createCallIntelligenceTask({
+      callId,
+      customerId,
+      subdomainId,
+      lockKey: lockKey!,
+      callMetadata: {
+        threadId,
+        callId,
+        callType: "INBOUND",
+        roomName,
+        transcript,
       },
     });
 
-    if (!currentCall || !currentCall.id || !currentCall.threadId) {
-      console.warn(
-        `⚠️ [RoomEnded] Could not find Call record for roomName: ${roomName}`,
-      );
-      return;
-    }
+    const webhookUrl = "https://www.hue-line.com/api/webhooks/hueclaw";
 
-    const transcript = await getTranscript(currentCall.id);
-
-    if (!transcript || transcript.length === 0) {
-      console.warn(
-        `ℹ️ [RoomEnded] No transcript lines found in Redis for Call ID: ${currentCall.id}`,
-      );
-    }
-
-    await prisma.call.update({
-      where: { id: currentCall.id },
-      data: {
-        transcript: transcript as unknown as Prisma.InputJsonValue,
-        status: "ENDED",
+    await invokeCallIntelligenceLambda({
+      payload: {
+        systemTaskId: taskId,
+        threadId,
+        transcript: JSON.stringify(transcript),
+        webhookUrl,
+        config: JSON.stringify(intelligence),
       },
     });
 
-    await deleteTranscript(currentCall.id);
+    await invalidateThreadCache(slug, threadId);
 
-    console.log(
-      `✅ [RoomEnded] Saved complete transcript for Call ID: ${currentCall.id}`,
-    );
-
-    await pusherServer.trigger(`thread-${currentCall.threadId}`, "call-ended", {
-      callId: currentCall.id,
-    });
-
-    await clearHueClawStatus(currentCall.threadId!);
-
-    await invalidateThreadCache(currentCall.subdomain?.slug!, currentCall.threadId);
-
-    // 🧠 invokeCallIntelligenceLambda(currentCall.id);
+    await setHueClawStatus(threadId, "INTELLIGENCE");
   } catch (error) {
-    console.error(
-      `❌ [RoomEnded] Failed to process room_ended for ${roomName}:`,
-      error,
-    );
+    if (lockKey) await releaseResourceLock(lockKey);
+    console.error(`❌ [RoomEnded] Failed to process room_ended for ${roomName}:`, error);
   }
 }

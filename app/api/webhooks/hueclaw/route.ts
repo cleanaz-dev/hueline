@@ -7,6 +7,7 @@ import { processNudgeReturn } from "@/lib/hueclaw/services/process-nudge-return"
 import { processImagenReturn } from "@/lib/hueclaw/services/process-imagen-return";
 import { processQuoteReturn } from "@/lib/hueclaw/services/process-quote-return";
 import { processIntelligenceReturn } from "@/lib/hueclaw/services/process-intelligence-return";
+import { processCallAudioReturn } from "@/lib/hueclaw/services/process-call-audio-return";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.LAMBDA_WEBHOOK_SECRET;
@@ -50,10 +51,12 @@ export async function POST(req: Request) {
       case "QUOTE_GENERATION":
         outcome = await processQuoteReturn(task, result);
         break;
-
       case "INTELLIGENCE":
-        outcome = await processIntelligenceReturn(task,result)
-        break
+        outcome = await processIntelligenceReturn(task, result);
+        break;
+      case "AUDIO":
+        outcome = await processCallAudioReturn(task, result);
+        break;
       default:
         throw new Error(`Unhandled SystemTask type: ${task.type}`);
     }
@@ -69,7 +72,6 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, message: outcome.message });
-
   } catch (error) {
     console.error("[HueClaw] Webhook error:", error);
 
@@ -77,6 +79,9 @@ export async function POST(req: Request) {
     if (activeLockKey) await releaseResourceLock(activeLockKey);
     if (activeThreadId) await clearHueClawStatus(activeThreadId);
 
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 },
+    );
   }
 }

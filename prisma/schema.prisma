@@ -593,6 +593,7 @@ enum SystemTaskType {
   NUDGE
   INTELLIGENCE
   OUTBOUND_CALL
+  AUDIO
 }
 
 model MediaAttachment {
@@ -706,12 +707,12 @@ model Call {
   callerPhone   String?
   callDirection CallDirection @default(INBOUND)
 
-  callSid      String?  @unique
+  callSid      String? @unique
   recordingSid String?
-  audioUrl     String?
+  audioS3Key   String?
   duration     String?
   status       String?
-  roomName     String?  @unique
+  roomName     String? @unique
   callType     String?
 
   transcript Json? // <- New!

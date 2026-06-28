@@ -13,7 +13,8 @@ type LockContext =
   | "COMMS"
   | "NUDGE"
   | "INTELLIGENCE"
-  | "OUTBOUND_CALL";
+  | "OUTBOUND_CALL"
+  | "AUDIO";
 
 export async function acquireResourceLock(
   resourceId: string,

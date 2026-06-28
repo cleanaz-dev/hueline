@@ -3,7 +3,7 @@
 import { WebhookReceiver } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
 import { handleLiveKitVoiceEgressEnded } from "@/lib/handlers/livekit-voice-egress-handler";
-import { handleLiveKitVoiceRoomEnded } from "@/lib/handlers/livekit-voice-room-ended"; // <-- Import new handler
+import { handleLiveKitVoiceRoomEnded } from "@/lib/handlers/livekit-voice-room-ended";
 
 const receiver = new WebhookReceiver(
   process.env.LIVEKIT_API_KEY!,
@@ -27,14 +27,27 @@ export async function POST(req: Request) {
     console.log(`📥 Webhook Event: ${event.event}`);
 
     switch (event.event) {
+      /* ============================================================
+       * PARTICIPANT JOINED
+       * Fires when any participant (agent or user) joins a room.
+       * ============================================================ */
       case "participant_joined":
         console.log("Participant Joined");
         break;
 
+      /* ============================================================
+       * PARTICIPANT LEFT
+       * Fires when any participant (agent or user) leaves a room.
+       * ============================================================ */
       case "participant_left":
         console.log("Participant Left");
         break;
 
+      /* ============================================================
+       * EGRESS ENDED
+       * Fires when a recording/egress job finishes and the file
+       * has been uploaded to S3. Triggers transcription pipeline.
+       * ============================================================ */
       case "egress_ended": {
         const roomName = event.egressInfo?.roomName;
         const s3Key = event.egressInfo?.fileResults?.[0]?.filename;
@@ -52,27 +65,38 @@ export async function POST(req: Request) {
         } else {
           console.warn("⚠️ egress_ended missing roomName or s3Key", {
             roomName,
-            fileResults: event.egressInfo?.fileResults
+            fileResults: event.egressInfo?.fileResults,
           });
         }
         break;
       }
 
+      /* ============================================================
+       * ROOM STARTED
+       * Fires when a new room is created and becomes active.
+       * ============================================================ */
       case "room_started":
         console.log(`🚀 Room started: ${event.room?.name}`);
         break;
 
+      /* ============================================================
+       * ROOM FINISHED
+       * Fires when all participants have left and the room closes.
+       * Triggers any post-call cleanup logic.
+       * ============================================================ */
       case "room_finished": {
         const roomName = event.room?.name;
         console.log(`🏁 Room finished: ${roomName}`);
-        
+
         if (roomName) {
-          // Look how beautiful and clean this is!
           await handleLiveKitVoiceRoomEnded(roomName);
         }
         break;
       }
 
+      /* ============================================================
+       * DEFAULT — UNHANDLED EVENTS
+       * ============================================================ */
       default:
         console.log(`⚠️ Unhandled event: ${event.event}`);
     }
