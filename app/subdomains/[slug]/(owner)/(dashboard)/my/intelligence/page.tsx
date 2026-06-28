@@ -1,5 +1,6 @@
-import CallIntelligenceOverview from "@/components/intelligence/intelligence-dashboard";
+import IntelligenceDashboardPage from "@/components/intelligence/intelligence-dashboard";
+
 
 export default async function page() {
-  return <CallIntelligenceOverview />;
+  return <IntelligenceDashboardPage />
 }
