@@ -1,47 +1,14 @@
 import { prisma } from "@/lib/prisma";
-import { createCommand, lambda } from "@/lib/aws/lambda";
-import { acquireResourceLock, clearHueClawStatus, setHueClawStatus } from "../redis";
-import { getPresignedUrl } from "../aws/s3";
 
 export async function handleLiveKitVoiceEgressEnded(
   roomName: string,
   s3Key: string,
-  callId: string // ✅ Added callId here
+  callId: string,
 ) {
-  
-  // ✅ Find and update using callId instead of roomName
-  const call = await prisma.call.update({
-    where: { id: callId }, 
-    data: { audioUrl: s3Key },
-    select: { threadId: true, id: true, systemTaskId: true },
+  await prisma.call.update({
+    where: { id: callId },
+    data: { audioS3Key: s3Key },
   });
 
-  if (!call?.threadId || !call?.systemTaskId) {
-    console.warn(`⚠️ No threadId and systemTaskId found for callId: ${callId}`);
-    return;
-  }
-
-  console.log(`✅ Recording S3 Key saved for call: ${callId} (Room: ${roomName})`);
-
-  const webhookUrl = `https://www.hue-line.com/api/webhooks/hueclaw`;
-  const audioUrl = await getPresignedUrl(s3Key);
-
-  console.log("Audio URL:", audioUrl)
-
-  const payload = {
-    audioUrl, 
-    webhookUrl,
-    threadId: call.threadId,
-    systemTaskId: call.systemTaskId,
-  };
-
-  const command = createCommand({
-    functionName: "hueline-hueclaw-intelligence-PROD",
-    payload,
-  });
-  
-  // 3. Trigger Redis & Lambda
-  await clearHueClawStatus(call.threadId);
-  await setHueClawStatus(call.threadId, "INTELLIGENCE");
-  await lambda.send(command);
+  console.log(`✅ Egress audio S3 key saved for call: ${callId} (Room: ${roomName})`);
 }
