@@ -18,7 +18,7 @@ export async function updateCallBasic({
     where: { callSid },
     data: {
       audioS3Key: recordingUrl,
-      status: "completed",
+      status: "ENDED",
       ...(duration !== undefined && { duration: String(duration) }),
     },
   });

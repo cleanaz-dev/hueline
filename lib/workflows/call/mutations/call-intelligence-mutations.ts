@@ -58,7 +58,7 @@ export async function upsertCall({
     update: {
       audioS3Key: recordingUrl,
       duration: duration ? String(duration) : undefined,
-      status: "completed",
+      status: "ENDED",
       ...(bookingId && { bookingId }),
       intelligence: {
         upsert: {
@@ -71,7 +71,7 @@ export async function upsertCall({
       callSid,
       audioS3Key: recordingUrl,
       duration: duration ? String(duration) : "0",
-      status: "completed",
+      status: "ENDED",
       bookingDataId: bookingId,
       intelligence: {
         create: intelligencePayload,

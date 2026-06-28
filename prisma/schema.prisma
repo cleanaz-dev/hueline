@@ -711,7 +711,7 @@ model Call {
   recordingSid String?
   audioS3Key   String?
   duration     String?
-  status       String?
+  status       CallStatus?  @default(PROCESSING)
   roomName     String? @unique
   callType     String?
 
@@ -731,6 +731,11 @@ model Call {
   systemTaskId String?
 
   @@index([bookingDataId])
+}
+
+enum CallStatus {
+  PROCESSING
+  ENDED
 }
 
 enum CallDirection {

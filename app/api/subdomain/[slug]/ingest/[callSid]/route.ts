@@ -71,14 +71,14 @@ export async function POST(req: Request, { params }: Params) {
       update: {
         duration: duration ? String(duration) : undefined,
         audioS3Key: recordingUrl,
-        status: "completed",
+        status: "ENDED",
         ...(booking?.id && { bookingDataId: booking.id }),
       },
       create: {
         callSid,
         duration: duration ? String(duration) : "0",
         audioS3Key: recordingUrl || "",
-        status: "completed",
+        status: "ENDED",
         subdomain: {
           connect: { id: subdomain.id }
         },

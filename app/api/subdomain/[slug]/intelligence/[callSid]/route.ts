@@ -90,7 +90,7 @@ export async function POST(
       update: {
         audioS3Key: recording_url,
         duration: duration ? String(duration) : undefined,
-        status: "completed",
+        status: "ENDED",
         ...(bookingDataId && { bookingDataId }),
 
         intelligence: {
@@ -122,7 +122,7 @@ export async function POST(
         callSid,
         audioS3Key: recording_url || "",
         duration: duration ? String(duration) : "0",
-        status: "completed",
+        status: "ENDED",
         bookingDataId: bookingDataId,
         intelligence: {
           create: {
