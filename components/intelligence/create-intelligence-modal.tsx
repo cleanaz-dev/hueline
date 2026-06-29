@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useOwner } from '@/context/owner-context'; // Ensure this is imported
+import { useOwner } from '@/context/owner-context';
 import {
   IntelligenceConfig,
   IntelligenceModalProps,
   IntelligenceTab,
-  PricingCategory,
   PricingItem,
 } from './types';
 import { DEFAULT_CONFIG, generateId } from './constants';
@@ -14,7 +13,8 @@ import { IntelligenceModalHeader } from './intelligence-modal-header';
 import { IntelligenceModalSidebar } from './intelligence-modal-sidebar';
 import { IntelligenceModalFooter } from './intelligence-modal-footer';
 import { PriceBookTab } from './tabs/price-book-tab';
-import { RulesTab } from './tabs/rules-tab';
+import { ModifiersTab } from './tabs/modifiers-tab';
+  // new tab
 
 export function IntelligenceModal({ isOpen, onClose, initialData }: IntelligenceModalProps) {
   const { subdomain, isSavingIntelligence, handleSaveIntelligence } = useOwner();
@@ -38,36 +38,34 @@ export function IntelligenceModal({ isOpen, onClose, initialData }: Intelligence
     const intelligenceId = subdomain?.intelligence?.id;
     if (!intelligenceId) {
       console.error("No intelligence ID found");
-      return; 
+      return;
     }
-    
-    // Calls context method, which triggers the API
     const success = await handleSaveIntelligence(intelligenceId, config);
-    
-    if (success) {
-      onClose();
-      // Optional: you might want to refresh the page/subdomain data here 
-      // if your context doesn't automatically re-fetch!
-    }
+    if (success) onClose();
   };
 
-  // --- HANDLERS: PRICE BOOK ---
-  const addPriceItem = (type: PricingCategory) => {
+  // --- CALCULATIONS FOR SIDEBAR COUNTS ---
+  const allItems = config.priceBook;
+  const modifiers = allItems.filter((item) => item.isModifier);
+
+  // --- HANDLERS (single list operations) ---
+  const addPriceItem = () => {
     const newItem: PricingItem = {
       id: generateId(),
       name: '',
-      amount: 0,
-      type,
-      unit: type === 'UNIT_COST' ? 'sqft' : undefined,
+      amount: 50,              // sensible default
+      type: 'FLAT_FEE',
+      isModifier: false,
+      unit: undefined,
     };
     setConfig((prev) => ({ ...prev, priceBook: [...prev.priceBook, newItem] }));
   };
 
-  const updatePriceItem = (id: string, field: keyof PricingItem, value: any) => {
+  const updatePriceItem = (id: string, updates: Partial<PricingItem>) => {
     setConfig((prev) => ({
       ...prev,
       priceBook: prev.priceBook.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
+        item.id === id ? { ...item, ...updates } : item
       ),
     }));
   };
@@ -79,55 +77,22 @@ export function IntelligenceModal({ isOpen, onClose, initialData }: Intelligence
     }));
   };
 
-  // --- HANDLERS: AI RULES (FLAGS) ---
-  const addRule = (flag: string) => {
-    setConfig((prev) => ({ ...prev, contextFlags: [...prev.contextFlags, flag] }));
-  };
-
-  const removeRule = (flagToRemove: string) => {
+  // Convenience handler for toggling modifier state
+  const toggleModifier = (id: string) => {
     setConfig((prev) => ({
       ...prev,
-      contextFlags: prev.contextFlags.filter((f) => f !== flagToRemove),
-      priceBook: prev.priceBook.filter((item) => item.name !== flagToRemove),
+      priceBook: prev.priceBook.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              isModifier: !item.isModifier,
+              // When turning on, ensure trigger exists (empty)
+              trigger: !item.isModifier ? '' : item.trigger,
+            }
+          : item
+      ),
     }));
   };
-
-  const setRuleImpact = (flag: string, type: PricingCategory | 'NONE') => {
-    setConfig((prev) => {
-      const existingItem = prev.priceBook.find((p) => p.name === flag);
-
-      if (type === 'NONE') {
-        if (!existingItem) return prev;
-        return {
-          ...prev,
-          priceBook: prev.priceBook.filter((item) => item.id !== existingItem.id),
-        };
-      }
-
-      if (existingItem) {
-        return {
-          ...prev,
-          priceBook: prev.priceBook.map((item) =>
-            item.id === existingItem.id ? { ...item, type } : item
-          ),
-        };
-      }
-
-      const newItem: PricingItem = {
-        id: generateId(),
-        name: flag,
-        amount: type === 'MULTIPLIER' ? 1.2 : 50,
-        type,
-      };
-      return { ...prev, priceBook: [...prev.priceBook, newItem] };
-    });
-  };
-
-  const corePriceBook = config.priceBook.filter(
-    (item) => !config.contextFlags.includes(item.name)
-  );
-  const unitCosts = corePriceBook.filter((i) => i.type === 'UNIT_COST');
-  const flatFees = corePriceBook.filter((i) => i.type === 'FLAT_FEE');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-sm">
@@ -135,27 +100,31 @@ export function IntelligenceModal({ isOpen, onClose, initialData }: Intelligence
         <IntelligenceModalHeader isEditMode={isEditMode} onClose={onClose} />
 
         <div className="flex flex-1 overflow-hidden bg-zinc-50/50">
-          <IntelligenceModalSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          <IntelligenceModalSidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            allCount={allItems.length}
+            modifierCount={modifiers.length}
+          />
 
           <div className="flex-1 overflow-y-auto p-8">
             {activeTab === 'priceBook' && (
               <PriceBookTab
-                unitCosts={unitCosts}
-                flatFees={flatFees}
+                items={allItems}
                 onAddItem={addPriceItem}
                 onUpdateItem={updatePriceItem}
                 onRemoveItem={removePriceItem}
+                onToggleModifier={toggleModifier}
               />
             )}
 
-            {activeTab === 'rules' && (
-              <RulesTab
-                contextFlags={config.contextFlags}
-                priceBook={config.priceBook}
-                onAddRule={addRule}
-                onRemoveRule={removeRule}
-                onSetImpact={setRuleImpact}
-                onUpdatePriceItem={updatePriceItem}
+            {activeTab === 'modifiers' && (
+              <ModifiersTab
+                items={modifiers}
+                onUpdateItem={updatePriceItem}
+                onRemoveModifierStatus={(id) =>
+                  updatePriceItem(id, { isModifier: false })
+                }
               />
             )}
           </div>
