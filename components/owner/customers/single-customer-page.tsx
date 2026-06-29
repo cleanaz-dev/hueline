@@ -6,6 +6,7 @@ import BookingCard, { Booking, Call } from "./booking-card";
 import ChatThreadsSidebar, { EnrichedChatThread } from "./chat-thread-sidebar";
 import DesignProjectsBar, { DesignProject } from "./design-projects-bar";
 import { Quote } from "@/app/generated/prisma/wasm";
+import { Button } from "@/components/ui/button";
 
 // ----------------------------------------------------------------------
 // Types & Sanitization
@@ -89,7 +90,14 @@ export default function CustomerSinglePage({
             </div>
           </div>
         </div>
-        <StatusBadge status={data.status} />
+        <div className="flex gap-2 items-centere">
+          <StatusBadge status={data.status} />
+          <Button
+            onClick={() => console.log("Uploading Media :)")}
+          >
+            Upload Media
+          </Button>
+        </div>
       </div>
 
       {/* 2 & 3. Middle grid: 2-Column Main Area + 1-Column Sidebar */}
