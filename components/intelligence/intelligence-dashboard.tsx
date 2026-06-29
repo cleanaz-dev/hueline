@@ -11,7 +11,8 @@ import OwnerPageHeader from "../owner/owner-page.header";
 import { PricingTab } from "./pricing-tab";
 import { ListeningTab } from "./listening-tab";
 import { RoomVisionTab } from "./room-vision-tab";
-import { IntelligenceConfig, IntelligenceModal } from "./create-intelligence-model";
+import { IntelligenceModal } from "./create-intelligence-modal";
+import { IntelligenceConfig } from "./types";
 
 export default function IntelligenceDashboardPage() {
   const { subdomain } = useOwner() as {
@@ -26,49 +27,28 @@ export default function IntelligenceDashboardPage() {
   const rawIntel = subdomain.intelligence;
   const hasIntelligence = !!rawIntel;
 
-  // Data Adapter: Maps legacy dynamic variables into the structured PriceBook config on the fly
   const adaptedConfig: IntelligenceConfig = useMemo(() => {
-    if (!rawIntel) return { prompt: "", priceBook: [], contextFlags: [] };
-
-    // 1. If it's already using the new PriceBook schema
-    if ((rawIntel.values as any)?.priceBook) {
-      return {
-        prompt: rawIntel.prompt || "",
-        priceBook: (rawIntel.values as any).priceBook,
-        contextFlags: (rawIntel.values as any).contextFlags || [],
-      };
-    }
-
-    // 2. Legacy adapter for existing DB rows
-    const legacyValues = (rawIntel.values as Record<string, any>) || {};
-    const legacySchema = (rawIntel.schema as Record<string, string>) || {};
-
-    const priceBook = Object.entries(legacyValues).map(([k, v]) => {
-      const isObj = typeof v === "object" && v !== null;
-      const val = isObj ? v.value : (v as number);
-      const type = isObj ? v.type : (val < 2 && val > 0 ? "MULTIPLIER" : "FLAT_FEE");
-      const label = isObj && v.label ? v.label : k.replace(/_/g, " ").replace(/([A-Z])/g, " $1").trim();
-
-      return {
-        id: crypto.randomUUID(),
-        name: label,
-        amount: val,
-        type: type,
-      };
-    });
-
-    const contextFlags = Object.keys(legacySchema).filter((k) => legacySchema[k] === "boolean");
-
-    return { prompt: rawIntel.prompt || "", priceBook, contextFlags };
+    if (!rawIntel) return { prompt: "", priceBook: [], contextFlags: [], examples: [] };
+    return {
+      prompt: rawIntel.prompt || "",
+      priceBook: (rawIntel.priceBook as any) || [],
+      contextFlags: (rawIntel.contextFlags as any) || [],
+      examples: (rawIntel.examples as any) || [],
+    };
   }, [rawIntel]);
 
-  const roomJson = (subdomain.roomIntelligence?.intelligence as any) || {};
-  const roomExamples = roomJson.examples || [];
-
   const handleSaveIntelligence = async (newConfig: IntelligenceConfig) => {
-    console.log("Saving new logic:", newConfig);
-    // TODO: Await your server action here
-    setIsModalOpen(false);
+    if (!rawIntel?.id) return;
+    try {
+      await fetch(`/api/${subdomain.slug}/intelligence/${rawIntel.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newConfig),
+      });
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -103,7 +83,7 @@ export default function IntelligenceDashboardPage() {
         </TabsContent>
 
         <TabsContent value="room">
-          <RoomVisionTab examples={roomExamples} />
+          <RoomVisionTab examples={adaptedConfig.examples} />
         </TabsContent>
       </Tabs>
 

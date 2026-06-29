@@ -97,6 +97,11 @@ export default function CustomerSinglePage({
           >
             Upload Media
           </Button>
+          <Button
+           onClick={() => console.log("Uploading Media :)")}
+          >
+            Start Design Project
+          </Button>
         </div>
       </div>
 

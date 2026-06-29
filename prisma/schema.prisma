@@ -245,7 +245,7 @@ model ClientActivity {
   client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId String?
 
-  subDomain    Subdomain?  @relation(fields: [subDomainId], references: [id], onDelete: Cascade)
+  subdomain    Subdomain?  @relation(fields: [subDomainId], references: [id], onDelete: Cascade)
   subDomainId  String?
   // Timeline stamps
   createdAt    DateTime    @default(now())
@@ -346,18 +346,20 @@ model RoomIntelligence {
   intelligence Json?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
-  Subdomain    Subdomain[]
+  subdomain    Subdomain[]
 }
 
 model Intelligence {
-  id        String    @id @default(uuid())
-  prompt    String?
-  values    Json?
-  schema    Json?
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @updatedAt
+  id           String    @id @default(uuid())
+  prompt       String?
+  priceBook    Json?
+  contextFlags Json?
+  examples     Json?
+  roomExamples Json?
+  createdAt    DateTime? @default(now())
+  updatedAt    DateTime? @updatedAt
 
-  subdomain Subdomain[]
+  subdomain    Subdomain[]
 }
 
 model CallFlow {

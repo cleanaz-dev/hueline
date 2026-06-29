@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     const activity = await prisma.clientActivity.create({
       data: {
         type: "INBOUND_EMAIL",
-        subDomain: { connect: { id: thread.subdomainId } },
+        subdomain: { connect: { id: thread.subdomainId } },
         customer: { connect: { id: thread.customer.id } },
         chatThread: { connect: { id: thread.id } },
         description: "Cx sent Email",

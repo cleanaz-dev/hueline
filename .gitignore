@@ -43,3 +43,5 @@ next-env.d.ts
 # lib/seeds
 lib/seed/*
 /app/generated/prisma
+lib/env/*
+

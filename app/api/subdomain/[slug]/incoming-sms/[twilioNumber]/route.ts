@@ -147,7 +147,7 @@ export async function POST(req: Request, { params }: Params) {
         data: {
           type: "SMS_INBOUND",
           customer: { connect: { id: customer.id } },
-          subDomain: { connect: { id: customer.subdomainId! } },
+          subdomain: { connect: { id: customer.subdomainId! } },
           chatThread: { connect: { id: thread.id } },
           description: `Inbound SMS from ${customer.name}${processedMedia.length > 0 ? " (with Media)" : ""}`,
           title: "Inbound SMS",

@@ -64,7 +64,7 @@ export async function POST(req: Request, { params }: Params) {
         customer: { connect: { id: customer.id } },
         description: `Inbound Call from ${customer.name} - ${customer.phone}`,
         title: "Inbound Call",
-        subDomain: { connect: { slug } },
+        subdomain: { connect: { slug } },
       },
     });
 

@@ -200,7 +200,7 @@ export async function processQuoteWorkflow({
           description: `${config.activityDescription(context)} (via ${job.deliveryMethod})`,
           metadata: { huelineId: "", jobId: job.id },
           customer: { connect: { id: customer.id } },
-          subDomain: { connect: { id: job.subdomainId } },
+          subdomain: { connect: { id: job.subdomainId } },
           chatThread: { connect: { id: metadata.chatThreadId } },
         },
       });

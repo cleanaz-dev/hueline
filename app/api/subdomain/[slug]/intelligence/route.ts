@@ -1,47 +1,51 @@
+import { authOptions } from "@/lib/auth";
+import { getIntelligenceExamples } from "@/lib/handlers/get-intelligence-examples";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // Adjust path to your prisma client
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ slug: string }> }
-) {
+interface Params {
+  params: Promise<{
+    slug: string;
+  }>;
+}
+
+export async function GET(req: Request, { params }: Params) {
   const { slug } = await params;
-  const { searchParams } = new URL(req.url);
-  const subdomainId = searchParams.get("subdomainId");
 
-  // 1. SECURITY: Verify the Lambda's API Key
-  const apiKey = req.headers.get("x-api-key");
-  if (apiKey !== process.env.INTERNAL_API_KEY) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
+
+  if (!session || !user)
+    return NextResponse.json({ message: "Invalid Session" }, { status: 401 });
 
   try {
-    // 2. FETCH INTELLIGENCE
-    // We prefer searching by ID (faster/safer), but fallback to slug if needed
-    const subdomain = await prisma.subdomain.findFirst({
-      where: subdomainId ? { id: subdomainId } : { slug: slug },
-      include: { intelligence: true },
+    const validUser = await prisma.subdomainUser.findUnique({
+      where: {
+        email: user.email!,
+      },
     });
 
-    if (!subdomain || !subdomain.intelligence) {
-      // Return defaults if no config exists yet
-      return NextResponse.json({
-        prompt: "You are a standard estimator assistant.",
-        values: {},
-        schema: {} 
-      });
-    }
+    if (!validUser)
+      return NextResponse.json(
+        { message: "Unauthorized Request" },
+        { status: 401 },
+      );
 
-    // 3. RETURN THE CONFIG
-    // This matches exactly what your Lambda expects
-    return NextResponse.json({
-      prompt: subdomain.intelligence.prompt,
-      values: subdomain.intelligence.values || {},
-      schema: subdomain.intelligence.schema || {},
+    const result = await prisma.subdomain.findUnique({
+      where: { slug },
+      select: {
+        intelligence: true,
+      },
     });
 
+    if (!result?.intelligence)
+      return NextResponse.json({ message: "Data Not Found" }, { status: 404 });
+
+    return NextResponse.json({ intelligence: result.intelligence });
   } catch (error) {
-    console.error("Config Fetch Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ message: "Server Error" }, { status: 500 });
   }
 }
+

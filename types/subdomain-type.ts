@@ -1,4 +1,4 @@
-import { Prisma, RoomType, BookingStatus, Export, Branding } from "@/app/generated/prisma";
+import { Prisma, RoomType, BookingStatus, Export, Branding, Intelligence } from "@/app/generated/prisma";
 import {
   CallReason,
   CallOutcome,
@@ -12,14 +12,6 @@ import {
 // --- INTELLIGENCE INTERFACES ---
 
 // 1. Global Config (Attached to Subdomain)
-export interface Intelligence {
-  id: string;
-  prompt: string | null;
-  values: Prisma.JsonValue | null;
-  schema: Prisma.JsonValue | null;
-  createdAt: Date | string | null;
-  updatedAt: Date | string | null;
-}
 
 // 2. Call Results (Attached to Call)
 export interface CallIntelligence {

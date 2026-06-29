@@ -34,7 +34,7 @@ export function RoomVisionTab({ examples }: { examples: any[] }) {
                   <Quote className="w-4 h-4 text-zinc-300 shrink-0 transform scale-x-[-1] mt-0.5" />
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Input</span>
-                    <p className="text-sm text-zinc-700 font-medium italic">"{ex.transcript}"</p>
+                   <p className="text-sm text-zinc-700 font-medium italic">"{ex.input}"</p>
                   </div>
                 </div>
 

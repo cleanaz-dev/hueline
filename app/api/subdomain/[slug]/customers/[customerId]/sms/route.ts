@@ -71,7 +71,7 @@ export async function POST(req: Request, { params }: Params) {
         type: "SMS_SENT",
         chatThreadId: threadId,
         customerId,
-        subDomain: { connect: { slug } },
+        subdomain: { connect: { slug } },
         title: "SMS Sent",
       },
     });

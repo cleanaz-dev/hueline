@@ -31,9 +31,9 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       hasConfig: true,
-      prompt: subdomain.intelligence.prompt,
-      values: subdomain.intelligence.values,
-      schema: subdomain.intelligence.schema,
+      // prompt: subdomain.intelligence.prompt,
+      // values: subdomain.intelligence.values,
+      // schema: subdomain.intelligence.schema,
     });
 
   } catch (error) {
@@ -51,42 +51,42 @@ export async function POST(req: Request) {
   }
 
   try {
-    const body = await req.json();
-    const { prompt, values, schema } = body;
+    // const body = await req.json();
+    // const { prompt, values, schema } = body;
 
-    const subdomain = await prisma.subdomain.findUnique({
-      where: { slug },
-      select: { 
-        intelligenceId: true,
-        id: true 
-      }
-    });
+    // const subdomain = await prisma.subdomain.findUnique({
+    //   where: { slug },
+    //   select: { 
+    //     intelligenceId: true,
+    //     id: true 
+    //   }
+    // });
 
-    if (!subdomain) {
-      return NextResponse.json({ error: "Subdomain not found" }, { status: 404 });
-    }
+    // if (!subdomain) {
+    //   return NextResponse.json({ error: "Subdomain not found" }, { status: 404 });
+    // }
 
-    let intelligence;
+    // let intelligence;
 
-    if (subdomain.intelligenceId) {
-      intelligence = await prisma.intelligence.update({
-        where: { id: subdomain.intelligenceId },
-        data: { prompt, values, schema },
-      });
-    } else {
-      intelligence = await prisma.intelligence.create({
-        data: {
-          prompt,
-          values,
-          schema,
-          subdomain: { connect: { id: subdomain.id } }
-        },
-      });
-    }
+    // if (subdomain.intelligenceId) {
+    //   intelligence = await prisma.intelligence.update({
+    //     where: { id: subdomain.intelligenceId },
+    //     data: { prompt, values, schema },
+    //   });
+    // } else {
+    //   intelligence = await prisma.intelligence.create({
+    //     data: {
+    //       prompt,
+    //       values,
+    //       schema,
+    //       subdomain: { connect: { id: subdomain.id } }
+    //     },
+    //   });
+    // }
 
     return NextResponse.json({ 
       success: true, 
-      intelligence 
+      // intelligence 
     });
   } catch (error) {
     console.error("Intelligence config save error:", error);

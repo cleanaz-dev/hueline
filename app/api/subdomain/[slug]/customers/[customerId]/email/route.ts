@@ -65,7 +65,7 @@ export async function POST(req: Request, { params }: Params) {
           customer: { connect: { id: customerId } },
           description: "Sent Email to Cx",
           title: "Email",
-          subDomain: { connect: { slug } },
+          subdomain: { connect: { slug } },
           chatThread: { connect: { id: threadId } }, // So easy
         },
       });

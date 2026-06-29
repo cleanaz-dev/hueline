@@ -185,7 +185,7 @@ export async function processMockupWorkflow({
           metadata: { huelineId: webhook.huelineId, jobId: job.id },
           customer: { connect: { id: customer.id } },
           chatThread: { connect: { id: thread.id } },
-          subDomain: { connect: { id: webhook.subdomainId } },
+          subdomain: { connect: { id: webhook.subdomainId } },
         },
       });
 

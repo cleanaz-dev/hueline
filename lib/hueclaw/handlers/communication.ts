@@ -202,7 +202,7 @@ export async function handleHueClawCommunication({
           description: config.activityDescription(context),
           chatThread: { connect: { id: thread.id } },
           customer: { connect: { id: thread.customerId } },
-          subDomain: { connect: { id: thread.subdomainId } },
+          subdomain: { connect: { id: thread.subdomainId } },
         },
       });
 

@@ -82,7 +82,7 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
           quoteId: quote.id,
         },
         customer: { connect: { id: customer.id } },
-        subDomain: { connect: { id: task.subdomainId } },
+        subdomain: { connect: { id: task.subdomainId } },
         chatThread: { connect: { id: threadId } },
       },
     });
@@ -95,7 +95,7 @@ export async function processQuoteReturn(task: SystemTask, rawResult: any) {
         description: `Quote link delivered to ${customer.name ?? "customer"} via ${task.deliveryMethod}. ${quoteLink}`,
         metadata: { quoteId: quote.id },
         customer: { connect: { id: customer.id } },
-        subDomain: { connect: { id: task.subdomainId } },
+        subdomain: { connect: { id: task.subdomainId } },
         chatThread: { connect: { id: threadId } },
       },
     });

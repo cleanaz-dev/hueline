@@ -83,7 +83,7 @@ export async function finalizeHueClawDelivery({
       customer: { connect: { id: customer?.id } },
       description: `${pendingMessage.deliveryMethod} sent with Mockup Image`,
       title: `${pendingMessage.deliveryMethod} SENT`,
-      subDomain: { connect: { id: customer?.subdomainId! } },
+      subdomain: { connect: { id: customer?.subdomainId! } },
     },
   });
 

@@ -143,7 +143,7 @@ export async function POST(req: Request) {
           customer: { connect: { id: customer.id } },
           description: "Client booked meeting from Booking page.",
           title: "Meeting Booked!",
-          subDomain: { connect: { id: adminSubdomainId } },
+          subdomain: { connect: { id: adminSubdomainId } },
         },
       }),
       prisma.logs.create({
