@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useOwner } from "@/context/owner-context";
-import { Cpu } from "lucide-react";
+import { Cpu, Router } from "lucide-react";
 import { SubdomainAccountData } from "@/types/subdomain-type";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OwnerPageHeader from "../owner/owner-page.header";
@@ -13,6 +13,7 @@ import { ListeningTab } from "./listening-tab";
 import { RoomVisionTab } from "./room-vision-tab";
 import { IntelligenceModal } from "./create-intelligence-modal";
 import { IntelligenceConfig } from "./types";
+import { useRouter } from "next/navigation";
 
 export default function IntelligenceDashboardPage() {
   const { subdomain } = useOwner() as {
@@ -20,6 +21,7 @@ export default function IntelligenceDashboardPage() {
   };
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const { push } = useRouter();
 
   if (!subdomain) {
     return <div className="p-8 text-zinc-400">Loading Configuration...</div>;
@@ -63,9 +65,9 @@ export default function IntelligenceDashboardPage() {
         description="Review the active logic gates, pricing models, and vision."
         icon={<Cpu className="size-6 text-zinc-500" />}
         addButtonLabel={
-          hasIntelligence ? "Update Intelligence" : "Create Intelligence"
+          hasIntelligence ? "View Intelligence" : "Create Intelligence"
         }
-        onAddClick={() => setIsModalOpen(true)}
+        onAddClick={() => push(`/my/intelligence/${rawIntel?.id}`)}
       />
 
       <Tabs defaultValue="pricing" className="w-full">
