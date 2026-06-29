@@ -4,9 +4,9 @@ import { getIntelligenceExamples } from "@/lib/handlers/get-intelligence-example
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
-// IMPORTANT: AI generation can easily take 10-20 seconds. 
+// IMPORTANT: AI generation can easily take 10-20 seconds.
 // If you host on Vercel, this prevents the default 15s timeout from killing the request.
-export const maxDuration = 60; 
+export const maxDuration = 60;
 
 interface Params {
   params: Promise<{
@@ -31,13 +31,16 @@ export async function PATCH(req: Request, { params }: Params) {
   });
 
   if (!validUser) {
-    return NextResponse.json({ message: "Unauthorized Request" }, { status: 401 });
+    return NextResponse.json(
+      { message: "Unauthorized Request" },
+      { status: 401 },
+    );
   }
 
   // 2. SECURITY: Verify the slug actually owns this Intelligence record
   const subdomain = await prisma.subdomain.findUnique({
     where: { slug },
-    select: { intelligenceId: true } 
+    select: { intelligenceId: true },
   });
 
   if (!subdomain || subdomain.intelligenceId !== intelligenceId) {
@@ -47,6 +50,10 @@ export async function PATCH(req: Request, { params }: Params) {
   try {
     // 3. STABILITY: Provide defensive defaults to empty arrays in case the frontend sends undefined
     const { prompt = "", priceBook = [], contextFlags = [] } = await req.json();
+
+    console.log("Price Book:", priceBook, "Context Flags", contextFlags);
+
+    return NextResponse.json({ message: "TEST" }, { status: 200 });
 
     // 4. Generate AI examples based on the newly saved rules
     const { examples, roomExamples } = await getIntelligenceExamples({
@@ -61,7 +68,6 @@ export async function PATCH(req: Request, { params }: Params) {
     });
 
     return NextResponse.json({ success: true, data: intelligence });
-    
   } catch (error) {
     // Better error logging prefix so you can spot AI failures easily in the terminal
     console.error("[INTELLIGENCE_PATCH_ERROR]:", error);

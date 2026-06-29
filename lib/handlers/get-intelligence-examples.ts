@@ -8,7 +8,7 @@ interface ExampleProps {
 
 export async function getIntelligenceExamples({ priceBook, contextFlags }: ExampleProps) {
     const res = await novitaAI.chat.completions.create({
-        model: LLM_MODELS.GLM_5_2,
+        model: LLM_MODELS.DEEPSEEK_V4_PRO,
         messages: [
             {
                 role: "system",
