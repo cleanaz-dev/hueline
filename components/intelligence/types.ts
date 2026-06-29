@@ -13,7 +13,7 @@ export interface IntelligenceModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: IntelligenceConfig | null;
-  onSave: (data: IntelligenceConfig) => void;
+
 }
 
 export interface IntelligenceExample {

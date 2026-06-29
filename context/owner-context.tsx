@@ -14,6 +14,7 @@ import { OwnerData } from "@/types/owner";
 import useSWR, { mutate } from "swr";
 import axios from "axios";
 import { pusherClient } from "@/lib/pusher/pusher-client";
+import { IntelligenceConfig } from "@/components/intelligence/types";
 
 // 1. NEW THREAD LOGIC: Define your Thread model interface
 export interface ChatThreadModel {
@@ -157,6 +158,12 @@ interface OwnerContextValue {
 
   // Active Call
   activeCall: ActiveCallData | null;
+  // Intelligence
+  handleSaveIntelligence: (
+    intelligenceId: string,
+    config: IntelligenceConfig
+  ) => Promise<boolean>;
+  isSavingIntelligence: boolean
 }
 
 const OwnerContext = createContext<OwnerContextValue | null>(null);
@@ -229,6 +236,7 @@ export function OwnerProvider({
   const [activeCall, setActiveCall] = useState<ActiveCallData | null>(null);
   const [isCancellingCall, setIsCancellingCall] = useState(false);
   const [isCancellingFollowUp, setIsCancellingFollowUp] = useState(false);
+  const [isSavingIntelligence, setSavingIntelligence] = useState(false);
 
   const [smsSuccess, setSmsSuccess] = useState<string | null>(null);
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
@@ -274,16 +282,19 @@ export function OwnerProvider({
       }, false); // false = do not re-fetch from API, we already have the data!
     });
 
-     // NEW: Listen for Call Ended events
-    channel.bind("call-ended", (data: { roomName: string, threadId: string }) => {
-      setActiveCall((prev) => {
-        // If the ended call is our current active call, clear it
-        if (prev?.roomName === data.roomName) {
-          return null;
-        }
-        return prev;
-      });
-    });
+    // NEW: Listen for Call Ended events
+    channel.bind(
+      "call-ended",
+      (data: { roomName: string; threadId: string }) => {
+        setActiveCall((prev) => {
+          // If the ended call is our current active call, clear it
+          if (prev?.roomName === data.roomName) {
+            return null;
+          }
+          return prev;
+        });
+      },
+    );
 
     return () => {
       pusherClient.unsubscribe(channelName);
@@ -540,7 +551,6 @@ export function OwnerProvider({
   ): Promise<boolean> => {
     setIsCancellingCall(true);
     try {
-
       setActiveCall(null);
       const res = await fetch(
         `/api/subdomain/${subdomain.slug}/customers/${customerId}/${threadId}/hang-up`,
@@ -573,6 +583,30 @@ export function OwnerProvider({
       return res.ok;
     } finally {
       setIsCancellingFollowUp(false);
+    }
+  };
+
+const handleSaveIntelligence = async (
+    intelligenceId: string,
+    config: IntelligenceConfig,
+  ): Promise<boolean> => {
+    setSavingIntelligence(true);
+    try {
+      const res = await fetch(
+        `/api/subdomain/${subdomain.slug}/intelligence/${intelligenceId}`,
+        {
+          method: "PATCH",
+          // FIX: Pass config directly so the backend can destructure it
+          body: JSON.stringify(config), 
+        },
+      );
+      if (!res.ok) throw new Error("Failed to save intelligence");
+      return res.ok;
+    } catch (error) {
+      console.error(error);
+      return false;
+    } finally {
+      setSavingIntelligence(false);
     }
   };
 
@@ -640,6 +674,10 @@ export function OwnerProvider({
 
         // Active Call
         activeCall,
+
+        // Intelligence
+        handleSaveIntelligence,
+        isSavingIntelligence
       }}
     >
       {children}

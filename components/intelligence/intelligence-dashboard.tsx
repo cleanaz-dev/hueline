@@ -19,6 +19,7 @@ export default function IntelligenceDashboardPage() {
     subdomain: SubdomainAccountData | null;
   };
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   if (!subdomain) {
     return <div className="p-8 text-zinc-400">Loading Configuration...</div>;
@@ -28,7 +29,8 @@ export default function IntelligenceDashboardPage() {
   const hasIntelligence = !!rawIntel;
 
   const adaptedConfig: IntelligenceConfig = useMemo(() => {
-    if (!rawIntel) return { prompt: "", priceBook: [], contextFlags: [], examples: [] };
+    if (!rawIntel)
+      return { prompt: "", priceBook: [], contextFlags: [], examples: [] };
     return {
       prompt: rawIntel.prompt || "",
       priceBook: (rawIntel.priceBook as any) || [],
@@ -39,6 +41,7 @@ export default function IntelligenceDashboardPage() {
 
   const handleSaveIntelligence = async (newConfig: IntelligenceConfig) => {
     if (!rawIntel?.id) return;
+    setIsSaving(true);
     try {
       await fetch(`/api/${subdomain.slug}/intelligence/${rawIntel.id}`, {
         method: "PATCH",
@@ -48,6 +51,8 @@ export default function IntelligenceDashboardPage() {
       setIsModalOpen(false);
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -57,19 +62,30 @@ export default function IntelligenceDashboardPage() {
         title="Intelligence"
         description="Review the active logic gates, pricing models, and vision."
         icon={<Cpu className="size-6 text-zinc-500" />}
-        addButtonLabel={hasIntelligence ? "Update Intelligence" : "Create Intelligence"}
+        addButtonLabel={
+          hasIntelligence ? "Update Intelligence" : "Create Intelligence"
+        }
         onAddClick={() => setIsModalOpen(true)}
       />
 
       <Tabs defaultValue="pricing" className="w-full">
         <TabsList className="bg-transparent p-0 border-b border-zinc-200 w-full justify-start h-auto rounded-none gap-6 mb-8">
-          <TabsTrigger value="pricing" className="rounded-none border-b-3 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none cursor-pointer hover:bg-muted rounded-md">
+          <TabsTrigger
+            value="pricing"
+            className="rounded-none border-b-3 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none cursor-pointer hover:bg-muted rounded-md"
+          >
             Pricing Logic
           </TabsTrigger>
-          <TabsTrigger value="listening" className="rounded-none border-b-3 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none cursor-pointer hover:bg-muted rounded-md">
+          <TabsTrigger
+            value="listening"
+            className="rounded-none border-b-3 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none cursor-pointer hover:bg-muted rounded-md"
+          >
             Active Listening
           </TabsTrigger>
-          <TabsTrigger value="room" className="rounded-none border-b-3 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none cursor-pointer hover:bg-muted rounded-md">
+          <TabsTrigger
+            value="room"
+            className="rounded-none border-b-3 border-transparent px-0 py-3 text-sm font-medium text-zinc-500 data-[state=active]:border-zinc-900 data-[state=active]:text-zinc-900 data-[state=active]:shadow-none cursor-pointer hover:bg-muted rounded-md"
+          >
             Room Vision
           </TabsTrigger>
         </TabsList>
@@ -91,7 +107,6 @@ export default function IntelligenceDashboardPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         initialData={adaptedConfig}
-        onSave={handleSaveIntelligence}
       />
     </div>
   );
