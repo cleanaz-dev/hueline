@@ -12,7 +12,7 @@ interface Params {
 }
 
 export async function PATCH(req: Request, { params }: Params) {
-  const { intelligenceId } = await params;
+  const { intelligenceId, slug } = await params;
 
   const session = await getServerSession(authOptions);
   const user = session?.user;
@@ -25,12 +25,18 @@ export async function PATCH(req: Request, { params }: Params) {
   });
 
   if (!validUser)
-    return NextResponse.json({ message: "Unauthorized Request" }, { status: 401 });
+    return NextResponse.json(
+      { message: "Unauthorized Request" },
+      { status: 401 },
+    );
 
   try {
     const { prompt, priceBook, contextFlags } = await req.json();
 
-    const { examples, roomExamples } = await getIntelligenceExamples({ priceBook, contextFlags });
+    const { examples, roomExamples } = await getIntelligenceExamples({
+      priceBook,
+      contextFlags,
+    });
 
     const intelligence = await prisma.intelligence.update({
       where: { id: intelligenceId },
@@ -38,7 +44,6 @@ export async function PATCH(req: Request, { params }: Params) {
     });
 
     return NextResponse.json({ success: true, data: intelligence });
-
   } catch (error) {
     console.error(error);
     return NextResponse.json({ message: "Server Error" }, { status: 500 });
