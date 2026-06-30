@@ -1,13 +1,11 @@
 import type { PricingRule } from "./types";
 
 export const PRICING_UNITS = [
-  { value: 'qty', label: 'Qty' },
   { value: 'hour', label: 'Hour' },
   { value: 'sqft', label: 'Sq.Ft.' },
   { value: 'gallon', label: 'Gallon' },
   { value: 'linear_ft', label: 'Linear Ft.' },
   { value: 'day', label: 'Day' },
-  { value: 'visit', label: 'Visit' },
 ] as const;
 
 

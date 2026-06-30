@@ -29,7 +29,7 @@ export function SinglePageIntelligence({ intelligence }: { intelligence?: any })
       setConfig({ 
         pricingRules: intelligence.pricingRules.map((rule: PricingRule) => ({
           ...rule,
-          unitName: rule.unitName || 'qty',
+          unitName: rule.unitName || 'hour',
           multiplier: rule.multiplier || 1.0,
           multiplierTarget: rule.multiplierTarget || 'TOTAL'
         })) 
@@ -38,9 +38,9 @@ export function SinglePageIntelligence({ intelligence }: { intelligence?: any })
       // Dummy data if empty
       setConfig({
         pricingRules: [
-          { id: '1', name: 'Base Call-out Fee', chargeType: 'FLAT', unitName: 'qty', amount: 150, isMultiplier: false, multiplier: 1.0, multiplierTarget: 'TOTAL' },
+          { id: '1', name: 'Base Call-out Fee', chargeType: 'FLAT', unitName: 'hour', amount: 150, isMultiplier: false, multiplier: 1.0, multiplierTarget: 'TOTAL' },
           { id: '2', name: 'Standard Labor', chargeType: 'PER_UNIT', unitName: 'hour', amount: 45, isMultiplier: false, multiplier: 1.0, multiplierTarget: 'TOTAL' },
-          { id: '3', name: 'High Ceilings', chargeType: 'FLAT', unitName: 'qty', amount: 0, isMultiplier: true, multiplier: 1.25, multiplierTarget: 'LABOR' },
+          { id: '3', name: 'High Ceilings', chargeType: 'FLAT', unitName: 'hour', amount: 0, isMultiplier: true, multiplier: 1.25, multiplierTarget: 'LABOR' },
         ]
       });
     }
@@ -71,7 +71,7 @@ const handleSave = async () => {
       name: '',
       amount: 0,
       chargeType: 'FLAT',
-      unitName: 'qty',
+      unitName: 'hour',
       isMultiplier: asMultiplier,
       multiplier: 1.0,
       multiplierTarget: 'TOTAL'
@@ -275,7 +275,7 @@ function PricingRuleRow({
         <div className="flex items-center gap-1.5 min-w-[120px]">
           <Label className="text-[9px] uppercase font-bold text-slate-400">Unit</Label>
           <Select 
-            value={rule.unitName || 'qty'} 
+            value={rule.unitName || 'hour'} 
             onValueChange={(val) => onUpdate({ unitName: val })}
             disabled={!isPerUnit} // Kept disabled for screen reader accessibility when visually hidden
           >
