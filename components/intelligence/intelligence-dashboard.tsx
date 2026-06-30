@@ -1,73 +1,47 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { useOwner } from "@/context/owner-context";
-import { Cpu, Router } from "lucide-react";
 import { SubdomainAccountData } from "@/types/subdomain-type";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OwnerPageHeader from "../owner/owner-page.header";
 
-// Imports to your new separate components
+// Imports for your separate components
 import { PricingTab } from "./pricing-tab";
 import { ListeningTab } from "./listening-tab";
 import { RoomVisionTab } from "./room-vision-tab";
-import { IntelligenceModal } from "./create-intelligence-modal";
-import { IntelligenceConfig } from "./types";
 import { useRouter } from "next/navigation";
+import { Cpu } from "lucide-react"; // Added this to fix the icon error
 
 export default function IntelligenceDashboardPage() {
-  const { subdomain } = useOwner() as {
-    subdomain: SubdomainAccountData | null;
-  };
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const { subdomain } = useOwner() as { subdomain: SubdomainAccountData | null };
   const { push } = useRouter();
 
   if (!subdomain) {
-    return <div className="p-8 text-zinc-400">Loading Configuration...</div>;
+    return <div>Loading Configuration...</div>;
   }
 
-  const rawIntel = subdomain.intelligence;
-  const hasIntelligence = !!rawIntel;
+  // We only need the ID now to navigate, we don't need the whole rawIntel object
+  const intelligenceId = subdomain.intelligence?.id;
+  const hasIntelligence = !!intelligenceId;
 
-  const adaptedConfig: IntelligenceConfig = useMemo(() => {
-    if (!rawIntel)
-      return { prompt: "", priceBook: [], contextFlags: [], examples: [] };
-    return {
-      prompt: rawIntel.prompt || "",
-      priceBook: (rawIntel.priceBook as any) || [],
-      contextFlags: (rawIntel.contextFlags as any) || [],
-      examples: (rawIntel.examples as any) || [],
-    };
-  }, [rawIntel]);
-
-  const handleSaveIntelligence = async (newConfig: IntelligenceConfig) => {
-    if (!rawIntel?.id) return;
-    setIsSaving(true);
-    try {
-      await fetch(`/api/${subdomain.slug}/intelligence/${rawIntel.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newConfig),
-      });
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSaving(false);
+  const handleButtonClick = () => {
+    if (intelligenceId) {
+      // Added backticks to make this a proper template literal string
+      push(`/my/intelligence/${intelligenceId}`);
+    } else {
+      // Fallback route if they need to create one
+      push(`/my/intelligence/new`); 
     }
   };
 
   return (
-    <div className="container max-w-7xl mx-auto">
-      <OwnerPageHeader
-        title="Intelligence"
-        description="Review the active logic gates, pricing models, and vision."
-        icon={<Cpu className="size-6 text-zinc-500" />}
-        addButtonLabel={
-          hasIntelligence ? "View Intelligence" : "Create Intelligence"
-        }
-        onAddClick={() => push(`/my/intelligence/${rawIntel?.id}`)}
+    <div className="w-full">
+      <OwnerPageHeader 
+        title="Intelligence" 
+        description="Review the active logic gates, pricing models, and vision." 
+        icon={<Cpu />} 
+        addButtonLabel={hasIntelligence ? "View Intelligence" : "Create Intelligence"} 
+        onAddClick={handleButtonClick} 
       />
 
       <Tabs defaultValue="pricing" className="w-full">
@@ -93,23 +67,19 @@ export default function IntelligenceDashboardPage() {
         </TabsList>
 
         <TabsContent value="pricing">
-          <PricingTab config={adaptedConfig} />
+          {/* Removed `config={adaptedConfig}` since adaptedConfig was undefined and you are using hardcoded examples inside the tab now */}
+          <PricingTab />
         </TabsContent>
 
         <TabsContent value="listening">
-          <ListeningTab flags={adaptedConfig.contextFlags} />
+          <ListeningTab />
         </TabsContent>
 
         <TabsContent value="room">
-          <RoomVisionTab examples={adaptedConfig.examples} />
+          <RoomVisionTab />
         </TabsContent>
       </Tabs>
-
-      <IntelligenceModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        initialData={adaptedConfig}
-      />
     </div>
   );
 }
+

@@ -350,18 +350,52 @@ model RoomIntelligence {
 }
 
 model Intelligence {
-  id           String    @id @default(uuid())
+  id           String        @id @default(uuid())
   prompt       String?
-  priceBook    Json?
+  
+  // Renamed to perfectly describe what the AI is learning
+  pricingRules PricingRule[] 
+  
   contextFlags Json?
   examples     Json?
   roomExamples Json?
-  createdAt    DateTime? @default(now())
-  updatedAt    DateTime? @updatedAt
+  createdAt    DateTime?     @default(now())
+  updatedAt    DateTime?     @updatedAt
 
   subdomain    Subdomain[]
 }
 
+// Represents a specific pricing logic node for the AI
+model PricingRule {
+  id               String           @id @default(uuid())
+  
+  intelligenceId   String
+  intelligence     Intelligence     @relation(fields: [intelligenceId], references: [id], onDelete: Cascade)
+  
+  name             String
+  chargeType       ChargeType       @default(FLAT)
+  unitName         String?          @default("qty")
+  amount           Float            @default(0)
+  
+  isMultiplier     Boolean          @default(false)
+  multiplier       Float            @default(1.0)
+  multiplierTarget MultiplierTarget @default(TOTAL)
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+// Strict Enums to keep your AI rules perfectly formatted
+enum ChargeType {
+  FLAT
+  PER_UNIT
+}
+
+enum MultiplierTarget {
+  TOTAL
+  LABOR
+  MATERIALS
+}
 model CallFlow {
   id String @id @default(uuid())
 

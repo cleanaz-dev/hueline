@@ -3,8 +3,9 @@
 import { Radar, Quote, ArrowRight, Info, Hammer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { LogicExplainer } from "./logic-explainer";
+import { ROOM_VISION_CONFIG } from "./constants";
 
-export function RoomVisionTab({ examples }: { examples: any[] }) {
+export function RoomVisionTab() {
   return (
     <div className="outline-none animate-in fade-in slide-in-from-bottom-1 duration-300">
       <LogicExplainer
@@ -14,10 +15,10 @@ export function RoomVisionTab({ examples }: { examples: any[] }) {
         exampleTitle="Speech Conversion"
         exampleContent={
           <div className="space-y-2">
-            <p>Input: <span className="italic">"There's mold in the corner."</span></p>
+            <p>Input: <span className="italic">"{ROOM_VISION_CONFIG.explainer.input}"</span></p>
             <div className="flex items-center gap-2">
               <ArrowRight className="w-3 h-3 text-zinc-400" />
-              <span className="font-bold">Wood Rot Repair</span>
+              <span className="font-bold">{ROOM_VISION_CONFIG.explainer.result}</span>
             </div>
           </div>
         }
@@ -25,7 +26,7 @@ export function RoomVisionTab({ examples }: { examples: any[] }) {
 
       <div className="border border-zinc-200 rounded-xl shadow-sm overflow-hidden bg-white">
         <div className="divide-y divide-zinc-100">
-          {examples.map((ex: any, i: number) => {
+          {ROOM_VISION_CONFIG.examples.map((ex, i) => {
             const hasAction = !!ex.output?.category;
             return (
               <div key={i} className="flex flex-col md:flex-row md:items-center gap-4 px-6 py-4 hover:bg-zinc-50/50 transition-colors">
@@ -70,11 +71,6 @@ export function RoomVisionTab({ examples }: { examples: any[] }) {
               </div>
             );
           })}
-          {examples.length === 0 && (
-            <div className="p-12 text-center text-zinc-400 italic">
-              No vision scenarios available.
-            </div>
-          )}
         </div>
       </div>
     </div>
