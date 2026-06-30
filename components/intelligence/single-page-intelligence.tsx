@@ -239,7 +239,7 @@ function PricingRuleRow({
   const isPerUnit = rule.chargeType === 'PER_UNIT';
 
   return (
-    <div className="group flex items-center gap-3 border border-slate-200 bg-white rounded-lg p-2 shadow-sm hover:border-slate-300 transition-all">
+    <div className="group flex items-center gap-3 border border-slate-200 bg-white rounded-lg p-2 shadow-sm hover:border-slate-300 transition-all overflow-hidden">
       
       {/* Name */}
       <Input
@@ -263,23 +263,32 @@ function PricingRuleRow({
         </Select>
       </div>
 
-      {/* Inline Unit */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <Label className={`text-[9px] uppercase font-bold transition-colors ${isPerUnit ? 'text-slate-400' : 'text-slate-300'}`}>Unit</Label>
-        <Select 
-          value={rule.unitName || 'qty'} 
-          onValueChange={(val) => onUpdate({ unitName: val })}
-          disabled={!isPerUnit}
-        >
-          <SelectTrigger className={`h-8 w-[85px] bg-slate-50 text-xs transition-opacity ${!isPerUnit && 'opacity-50'}`}>
-            <SelectValue placeholder="Unit" />
-          </SelectTrigger>
-          <SelectContent>
-            {PRICING_UNITS.map((unit) => (
-              <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Inline Unit (ANIMATED SLIDE) */}
+      <div 
+        className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center shrink-0 ${
+          isPerUnit 
+            ? 'max-w-[150px] opacity-100' 
+            : 'max-w-0 opacity-0 -ml-3' // -ml-3 perfectly cancels out the parent's gap-3 when hidden
+        }`}
+      >
+        {/* Inner container with a fixed min-width so the Select doesn't squish visually while animating */}
+        <div className="flex items-center gap-1.5 min-w-[120px]">
+          <Label className="text-[9px] uppercase font-bold text-slate-400">Unit</Label>
+          <Select 
+            value={rule.unitName || 'qty'} 
+            onValueChange={(val) => onUpdate({ unitName: val })}
+            disabled={!isPerUnit} // Kept disabled for screen reader accessibility when visually hidden
+          >
+            <SelectTrigger className="h-8 w-[85px] bg-slate-50 text-xs">
+              <SelectValue placeholder="Unit" />
+            </SelectTrigger>
+            <SelectContent>
+              {PRICING_UNITS.map((unit) => (
+                <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Inline Rate */}
@@ -321,7 +330,6 @@ function PricingRuleRow({
     </div>
   );
 }
-
 // ============================================================================
 // COMPACT MULTIPLIER BANK ROW
 // ============================================================================
