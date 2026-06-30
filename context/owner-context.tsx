@@ -162,7 +162,7 @@ interface OwnerContextValue {
   handleSaveIntelligence: (
     intelligenceId: string,
     config: IntelligenceConfig
-  ) => Promise<boolean>;
+  ) => Promise<any>;
   isSavingIntelligence: boolean
 }
 
@@ -589,7 +589,7 @@ export function OwnerProvider({
 const handleSaveIntelligence = async (
   intelligenceId: string,
   config: IntelligenceConfig,
-): Promise<boolean> => {
+) => { // Removed : Promise<boolean> so it can return data
   setSavingIntelligence(true);
   try {
     const res = await fetch(
@@ -601,10 +601,14 @@ const handleSaveIntelligence = async (
       },
     );
     if (!res.ok) throw new Error("Failed to save intelligence");
-    return true;
+    
+    // Extract the fresh data from your API response
+    const json = await res.json();
+    return json.data; // This contains the fresh rules with real DB IDs
+    
   } catch (error) {
     console.error(error);
-    return false;
+    return null; // Return null on failure
   } finally {
     setSavingIntelligence(false);
   }

@@ -48,7 +48,21 @@ export function SinglePageIntelligence({ intelligence }: { intelligence?: any })
 
 const handleSave = async () => {
   if (!intelligence?.id) return;
-  await handleSaveIntelligence(intelligence.id, config);
+  
+  // Call the save handler
+  const updatedData = await handleSaveIntelligence(intelligence.id, config);
+  
+  // If successful, update the local state with the real DB IDs!
+  if (updatedData?.pricingRules) {
+    setConfig({
+      pricingRules: updatedData.pricingRules.map((rule: any) => ({
+        ...rule,
+        unitName: rule.unitName || 'hour',
+        multiplier: rule.multiplier || 1.0,
+        multiplierTarget: rule.multiplierTarget || 'TOTAL'
+      }))
+    });
+  }
 };
 
   const updateRule = (id: string, updates: Partial<PricingRule>) => {
@@ -126,7 +140,7 @@ const handleSave = async () => {
         <div className="w-[55%] flex flex-col border-r border-slate-200 bg-slate-50/50">
           <div className="flex-none p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <h2 className="font-semibold text-slate-900">Standard Rules</h2>
+              <h2 className="font-semibold text-slate-900">Standard Intelligence</h2>
               <Badge variant="secondary" className="bg-slate-200/60">{config.pricingRules.length}</Badge>
             </div>
             <Button onClick={() => addRule(false)} variant="outline" size="sm" className="h-8 gap-1.5 bg-white">
@@ -187,7 +201,7 @@ const handleSave = async () => {
           <div className="flex-none p-4 border-b border-amber-100 bg-amber-50 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-500" />
-              <h2 className="font-semibold text-amber-900">AI Multipliers</h2>
+              <h2 className="font-semibold text-amber-900">Multipliers</h2>
               <Badge variant="secondary" className="bg-amber-200/50 text-amber-800">{multiplierRules.length}</Badge>
             </div>
             <Button onClick={() => addRule(true)} variant="outline" size="sm" className="h-8 gap-1.5 bg-white border-amber-200 text-amber-700 hover:bg-amber-100">

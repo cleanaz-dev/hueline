@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { updateIntelligenceSettings } from "@/lib/prisma/mutations/intelligence/save-intelligence";
 
-export const maxDuration = 60;
 
 interface Params {
   params: Promise<{
