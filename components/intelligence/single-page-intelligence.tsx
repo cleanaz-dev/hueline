@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { PRICING_UNITS } from './constants';
 import { IntelligenceConfig, PricingRule } from './types';
+import { useOwner } from '@/context/owner-context';
 
 
 // ============================================================================
@@ -20,6 +21,7 @@ import { IntelligenceConfig, PricingRule } from './types';
 export function SinglePageIntelligence({ intelligence }: { intelligence?: any }) {
   const [isSaving, setIsSaving] = useState(false);
   const [config, setConfig] = useState<IntelligenceConfig>({ pricingRules: [] });
+  const { handleSaveIntelligence, isSavingIntelligence } = useOwner()
 
   useEffect(() => {
     // Check for the new relational array
@@ -44,13 +46,10 @@ export function SinglePageIntelligence({ intelligence }: { intelligence?: any })
     }
   }, [intelligence]);
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    // TODO: Call your Server Action here, e.g., 
-    // await savePricingRules(intelligence.id, config.pricingRules);
-    await new Promise((resolve) => setTimeout(resolve, 800)); 
-    setIsSaving(false);
-  };
+const handleSave = async () => {
+  if (!intelligence?.id) return;
+  await handleSaveIntelligence(intelligence.id, config);
+};
 
   const updateRule = (id: string, updates: Partial<PricingRule>) => {
     setConfig((prev) => ({
@@ -113,9 +112,9 @@ export function SinglePageIntelligence({ intelligence }: { intelligence?: any })
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" className="text-slate-500">Discard</Button>
-          <Button onClick={handleSave} disabled={isSaving} className="gap-2 bg-slate-900 text-white">
+          <Button onClick={handleSave} disabled={isSavingIntelligence} className="gap-2 bg-slate-900 text-white">
             <Save className="w-4 h-4" />
-            {isSaving ? 'Saving...' : 'Save Rules'}
+            {isSavingIntelligence ? 'Saving...' : 'Save Rules'}
           </Button>
         </div>
       </div>

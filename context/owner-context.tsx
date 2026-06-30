@@ -8,7 +8,7 @@ import {
   useEffect,
   useRef,
 } from "react";
-import { Customer, SubdomainUser } from "@/app/generated/prisma";
+import { Customer, Intelligence, SubdomainUser } from "@/app/generated/prisma";
 import { AiSuggestionData } from "@/lib/moonshot";
 import { OwnerData } from "@/types/owner";
 import useSWR, { mutate } from "swr";
@@ -587,28 +587,29 @@ export function OwnerProvider({
   };
 
 const handleSaveIntelligence = async (
-    intelligenceId: string,
-    config: IntelligenceConfig,
-  ): Promise<boolean> => {
-    setSavingIntelligence(true);
-    try {
-      const res = await fetch(
-        `/api/subdomain/${subdomain.slug}/intelligence/${intelligenceId}`,
-        {
-          method: "PATCH",
-          // FIX: Pass config directly so the backend can destructure it
-          body: JSON.stringify(config), 
-        },
-      );
-      if (!res.ok) throw new Error("Failed to save intelligence");
-      return res.ok;
-    } catch (error) {
-      console.error(error);
-      return false;
-    } finally {
-      setSavingIntelligence(false);
-    }
-  };
+  intelligenceId: string,
+  config: IntelligenceConfig,
+): Promise<boolean> => {
+  setSavingIntelligence(true);
+  try {
+    const res = await fetch(
+      `/api/subdomain/${subdomain.slug}/intelligence/${intelligenceId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      },
+    );
+    if (!res.ok) throw new Error("Failed to save intelligence");
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  } finally {
+    setSavingIntelligence(false);
+  }
+};
+
 
   return (
     <OwnerContext.Provider
